@@ -259,7 +259,7 @@ const SLIDES = [
   {
     label: 'Title',
     by: 0,
-    note: 'Shared before the chair introduces you (Zoom: share this browser window, F11 for full screen). Say nothing about the title. First words, as you click: “Before I tell you anything, I’d like you to do something with me.”',
+    note: 'Shared before the chair introduces you (Zoom: share this browser window, F11 for full screen). Say nothing about the title. Click straight to the situated-context slide.',
     render: () => (
       <Frame>
         <div style={K.crests}>
@@ -276,10 +276,27 @@ const SLIDES = [
     ),
   },
 
-  // 2 — The room does two BCAT trials
+  // 2 — Situated context (ISCR's invitation to every presenter)
+  {
+    label: 'Where I’m speaking from',
+    by: 20,
+    note: 'About 15 seconds, even pace, no pause for effect. Read the three lines as written. Then, as you click: “Now, before I tell you anything else, I’d like you to do something with me.”',
+    render: () => (
+      <Frame kicker="Situated context">
+        <H2>Where I’m speaking from</H2>
+        <Bullets items={[
+          'I live in Toronto and work in Toronto and Mississauga, on the traditional land of the Huron-Wendat, the Seneca, and the Mississaugas of the Credit.',
+          'I grew up in Toronto. My grandparents came from Poland and Russia, survivors of the Holocaust and of the pogroms.',
+          'Trained in psychology and neuroscience, I build tools that train breath and body awareness, informed by contemplative practice.',
+        ]} />
+      </Frame>
+    ),
+  },
+
+  // 3 — The room does two BCAT trials
   {
     label: 'Breathing demo',
-    by: 65,
+    by: 85,
     exercise: true,
     note: 'Nothing to explain first. ① Begin. ~14 s: say nothing while it runs. ② “In the chat: F if it got faster, S if slower, = if it stayed the same.” Give it five seconds, then read the split out loud (“mostly equals signs, a few Fs”). Don’t reveal. ③ “Once more.” ~14 s. ④ “And this time? Same codes.” ⑤ “Last one, the one I care about: which trial stirred you up more? Type 1 or 2, or 0 for no difference.” ⑥ Reveal: “Your breathing did the same thing twice. What differed was whether you noticed.” If many caught trial 1: “This audience is unusually good at this. You meditate. In the lab, gradual changes this size are mostly missed.” R resets if you start early.',
     render: () => (
@@ -289,10 +306,10 @@ const SLIDES = [
     ),
   },
 
-  // 3 — The question
+  // 4 — The question
   {
     label: 'Three positions',
-    by: 100,
+    by: 120,
     note: '“That’s an old question in emotion science: does a bodily change have to be noticed to be felt?” One clause per card. A: a missed change still moves you, in proportion. B: it lifts arousal but carries no size. C, James and Lange: noticing is the feeling. “It was never settled, because bigger changes are both easier to notice and more arousing.”',
     render: (d) => (
       <Frame wide kicker="Does a bodily change have to be noticed to be felt?">
@@ -306,10 +323,10 @@ const SLIDES = [
     ),
   },
 
-  // 4 — The BCAT: what you just did
+  // 5 — The BCAT: what you just did
   {
     label: 'What you just did (BCAT)',
-    by: 140,
+    by: 160,
     note: '“You’ve just done our task, the Breath Change Awareness Task.” Point to the two traces: same final pace, different onset. “Gradual onset hides a change; abrupt onset reveals it. A staircase finds each person’s threshold, so we get noticed and missed trials at the same size of change, in the same person.” Five studies, 787 people; the last preregistered, with a respiration belt.',
     render: (d) => (
       <Frame wide kicker="What you just did · the Breath Change Awareness Task">
@@ -328,10 +345,10 @@ const SLIDES = [
     ),
   },
 
-  // 5 — The result
+  // 6 — The result
   {
     label: 'Result',
-    by: 210,
+    by: 230,
     note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right panel: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1. And the belt shows their breathing really did change on the missed trials.” Callback: “The answer is C. And look back at the chat: most of you typed 2.”',
     render: (d) => (
       <Frame wide kicker="Result">
@@ -351,10 +368,10 @@ const SLIDES = [
     ),
   },
 
-  // 6 — MAIA: confidence, not sensitivity
+  // 7 — MAIA: confidence, not sensitivity
   {
     label: 'MAIA',
-    by: 270,
+    by: 290,
     note: 'To this audience specifically: “Many of you would say you notice subtle changes in your breathing.” Beat. “That’s close to an item on the MAIA, the questionnaire our field uses most for body awareness. Across all five studies, MAIA predicted how confident people were in their judgements, but not how small a change they could detect.” Land it kindly: “It measures a habit of attending to and trusting the body, not better sensors. And on our account, that habit is exactly what decides which changes get noticed.”',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
@@ -372,11 +389,11 @@ const SLIDES = [
     ),
   },
 
-  // 7 — Why it matters for contemplative science
+  // 8 — Why it matters for contemplative science
   {
     label: 'Detection habits',
-    by: 335,
-    note: '“If feeling waits on noticing, then emotional life partly reflects detection habits: which signals we notice, and how much we trust them.” One line each: panic (signals noticed and caught up in catastrophe; exposure works because noticed signals can update belief) and savouring (bringing mild pleasant states across the threshold). Then: “Contemplative practice may work less by changing the body than by changing what crosses the threshold. That’s testable, and the BCAT gives us the instrument.”',
+    by: 340,
+    note: '“If feeling waits on noticing, then emotional life partly reflects detection habits: which signals we notice, and how much we trust them.” One line on panic (signals noticed and caught up in catastrophe; exposure works because noticed signals can update belief). Leave savouring on the slide unspoken: this slide is 15 s shorter to make room for the situated-context slide. Then: “Contemplative practice may work less by changing the body than by changing what crosses the threshold. That’s testable, and the BCAT gives us the instrument.”',
     render: (d) => (
       <Frame kicker="For contemplative science">
         <H2>Emotion follows detection habits</H2>
@@ -394,17 +411,18 @@ const SLIDES = [
     ),
   },
 
-  // 8 — Close
+  // 9 — Close
   {
     label: 'Close',
     by: 360,
-    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. “Happy to take questions.” Stop.',
+    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. Point to the GitHub link for the code. “Happy to take questions.” Stop.',
     render: () => (
       <Frame>
         <h1 style={K.title}>What you miss won’t move you.</h1>
         <p style={K.subtitle}>What you practise noticing will.</p>
         <div style={{ height: 10 }} />
-        <p style={K.author}>Kyle Logie-Hagen · Rose Amir Pour</p>
+        <p style={K.author}>With Kyle Logie-Hagen · Rose Amir Pour</p>
+        <p style={K.link}>github.com/Normega/BCAT2026</p>
         <Cite>Materials, data and analysis code on OSF · NSERC Discovery RGPIN-2015-05901</Cite>
         <div style={K.crests}>
           <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
@@ -436,6 +454,7 @@ const K = {
   affil:    { fontSize: 'clamp(13px, 1.6vw, 16px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
+  link:     { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(16px, 1.9vw, 20px)', color: 'var(--pkd)', margin: 0, letterSpacing: '0.02em' },
   cite:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: 0, letterSpacing: '0.03em' },
 
   h2:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(24px, 3.6vw, 40px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.12 },
