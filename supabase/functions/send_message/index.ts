@@ -32,6 +32,8 @@ import { issueLink } from '../_shared/issueLink.ts'
 import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
 import { studyDayPosition, scheduleRank } from '../_shared/studyDayPosition.ts'
 import { RESEARCH_REPLY_TO } from '../_shared/replyTo.ts'
+import { holdCalendar } from '../_shared/holdCalendar.ts'
+import { todayInLabTz } from '../_shared/labDate.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -169,7 +171,7 @@ Deno.serve(async (req) => {
     // Per-study custom email subject/body (nullable — null uses default template).
     const { data: study } = await db
       .from('studies')
-      .select('email_subject, email_body, reply_to_email, compensation_kind, active')
+      .select('email_subject, email_body, reply_to_email, compensation_kind, active, design_graph')
       .eq('id', row.study_id)
       .single()
 
@@ -362,6 +364,8 @@ Deno.serve(async (req) => {
       baseline_hold:   row.resend_note === 'baseline_catchup' ? 'catchup'
         : (hold_resend || (row.hold_resends ?? 0) > 0) ? 'repeat'
         : null,
+      // A fixed calendar changes what the repeat copy can truthfully say.
+      hold_calendar:   holdCalendar(study?.design_graph, todayInLabTz()),
     })
 
     // Warn if any template variables remain unresolved after substitution

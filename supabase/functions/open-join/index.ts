@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
 
       const { data: study } = await db
         .from('studies')
-        .select('id, active, design_graph')
+        .select('id, active, design_graph, open_join_ip_max_per_hour')
         .eq('open_join_slug', slug)
         .maybeSingle()
       if (!study || study.active === false) {
@@ -221,7 +221,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Per-IP ceiling on new attempts. Fail open on a lookup error.
+      // Per-IP ceiling on new attempts. Fail open on a lookup error. A study can
+      // raise its own (studies.open_join_ip_max_per_hour): a class signing up
+      // together in a lecture hall shares one campus network address.
+      const ipMax = study.open_join_ip_max_per_hour ?? IP_MAX_PER_HOUR
       if (ipHash) {
         const since = new Date(Date.now() - 60 * 60 * 1000).toISOString()
         const { count, error: cErr } = await db
@@ -230,7 +233,7 @@ Deno.serve(async (req) => {
           .eq('study_id', study.id)
           .eq('ip_hash', ipHash)
           .gte('created_at', since)
-        if (!cErr && (count ?? 0) >= IP_MAX_PER_HOUR) {
+        if (!cErr && (count ?? 0) >= ipMax) {
           return json({ error: 'Too many sign-ups from this network in the last hour. Please try again later.' }, 429)
         }
       }

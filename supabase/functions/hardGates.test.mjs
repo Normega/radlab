@@ -13,7 +13,7 @@
 // opens a session stops asking.
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
-import { join, dirname, resolve } from 'node:path'
+import { sep, join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -35,7 +35,7 @@ for (const name of readdirSync(fnDir, { withFileTypes: true })) {
   if (!existsSync(join(ROOT, file))) continue
   const src = read(file)
   if (!/\/s\/\$\{/.test(src)) continue
-  senders.push(file)
+  senders.push(file.split(sep).join('/'))   // forward slashes on Windows too
   const gate = src.indexOf("rpc('schedule_row_block_reason'")
   const linkBuilt = src.search(/\/s\/\$\{/)
   check(`${file} asks schedule_row_block_reason`, gate !== -1)

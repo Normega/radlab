@@ -49,6 +49,11 @@ export function renderEmail(vars: {
   // holds existed, so the copy apologises; 'repeat': the daily re-send that
   // keeps going until they complete it or withdraw. Replaces the custom subject.
   baseline_hold?: 'catchup' | 'repeat' | null
+  // A 'repeat' re-send whose study runs on a fixed calendar (holdCalendar.ts):
+  // the first day's date and how many days have gone by. Replaces the repeat
+  // copy's "begins the day after you complete it", which a fixed calendar
+  // makes false. Null/absent = the original copy.
+  hold_calendar?: { starts: string; days_passed: number } | null
 }): { subject: string; html: string; text: string } {
   // {{study_day}} resolves to the integer, or "your study" for single-shot rows.
   // {{study_day_of_total}} adds the " of N" suffix when a total is known, so a
@@ -104,7 +109,7 @@ export function renderEmail(vars: {
   const intro = vars.final_notice
     ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours, vars.compensation ?? 'credit')
     : vars.baseline_hold === 'catchup' ? BASELINE_CATCHUP_INTRO
-    : vars.baseline_hold === 'repeat' ? BASELINE_REPEAT_INTRO
+    : vars.baseline_hold === 'repeat' ? (vars.hold_calendar ? holdCalendarIntro(vars.hold_calendar) : BASELINE_REPEAT_INTRO)
     : vars.is_reminder ? REMINDER_INTRO
     : vars.lapsed ? LAPSED_INTRO
     : vars.after_missed ? missedIntro : null
@@ -289,6 +294,17 @@ const TERMINATION_HTML_WRAPPER = `<!DOCTYPE html>
 const BASELINE_CATCHUP_INTRO = `Our apologies — we didn't get your baseline data yet, and we need it to complete the study. Please take a few minutes to complete your baseline survey using the link below. Your daily sessions continue as usual.`
 
 const BASELINE_REPEAT_INTRO = `Your baseline survey is still waiting for you. The daily part of the study begins the day after you complete it, so please take a few minutes to do it using the link below.`
+
+// The repeat copy for a fixed calendar (2026-10-09, the PSY240 class trial): before
+// day 1 it says when everyone starts; after, how many days have been missed, and
+// that finishing the baseline is the way back in, with nothing to catch up.
+function holdCalendarIntro(c: { starts: string; days_passed: number }): string {
+  if (c.days_passed <= 0) {
+    return `Your baseline survey is still waiting for you. The daily practice starts on ${c.starts} for everyone, so please take a few minutes to do it using the link below.`
+  }
+  const days = `${c.days_passed} day${c.days_passed === 1 ? '' : 's'}`
+  return `Your baseline survey is still waiting for you. The daily practice started on ${c.starts}, so you've missed ${days} so far. Finishing the baseline is how to get back on track: you'll pick up the calendar where it is now, with nothing to catch up. Please take a few minutes to do it using the link below.`
+}
 
 const REMINDER_INTRO = `Just a friendly reminder — it looks like you haven't completed this session yet, and your personal link is still active, so there's still time. The original details are below.`
 
