@@ -232,8 +232,8 @@ const BLUE = '#0072B2'
 // Three positions, drawn as predictions for the missed-change line.
 function Predictions() {
   const cards = [
-    { k: 'A', name: 'Constructivist', who: 'Zillmann · interoceptive inference', miss: 'scaled',  line: 'Missed changes still move you, in proportion' },
-    { k: 'B', name: 'Moderate',       who: 'Schachter & Singer · Barrett',      miss: 'raised',  line: 'Missed changes lift arousal, but not by how much' },
+    { k: 'A', name: 'Constructivist', who: 'Zillmann · interoceptive inference', miss: 'parallel',  line: 'Missed changes move you just as much; noticing adds a lift' },
+    { k: 'B', name: 'Moderate',       who: 'Schachter & Singer · Barrett',      miss: 'amplified', line: 'Missed changes still move you; noticing amplifies it' },
     { k: 'C', name: 'Constitutive',   who: 'James · Lange',                     miss: 'flat',    line: 'Missed changes do nothing: noticing is the feeling' },
   ]
   return (
@@ -252,9 +252,10 @@ function Predictions() {
 
 function MiniPlot({ miss }) {
   const W = 220, H = 128, x0 = 26, x1 = W - 10, yBase = 98, yTop = 20
-  const hit = `M${x0},${yBase} L${x1},${yTop}`
-  const missPath = miss === 'scaled' ? `M${x0},${yBase} L${x1},${yTop + 22}`
-    : miss === 'raised' ? `M${x0},${yBase - 15} L${x1},${yBase - 15}`
+  const lift = 20
+  const hit = miss === 'parallel' ? `M${x0},${yBase - lift} L${x1},${yTop}` : `M${x0},${yBase} L${x1},${yTop}`
+  const missPath = miss === 'parallel' ? `M${x0},${yBase} L${x1},${yTop + lift}`
+    : miss === 'amplified' ? `M${x0},${yBase} L${x1},${yTop + 42}`
     : `M${x0},${yBase} L${x1},${yBase}`
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto' }}>
@@ -346,7 +347,7 @@ const SLIDES = [
   {
     label: 'Three positions',
     by: 120,
-    note: '“That’s an old question in emotion science: does a bodily change have to be noticed to be felt?” One clause per card. A: a missed change still moves you, in proportion. B: it lifts arousal but carries no size. C, James and Lange: noticing is the feeling. “It was never settled, because bigger changes are both easier to notice and more arousing.”',
+    note: '“That’s an old question in emotion science: does a bodily change have to be noticed to be felt?” One clause per card. A: missed changes move you just as much, noticing only adds a lift (parallel lines). B: missed changes still move you, noticing amplifies it (steeper gold). C, James and Lange: noticing is the feeling (flat blue). “It was never settled, because bigger changes are both easier to notice and more arousing.”',
     render: (d) => (
       <Frame wide kicker="Does a bodily change have to be noticed to be felt?">
         <Predictions />
@@ -385,7 +386,7 @@ const SLIDES = [
   {
     label: 'Result',
     by: 230,
-    note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right panel: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1. And the belt shows their breathing really did change on the missed trials.” Callback: “The answer is C.” Then match the chat: if most typed 2, “and most of you typed 2: the trial you noticed is the one that moved you.” If it was mixed or mostly 0, “and if neither trial stirred you, that fits too: a change this small mostly moves people when they catch it.”',
+    note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right panel: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1. And the belt shows their breathing really did change on the missed trials.” Callback: “The answer is C. The interaction rules out A, and the flat blue line rules out B.” Then match the chat: if most typed 2, “and most of you typed 2: the trial you noticed is the one that moved you.” If it was mixed or mostly 0, “and if neither trial stirred you, that fits too: a change this small mostly moves people when they catch it.”',
     render: (d) => (
       <Frame wide kicker="Result">
         <H2>Noticed changes move us. Missed ones don’t.</H2>
@@ -506,13 +507,13 @@ const BONUS = [
   },
   {
     q: 'Isn’t a missed change just a weaker response?',
-    note: '“That’s the Moderate account: missed changes still lift arousal, just without scaling. If so, missed trials should sit above no-change trials. They didn’t, and the Bayes factors favour no difference in all four studies that had a no-change baseline.”',
+    note: '“That’s the Moderate account: missed changes still move you, just less, so the blue line should still slope up. It was flat, and missed trials matched no-change trials: the Bayes factors favour no difference in all four studies that had a no-change baseline.” If someone proposes a magnitude-blind lift instead (missed raised but flat), the same Bayes factors rule that out too.',
     render: () => (
       <Frame wide kicker="Bonus · missed versus no change">
         <H2>Missed changes look like no change at all</H2>
         <Bullets items={[
-          'A, Constructivist: missed changes should still move arousal in proportion. They did not.',
-          'B, Moderate: missed changes should still lift arousal. They did not.',
+          'A, Constructivist: missed changes should move arousal as much as noticed ones. They did not.',
+          'B, Moderate: missed changes should still move arousal, only less. They did not.',
           'C, Constitutive: missed changes do nothing. They matched no-change trials.',
         ]} />
         <div style={K.stats}>
