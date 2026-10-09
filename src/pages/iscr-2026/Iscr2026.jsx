@@ -226,8 +226,8 @@ function MiniPlot({ miss }) {
       <line x1={x0} y1={10} x2={x0} y2={yBase + 6} stroke="#c9cacd" />
       <path d={hit} stroke={GOLD} strokeWidth="4" strokeLinecap="round" />
       <path d={missPath} stroke={BLUE} strokeWidth="4" strokeLinecap="round" />
-      <text x={x0 - 8} y={56} fontSize="11" fill="#8a8b8f" textAnchor="middle" transform={`rotate(-90 ${x0 - 8} 56)`} fontFamily="'DM Sans',sans-serif">felt arousal</text>
-      <text x={(x0 + x1) / 2} y={H - 6} fontSize="11" fill="#8a8b8f" textAnchor="middle" fontFamily="'DM Sans',sans-serif">size of breathing change →</text>
+      <text x={x0 - 8} y={56} fontSize="12" fill="#8a8b8f" textAnchor="middle" transform={`rotate(-90 ${x0 - 8} 56)`} fontFamily="'DM Sans',sans-serif">felt arousal</text>
+      <text x={(x0 + x1) / 2} y={H - 6} fontSize="12" fill="#8a8b8f" textAnchor="middle" fontFamily="'DM Sans',sans-serif">size of breathing change →</text>
     </svg>
   )
 }
@@ -349,15 +349,15 @@ const SLIDES = [
   {
     label: 'Result',
     by: 230,
-    note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right panel: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1. And the belt shows their breathing really did change on the missed trials.” Callback: “The answer is C. And look back at the chat: most of you typed 2.”',
+    note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right panel: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all. Bayes factors favour the null, 9 to 30 to 1. And the belt shows their breathing really did change on the missed trials.” Callback: “The answer is C.” Then match the chat: if most typed 2, “and most of you typed 2: the trial you noticed is the one that moved you.” If it was mixed or mostly 0, “and if neither trial stirred you, that fits too: a change this small mostly moves people when they catch it.”',
     render: (d) => (
       <Frame wide kicker="Result">
         <H2>Noticed changes move us. Missed ones don’t.</H2>
         <img src="/iscr-2026/fig-gating-s5.png" alt="Study 5: felt arousal by breathing-rate change for detected and missed trials, with a forest plot of the Change × Detection interaction across five studies" style={K.fig} />
-        <p style={K.figCap}>Left: Study 5, felt arousal (z) by breathing-rate change, ← faster · slower →. Right: Change × Detection, all five studies.</p>
+        <p style={K.figCap}>Left: Study 5, felt arousal by breathing change · Right: all five studies</p>
         <div style={K.stats}>
           <Stat big="5 / 5" label="studies replicate the gating" sub="pooled r = −.11 [−.15, −.06]" />
-          <Stat big="9–30 : 1" label="evidence that a missed change = no change" sub="BF₀₁, four studies with a no-change baseline" color={BLUE} />
+          <Stat big="9–30 : 1" label="evidence that a missed change = no change" sub="BF₀₁, 4 studies with a no-change baseline" color={BLUE} />
         </div>
         <Detail density={d}>
           On detected trials arousal scaled with change magnitude; on missed trials it did not, and missed-change
@@ -398,7 +398,7 @@ const SLIDES = [
       <Frame kicker="For contemplative science">
         <H2>Emotion follows detection habits</H2>
         <Bullets items={[
-          'Panic and health anxiety: mild signals noticed and read as threat. Exposure works on what is noticed.',
+          'Panic and health anxiety: mild signals noticed and read as threat. Exposure helps because noticed signals can update beliefs.',
           'Savouring: mild pleasant states only count once they cross the threshold.',
           'Practice may change what crosses the threshold, not the body itself. That is testable.',
         ]} />
@@ -422,8 +422,8 @@ const SLIDES = [
         <p style={K.subtitle}>What you practise noticing will.</p>
         <div style={{ height: 10 }} />
         <p style={K.author}>With Kyle Logie-Hagen · Rose Amir Pour</p>
-        <p style={K.link}>github.com/Normega/BCAT2026</p>
-        <Cite>Materials, data and analysis code on OSF · NSERC Discovery RGPIN-2015-05901</Cite>
+        <p style={K.link}>Materials, data and code · github.com/Normega/BCAT2026</p>
+        <Cite>NSERC Discovery RGPIN-2015-05901</Cite>
         <div style={K.crests}>
           <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
           <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
@@ -446,38 +446,38 @@ const K = {
   slideArea: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '52px 40px 56px', overflowY: 'auto' },
   frame: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, textAlign: 'center', maxWidth: 1000, width: '100%' },
   frameWide: { maxWidth: 'min(1180px, 95vw)' },
-  kicker: { fontFamily: '"Space Mono",monospace', fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pkd)' },
+  kicker: { fontFamily: '"Space Mono",monospace', fontSize: 16, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pkd)' },
 
   title:    { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(34px, 6vw, 64px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.05 },
   subtitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(19px, 3vw, 32px)', fontWeight: 400, color: 'var(--pkd)', margin: 0, fontStyle: 'italic' },
   author:   { fontSize: 'clamp(16px, 2.1vw, 21px)', color: 'var(--tx)', margin: 0, fontWeight: 600 },
-  affil:    { fontSize: 'clamp(13px, 1.6vw, 16px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
-  event:    { fontFamily: '"Space Mono",monospace', fontSize: 13, color: 'var(--tx3)', margin: '10px 0 0', letterSpacing: '0.06em' },
+  affil:    { fontSize: 'clamp(16px, 1.6vw, 18px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
+  event:    { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '10px 0 0', letterSpacing: '0.06em' },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
   link:     { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(16px, 1.9vw, 20px)', color: 'var(--pkd)', margin: 0, letterSpacing: '0.02em' },
-  cite:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: 0, letterSpacing: '0.03em' },
+  cite:     { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: 0, letterSpacing: '0.03em' },
 
   h2:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(24px, 3.6vw, 40px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.12 },
   lead: { fontSize: 'clamp(16px, 2vw, 23px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, maxWidth: 820 },
   ul:   { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 11, maxWidth: 860 },
-  li:   { fontSize: 'clamp(15px, 1.9vw, 21px)', color: 'var(--tx)', lineHeight: 1.45, position: 'relative', paddingLeft: 24, textAlign: 'left' },
+  li:   { fontSize: 'clamp(16px, 1.9vw, 21px)', color: 'var(--tx)', lineHeight: 1.45, position: 'relative', paddingLeft: 24, textAlign: 'left' },
   detail: { fontSize: 'clamp(13px, 1.5vw, 16px)', color: 'var(--tx2)', lineHeight: 1.6, maxWidth: 760, margin: 0, borderTop: '1px solid var(--bd)', paddingTop: 14 },
 
   preds: { display: 'flex', gap: 18, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
   pred: { flex: '1 1 260px', maxWidth: 340, background: '#fff', border: '1px solid var(--bd)', borderRadius: 18, padding: '16px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
   predHead: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--tx)', display: 'flex', alignItems: 'center', gap: 10 },
   predK: { fontFamily: '"Space Mono",monospace', fontSize: 15, fontWeight: 700, color: '#fff', background: 'var(--pk)', borderRadius: 999, width: 28, height: 28, display: 'inline-grid', placeItems: 'center' },
-  predLine: { fontSize: 'clamp(14px, 1.7vw, 18px)', color: 'var(--tx)', lineHeight: 1.35 },
-  predWho: { fontFamily: '"Space Mono",monospace', fontSize: 11, color: 'var(--tx3)' },
-  legend: { display: 'flex', gap: 26, flexWrap: 'wrap', justifyContent: 'center', fontSize: 'clamp(13px, 1.6vw, 17px)', color: 'var(--tx2)' },
+  predLine: { fontSize: 'clamp(16px, 1.7vw, 19px)', color: 'var(--tx)', lineHeight: 1.35 },
+  predWho: { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)' },
+  legend: { display: 'flex', gap: 26, flexWrap: 'wrap', justifyContent: 'center', fontSize: 'clamp(16px, 1.6vw, 18px)', color: 'var(--tx2)' },
 
-  fig: { maxWidth: '100%', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
-  figCap: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', margin: '-8px 0 0' },
+  fig: { maxWidth: '100%', maxHeight: '40vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figCap: { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '-8px 0 0' },
   stats: { display: 'flex', gap: 22, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
   stat: { flex: '1 1 280px', maxWidth: 420, background: '#fff', border: '1px solid var(--bd)', borderRadius: 18, padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 6 },
   statBig: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(34px, 5vw, 56px)', lineHeight: 1 },
-  statLabel: { fontSize: 'clamp(14px, 1.8vw, 19px)', color: 'var(--tx)', lineHeight: 1.35 },
-  statSub: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)' },
+  statLabel: { fontSize: 'clamp(16px, 1.8vw, 20px)', color: 'var(--tx)', lineHeight: 1.35 },
+  statSub: { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)' },
 
   bottom: { position: 'absolute', bottom: 14, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, cursor: 'default' },
   navArrow: { border: 'none', background: 'none', color: 'var(--tx3)', fontSize: 30, lineHeight: 1, cursor: 'pointer', padding: '0 6px' },
