@@ -41,7 +41,7 @@ export const DECISIONS = [
   { id: 'D3', q: 'Delivery', decided: 'Embedded: every arm runs the same way, one radlab link a day. Sense Foraging’s practice runs full-screen inside the radlab session and hands back when done (finished, and how long it ran); an “open in a new tab” link inside the step is the fallback. No senseforaging.com account.', status: 'decided' },
   { id: 'D4', q: 'The arms’ own measures', decided: 'One measure allied with each arm: Sense Foraging, sf-pool-5 (34 items); Nonreactivity, the MPoD-t (15 items, with a nonreactivity facet; a copy, since Study 3 uses the original); Stress mindset, Crum’s Stress Mindset Measure (8 items). The wellbeing scales are the arm-neutral outcomes.', status: 'decided' },
   { id: 'D5', q: 'The wellbeing set', decided: 'SPANE (2 weeks), Flourishing, life satisfaction (Study 3’s six-face item, reused), PHQ-4, self-rated health, pre and post. Everyone sees the support resources (UTMAP 2026’s sheet) at the end of each survey, on withdrawal and in the debrief, with a Support link in every trial email. Nobody reads individual rows; the export is de-identified first.', status: 'decided' },
-  { id: 'D6', q: 'Randomization 1:1:1, with Liliana Study 3 participants assigned to Sense Foraging?', suggest: 'Keep (decided Sep 28).', status: 'open' },
+  { id: 'D6', q: 'Randomization', decided: '1:1:1 in shuffled blocks of three (radlab’s own draw), at the moment baseline is submitted. Study 3 students (9 today, matched by email) go to Sense Foraging outside the blocks, flagged, so Nov 18 can show results with and without them. Arm names stay out of the emails and consent; arms and hypotheses revealed at the debrief.', status: 'decided' },
   { id: 'D7', q: 'What do students who decline do for the reflection assignment?', suggest: 'An alternative (e.g., a published RCT to reflect on), named in the consent form.', status: 'open' },
   { id: 'D8', q: 'Is participation worth marks, or only the reflection?', suggest: '—', status: 'open' },
 ]
@@ -70,7 +70,8 @@ export const CHECKLIST = [
     { what: 'Load classrct-nr-d01…d28 and classrct-ra-d01…d28 into intervention_modules', status: 'next' },
     { what: 'A sense_foraging step type in radlab sessions', status: 'next' },
     { what: 'Session templates: pre, post, 84 daily (generated)', status: 'next' },
-    { what: 'Study: open join link, consent, randomization (Study 3 → Sense Foraging), 28-day schedule, daily reminder, withdrawal without adherence emails, debrief', status: 'next' },
+    { what: 'Study: open join link, consent, randomization (blocks of three; Study 3 → Sense Foraging by email, outside the blocks, flagged), 28-day schedule, daily reminder, withdrawal without adherence emails, debrief', status: 'next' },
+    { what: 'Emails and consent name no arm (“today’s practice”); arms revealed at the debrief', status: 'next' },
     { what: 'Smoke test with fake participants; remove them before launch', status: 'next' },
   ] },
   { group: 'Class', items: [
