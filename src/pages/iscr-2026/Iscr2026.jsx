@@ -433,44 +433,24 @@ const SLIDES = [
   {
     label: 'Detection habits',
     by: 340,
-    note: '“If feeling waits on noticing, then emotional life partly reflects detection habits: which signals we notice, and how much we trust them.” One line on panic (signals noticed and caught up in catastrophe; exposure works because noticed signals can update belief). Leave savouring on the slide unspoken: this slide is 15 s shorter to make room for the situated-context slide. Then: “Contemplative practice may work less by changing the body than by changing what crosses the threshold. That’s testable, and the BCAT gives us the instrument.”',
+    note: '“If feeling waits on noticing, then emotional life partly reflects detection habits: which signals we notice, and how much we trust them.” One line on panic (signals noticed and caught up in catastrophe; exposure works because noticed signals can update belief). Leave savouring on the slide unspoken: this slide is 15 s shorter to make room for the situated-context slide. Then: “Contemplative practice may work less by changing the body than by changing what crosses the threshold. That’s testable, and the BCAT gives us the instrument.” Point right, one line: “The Satipaṭṭhāna Sutta puts it in that order: experience the whole body, then calm it. Awareness is what lets the change in.”',
     render: (d) => (
-      <Frame kicker="For contemplative science">
-        <H2>Emotion follows detection habits</H2>
-        <Bullets items={[
-          'Panic and health anxiety: mild signals noticed and read as threat. Exposure helps because noticed signals can update beliefs.',
-          'Savouring: mild pleasant states only count once they cross the threshold.',
-          'Practice may change what crosses the threshold, not the body itself. That is testable.',
-        ]} />
-        <Detail density={d}>
-          Limits: arousal was self-reported, samples were mostly undergraduates, and individual thresholds were only
-          moderately reliable (ICC .24–.59 with 10-trial staircases). Next: autonomic measures on hit vs miss trials,
-          and practitioners vs novices.
-        </Detail>
-      </Frame>
-    ),
-  },
-
-  // 9 — Close
-  {
-    label: 'Close',
-    by: 360,
-    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Point right: “The Satipaṭṭhāna Sutta’s breathing instructions put it in that order: experience the whole body first, then calm it. Awareness is what lets the change in.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. Point to the GitHub link for the code. “Happy to take questions.” Stop.',
-    render: () => (
-      <div style={K.closeGrid}>
-        <div style={K.closeCol}>
-          <h1 style={K.closeTitle}>What you miss won’t move you.</h1>
-          <p style={K.subtitle}>What you practise noticing will.</p>
-          <div style={{ height: 10 }} />
-          <p style={K.author}>With Kyle Logie-Hagen · Rose Amir Pour</p>
-          <p style={K.link}>Materials, data and code<br />github.com/Normega/BCAT2026</p>
-          <Cite>NSERC Discovery RGPIN-2015-05901</Cite>
-          <div style={K.crests}>
-            <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
-            <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
-          </div>
+      <div style={K.twoCol}>
+        <div style={K.col}>
+          <div style={K.kicker}>For contemplative science</div>
+          <H2>Emotion follows detection habits</H2>
+          <Bullets items={[
+            'Panic and health anxiety: mild signals noticed and read as threat. Exposure helps because noticed signals can update beliefs.',
+            'Savouring: mild pleasant states only count once they cross the threshold.',
+            'Practice may change what crosses the threshold, not the body itself. That is testable.',
+          ]} />
+          <Detail density={d}>
+            Limits: arousal was self-reported, samples were mostly undergraduates, and individual thresholds were only
+            moderately reliable (ICC .24–.59 with 10-trial staircases). Next: autonomic measures on hit vs miss trials,
+            and practitioners vs novices.
+          </Detail>
         </div>
-        <div style={K.closeCol}>
+        <div style={K.col}>
           <Meditator />
           <div style={K.sutta}>
             <p style={K.suttaQuote}>“I will breathe in/out experiencing the whole body.”</p>
@@ -480,6 +460,27 @@ const SLIDES = [
           <p style={K.suttaTake}>→ Awareness is needed to let change in.</p>
         </div>
       </div>
+    ),
+  },
+
+  // 9 — Close
+  {
+    label: 'Close',
+    by: 360,
+    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. Point to the GitHub link for the code. “Happy to take questions.” Stop.',
+    render: () => (
+      <Frame>
+        <h1 style={K.title}>What you miss won’t move you.</h1>
+        <p style={K.subtitle}>What you practise noticing will.</p>
+        <div style={{ height: 10 }} />
+        <p style={K.author}>With Kyle Logie-Hagen · Rose Amir Pour</p>
+        <p style={K.link}>Materials, data and code · github.com/Normega/BCAT2026</p>
+        <Cite>NSERC Discovery RGPIN-2015-05901</Cite>
+        <div style={K.crests}>
+          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
+          <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
+        </div>
+      </Frame>
     ),
   },
 ]
@@ -722,9 +723,8 @@ const K = {
   author:   { fontSize: 'clamp(16px, 2.1vw, 21px)', color: 'var(--tx)', margin: 0, fontWeight: 600 },
   affil:    { fontSize: 'clamp(16px, 1.6vw, 18px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '10px 0 0', letterSpacing: '0.06em' },
-  closeGrid:  { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 40, alignItems: 'center', width: 'min(1180px, 95vw)' },
-  closeCol:   { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' },
-  closeTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(32px, 4.4vw, 54px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.08 },
+  twoCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 40, alignItems: 'center', width: 'min(1180px, 95vw)' },
+  col:    { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, textAlign: 'center' },
   sutta:      { borderLeft: '3px solid var(--pk)', padding: '4px 0 4px 18px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 460 },
   suttaQuote: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(17px, 1.8vw, 21px)', color: 'var(--tx)', margin: 0, lineHeight: 1.35 },
   suttaSrc:   { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '4px 0 0' },
