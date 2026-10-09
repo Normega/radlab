@@ -455,24 +455,89 @@ const SLIDES = [
   {
     label: 'Close',
     by: 360,
-    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. Point to the GitHub link for the code. “Happy to take questions.” Stop.',
+    note: 'Slow down. “In your first trial your body changed and your feelings didn’t follow, because you didn’t notice. What you miss won’t move you, and what you practise noticing will.” Point right: “The Satipaṭṭhāna Sutta’s breathing instructions put it in that order: experience the whole body first, then calm it. Awareness is what lets the change in.” Thank co-authors Kyle Logie-Hagen and Rose Amir Pour, and NSERC. Point to the GitHub link for the code. “Happy to take questions.” Stop.',
     render: () => (
-      <Frame>
-        <h1 style={K.title}>What you miss won’t move you.</h1>
-        <p style={K.subtitle}>What you practise noticing will.</p>
-        <div style={{ height: 10 }} />
-        <p style={K.author}>With Kyle Logie-Hagen · Rose Amir Pour</p>
-        <p style={K.link}>Materials, data and code · github.com/Normega/BCAT2026</p>
-        <Cite>NSERC Discovery RGPIN-2015-05901</Cite>
-        <div style={K.crests}>
-          <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
-          <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
+      <div style={K.closeGrid}>
+        <div style={K.closeCol}>
+          <h1 style={K.closeTitle}>What you miss won’t move you.</h1>
+          <p style={K.subtitle}>What you practise noticing will.</p>
+          <div style={{ height: 10 }} />
+          <p style={K.author}>With Kyle Logie-Hagen · Rose Amir Pour</p>
+          <p style={K.link}>Materials, data and code<br />github.com/Normega/BCAT2026</p>
+          <Cite>NSERC Discovery RGPIN-2015-05901</Cite>
+          <div style={K.crests}>
+            <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
+            <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
+          </div>
         </div>
-      </Frame>
+        <div style={K.closeCol}>
+          <Meditator />
+          <div style={K.sutta}>
+            <p style={K.suttaQuote}>“I will breathe in/out experiencing the whole body.”</p>
+            <p style={K.suttaQuote}>“I will breathe in/out calming the bodily process.”</p>
+            <p style={K.suttaSrc}>Satipaṭṭhāna Sutta</p>
+          </div>
+          <p style={K.suttaTake}>→ Awareness is needed to let change in.</p>
+        </div>
+      </div>
     ),
   },
 ]
 
+
+
+// A seated meditator with sound, light and breathing motion arriving. The
+// dashed outline around the body breathes slowly (SMIL, no React state).
+function Meditator() {
+  const ink = '#c04a82', body = '#FBEAF3', gold = GOLD, blue = BLUE, grey = '#6b6c70'
+  const label = { fontSize: 15, fill: grey, fontFamily: "'DM Sans',sans-serif" }
+  return (
+    <svg viewBox="0 0 380 250" style={{ width: '100%', maxWidth: 440, height: 'auto' }} role="img"
+      aria-label="A seated meditator receiving sound, light and the motion of breathing">
+      <defs>
+        <marker id="iscr-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill={grey} />
+        </marker>
+      </defs>
+
+      {/* breathing motion: the body's outline expands and settles */}
+      <ellipse cx="190" cy="160" rx="92" ry="78" fill="none" stroke={ink} strokeOpacity="0.35" strokeDasharray="5 7" strokeWidth="2">
+        <animate attributeName="rx" values="86;98;86" dur="8s" repeatCount="indefinite" />
+        <animate attributeName="ry" values="72;82;72" dur="8s" repeatCount="indefinite" />
+      </ellipse>
+
+      {/* meditator */}
+      <ellipse cx="190" cy="214" rx="78" ry="17" fill={body} stroke={ink} strokeWidth="2.5" />
+      <path d="M181,121 L199,121 Q218,124 222,138 L214,202 Q190,208 166,202 L158,138 Q162,124 181,121 Z" fill={body} stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M160,136 Q132,166 146,190 Q160,202 182,200" fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M220,136 Q248,166 234,190 Q220,202 198,200" fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <ellipse cx="190" cy="200" rx="10" ry="6" fill={body} stroke={ink} strokeWidth="2" />
+      <circle cx="190" cy="100" r="21" fill={body} stroke={ink} strokeWidth="2.5" />
+      <path d="M181,104 Q185,107 189,104 M191,104 Q195,107 199,104" fill="none" stroke={ink} strokeWidth="1.6" strokeLinecap="round" />
+
+      {/* sound: waves from the left */}
+      <path d="M44,78 Q56,100 44,122" fill="none" stroke={blue} strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M58,70 Q74,100 58,130" fill="none" stroke={blue} strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M72,62 Q92,100 72,138" fill="none" stroke={blue} strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="96" y1="100" x2="160" y2="100" stroke={grey} strokeWidth="1.8" markerEnd="url(#iscr-arrow)" />
+      <text x="42" y="160" {...label}>sound</text>
+
+      {/* light: a sun with rays toward the head */}
+      <circle cx="326" cy="40" r="14" fill={gold} />
+      {[[-26, 0], [-24, 10], [-20, -10], [0, -24], [12, -20], [20, 12]].map(([dx, dy], k) => (
+        <line key={k} x1={326 + dx * 0.75} y1={40 + dy * 0.75} x2={326 + dx * 1.15} y2={40 + dy * 1.15} stroke={gold} strokeWidth="2.5" strokeLinecap="round" />
+      ))}
+      <line x1="304" y1="56" x2="218" y2="92" stroke={grey} strokeWidth="1.8" strokeDasharray="4 5" markerEnd="url(#iscr-arrow)" />
+      <text x="304" y="84" {...label}>light</text>
+
+      {/* breath: air arriving at the nose and chest */}
+      <path d="M300,150 q10,-8 20,0 t20,0" fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M300,166 q10,-8 20,0 t20,0" fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="294" y1="158" x2="250" y2="156" stroke={grey} strokeWidth="1.8" markerEnd="url(#iscr-arrow)" />
+      <text x="294" y="196" {...label}>breathing</text>
+    </svg>
+  )
+}
 
 // ── Bonus slides (Q&A only) ─────────────────────────────────────────────────
 // Reached with B (index) or 1–8, never by clicking forward from the close.
@@ -657,6 +722,13 @@ const K = {
   author:   { fontSize: 'clamp(16px, 2.1vw, 21px)', color: 'var(--tx)', margin: 0, fontWeight: 600 },
   affil:    { fontSize: 'clamp(16px, 1.6vw, 18px)', color: 'var(--tx2)', margin: 0, lineHeight: 1.5, fontFamily: '"Space Mono",monospace' },
   event:    { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '10px 0 0', letterSpacing: '0.06em' },
+  closeGrid:  { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 40, alignItems: 'center', width: 'min(1180px, 95vw)' },
+  closeCol:   { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' },
+  closeTitle: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(32px, 4.4vw, 54px)', fontWeight: 400, color: 'var(--tx)', margin: 0, lineHeight: 1.08 },
+  sutta:      { borderLeft: '3px solid var(--pk)', padding: '4px 0 4px 18px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 460 },
+  suttaQuote: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(17px, 1.8vw, 21px)', color: 'var(--tx)', margin: 0, lineHeight: 1.35 },
+  suttaSrc:   { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: '4px 0 0' },
+  suttaTake:  { fontSize: 'clamp(17px, 1.9vw, 21px)', fontWeight: 600, color: 'var(--pkd)', margin: 0 },
   crests:   { display: 'flex', gap: 32, alignItems: 'center', marginBottom: 6 },
   link:     { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(16px, 1.9vw, 20px)', color: 'var(--pkd)', margin: 0, letterSpacing: '0.02em' },
   cite:     { fontFamily: '"Space Mono",monospace', fontSize: 16, color: 'var(--tx2)', margin: 0, letterSpacing: '0.03em' },
