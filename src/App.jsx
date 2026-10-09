@@ -9,6 +9,7 @@ import AuraFilterDef     from './components/AuraFilterDef'
 import AdminRoute        from './components/AdminRoute'
 import TalksRoute        from './components/TalksRoute'
 import BreathEvidenceRoute from './components/BreathEvidenceRoute'
+import LabOnlyRoute from './components/LabOnlyRoute'
 import SuperAdminRoute   from './components/SuperAdminRoute'
 import ClassAdminRoute   from './academic/lecture-lounge/ClassAdminRoute'
 import LectureLoungeAdminRoute from './academic/lecture-lounge/LectureLoungeAdminRoute'
@@ -47,6 +48,7 @@ const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const Withdraw       = lazy(() => import('./pages/Withdraw'))
 const BuddyCheckin   = lazy(() => import('./pages/BuddyCheckin'))
 const TaskPreview    = lazy(() => import('./pages/TaskPreview'))
+const PublicDisplay  = lazy(() => import('./pages/PublicDisplay'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
 
@@ -104,6 +106,7 @@ const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 const BreathEvidence = lazy(() => import('./pages/breathevidence/BreathEvidence'))
+const Psy240Trial = lazy(() => import('./pages/psy240trial/Psy240Trial'))
 
 // Academic partition (src/academic/) — Lecture Lounge lives here, the Field
 // Guide ingest portal joins it. Separate chunk group from research admin and
@@ -766,6 +769,11 @@ export default function App() {
             <Route path="/breathevidence" element={<BreathEvidence />} />
           </Route>
 
+          {/* The teaching trial's launch tracker (Oct 2026): lab only. */}
+          <Route element={<LabOnlyRoute session={session} role={role} superAdmin={superAdmin} kicker="Teaching trial · launch tracker" />}>
+            <Route path="/psy240trial" element={<Psy240Trial />} />
+          </Route>
+
           {/*
             Academic partition — Lecture Lounge (and, next, the Field Guide
             ingest portal). Own chunk group (every component separately
@@ -994,6 +1002,9 @@ export default function App() {
 
           {/* Task preview share link (issued from /admin/tasks) — no auth or layout; nothing is saved. §25a */}
           <Route path="/preview/:token" element={<TaskPreview />} />
+
+          {/* A display published for anyone (displays.public), e.g. a study's support list linked from its emails — no auth or layout. §24a */}
+          <Route path="/resources/:slug" element={<PublicDisplay />} />
 
           {/* Admin section — role-gated */}
           <Route element={<AdminRoute session={session} role={role} superAdmin={superAdmin} />}>
