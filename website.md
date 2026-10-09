@@ -3679,6 +3679,9 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
   join page (`openJoinContent.js`, a recorded course-leak exception for its contact address) and
   first email (`COPY_BY_SLUG.classtrial`).
 - `hardGates.test.mjs` normalises scanned paths, so it passes on Windows as on CI.
+- Deployed from main (160c8e5) on 2026-10-09: `send_message` v39, `open-join` v9, `verify_jwt` unchanged (false).
+  Scheduler coverage for this shape: `materializeScheduleFixedArms.test.mjs` (hold, fork, calendar
+  arms, a late joiner's skipped days, a pre-written assignment used without a draw).
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
