@@ -778,6 +778,17 @@ function questionnaireWideByProfile(qRows, ctx, tools) {
       : basePrefix
     const put = cellWriter(tools, 'questionnaire_responses', pid)
     for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
+      // The order this participant saw (interleaved questionnaires): one column
+      // per item giving its 1-based position, named from the item id like the
+      // answer columns, so `<prefix>_pos_07` is where `<prefix>_07` was shown.
+      if (rawKey === '_order' && val && typeof val === 'object') {
+        put(byProfile[pid], `${prefix}_order_method`, val.method ?? '')
+        for (const [item, pos] of Object.entries(val.positions ?? {})) {
+          const im = item.replace(/^item_/, '').match(/(\d+)$/)
+          put(byProfile[pid], `${prefix}_pos_${im ? im[1] : item}`, pos)
+        }
+        continue
+      }
       const cleanKey = rawKey.replace(/^item_/, '')
       const m = cleanKey.match(/(\d+)$/)
       const colName = m ? `${prefix}_${m[1]}` : `${prefix}_${cleanKey}`
@@ -1203,6 +1214,8 @@ const COLUMN_NOTES = [
   [/^vas_.*_post_d\d+$/,        'Momentary rating, POST-practice check-in, on the given study day (1-6).'],
   [/^vas_.*_d\d+$/,             'Momentary rating on the given study day (1-6). No pre/post phase (single-scale step).'],
   [/^vas_.*_unscheduled_\d+$/,  'Rating with no schedule link (predates schedule linkage). Occurrence-numbered; day unknown.'],
+  [/_order_method$/,            "How this questionnaire's item order was set: interleave = drawn per participant under the spacing rules; fixed_fallback = no valid order found, written order used."],
+  [/_pos_[^_]+$/,               'Position (1 = first) at which the matching item was shown to this participant. Same suffix as the answer column it describes.'],
 ]
 
 function describeColumn(col) {

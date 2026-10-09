@@ -114,6 +114,8 @@ export function responseIsComplete(config, value) {
   }
 
   if (type === 'multiple_choice') {
+    // Declining is a complete answer, but only where the item offers it.
+    if (value === 'pna') return config.allow_pna === true
     if (config.allow_multiple === true) {
       const selections = Array.isArray(value) ? value : []
       if (selections.length === 0) return !required

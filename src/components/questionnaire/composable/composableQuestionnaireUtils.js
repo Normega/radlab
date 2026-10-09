@@ -3,6 +3,13 @@ import {
   defaultResponseFor,
   responseIsComplete,
 } from './componentRegistry'
+import { validateInterleaveSpec } from '../../../lib/interleaveOrder'
+import { validateShowIf } from '../../../lib/composableVisibility'
+
+// The types whose component actually draws "Prefer not to answer". Setting
+// allow_pna anywhere else used to be accepted and silently ignored, which left
+// a question the consent form promised could be declined with no way to decline.
+const PNA_TYPES = new Set(['likert', 'slider', 'likert_slider', 'graphic_slider', 'multiple_choice'])
 
 export function isComposableQuestionnaire(questionnaire) {
   return questionnaire?.questionnaire_type === 'composable'
@@ -136,6 +143,10 @@ export function validateComposableDefinition(definition) {
         return
       }
 
+      if (component.allow_pna === true && !PNA_TYPES.has(component.type)) {
+        errors.push(`${prefix}: "${component.type}" cannot show "Prefer not to answer" (allow_pna).`)
+      }
+
       if (component.type !== 'information' && !component.question) {
         errors.push(`${prefix}: missing "question".`)
       }
@@ -203,6 +214,14 @@ export function validateComposableDefinition(definition) {
       }
     })
   })
+
+  errors.push(...validateShowIf(definition.pages))
+  if (definition.interleave) {
+    errors.push(...validateInterleaveSpec(definition.interleave, componentIds))
+    const conditional = allComponents(definition)
+      .filter(c => c.show_if && definition.interleave.items?.includes(c.id))
+    if (conditional.length) errors.push('interleave: shuffled items cannot have show_if.')
+  }
 
   return errors
 }

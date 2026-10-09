@@ -1,4 +1,5 @@
 import RichText from './RichText'
+import PreferNotToAnswer, { PNA } from './PreferNotToAnswer'
 
 function inputIsValid(option, rawValue) {
   const text = String(rawValue ?? '').trim()
@@ -24,10 +25,16 @@ function inputIsValid(option, rawValue) {
  */
 export default function MultipleChoiceQuestion({ config, value = null, onChange }) {
   const multiple = config.allow_multiple === true
+  // `allow_pna: true` adds the small "Prefer not to answer" under the options,
+  // stored as the bare string 'pna' (as on Likert items) rather than as an
+  // option, so it can never be counted as a choice. Choosing an option replaces
+  // it; choosing it replaces the options.
+  const declined = value === PNA
+  const answer = declined ? null : value
 
-  const selections = multiple ? (Array.isArray(value) ? value : []) : null
-  const selectedId = multiple ? null : value?.option_id ?? null
-  const selectedValue = multiple ? null : value?.value ?? ''
+  const selections = multiple ? (Array.isArray(answer) ? answer : []) : null
+  const selectedId = multiple ? null : answer?.option_id ?? null
+  const selectedValue = multiple ? null : answer?.value ?? ''
 
   function selectionFor(optionId) {
     return selections?.find(s => s.option_id === optionId) ?? null
@@ -137,6 +144,10 @@ export default function MultipleChoiceQuestion({ config, value = null, onChange 
           )
         })}
       </div>
+
+      {config.allow_pna === true && (
+        <PreferNotToAnswer selected={declined} onChange={onChange} />
+      )}
     </section>
   )
 }

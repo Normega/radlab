@@ -136,6 +136,10 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
         totalParts={totalSteps}
         onComplete={handleComplete}
         isSimMode={isSimMode}
+        // Seeds an interleaved item order (definition.interleave). The schedule
+        // row is stable for this person and session, so a reload shows the order
+        // they started with; demos and previews get none and draw a fresh one.
+        orderSeed={!demoMode && scheduleId ? `${scheduleId}:${slug}` : null}
       />
       {failed && (
         <SaveRetryBanner message={failed.message} busy={busy} onRetry={() => handleComplete(failed.result)} />

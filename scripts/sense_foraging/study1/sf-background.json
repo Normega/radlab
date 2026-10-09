@@ -1,0 +1,510 @@
+{
+  "slug": "sf-background",
+  "name": "About you",
+  "questionnaire_type": "composable",
+  "instructions": "A few questions about you, including any regular meditation, yoga, or other mind-body practice. None of your answers affect whether you take part.",
+  "pages": [
+    {
+      "id": "bg_about",
+      "components": [
+        {
+          "id": "bg_age",
+          "type": "multiple_choice",
+          "question": "What is your age?",
+          "options": [
+            {
+              "id": "age",
+              "label": "My age in years",
+              "response_type": "number",
+              "min": 18,
+              "max": 100,
+              "value": "age"
+            },
+            {
+              "id": "prefer_not",
+              "label": "Prefer not to answer",
+              "value": "prefer_not"
+            }
+          ],
+          "required": true,
+          "allow_pna": false
+        },
+        {
+          "id": "bg_gender",
+          "type": "multiple_choice",
+          "question": "What is your gender?",
+          "options": [
+            {
+              "id": "man",
+              "label": "Man",
+              "value": "man"
+            },
+            {
+              "id": "woman",
+              "label": "Woman",
+              "value": "woman"
+            },
+            {
+              "id": "non_binary",
+              "label": "Non-binary",
+              "value": "non_binary"
+            },
+            {
+              "id": "self_describe",
+              "label": "Prefer to self-describe",
+              "response_type": "text",
+              "value": "self_describe"
+            },
+            {
+              "id": "prefer_not",
+              "label": "Prefer not to say",
+              "value": "prefer_not"
+            }
+          ],
+          "required": true,
+          "allow_pna": false
+        },
+        {
+          "id": "bg_race",
+          "type": "multiple_choice",
+          "question": "What is your race/ethnicity? Select all that apply.",
+          "options": [
+            {
+              "id": "east_asian",
+              "label": "East Asian",
+              "value": "east_asian"
+            },
+            {
+              "id": "south_asian",
+              "label": "South Asian",
+              "value": "south_asian"
+            },
+            {
+              "id": "southeast_asian",
+              "label": "Southeast Asian",
+              "value": "southeast_asian"
+            },
+            {
+              "id": "black",
+              "label": "Black",
+              "value": "black"
+            },
+            {
+              "id": "hispanic_latin",
+              "label": "Hispanic or Latino/a/x",
+              "value": "hispanic_latin"
+            },
+            {
+              "id": "indigenous",
+              "label": "Indigenous (e.g., First Nations, Native American, Aboriginal and Torres Strait Islander, Māori)",
+              "value": "indigenous"
+            },
+            {
+              "id": "mena",
+              "label": "Middle Eastern or North African",
+              "value": "mena"
+            },
+            {
+              "id": "pacific",
+              "label": "Pacific Islander",
+              "value": "pacific"
+            },
+            {
+              "id": "white",
+              "label": "White",
+              "value": "white"
+            },
+            {
+              "id": "mixed",
+              "label": "Mixed or multiple",
+              "value": "mixed"
+            },
+            {
+              "id": "other",
+              "label": "Other (please specify)",
+              "response_type": "text",
+              "value": "other"
+            },
+            {
+              "id": "prefer_not",
+              "label": "Prefer not to say",
+              "exclusive": true,
+              "value": "prefer_not"
+            }
+          ],
+          "required": true,
+          "allow_pna": false,
+          "allow_multiple": true
+        },
+        {
+          "id": "bg_country",
+          "type": "multiple_choice",
+          "question": "What is your current country of residence?",
+          "options": [
+            {
+              "id": "us",
+              "label": "United States",
+              "value": "us"
+            },
+            {
+              "id": "uk",
+              "label": "United Kingdom",
+              "value": "uk"
+            },
+            {
+              "id": "ca",
+              "label": "Canada",
+              "value": "ca"
+            },
+            {
+              "id": "au",
+              "label": "Australia",
+              "value": "au"
+            },
+            {
+              "id": "ie",
+              "label": "Ireland",
+              "value": "ie"
+            },
+            {
+              "id": "nz",
+              "label": "New Zealand",
+              "value": "nz"
+            },
+            {
+              "id": "other",
+              "label": "Other (please specify)",
+              "response_type": "text",
+              "value": "other"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bg_education",
+          "type": "multiple_choice",
+          "question": "What is the highest level of education you have completed?",
+          "options": [
+            {
+              "id": "lt_hs",
+              "label": "Less than high school",
+              "value": "lt_hs"
+            },
+            {
+              "id": "hs",
+              "label": "High school or equivalent",
+              "value": "hs"
+            },
+            {
+              "id": "some_college",
+              "label": "Some college",
+              "value": "some_college"
+            },
+            {
+              "id": "bachelors",
+              "label": "Bachelor’s degree",
+              "value": "bachelors"
+            },
+            {
+              "id": "graduate",
+              "label": "Graduate or professional degree",
+              "value": "graduate"
+            },
+            {
+              "id": "prefer_not",
+              "label": "Prefer not to say",
+              "value": "prefer_not"
+            }
+          ],
+          "required": true,
+          "allow_pna": false
+        }
+      ]
+    },
+    {
+      "id": "bg_practice",
+      "components": [
+        {
+          "id": "bg_practice_regular",
+          "type": "multiple_choice",
+          "question": "Have you ever practiced meditation, yoga, or another contemplative or mind-body practice regularly (i.e., at least once a week for a period of two months or more)?",
+          "options": [
+            {
+              "id": "yes",
+              "label": "Yes",
+              "value": "yes"
+            },
+            {
+              "id": "no",
+              "label": "No",
+              "value": "no"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "bg_practice_detail",
+      "components": [
+        {
+          "id": "bg_practice_types",
+          "type": "multiple_choice",
+          "question": "Which practice(s) have you engaged in regularly? Select all that apply.",
+          "options": [
+            {
+              "id": "meditation",
+              "label": "Meditation (e.g., mindfulness, focused attention, loving-kindness)",
+              "value": "meditation"
+            },
+            {
+              "id": "yoga",
+              "label": "Yoga",
+              "value": "yoga"
+            },
+            {
+              "id": "taichi_qigong",
+              "label": "Tai chi / Qigong",
+              "value": "taichi_qigong"
+            },
+            {
+              "id": "contemplative_prayer",
+              "label": "Contemplative prayer or religious contemplative practice",
+              "value": "contemplative_prayer"
+            },
+            {
+              "id": "martial_arts",
+              "label": "Martial arts with a contemplative/meditative component",
+              "value": "martial_arts"
+            },
+            {
+              "id": "other",
+              "label": "Other",
+              "response_type": "text",
+              "value": "other"
+            }
+          ],
+          "required": true,
+          "allow_pna": true,
+          "allow_multiple": true,
+          "show_if": {
+            "component": "bg_practice_regular",
+            "equals": "yes"
+          }
+        },
+        {
+          "id": "bg_practice_years",
+          "type": "multiple_choice",
+          "question": "In total, for how many years have you practiced regularly (across all practices listed above)?",
+          "options": [
+            {
+              "id": "years",
+              "label": "Years",
+              "response_type": "number",
+              "min": 0,
+              "max": 90,
+              "value": "years"
+            },
+            {
+              "id": "prefer_not",
+              "label": "Prefer not to answer",
+              "value": "prefer_not"
+            }
+          ],
+          "required": true,
+          "allow_pna": false,
+          "show_if": {
+            "component": "bg_practice_regular",
+            "equals": "yes"
+          }
+        },
+        {
+          "id": "bg_practice_freq",
+          "type": "multiple_choice",
+          "question": "Over the past 3 months, how often have you practiced?",
+          "options": [
+            {
+              "id": "none",
+              "label": "Not at all",
+              "value": "none"
+            },
+            {
+              "id": "lt_weekly",
+              "label": "Less than once a week",
+              "value": "lt_weekly"
+            },
+            {
+              "id": "1_2_week",
+              "label": "1–2 times a week",
+              "value": "1_2_week"
+            },
+            {
+              "id": "3_5_week",
+              "label": "3–5 times a week",
+              "value": "3_5_week"
+            },
+            {
+              "id": "daily",
+              "label": "Daily or near-daily",
+              "value": "daily"
+            }
+          ],
+          "required": true,
+          "allow_pna": true,
+          "show_if": {
+            "component": "bg_practice_regular",
+            "equals": "yes"
+          }
+        },
+        {
+          "id": "bg_practice_training",
+          "type": "multiple_choice",
+          "question": "Have you ever completed a formal, teacher-led training or program in a contemplative practice (e.g., an MBSR course, a yoga teacher training, a meditation retreat)?",
+          "options": [
+            {
+              "id": "yes",
+              "label": "Yes",
+              "value": "yes"
+            },
+            {
+              "id": "no",
+              "label": "No",
+              "value": "no"
+            }
+          ],
+          "required": true,
+          "allow_pna": true,
+          "show_if": {
+            "component": "bg_practice_regular",
+            "equals": "yes"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bg_spirit",
+      "components": [
+        {
+          "id": "bg_religious",
+          "type": "likert",
+          "question": "To what extent do you consider yourself a religious person?",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all religious"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Very religious"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bg_spiritual",
+          "type": "likert",
+          "question": "To what extent do you consider yourself a spiritual person?",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all spiritual"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Very spiritual"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bg_tradition",
+          "type": "multiple_choice",
+          "question": "Do you currently identify with a religious or spiritual tradition? Select the one that best applies.",
+          "options": [
+            {
+              "id": "none",
+              "label": "No religious/spiritual affiliation",
+              "value": "none"
+            },
+            {
+              "id": "christian",
+              "label": "Christian",
+              "value": "christian"
+            },
+            {
+              "id": "muslim",
+              "label": "Muslim",
+              "value": "muslim"
+            },
+            {
+              "id": "jewish",
+              "label": "Jewish",
+              "value": "jewish"
+            },
+            {
+              "id": "buddhist",
+              "label": "Buddhist",
+              "value": "buddhist"
+            },
+            {
+              "id": "hindu",
+              "label": "Hindu",
+              "value": "hindu"
+            },
+            {
+              "id": "sikh",
+              "label": "Sikh",
+              "value": "sikh"
+            },
+            {
+              "id": "sbnr",
+              "label": "Spiritual but not religious (unaffiliated)",
+              "value": "sbnr"
+            },
+            {
+              "id": "other",
+              "label": "Other",
+              "response_type": "text",
+              "value": "other"
+            },
+            {
+              "id": "prefer_not",
+              "label": "Prefer not to say",
+              "value": "prefer_not"
+            }
+          ],
+          "required": true,
+          "allow_pna": false
+        }
+      ]
+    }
+  ]
+}

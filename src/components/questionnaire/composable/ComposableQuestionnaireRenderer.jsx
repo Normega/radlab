@@ -1,11 +1,43 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import RichText from './RichText'
 import SurveyPageRenderer from './SurveyPageRenderer'
 import {
   normalizeComposableResponses,
   pageIsComplete,
 } from './composableQuestionnaireUtils'
+import { COMPONENT_TYPES } from './componentRegistry'
+import { interleaveOrder } from '../../../lib/interleaveOrder'
+import { visibleComponents, pageIsShown, markNotApplicable } from '../../../lib/composableVisibility'
 import './composableSurvey.css'
+
+// The pages this participant sees. Without `interleave` they are the
+// definition's own pages. With it, the listed items are re-ordered by
+// interleaveOrder (seeded, so a reload shows the same order) and cut into
+// `page_sizes`; any component NOT in the shuffle (an information block, say)
+// stays at the top of the page it was written on. If no valid order is found
+// the definition's fixed pages are used, and the response records that.
+function buildPresentation(questionnaire, seed) {
+  const spec = questionnaire.interleave
+  const written = questionnaire.pages ?? []
+  if (!spec) return { pages: written, order: null }
+
+  const result = interleaveOrder(spec, seed)
+  if (!result) return { pages: written, order: { method: 'fixed_fallback' } }
+
+  const pool = new Set(spec.items)
+  const byId = new Map(written.flatMap(page => page.components ?? []).map(c => [c.id, c]))
+  const fixedOn = i => (written[i]?.components ?? []).filter(c => !pool.has(c.id))
+  const pages = result.pages.map((ids, i) => ({
+    id: `interleave_p${i + 1}`,
+    components: [...fixedOn(i), ...ids.map(id => byId.get(id))],
+  }))
+  for (let i = result.pages.length; i < written.length; i++) {
+    if (fixedOn(i).length) pages.push({ ...written[i], components: fixedOn(i) })
+  }
+  return { pages, order: { method: 'interleave', version: 1, positions: result.positions } }
+}
+
+const collects = component => COMPONENT_TYPES[component.type]?.collectsResponse === true
 
 export default function ComposableQuestionnaireRenderer({
   questionnaire,
@@ -15,6 +47,9 @@ export default function ComposableQuestionnaireRenderer({
   onBack,
   previewMode = false,
   isSimMode = false,
+  // Seeds the interleaved order. The step wrapper passes one derived from the
+  // participant's schedule row; previews pass none and get a fresh order each load.
+  orderSeed = null,
 }) {
   const hasInstructions = Boolean(questionnaire.instructions?.trim())
   const [showInstructions, setShowInstructions] = useState(hasInstructions)
@@ -23,8 +58,18 @@ export default function ComposableQuestionnaireRenderer({
   const [done, setDone] = useState(false)
   const completedRef = useRef(false)
 
-  const pages = questionnaire.pages ?? []
-  const page = pages[pageIndex]
+  const [previewSeed] = useState(() => `preview-${Math.random().toString(36).slice(2)}`)
+  const presentation = useMemo(
+    () => buildPresentation(questionnaire, orderSeed ?? previewSeed),
+    [questionnaire, orderSeed, previewSeed],
+  )
+  const pages = presentation.pages
+  const rawPage = pages[pageIndex]
+  // Only the components whose show_if holds are drawn or required.
+  const page = rawPage ? { ...rawPage, components: visibleComponents(rawPage, responses) } : rawPage
+  const shownIndices = pages.map((p, i) => (pageIsShown(p, responses) ? i : -1)).filter(i => i >= 0)
+  const nextShown = shownIndices.find(i => i > pageIndex)
+  const prevShown = [...shownIndices].reverse().find(i => i < pageIndex)
 
   const updateResponse = useCallback((componentId, value) => {
     setResponses(previous => ({
@@ -42,8 +87,15 @@ export default function ComposableQuestionnaireRenderer({
     if (completedRef.current) return
     completedRef.current = true
 
+    // Hidden questions are recorded as not applicable, never left blank, and
+    // the order this participant saw is recorded with their answers (rule 3:
+    // column names and analysis come from recorded facts, not inference).
+    const normalized = markNotApplicable(
+      pages, normalizeComposableResponses(questionnaire, responses), collects)
+    if (presentation.order) normalized._order = presentation.order
+
     onComplete?.({
-      responses: normalizeComposableResponses(questionnaire, responses),
+      responses: normalized,
       subscaleScores: {},
       derivedScores: {},
     })
@@ -63,18 +115,18 @@ export default function ComposableQuestionnaireRenderer({
   function next() {
     if (!pageIsComplete(page, responses)) return
 
-    if (pageIndex >= pages.length - 1) {
+    if (nextShown == null) {
       finish()
       return
     }
 
-    setPageIndex(index => index + 1)
+    setPageIndex(nextShown)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function back() {
-    if (pageIndex > 0) {
-      setPageIndex(index => index - 1)
+    if (prevShown != null) {
+      setPageIndex(prevShown)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -136,7 +188,7 @@ export default function ComposableQuestionnaireRenderer({
     <div className="cs-player">
       <div className="cs-progress">
         <span>{questionnaire.name}</span>
-        <span>Page {pageIndex + 1} of {pages.length}</span>
+        <span>Page {shownIndices.indexOf(pageIndex) + 1} of {shownIndices.length}</span>
       </div>
 
       <main className="cs-player__content">
@@ -158,7 +210,7 @@ export default function ComposableQuestionnaireRenderer({
           disabled={!canContinue}
           onClick={next}
         >
-          {pageIndex === pages.length - 1 ? 'Finish' : 'Next →'}
+          {nextShown == null ? 'Finish' : 'Next →'}
         </button>
       </div>
     </div>

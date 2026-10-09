@@ -1,0 +1,1261 @@
+{
+  "slug": "sf-sfs",
+  "name": "How you pay attention",
+  "questionnaire_type": "composable",
+  "instructions": "People pay attention in two ways. In the sensing mode, you take in what is here through your senses (sounds, textures, light, your breath) without needing to do anything with it. In the doing mode, you use what you know to plan, solve, judge, fix or get something done. Both are useful. These questions ask how you move between them.\n\nPlease rate how much you feel that each statement describes you right now, on a scale of 1-6.",
+  "pages": [
+    {
+      "id": "sfs_p1",
+      "components": [
+        {
+          "id": "sfs_30",
+          "type": "likert",
+          "question": "I enjoy the process of discovering something new, not just the outcome of what I find",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_23",
+          "type": "likert",
+          "question": "I notice that feeling unsafe or threatened makes it harder for me to stay open to my senses",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_17",
+          "type": "likert",
+          "question": "I do not view it as a personal failing when stress narrows my attention. I recognize it as a natural response",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_14",
+          "type": "likert",
+          "question": "I can tell the difference between a moment that calls for the doing mode and one that calls for the sensing mode",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_12",
+          "type": "likert",
+          "question": "Returning to the sensing mode feels worth prioritizing, even when I am busy",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_25",
+          "type": "likert",
+          "question": "Time in the sensing mode leaves me with a sense of awe or wonder",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_02",
+          "type": "likert",
+          "question": "I recognize that the sensing mode is always available to me",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_24",
+          "type": "likert",
+          "question": "I can sense when my surroundings feel safe enough to explore openly",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_10",
+          "type": "likert",
+          "question": "I realize I always have a choice between the sensing mode and the doing mode",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "sfs_p2",
+      "components": [
+        {
+          "id": "sfs_13",
+          "type": "likert",
+          "question": "I notice quickly when I have drifted into autopilot or the doing mode without meaning to",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_18",
+          "type": "likert",
+          "question": "I place extra value on returning to the sensing mode in moments when stress is pulling me toward narrow, familiar responses",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_07",
+          "type": "likert",
+          "question": "Once I notice I have slipped into the doing mode without meaning to, I know how to shift back",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_20",
+          "type": "likert",
+          "question": "What I notice in the moment feels complete on its own, without needing to add meaning to it",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_29",
+          "type": "likert",
+          "question": "I value being free from the need to have control or know what comes next",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_06",
+          "type": "likert",
+          "question": "I can move into the sensing mode even in the middle of a stressful or demanding moment",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_05",
+          "type": "likert",
+          "question": "I see myself as having two gears that I can choose between: sensing and doing",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_22",
+          "type": "likert",
+          "question": "I am more able to move into the sensing mode when I feel safe and secure",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "sfs_p3",
+      "components": [
+        {
+          "id": "sfs_01",
+          "type": "likert",
+          "question": "I feel confident in my ability to move into the sensing mode",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_21",
+          "type": "likert",
+          "question": "I can let a sensation simply be, without figuring out what it means or where it leads",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_32",
+          "type": "likert",
+          "question": "I am drawn to uncertainty and ambiguity, not just tolerant of it, when I am in the sensing mode",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_attn_check",
+          "type": "likert",
+          "question": "To show that you are reading each statement, please select Disagree for this one.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_15",
+          "type": "likert",
+          "question": "I understand that stress and threat naturally pull people toward familiar ways of doing rather than open exploration",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_11",
+          "type": "likert",
+          "question": "I place real value on time spent in the sensing mode, not only on getting things done",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_03",
+          "type": "likert",
+          "question": "For me, the sensing mode feels different in kind from the doing mode of planning, fixing, and achieving",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_04",
+          "type": "likert",
+          "question": "I can see clearly how easily the doing mode can become my default",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "sfs_p4",
+      "components": [
+        {
+          "id": "sfs_26",
+          "type": "likert",
+          "question": "Engaging my senses fully opens up new ideas or perspectives I would not have noticed otherwise",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_09",
+          "type": "likert",
+          "question": "Moving into the sensing mode has gotten easier for me over time, even outside formal practice",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_28",
+          "type": "likert",
+          "question": "I welcome surprise when I am in the sensing mode, rather than trying to predict or control what happens",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_27",
+          "type": "likert",
+          "question": "I look forward to the feeling that comes from sensory exploration, not just the skill of doing it",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_16",
+          "type": "likert",
+          "question": "Even when I am stressed, I try to make space for the sensing mode",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_19",
+          "type": "likert",
+          "question": "I can experience a sensation without needing to judge it as good or bad",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_08",
+          "type": "likert",
+          "question": "I can move into the sensing mode in unfamiliar or new settings, not just when I set time aside to practise",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfs_31",
+          "type": "likert",
+          "question": "Seeing something from a new or unexpected perspective feels valuable to me in its own right",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "interleave": {
+    "items": [
+      "sfs_01",
+      "sfs_02",
+      "sfs_03",
+      "sfs_04",
+      "sfs_05",
+      "sfs_06",
+      "sfs_07",
+      "sfs_08",
+      "sfs_09",
+      "sfs_10",
+      "sfs_11",
+      "sfs_12",
+      "sfs_13",
+      "sfs_14",
+      "sfs_15",
+      "sfs_16",
+      "sfs_17",
+      "sfs_18",
+      "sfs_19",
+      "sfs_20",
+      "sfs_21",
+      "sfs_22",
+      "sfs_23",
+      "sfs_24",
+      "sfs_25",
+      "sfs_26",
+      "sfs_27",
+      "sfs_28",
+      "sfs_29",
+      "sfs_30",
+      "sfs_31",
+      "sfs_32",
+      "sfs_attn_check"
+    ],
+    "page_sizes": [
+      9,
+      8,
+      8,
+      8
+    ],
+    "clusters": {
+      "action": [
+        "sfs_01",
+        "sfs_06",
+        "sfs_07",
+        "sfs_08",
+        "sfs_09"
+      ],
+      "practice": [
+        "sfs_02",
+        "sfs_03"
+      ],
+      "drift": [
+        "sfs_04",
+        "sfs_13",
+        "sfs_14"
+      ],
+      "view_core": [
+        "sfs_05",
+        "sfs_10",
+        "sfs_11",
+        "sfs_12"
+      ],
+      "view_stress": [
+        "sfs_16",
+        "sfs_18"
+      ],
+      "normalizing": [
+        "sfs_15",
+        "sfs_17"
+      ],
+      "completeness": [
+        "sfs_19",
+        "sfs_20",
+        "sfs_21"
+      ],
+      "safety": [
+        "sfs_22",
+        "sfs_23",
+        "sfs_24"
+      ],
+      "reward": [
+        "sfs_25",
+        "sfs_26",
+        "sfs_27"
+      ],
+      "view_openness": [
+        "sfs_28",
+        "sfs_29",
+        "sfs_30",
+        "sfs_31",
+        "sfs_32"
+      ]
+    },
+    "cluster_min_gap": 3,
+    "cluster_max_per_page": 2,
+    "groups": [
+      {
+        "items": [
+          "sfs_05",
+          "sfs_10",
+          "sfs_11",
+          "sfs_12",
+          "sfs_16",
+          "sfs_18",
+          "sfs_28",
+          "sfs_29",
+          "sfs_30",
+          "sfs_31",
+          "sfs_32"
+        ],
+        "min_gap": 2,
+        "max_per_page": 3
+      }
+    ],
+    "pairs": [
+      [
+        "sfs_04",
+        "sfs_13"
+      ],
+      [
+        "sfs_16",
+        "sfs_18"
+      ],
+      [
+        "sfs_01",
+        "sfs_09"
+      ],
+      [
+        "sfs_06",
+        "sfs_16"
+      ]
+    ],
+    "pair_min_gap": 3,
+    "anchored": {
+      "sfs_attn_check": {
+        "min_position": 11,
+        "max_position": 24,
+        "not_page_edge": true
+      }
+    }
+  }
+}
