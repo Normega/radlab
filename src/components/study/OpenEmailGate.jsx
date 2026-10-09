@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { OPEN_JOIN_CONTENT } from '../../pages/openJoinContent'
 
 // ── OpenEmailGate ────────────────────────────────────────────────────────────
 // The open-recruitment route's email step (studies.open_join_slug, e.g.
@@ -10,10 +11,32 @@ import { useState } from 'react'
 // link to the address given and retires the one this page holds, so the only
 // way forward is through that inbox -- which is what makes the address real.
 // @mail.utoronto.ca only: the study is for U of T students.
+//
+// Its words are per study (2026-10-09): OPEN_JOIN_CONTENT[slug].emailGate, read
+// by the study's open_join_slug. The default is the original copy, written for
+// Liliana Study 3 — Paid (eligibility, Interac payment), which was shown to
+// every open-join study until then, including a class trial with neither.
+
+const DEFAULT_COPY = {
+  title:    'You’re eligible to take part',
+  body:     'Enter your U of T student email address and we’ll send you the link to start. Your daily session links and your payment (by Interac e-transfer) will also go to this address.',
+  sentLead: 'You’re eligible, thank you!',
+  sentNext: 'Open it to read the consent form and, if you agree to take part, begin the first session (about 30 minutes).',
+}
 
 const STUDENT_EMAIL = /^[a-z0-9._%+'-]+@mail\.utoronto\.ca$/i
 
-export default function OpenEmailGate({ token }) {
+export default function OpenEmailGate({ token, studyId = null, supabaseClient = null }) {
+  // null while the study's own words load (a moment); then its copy, or the default
+  const [copy, setCopy] = useState(studyId && supabaseClient ? null : DEFAULT_COPY)
+  useEffect(() => {
+    if (!studyId || !supabaseClient) return
+    let live = true
+    supabaseClient.from('studies').select('open_join_slug').eq('id', studyId).maybeSingle()
+      .then(({ data }) => { if (live) setCopy({ ...DEFAULT_COPY, ...(OPEN_JOIN_CONTENT[data?.open_join_slug]?.emailGate ?? {}) }) })
+      .catch(() => { if (live) setCopy(DEFAULT_COPY) })
+    return () => { live = false }
+  }, [studyId, supabaseClient])
   const [email,   setEmail]   = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy,    setBusy]    = useState(false)
@@ -48,13 +71,14 @@ export default function OpenEmailGate({ token }) {
     setBusy(false)
   }
 
+  if (!copy) return <div style={S.wrap} />
+
   if (sentTo) {
     return (
       <div style={S.wrap}>
         <h1 style={S.title}>Check your U of T email</h1>
         <p style={S.body}>
-          You’re eligible, thank you! We’ve sent a link to <strong>{sentTo}</strong>. Open it to read
-          the consent form and, if you agree to take part, begin the first session (about 30 minutes).
+          {copy.sentLead ? `${copy.sentLead} ` : ''}We’ve sent a link to <strong>{sentTo}</strong>. {copy.sentNext}
         </p>
         <p style={S.muted}>
           It can take a few minutes to arrive. If you don’t see it, check your junk or quarantine folder.
@@ -66,11 +90,8 @@ export default function OpenEmailGate({ token }) {
 
   return (
     <div style={S.wrap}>
-      <h1 style={S.title}>You’re eligible to take part</h1>
-      <p style={S.body}>
-        Enter your U of T student email address and we’ll send you the link to start. Your daily
-        session links and your payment (by Interac e-transfer) will also go to this address.
-      </p>
+      <h1 style={S.title}>{copy.title}</h1>
+      <p style={S.body}>{copy.body}</p>
       <p style={S.muted}>Only addresses ending in <strong>@mail.utoronto.ca</strong> are accepted.</p>
 
       <label style={S.label}>

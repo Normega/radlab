@@ -66,6 +66,13 @@ export const OPEN_JOIN_CONTENT = {
     title:       'Our class trial: three daily practices for stress',
     lead:        'A small randomized controlled trial our class runs together, so you experience an RCT from the inside before we analyse one. A learning exercise, not research.',
     cta:         'Start',
+    // the email step after Start (OpenEmailGate): no eligibility, no payment
+    emailGate: {
+      title:    'Where should your links go?',
+      body:     'Enter your U of T student email address and we’ll send you the link to start. Each day’s practice will also go to this address.',
+      sentLead: 'Thank you!',
+      sentNext: 'Open it to read the consent form and, if you agree to take part, do the baseline survey (15 to 20 minutes).',
+    },
     contactName: 'the teaching team',
     contact:     'psy240@radlab.zone',
     sections: [
