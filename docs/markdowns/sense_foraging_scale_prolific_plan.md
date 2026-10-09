@@ -18,7 +18,7 @@ Read §1 (decisions) before writing code. Several choices change what gets built
 - **P4 decline: no new code needed.** The PSY240 trial session shipped "No thanks" (`studies.decline_message`, `decline_consent()`, applied live; ConsentGate on `dev`). Study 1's message tells people to return the submission on Prolific.
 - **Attention checks renamed** `sfs_attn_check` / `maia_attn_check`. The export names a column by an item's trailing digits, so `_attn_1` would have exported as `_1` ("item 1").
 - **Next:** P5 (identity table + de-identification + `?test=1`), then P6 (posting column).
-- **Open decision (D6 follow-on):** Prolific keeps exact start/finish times. To make "cannot be re-identified, even under court order" true, de-identification should also coarsen our timestamps (e.g. to the date). Norm to decide.
+- **De-identification decided (2026-10-09):** the scrub specification and timeline are in §5a, and the how-to is in website.md §26c. Open: offsite-backup retention (§5a, option (b) recommended).
 
 ---
 
@@ -99,7 +99,7 @@ Promises the platform has to keep, quoted from Consent v3 and the debrief:
   - Positions are recorded.
   - Facet key received 2026-10-09 (pool 4). The rules built on it are verified (see P1 below).
 - **D5 decided:** the short international race/ethnicity list (a). Asian is split into East / South / Southeast, and Indigenous is broadened with examples for all six countries.
-- **D6 (proposed, to confirm with Norm):** keep the Prolific ID, but in **one identity table** (Prolific ID → random study id). Every other row uses the random id. The offsite backup skips that table's data, so deletion after payment + 48 h is permanent. Supabase's own ~7-day daily backups are the only residue.
+- **D6 decided (2026-10-09):** keep the Prolific ID, but in **one identity table** (Prolific ID → random study id). Every other row uses the random id. The offsite backup skips that table's data, so deletion after payment + 48 h is permanent. Supabase's own ~7-day daily backups are the only residue.
 - **D7 decided:** two instructed-response checks. Study 1 has one among the 32 new-scale items. Study 2 has that one plus one inside MAIA-2. None in the short scales. Both go into Norm's amendment.
 
 **P1 amendment: interleaved shuffle (rules verified 2026-10-09).**
@@ -184,18 +184,24 @@ Rules that apply throughout:
 - A narrow `record_consent_decline` definer RPC **deletes the participant's enrollment and schedule rows**. Nothing about a non-participant is retained.
 - A sweep removes enrollments that never consented, older than the link expiry. It covers people who simply close the tab.
 
-**P5 — Prolific identity handling (G5, G9, D6).** Edge Function + migration + frontend (main). The biggest piece.
-- `studies.hash_external_id boolean`. When it is on, `auto-enroll` stores:
-  - `HMAC_SHA256(EXTERNAL_ID_KEY, pid)` as `external_id`, and in the synthetic email and display name;
-  - `prolific_study_id` in clear (it identifies the posting, not the person);
-  - **no** `prolific_session_id`.
-- Re-entry and cross-posting dedupe still work, because the hash is deterministic.
-- `?test=1` on the join URL marks the enrollment `is_test` (port of `49f9d93`).
-- `deidentify_external_enrollments(study_id, completed_before)` (lab-only RPC):
+**P5 — Prolific identity handling (G5, G6, G9, D6).** Migration + Edge Function + frontend (main). The biggest piece. Design as decided 2026-10-09: one identity table, deleted after payment.
+- **`external_identities`** (study_id, external_id = the Prolific ID, surrogate, created_at): the only place a Prolific ID is ever written. RLS: no participant access; lab read; writes only through `auto-enroll` (service role) and the de-identification RPC.
+- `auto-enroll`, for a study with `studies.separate_external_identity = true`:
+  - looks the Prolific ID up in that table (re-entry and cross-posting dedupe still work);
+  - on a new arrival, mints a random surrogate (`SF1-` + 10 random characters) and uses **only the surrogate** everywhere else: `study_enrollments.external_id`, the synthetic auth email, `user_metadata.display_name`, `profiles.display_name`;
+  - keeps `prolific_study_id` (the posting, not the person) and **drops** `prolific_session_id`;
+  - logs nothing containing the Prolific ID. Today one line logs `external_id` on exclusion-group refusals; it logs the surrogate instead.
+- **Clean logs.** The Prolific study URL carries the IDs in the fragment: `https://radlab.zone/study/join#study_id=…&PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}`.
+  - Browsers never send a fragment to the server, so the Prolific ID never reaches Vercel's or Supabase's request logs. It travels only in the `auto-enroll` POST body, which is not logged.
+  - `StudyJoin` reads the fragment (the query string still works for SONA) and clears it with `history.replaceState`.
+  - **Verify with Prolific's preview that it substitutes placeholders inside a fragment.** If it does not, keep the query string and note Vercel's log retention instead.
+- **Offsite backup** (`Normega/radlab-backups`): `pg_dump --exclude-table-data=public.external_identities`. The table's shape is backed up; its rows never are.
+- **`?test=1`** (or `test=1` in the fragment) marks the enrollment `is_test` (port of `49f9d93`).
+- **`deidentify_external_enrollments(study_id, before)`** (lab-only RPC):
   - **refuses** rows completed less than 48 h ago;
-  - replaces `external_id` with `sf-<random>` and clears the auth email/metadata and profile display name to the same surrogate;
-  - stamps `deidentified_at`.
-- Run it after each approval batch. Then confirm it does not break the export's `participant_external_id` join, which reads the surrogate thereafter.
+  - deletes the matching `external_identities` rows (after this the Prolific ID exists nowhere we hold, apart from Supabase's own ≤7-day snapshots);
+  - stamps `study_enrollments.deidentified_at`;
+  - also deletes the identity rows of anyone who never consented or who declined (REB §9: nothing kept about non-participants), whatever their age.
 - Deploy from an up-to-date `main` only (the stale-checkout revert of 2026-10-07).
 
 **P6 — Export (G7).** Frontend.
@@ -322,18 +328,59 @@ P7 (reconciliation panel) can start as manual SQL. A `send_time` default in `aut
 3. **Daily cadence:**
    - reconcile Prolific submissions against the panel (P7);
    - approve, and pay partials;
-   - after 48 h, de-identify that batch;
+   - after 48 h, run `deidentify_external_enrollments` for that batch;
    - log each batch (date, n approved, n partial, n de-identified).
-   - Withdrawal emails within 48 h: hash the PID, find the enrollment, delete its responses, record the withdrawal.
+   - Withdrawal emails within 48 h: look the Prolific ID up in `external_identities`, delete that participant's responses, record the withdrawal.
 4. **Study 2** launches after Study 1 closes (CFA tests the EFA structure). Prolific excludes all Study 1 participants. Preregister the CFA model and the quality-exclusion criteria from Study 1 first.
 5. **Close each study:**
    - set `active = false`, plus the CLAUDE.md "disabling a study" steps;
-   - confirm zero rows with a live hash;
-   - **destroy `EXTERNAL_ID_KEY`** and record the date here.
-6. **Borealis deposit:**
-   - `repository_consent = true`, non-test, de-identified rows only;
-   - exact timestamps coarsened, because Prolific's own export has completion times and could re-link them;
-   - files restricted, with the approved Terms of Access text and the DUA on request.
+   - confirm `external_identities` has no rows for the study;
+   - then follow §5a (freeze the shareable file, then purge the raw rows).
+6. **Borealis deposit and sharing on request:** only the §5a shareable file, and only its `repository_consent = true` rows. Files restricted, with the approved Terms of Access text, and the DUA signed before any release.
+
+## 5a. De-identification and the shareable dataset (decided 2026-10-09)
+
+**The goal (Norm, 2026-10-09):** once a participant is paid and their 48 h withdrawal window has closed, nobody, including us under a court order served on Prolific, can link their answers back to them. The dataset must be fit to share with other researchers on reasonable request.
+
+**Why deleting the Prolific ID is not enough.** Prolific keeps, per submission, the Prolific ID, the start and finish times, the **time taken in seconds**, and the profile it verified (age, country, and the demographics participants chose to give it). Any of those, matched against what we hold, can re-link a row. So the scrub removes exact times, exact durations and rare demographic combinations, not just the ID.
+
+**Timeline**
+
+| When | What | Where it runs |
+|---|---|---|
+| Arrival | Prolific ID written only to `external_identities`, through the URL fragment (no server log). Everything else carries the surrogate. | `auto-enroll` (P5) |
+| ≥ 48 h after completion **and** payment approved | `deidentify_external_enrollments`: the identity row is deleted. From here the only bridge to a person is Prolific's own records (times, durations, profile). | lab RPC (P5), per batch |
+| Decline / never consented | Identity row deleted at the next batch run, whatever its age. | same RPC |
+| Study closed, data frozen | Produce the **shareable file** (below), verify it, store it (lab Shared Drive + checksum). Then `purge_study_data(study_id, <study name typed out>)` deletes the raw rows, the step timings and the accounts that exist only for this study. | `scripts/sense_foraging/deidentify.py` (to build) + existing `purge_study_data` |
+| After purge | Supabase's own daily snapshots age out in ≤ 7 days. **Offsite backups still hold the raw rows (never the Prolific ID).** See the open decision below. | — |
+
+**The shareable file: what the scrub does**
+
+1. **Participant id:** a fresh random id per row (`SF1-0001`…), assigned in shuffled order. Not the surrogate, not `profile_id`, nothing that exists in the database or the backups.
+2. **Time:** every timestamp is dropped: enrolled, consent, completed, received, step entered/exited.
+   - Kept instead: `wave` (study + calendar month of collection, e.g. `S1-2026-11`) and `minutes_total`, rounded to whole minutes and top-coded at 60.
+   - Per-instrument minutes are rounded the same way and top-coded at 30. Prolific's time taken is in seconds; a whole-minute value with no date leaves dozens of matches per value.
+3. **Quality flags, computed from the exact times before they are dropped**, per the criteria preregistered before data collection:
+   - `attn_sfs_pass`, `attn_maia_pass` (Study 2);
+   - `speeder` (median seconds per item below the declared floor);
+   - `longstring_max` (longest run of identical answers);
+   - `pna_count`.
+   The exact times needed to recompute them are not shared and are purged at close.
+4. **Free text:** every "Other / please specify / self-describe" answer is read by a lab member, recoded into an existing category or `other`, and **never shared raw**. A rare country or a self-description can identify someone.
+5. **Quasi-identifiers:** age in 5-year bands, top-coded at 75+.
+   - Then check that every combination of age band × gender × country × race/ethnicity (collapsed) × education occurs at least **5 times** in the file.
+   - Where it does not, coarsen in this order until it does: education → race/ethnicity (to broader groups) → country (to "Other") → age (to 10-year bands).
+   - The script reports what it coarsened and how many rows each step touched.
+6. **Posting:** `general` / `contemplative`, mapped from the recorded Prolific study id (P6). The Prolific study id itself is dropped.
+7. **Kept as is:** item answers (`pna`, `not_applicable` and the attention checks included), presented positions (`…_pos_NN`, random per person and not identifying), consent to deposit.
+8. **Rows:** test enrollments, withdrawals and decliners are removed. A second file, `…_shareable_depositable.csv`, keeps only `repository_consent = true`. **That is the only file that leaves the lab**, whether to Borealis or to a researcher on request (both under the DUA). The other is for the lab's own analysis.
+9. **Proof:** the script writes `_deidentification_report.csv`: row counts in and out, each coarsening step, the smallest combination size (must be ≥ 5), and a scan showing no column holds a timestamp, a surrogate or a profile id.
+
+**Open decision (Norm): offsite backups.** The nightly offsite dumps never contain a Prolific ID (P5 excludes that table), but monthly dumps are kept forever and will hold the raw rows, with exact timestamps, from the collection months. With a court order served on Prolific and access to those dumps, a determined party could still match times. Options:
+- (a) accept it and say so in the security document;
+- (b) when a study closes, delete or re-dump the offsite monthly snapshots that cover its collection months. This affects every study's backups for those months, so it would be done once both Sense Foraging studies close and only after a fresh full dump exists.
+
+Recommended: (b).
 
 ## 6. Size of the work
 
