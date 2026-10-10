@@ -194,6 +194,23 @@ instruments against these five before a study recruits, not after.
 
 ---
 
+## Questionnaire layout — one per study, v2 for new studies
+
+Questionnaires render either one item per screen (v1, legacy) or as labelled cards several per page (v2,
+the standard since 2026-10-10). It is a **study** setting, `studies.questionnaire_layout`, not an
+instrument setting: legacy definitions are converted at render time (`src/lib/legacyToStacked.js`) with the
+same item ids. Two rules:
+
+- **Never change a study's layout once real participants have answered.** It mixes two administrations in one
+  dataset; the study page asks before allowing it. Running v1 studies stay v1 until they close.
+- **Never mix layouts within a study.** New instruments go in as composable definitions or legacy ones that
+  convert; don't hand-build a one-per-screen exception.
+
+Every questionnaire response records `presentation_format`. Evidence and rationale: website.md §23
+("Questionnaire layout v2") and `reports/Items per screen in web surveys.md`.
+
+---
+
 ## Migration convention
 
 All Supabase migrations live in `.\supabase\migrations\` and are named `YYYYMMDD_description.sql` (e.g. `20260606_compensation_form.sql`). **Never write migration SQL to the project root.** Run migrations manually in the Supabase SQL editor, or via the Supabase MCP `apply_migration` tool.

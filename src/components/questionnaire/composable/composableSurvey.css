@@ -632,6 +632,31 @@
   cursor: default;
 }
 
+/* Looks unavailable until the page is complete, but still takes the tap that
+   shows which questions are missing (ComposableQuestionnaireRenderer.next). */
+.cs-primary-button.is-waiting {
+  background: var(--bd);
+  color: var(--tx3);
+}
+
+.cs-component {
+  display: contents;
+}
+
+.cs-component.is-missing .cs-question-card {
+  border-color: var(--pk);
+  box-shadow: 0 0 0 2px var(--pk);
+}
+
+.cs-missing-note {
+  flex: 1;
+  margin: 0 8px;
+  text-align: center;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: var(--fs-body-sm);
+  color: var(--pkd);
+}
+
 .cs-secondary-button,
 .cs-back-floating {
   border: 1px solid var(--bd);

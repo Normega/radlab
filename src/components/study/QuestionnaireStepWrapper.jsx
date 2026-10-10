@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import QuestionnaireRenderer from '../questionnaire/QuestionnaireRenderer'
 import { useSubmitLock } from '../../lib/useSubmitLock'
+import { legacyToStacked } from '../../lib/legacyToStacked'
 import SaveRetryBanner from './SaveRetryBanner'
 
 export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId, stepIndex, totalSteps, onComplete, supabaseClient, isSimMode = false, demoMode = false }) {
@@ -62,6 +63,26 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
     onComplete({ carried_forward: true, slug })
   }, [carried]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The study's questionnaire layout (studies.questionnaire_layout, 2026-10-10):
+  // 'one_per_screen' (v1) or 'stacked' (v2: labelled cards, several per page). A
+  // legacy definition follows the study; a composable one is stacked either way.
+  // Read under the participant's own session ("studies: enrolled participant
+  // read"); anything unreadable keeps v1, which is what every study had before.
+  const studyId = enrollment?.study_id ?? null
+  const { data: layout, isLoading: layoutLoading } = useQuery({
+    queryKey: ['study-questionnaire-layout', studyId],
+    enabled: !carried && !!studyId && !demoMode,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const { data, error } = await db.from('studies').select('questionnaire_layout').eq('id', studyId).maybeSingle()
+      if (error) {
+        console.warn('questionnaire layout unreadable, keeping one item per screen:', error.message)
+        return 'one_per_screen'
+      }
+      return data?.questionnaire_layout ?? 'one_per_screen'
+    },
+  })
+
   // Keyed by slug: one wrapper instance can be handed a second questionnaire
   // without remounting, and a lock still held from the first would swallow
   // the second's submit AND its onComplete, hanging the session outright.
@@ -74,7 +95,9 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
 
   if (carried) return <div style={S.loading}>Loading…</div>
 
-  if (isLoading) return <div style={S.loading}>Loading questionnaire…</div>
+  // Wait for the layout too, so a participant never starts a page in one layout
+  // and finishes it in the other.
+  if (isLoading || (layoutLoading && !!studyId && !demoMode)) return <div style={S.loading}>Loading questionnaire…</div>
   if (error)     return <div style={S.err}>Could not load questionnaire "{slug}": {error.message}</div>
 
   // An unconfigured definition would crash the renderer — surface a legible
@@ -88,6 +111,13 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
   if (!isConfigured) {
     return <div style={S.err}>Questionnaire "{slug}" is not configured (no {isComposable ? 'pages' : 'items'}). Check its definition in the admin library.</div>
   }
+
+  // What this participant is shown, and what the response row records about it.
+  const converted = layout === 'stacked' && !isComposable ? legacyToStacked(q.definition) : null
+  const shown = converted ?? q.definition
+  const presentationFormat = shown.questionnaire_type === 'composable' ? 'stacked'
+    : shown.questionnaire_type === 'checklist' ? 'checklist'
+    : 'one_per_screen'
 
   // This wrapper had NO guard: QuestionnaireRenderer refuses to fire onComplete
   // twice per mount, but a remount re-arms it, and the insert here would then
@@ -111,6 +141,10 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
           // which is exactly how Sandy Study 3 lost 1,895 slider responses to
           // the dedupe trigger (20260910_dedupe_by_step_index.sql).
           step_index:         stepIndex ?? null,
+          // The layout the participant actually saw (rule 1: record where a
+          // response came from), so a format difference between studies, or a
+          // v1/v2 boundary, is visible in the data instead of guessed at.
+          presentation_format: presentationFormat,
           responses,
           completed_at:       new Date().toISOString(),
         })
@@ -131,7 +165,7 @@ export default function QuestionnaireStepWrapper({ slug, enrollment, scheduleId,
   return (
     <>
       <QuestionnaireRenderer
-        questionnaire={q.definition}
+        questionnaire={shown}
         partNumber={stepIndex + 1}
         totalParts={totalSteps}
         onComplete={handleComplete}

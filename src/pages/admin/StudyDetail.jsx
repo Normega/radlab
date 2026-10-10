@@ -27,7 +27,7 @@ function useStudy(id) {
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
           allow_self_enrollment, allow_credit_only_consent, offer_repository_consent, require_student_number,
-          separate_external_identity, screener_id
+          separate_external_identity, questionnaire_layout, screener_id
         `)
         .eq('id', id)
         .single()
@@ -210,7 +210,8 @@ export default function StudyDetail() {
         </>
       )}
 
-      {/* Screener, consent, and debrief — all types */}
+      {/* Questionnaire layout, screener, consent, and debrief — all types */}
+      <QuestionnaireLayoutSection study={study} qc={qc} />
       <ScreenerSection study={study} qc={qc} />
       <ConsentFormSection study={study} qc={qc} />
       <DebriefFormSection study={study} qc={qc} />
@@ -574,6 +575,71 @@ function useScreeners() {
       return data ?? []
     },
   })
+}
+
+// ─── Questionnaire layout (20261010_questionnaire_layout_v2.sql) ─────────────
+// v1 shows legacy questionnaires one item per screen; v2 shows every
+// questionnaire as labelled cards, several per page (src/lib/legacyToStacked.js).
+// Rationale and evidence: reports/Items per screen in web surveys.md. Changing it
+// once real participants have answered mixes two administrations in one dataset,
+// so it locks then and asks before changing.
+
+const LAYOUTS = [
+  { value: 'stacked', label: 'v2 — several questions per page (standard for new studies)',
+    help: 'Every questionnaire shows as cards, about 8 per page, each with its own labelled answers, in the published order.' },
+  { value: 'one_per_screen', label: 'v1 — one question per screen (legacy)',
+    help: 'Older item-by-item questionnaires show one item per screen and advance on tap. Kept for studies that started this way.' },
+]
+
+function QuestionnaireLayoutSection({ study, qc }) {
+  const [err, setErr] = useState(null)
+  const { data: answered = 0 } = useQuery({
+    queryKey: ['study-real-consents', study.id],
+    queryFn: async () => {
+      const { count, error } = await supabase.from('study_enrollments')
+        .select('id', { count: 'exact', head: true })
+        .eq('study_id', study.id).eq('is_test', false).not('consent_date', 'is', null)
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  const current = study?.questionnaire_layout ?? 'one_per_screen'
+
+  async function choose(value) {
+    if (value === current) return
+    if (answered > 0 && !window.confirm(
+      `${answered} real participant${answered === 1 ? ' has' : 's have'} already consented to this study. ` +
+      'Changing the questionnaire layout now means one dataset holds two administrations. Change it anyway?')) return
+    setErr(null)
+    const { error } = await supabase.from('studies').update({ questionnaire_layout: value }).eq('id', study.id)
+    if (error) setErr(error.message)
+    qc.invalidateQueries({ queryKey: ['study-detail', study.id] })
+  }
+
+  return (
+    <div style={{ marginTop: 40 }}>
+      <h2 style={S.sectionTitle}>Questionnaire layout</h2>
+      <div style={{ ...S.formCard, marginTop: 16 }}>
+        {LAYOUTS.map(l => (
+          <label key={l.value} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 8 }}>
+            <input type="radio" name="questionnaire-layout" style={{ marginTop: 4 }}
+              checked={current === l.value} onChange={() => choose(l.value)} />
+            <span>
+              <span style={{ fontSize: 14, color: 'var(--tx)' }}>{l.label}</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--tx3)' }}>{l.help}</span>
+            </span>
+          </label>
+        ))}
+        <p style={{ fontSize: 12, color: 'var(--tx3)', margin: '8px 0 0' }}>
+          {answered > 0
+            ? `Locked in practice: ${answered} real participant${answered === 1 ? ' has' : 's have'} consented. Keep the layout for the life of the study.`
+            : 'Choose before anyone takes part, then keep it for the life of the study.'}
+          {' '}Each response records the layout it was shown in (<code>presentation_format</code>).
+        </p>
+        {err && <p style={S.errMsg}>{err}</p>}
+      </div>
+    </div>
+  )
 }
 
 function ScreenerSection({ study, qc }) {

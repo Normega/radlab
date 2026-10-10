@@ -777,7 +777,21 @@ function questionnaireWideByProfile(qRows, ctx, tools) {
       ? tools.namer.name(pid, basePrefix, { table: 'questionnaire_responses', row_id: r.id })
       : basePrefix
     const put = cellWriter(tools, 'questionnaire_responses', pid)
+    // The layout this administration was shown in (questionnaire_layout v2,
+    // 2026-10-10). Absent on rows recorded before the column existed.
+    if (r.presentation_format) put(byProfile[pid], `${prefix}_format`, r.presentation_format)
     for (const [rawKey, val] of Object.entries(r.responses ?? {})) {
+      // Answer timing (v2 renderer): summarized for speeder screening as total
+      // seconds and seconds per answered item, which mean the same thing in either
+      // layout. Per-answer times stay in the table CSV's responses column.
+      if (rawKey === '_timing' && val && typeof val === 'object') {
+        const answered = Object.entries(r.responses)
+          .filter(([k, v]) => !k.startsWith('_') && v !== 'not_applicable').length
+        const secs = Number(val.total_ms ?? 0) / 1000
+        put(byProfile[pid], `${prefix}_secs_total`, Math.round(secs * 10) / 10)
+        put(byProfile[pid], `${prefix}_secs_per_item`, answered ? Math.round((secs / answered) * 100) / 100 : '')
+        continue
+      }
       // The order this participant saw (interleaved questionnaires): one column
       // per item giving its 1-based position, named from the item id like the
       // answer columns, so `<prefix>_pos_07` is where `<prefix>_07` was shown.
@@ -1215,6 +1229,9 @@ const COLUMN_NOTES = [
   [/^vas_.*_d\d+$/,             'Momentary rating on the given study day (1-6). No pre/post phase (single-scale step).'],
   [/^vas_.*_unscheduled_\d+$/,  'Rating with no schedule link (predates schedule linkage). Occurrence-numbered; day unknown.'],
   [/_order_method$/,            "How this questionnaire's item order was set: interleave = drawn per participant under the spacing rules; fixed_fallback = no valid order found, written order used."],
+  [/_format$/,                  'Layout this questionnaire was shown in: one_per_screen (v1), stacked (v2: labelled cards, several per page) or checklist. Blank = recorded before 2026-10-10.'],
+  [/_secs_total$/,              'Seconds from the first page of this questionnaire being shown to its submission (browser monotonic clock, so a wrong participant clock does not matter).'],
+  [/_secs_per_item$/,           'Seconds per answered item (total / items answered, not-applicable items excluded). For speeder screening: comparable across layouts, unlike per-screen times.'],
   [/_pos_[^_]+$/,               'Position (1 = first) at which the matching item was shown to this participant. Same suffix as the answer column it describes.'],
 ]
 
