@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { interventionStyles as S, OwlScreen } from './InterventionPage'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 /**
  * Liliana Study 3 midpoint step (WP-L4/L5b) — mounted by StepDispatcher for
@@ -93,6 +94,8 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
   const studyId = enrollment?.study_id
 
   const [screen,   setScreen]   = useState('loading')
+  // Each midpoint screen starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(screen)
   const [error,    setError]    = useState(null)
   const [group,    setGroup]    = useState(null)
   const [snapshot, setSnapshot] = useState(null)

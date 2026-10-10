@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import DemoModal from '../DemoModal'
 import StepDispatcher from './StepDispatcher'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 /**
  * Admin session demo — steps through a session template's nodes with
@@ -22,6 +23,8 @@ import StepDispatcher from './StepDispatcher'
 // demoing from the Session Library, where a template has no day context.
 export default function SessionDemoModal({ templateId, label, studyDay = null, sendTime = null, onClose }) {
   const [index, setIndex] = useState(0)
+  // Each demoed step starts at the top of the modal (see scrollToTop.js).
+  useScrollToTopOn(index)
   const [runId, setRunId] = useState(0) // bump to restart
 
   const { data: nodes = [], isLoading, error } = useQuery({

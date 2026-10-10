@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import MoodTap from './MoodTap'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -181,6 +182,8 @@ function PreviewSummary({ config, result, answerKey, onRestart }) {
 export default function CheckinRunner({ checkinId, config, session, onComplete, preview }) {
   const activities = config?.activities ?? []
   const [stepIndex, setStepIndex] = useState(0)
+  // Each check-in step starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(stepIndex)
   const [draft, setDraft] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)

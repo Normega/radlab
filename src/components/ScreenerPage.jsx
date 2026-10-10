@@ -3,6 +3,7 @@ import { evaluateScreenerPhase2 } from '../lib/screenerUtils'
 import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
 import SaveRetryBanner from './study/SaveRetryBanner'
 import { writeScreenerDraft } from '../lib/screenerDraft'
+import { useScrollToTopOn } from '../lib/scrollToTop'
 
 // ── ScreenerPage ───────────────────────────────────────────────────────────────
 //
@@ -57,6 +58,8 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
   const hasPhase2 = phase2Slugs.length > 0
 
   const [phase,         setPhase]         = useState('description')
+  // Each screener phase starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(phase)
   const [eligAnswers,   setEligAnswers]   = useState({})
   const [eligResult,    setEligResult]    = useState(null)
   const [q2Defs,        setQ2Defs]        = useState([])   // definitions aligned to phase2Slugs
@@ -470,7 +473,7 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
         {meta.sub && <div style={S.pageSubtitle}>{meta.sub}</div>}
       </div>
 
-      <div style={S.scrollArea}>
+      <div data-scroll-root style={S.scrollArea}>
         {phase === 'description' && renderDescription()}
         {phase === 'eligibility' && renderEligibility()}
         {phase === 'outcome'     && renderOutcome()}

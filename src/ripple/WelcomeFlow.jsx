@@ -11,6 +11,7 @@ import Checkbox from '../components/ui/Checkbox'
 import OnboardingNavigation from '../components/ui/OnboardingNavigation'
 import PrimaryCTA from '../components/ui/PrimaryCTA'
 import { uploadAvatarPng } from '../lib/avatarPng'
+import { useScrollToTopOn } from '../lib/scrollToTop'
 
 // ── WelcomeFlow ───────────────────────────────────────────────────────────────
 // Route: /welcome — public-tier onboarding, rebuilt for Onboarding Redesign v1
@@ -69,6 +70,8 @@ export default function WelcomeFlow({ session, onComplete, devInitialStep }) {
   const navigate = useNavigate()
 
   const [step,  setStep]  = useState(STEPS.LOADING)
+  // Each onboarding step starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(step)
   const [error, setError] = useState(null)
   const [busy,  setBusy]  = useState(false)
 

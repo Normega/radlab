@@ -14,6 +14,7 @@ export default function DemoModal({ title, subtitle = 'Preview only — no data 
 
   return (
     <div
+      data-scroll-root
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'rgba(0,0,0,0.82)',

@@ -3137,9 +3137,27 @@ on mobile the browser's scroll anchoring cancels that.
   - `WrapperElementPage`;
   - the student and Liliana demographics (section).
 
-**A new paginated step component should call `useScrollToTopOn(<its page index>)`.** A new full-screen
-scroll container should carry `data-scroll-root`. Tests: `scrollToTop.test.mjs`, plus a jsdom
-click-through of the composable renderer inside a scrolled panel.
+**Second pass (2026-10-10, after Norm found surveys still affected).** The first fix missed seven more
+flows. Now also wired:
+- the screener (`ScreenerPage`, phase; its scroll area is marked);
+- Liliana's `MidpointStep` (screen);
+- Lecture Lounge `CheckinRunner` (step);
+- Ripple `CheckinFlow` (phase + item) and `WelcomeFlow` (step);
+- `SessionDemoModal` (step; `DemoModal` is marked).
+
+**Enforced for future screens:** `src/lib/scrollToTopCoverage.test.mjs` fails CI if a component in a
+participant-facing folder keeps a page, step, section, screen, slide, phase or item position in state
+without calling `useScrollToTopOn`.
+- The folders are `components/study`, `components/questionnaire`, `components/vas`, `ScreenerPage`,
+  `ripple`, `academic/lecture-lounge` and the session and join pages.
+- A component may opt out only by being listed in its `ALLOWED` map with a reason. Today: `GuidedTextBlock`,
+  a block inside a screen, and `PhysioSetupStep`, operator-run hardware setup.
+- The test also checks that every session runner marks its scroll panel. It was shown to fail when one
+  call is removed.
+
+So: **a new paginated component calls `useScrollToTopOn(<its page index>)`**, and a new full-screen scroll
+container carries `data-scroll-root`. Tests: `scrollToTop.test.mjs`, `scrollToTopCoverage.test.mjs`, and a
+jsdom click-through of the composable renderer inside a scrolled panel.
 
 ### locked flag
 

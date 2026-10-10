@@ -10,6 +10,7 @@ import Nav from '../components/Nav'
 import { supabase as globalSupabase } from '../lib/supabase'
 import { dbWrite } from '../lib/dbWrite'
 import { drawItems, formatItemResponses } from './itemEngine'
+import { useScrollToTopOn } from '../lib/scrollToTop'
 
 // ── CheckinFlow ───────────────────────────────────────────────────────────────
 // Phases: phase1 → phase2 → items (0–2) → [intention_followup] → reveal
@@ -542,6 +543,8 @@ export default function CheckinFlow({ session, context = 'manual', onComplete, o
   const [nextItemState,    setNextItemState]    = useState(null)
   const [itemResponses,    setItemResponses]    = useState([])
   const [itemIndex,        setItemIndex]        = useState(0)
+  // Each check-in phase and item starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(`${phase}:${itemIndex}`)
 
   // WP4 intention state
   const [prevIntention,        setPrevIntention]        = useState(null)  // previous check-in's intention text
