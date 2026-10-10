@@ -16,7 +16,8 @@ Read §1 (decisions) before writing code. Several choices change what gets built
   - Live `sf-background` / `sf-sfs` definitions updated and verified byte-identical to `scripts/sense_foraging/study1/*.json` (canonical-jsonb md5).
   - Until `dev` is promoted, radlab.zone renders them without branching or the multiple-choice decline. **Test Study 1 on dev.radlab.zone.**
 - **P4 decline: no new code needed.** The PSY240 trial session shipped "No thanks" (`studies.decline_message`, `decline_consent()`, applied live; ConsentGate on `dev`). Study 1's message tells people to return the submission on Prolific.
-- **Attention checks renamed** `sfs_attn_check` / `maia_attn_check`. The export names a column by an item's trailing digits, so `_attn_1` would have exported as `_1` ("item 1").
+- **Two attention checks in Study 1 (Norm, 2026-10-09)**: `sfs_attn_disagree` (pages 1–2) and `sfs_attn_agree` (pages 3–4). They ask for different answers, offer no "Prefer not to answer", and **failing both excludes from analysis**; failing one is flagged. Live `sf-sfs` verified identical to the file; pool 5's sheets updated. Still open: whether a double fail is also rejected on Prolific (recommended: no, because the consent promises payment for time spent).
+- **Attention checks renamed** (`sfs_attn_*`, `maia_attn_check`). The export names a column by an item's trailing digits, so `_attn_1` would have exported as `_1` ("item 1").
 - **Next:** P5 (identity table + de-identification + `?test=1`), then P6 (posting column).
 - **De-identification decided (2026-10-09):** the scrub specification and timeline are in §5a, and the how-to is in website.md §26c. Open: offsite-backup retention (§5a, option (b) recommended).
 
@@ -121,12 +122,12 @@ Clusters:
 | Reward / Awe | 25–27 |
 | View: openness | 28–32 |
 
-Rules. There are 33 slots (32 items + `sfs_attn_1`) on pages of 9, 8, 8 and 8.
+Rules. There are 34 slots (32 items + the two checks) on pages of 9, 9, 8 and 8.
 - Two items from the same cluster are at least 3 positions apart.
 - The 11 View items are never adjacent.
 - The flagged pairs 4–13, 16–18, 1–9 and 6–16 are at least 3 apart.
 - No page carries more than 2 items from one cluster or more than 3 View items.
-- The check sits in positions 11–24, never first or last on a page.
+- The Disagree check sits in positions 3–16 (pages 1–2) and the Agree check in 20–33 (pages 3–4), never first or last on a page.
 
 Method: a bounded random depth-first search with deterministic restarts, seeded per participant.
 
@@ -361,7 +362,7 @@ P7 (reconciliation panel) can start as manual SQL. A `send_time` default in `aut
    - Kept instead: `wave` (study + calendar month of collection, e.g. `S1-2026-11`) and `minutes_total`, rounded to whole minutes and top-coded at 60.
    - Per-instrument minutes are rounded the same way and top-coded at 30. Prolific's time taken is in seconds; a whole-minute value with no date leaves dozens of matches per value.
 3. **Quality flags, computed from the exact times before they are dropped**, per the criteria preregistered before data collection:
-   - `attn_sfs_pass`, `attn_maia_pass` (Study 2);
+   - `attn_failed` (0–2 Sense Foraging checks failed; **2 = excluded from analysis**), `attn_maia_pass` (Study 2);
    - `speeder` (median seconds per item below the declared floor);
    - `longstring_max` (longest run of identical answers);
    - `pna_count`.

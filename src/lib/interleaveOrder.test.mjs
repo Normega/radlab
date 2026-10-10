@@ -7,11 +7,12 @@ import { interleaveOrder, orderViolations, validateInterleaveSpec } from './inte
 
 const id = n => `sfs_${String(n).padStart(2, '0')}`
 const ids = ns => ns.map(id)
-const CHECK = 'sfs_attn_check'
+const CHECK = 'sfs_attn_disagree'
+const CHECK2 = 'sfs_attn_agree'
 
 const SPEC = {
-  items: [...ids(Array.from({ length: 32 }, (_, i) => i + 1)), CHECK],
-  page_sizes: [9, 8, 8, 8],
+  items: [...ids(Array.from({ length: 32 }, (_, i) => i + 1)), CHECK, CHECK2],
+  page_sizes: [9, 9, 8, 8],
   clusters: {
     action: ids([1, 6, 7, 8, 9]), practice: ids([2, 3]), drift: ids([4, 13, 14]),
     view_core: ids([5, 10, 11, 12]), view_stress: ids([16, 18]), normalizing: ids([15, 17]),
@@ -23,7 +24,10 @@ const SPEC = {
   groups: [{ items: ids([5, 10, 11, 12, 16, 18, 28, 29, 30, 31, 32]), min_gap: 2, max_per_page: 3 }],
   pairs: [[id(4), id(13)], [id(16), id(18)], [id(1), id(9)], [id(6), id(16)]],
   pair_min_gap: 3,
-  anchored: { [CHECK]: { min_position: 11, max_position: 24, not_page_edge: true } },
+  anchored: {
+    [CHECK]: { min_position: 3, max_position: 16, not_page_edge: true },
+    [CHECK2]: { min_position: 20, max_position: 33, not_page_edge: true },
+  },
 }
 const SEEDS = 3000
 
@@ -62,16 +66,17 @@ test('items land in every position about equally often', () => {
   }
   for (let n = 1; n <= 32; n++) {
     const mean = sum[id(n)] / SEEDS
-    assert.ok(mean > 15 && mean < 19, `${id(n)} mean position ${mean.toFixed(2)} (balanced = 17)`)
+    assert.ok(mean > 15.5 && mean < 19.5, `${id(n)} mean position ${mean.toFixed(2)} (balanced = 17.5)`)
     const share = first[id(n)] / SEEDS
     assert.ok(share > 0.015 && share < 0.06, `${id(n)} opens ${(share * 100).toFixed(1)}% of orders (balanced ≈ 3.1%)`)
   }
-  const checkMean = sum[CHECK] / SEEDS
-  assert.ok(checkMean >= 11 && checkMean <= 24)
+  // One check in each half of the scale, every time.
+  assert.ok(sum[CHECK] / SEEDS >= 3 && sum[CHECK] / SEEDS <= 16)
+  assert.ok(sum[CHECK2] / SEEDS >= 20 && sum[CHECK2] / SEEDS <= 33)
 })
 
 test('the rule checker sees a clumped order (so "no violations" means something)', () => {
-  const plain = [...SPEC.items.slice(0, 20), CHECK, ...SPEC.items.slice(20, 32)]
+  const plain = [...SPEC.items.slice(0, 10), CHECK, ...SPEC.items.slice(10, 22), CHECK2, ...SPEC.items.slice(22, 32)]
   // Written order: sfs_06..sfs_09 (all Action) sit side by side.
   assert.ok(orderViolations(SPEC, plain).length > 0)
 })

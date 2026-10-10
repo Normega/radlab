@@ -3108,7 +3108,7 @@ so `npm test` covers it directly.
 - **Export naming trap, noted for every study.** The wide export names a questionnaire column by the
   item id's **trailing digits** (`sfs_07` → `<prefix>_07`). An id like `attn_1` would therefore export as
   `<prefix>_1`, indistinguishable from item 1. Give non-item components ids that end in a word
-  (`sfs_attn_check`).
+  (`sfs_attn_disagree`).
 
 ### Pages start at the top (2026-10-09)
 
@@ -4697,7 +4697,10 @@ $12/h, and offer the separate Borealis deposit consent.
 
 - **Studies:**
   - "Sense Foraging Study 1 (EFA)" `74cb6aa5-857c-408e-adfa-a5556acd62b7`: `sf-background`
-    ("About you") → `sf-sfs` ("How you pay attention", interleaved, with `sfs_attn_check`) → debrief.
+    ("About you") → `sf-sfs` ("How you pay attention", interleaved) → debrief.
+  - Two attention checks among the 32 items: `sfs_attn_disagree` (pages 1–2) and `sfs_attn_agree`
+    (pages 3–4). They ask for different answers and offer no "Prefer not to answer". **Failing both
+    excludes from analysis**; failing one is flagged.
   - "Sense Foraging Study 2 (DRAFT, pool 4 wording)" `fe7eb24e-c4c0-43ae-87c4-e55e7314d411`: a full
     Study 2 test drive on `sfdraft-*` questionnaires, retired once Study 2 is built properly.
   - Both are `online_single` with no design graph, entered through `/study/join`, and use
@@ -4758,7 +4761,7 @@ form says.
   - `minutes_total`, rounded to whole minutes and top-coded at 60;
   - per-instrument minutes, rounded and top-coded at 30.
 - **Quality flags computed from the exact times first**, by the preregistered rules:
-  - `attn_sfs_pass` / `attn_maia_pass`;
+  - `attn_failed` (0–2; 2 = excluded) / `attn_maia_pass`;
   - `speeder`;
   - `longstring_max`;
   - `pna_count`.

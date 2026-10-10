@@ -38,14 +38,22 @@ SFS_PAGES = [[30, 23, 17, 14, 12, 25, 2, 24, 10],
              [26, 9, 28, 27, 16, 19, 8, 31]]
 # Attention checks end in a word, not a digit: the export names a column by an
 # item's trailing digits, so `sfs_attn_1` would export as `_1`, i.e. "item 1".
-SFS_CHECK = 'sfs_attn_check'
+# Study 1 has two (Norm, 2026-10-09): different instructed answers, so a run of
+# identical answers cannot pass both; one in each half; failing BOTH excludes.
+# They are instructions, not questions about the person, so they offer no
+# "Prefer not to answer": anything but the instructed answer is a fail.
+SFS_CHECK = 'sfs_attn_disagree'          # the draft's single check
+SFS_CHECKS = {                           # id: (correct value, label to select)
+    'sfs_attn_disagree': (2, 'Disagree'),
+    'sfs_attn_agree': (5, 'Agree'),
+}
 
 # Interleave rules (pool 5's facet key; verified by interleaveOrder.test.mjs).
 def sfs_interleave():
     i = lambda ns: [f'sfs_{n:02d}' for n in ns]
     return {
-        'items': i(range(1, 33)) + [SFS_CHECK],
-        'page_sizes': [9, 8, 8, 8],
+        'items': i(range(1, 33)) + list(SFS_CHECKS),
+        'page_sizes': [9, 9, 8, 8],
         'clusters': {
             'action': i([1, 6, 7, 8, 9]), 'practice': i([2, 3]), 'drift': i([4, 13, 14]),
             'view_core': i([5, 10, 11, 12]), 'view_stress': i([16, 18]), 'normalizing': i([15, 17]),
@@ -57,7 +65,11 @@ def sfs_interleave():
         'groups': [{'items': i([5, 10, 11, 12, 16, 18, 28, 29, 30, 31, 32]), 'min_gap': 2, 'max_per_page': 3}],
         'pairs': [i([4, 13]), i([16, 18]), i([1, 9]), i([6, 16])],
         'pair_min_gap': 3,
-        'anchored': {SFS_CHECK: {'min_position': 11, 'max_position': 24, 'not_page_edge': True}},
+        # pages 1-2 = positions 1-18, pages 3-4 = 19-34: one check in each half.
+        'anchored': {
+            'sfs_attn_disagree': {'min_position': 3, 'max_position': 16, 'not_page_edge': True},
+            'sfs_attn_agree': {'min_position': 20, 'max_position': 33, 'not_page_edge': True},
+        },
     }
 
 
@@ -159,20 +171,39 @@ def build_sfs(slug='sfdraft-sfs-pool4', name='Sense Foraging Scale (DRAFT, pool 
     definition = next(r[1].value for r in wb['Instructions'].iter_rows()
                       if r[0].value == 'Pool 4 definition shown before the items')
     assert len(rows) == 32
-    check = likert(SFS_CHECK, 'To show that you are reading each statement, please select '
-                   'Disagree for this one.', SFS_POINTS)
-    pages = []
-    for p, items in enumerate(SFS_PAGES, 1):
-        comps = [check if i == 'A' else likert(f'sfs_{i:02d}', rows[i], SFS_POINTS) for i in items]
-        pages.append({'id': f'sfs_p{p}', 'components': comps})
+    def check(cid):
+        c = likert(cid, 'To show that you are reading each statement, please select '
+                   f'{SFS_CHECKS[cid][1]} for this one.', SFS_POINTS)
+        del c['allow_pna']
+        return c
+
+    item = lambda i: check(i) if i in SFS_CHECKS else likert(i, rows[int(i[4:])], SFS_POINTS)
+    if interleave:
+        # The written pages are the renderer's fallback if no order can be drawn,
+        # so they are themselves a valid interleaved order (fixed seed).
+        layout = fallback_pages(sfs_interleave())
+    else:
+        layout = [[SFS_CHECK if i == 'A' else f'sfs_{i:02d}' for i in page] for page in SFS_PAGES]
+    pages = [{'id': f'sfs_p{p}', 'components': [item(i) for i in ids]} for p, ids in enumerate(layout, 1)]
     instructions = (definition + '\n\nPlease rate how much you feel that each statement describes '
                     'you right now, on a scale of 1-6.')
     q = questionnaire(slug, name, instructions, pages)
     if interleave:
-        # The written pages (seed 12345, itself a valid order) stay as the
-        # fallback the renderer uses if no order can be drawn.
         q['interleave'] = sfs_interleave()
     return q
+
+
+def fallback_pages(spec):
+    """A valid interleaved order for a fixed seed, from the platform's own code."""
+    import subprocess
+    lib = (Path(__file__).resolve().parents[2] / 'src' / 'lib' / 'interleaveOrder.js').as_uri()
+    js = ("import { interleaveOrder } from '" + lib + "';"
+          "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{"
+          "const r=interleaveOrder(JSON.parse(d),'definition-fallback');"
+          "if(!r){process.exit(1)};process.stdout.write(JSON.stringify(r.pages))})")
+    out = subprocess.run(['node', '--input-type=module', '-e', js], input=json.dumps(spec),
+                         capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)
 
 
 def appendix_items(paras, heading):
