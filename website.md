@@ -4719,7 +4719,6 @@ $12/h, and offer the separate Borealis deposit consent.
 - **Test enrollments** use external ids `SF1-NORM-*` / `SFDRAFT-NORM-*` and are marked `is_test`.
 
 **Still to build before launch:**
-- P5 identity handling (below);
 - P6 posting column in the export;
 - the amended forms;
 - Prolific completion code;
@@ -4736,7 +4735,7 @@ times, **time taken in seconds**, and verified profile (age, country, and any de
 participant gave it). Exact times, exact durations or a rare demographic combination in our data could
 re-link a row. So the procedure removes those too.
 
-**1. At arrival (P5, to build)**
+**1. At arrival (built and live 2026-10-09, §28 "Separate external identity"; Study 1 has the switch on)**
 - The Prolific ID is written **only** to `external_identities`. Enrollment, auth email and display
   names carry a random surrogate (`SF1-…`).
 - The join URL carries the IDs in the **fragment** (`/study/join#study_id=…&PROLIFIC_PID=…`), which
@@ -4744,7 +4743,8 @@ re-link a row. So the procedure removes those too.
 - The offsite backup dumps `external_identities` without its rows.
 
 **2. Per batch, at least 48 h after completion and once Prolific payment is approved**
-- Run `deidentify_external_enrollments(study_id, before)` (P5). It refuses anything younger than 48 h,
+- Run `select deidentify_external_enrollments('<study>', '<paid through>')` (dry run), then again with
+  `, true` to delete. It never touches anything younger than 48 h,
   deletes the identity rows and stamps `deidentified_at`.
 - It also removes identity rows for decliners and never-consenters, whatever their age (REB: nothing kept
   about non-participants).
@@ -8148,7 +8148,9 @@ Onboarding is Wed Oct 14 in class.
 - [x] Study 1 built, Prolific join path tested (2026-10-09)
 - [x] Interleaved item order, `show_if`, multiple-choice "Prefer not to answer" (on dev 2026-10-09)
 - [x] De-identification and sharing procedure decided (§26c)
-- [ ] P5: `external_identities`, fragment join URL, `deidentify_external_enrollments`, `?test=1`, backup exclusion
+- [x] P5: `external_identities`, fragment join URL, `deidentify_external_enrollments`, `test=1` (live 2026-10-09; Study 1 switched on)
+- [ ] Offsite backup: `--exclude-table-data=public.external_identities` in `Normega/radlab-backups`
+- [ ] Confirm with Prolific's preview that `{{%PROLIFIC_PID%}}` is substituted inside a `#` fragment
 - [ ] P6: posting column in the export
 - [ ] `scripts/sense_foraging/deidentify.py` (shareable file + report)
 - [ ] Amended Study 1 consent/debrief in place; Prolific completion code; 20-person pilot

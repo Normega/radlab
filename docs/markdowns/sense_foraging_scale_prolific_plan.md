@@ -18,7 +18,13 @@ Read §1 (decisions) before writing code. Several choices change what gets built
 - **P4 decline: no new code needed.** The PSY240 trial session shipped "No thanks" (`studies.decline_message`, `decline_consent()`, applied live; ConsentGate on `dev`). Study 1's message tells people to return the submission on Prolific.
 - **Two attention checks in Study 1 (Norm, 2026-10-09)**: `sfs_attn_disagree` (pages 1–2) and `sfs_attn_agree` (pages 3–4). They ask for different answers, offer no "Prefer not to answer", and **failing both excludes from analysis**; failing one is flagged. Live `sf-sfs` verified identical to the file; pool 5's sheets updated. **A double fail is still paid** (Norm, 2026-10-09: "accept it as the cost of online testing"). Approve the submission on Prolific; exclude only from analysis. The consent promises payment for time spent.
 - **Attention checks renamed** (`sfs_attn_*`, `maia_attn_check`). The export names a column by an item's trailing digits, so `_attn_1` would have exported as `_1` ("item 1").
-- **Next:** P5 (identity table + de-identification + `?test=1`), then P6 (posting column).
+- **P5 built and live (2026-10-09, on `main` `8a3e93a` + `ec7070a`, auto-enroll redeployed from `main`).**
+  - Study 1 has `separate_external_identity = true`.
+  - Live test: a fake Prolific ID existed only in `external_identities`; enrollment, auth email, display names and the auth audit log held the surrogate; the session id was not stored; re-entry returned the same link. A flag-off study (the draft) behaved exactly as before.
+  - **Found and fixed during that test:** the first version looked the ID up with a GET, so it appeared in the API gateway log. It is now an RPC (POST), and a re-test found no trace in any log.
+  - Probed in rolled-back transactions first.
+- **Still open for P5:** the offsite-backup exclusion (`Normega/radlab-backups`, Norm's repo), and a check with Prolific's preview that placeholders are substituted inside a `#` fragment. Until that check, the admin page's fragment link is unproven; the query-string link still works.
+- **Next:** P6 (posting column in the export), then `deidentify.py` (§5a).
 - **De-identification decided (2026-10-09):** the scrub specification and timeline are in §5a, and the how-to is in website.md §26c. Open: offsite-backup retention (§5a, option (b) recommended).
 
 ---
@@ -185,7 +191,7 @@ Rules that apply throughout:
 - A narrow `record_consent_decline` definer RPC **deletes the participant's enrollment and schedule rows**. Nothing about a non-participant is retained.
 - A sweep removes enrollments that never consented, older than the link expiry. It covers people who simply close the tab.
 
-**P5 — Prolific identity handling (G5, G6, G9, D6).** Migration + Edge Function + frontend (main). The biggest piece. Design as decided 2026-10-09: one identity table, deleted after payment.
+**P5 — Prolific identity handling (G5, G6, G9, D6). BUILT 2026-10-09; see the status block above.** Migration + Edge Function + frontend (main). The biggest piece. Design as decided 2026-10-09: one identity table, deleted after payment.
 - **`external_identities`** (study_id, external_id = the Prolific ID, surrogate, created_at): the only place a Prolific ID is ever written. RLS: no participant access; lab read; writes only through `auto-enroll` (service role) and the de-identification RPC.
 - `auto-enroll`, for a study with `studies.separate_external_identity = true`:
   - looks the Prolific ID up in that table (re-entry and cross-posting dedupe still work);
@@ -198,7 +204,7 @@ Rules that apply throughout:
   - **Verify with Prolific's preview that it substitutes placeholders inside a fragment.** If it does not, keep the query string and note Vercel's log retention instead.
 - **Offsite backup** (`Normega/radlab-backups`): `pg_dump --exclude-table-data=public.external_identities`. The table's shape is backed up; its rows never are.
 - **`?test=1`** (or `test=1` in the fragment) marks the enrollment `is_test` (port of `49f9d93`).
-- **`deidentify_external_enrollments(study_id, before)`** (lab-only RPC):
+- **`deidentify_external_enrollments(study_id, paid_through, confirm := false)`** (lab-only RPC; dry run by default):
   - **refuses** rows completed less than 48 h ago;
   - deletes the matching `external_identities` rows (after this the Prolific ID exists nowhere we hold, apart from Supabase's own ≤7-day snapshots);
   - stamps `study_enrollments.deidentified_at`;
