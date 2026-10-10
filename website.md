@@ -4700,7 +4700,8 @@ $12/h, and offer the separate Borealis deposit consent.
     ("About you") → `sf-sfs` ("How you pay attention", interleaved) → debrief.
   - Two attention checks among the 32 items: `sfs_attn_disagree` (pages 1–2) and `sfs_attn_agree`
     (pages 3–4). They ask for different answers and offer no "Prefer not to answer". **Failing both
-    excludes from analysis**; failing one is flagged.
+    excludes from analysis but is still paid** (approve on Prolific: the consent promises payment for
+    time spent, and Norm accepts the loss as the cost of online testing). Failing one is flagged.
   - "Sense Foraging Study 2 (DRAFT, pool 4 wording)" `fe7eb24e-c4c0-43ae-87c4-e55e7314d411`: a full
     Study 2 test drive on `sfdraft-*` questionnaires, retired once Study 2 is built properly.
   - Both are `online_single` with no design graph, entered through `/study/join`, and use
