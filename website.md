@@ -4841,6 +4841,16 @@ $12/h, and offer the separate Borealis deposit consent.
   - **Plan (Norm)**: a quick EFA before Oct 17. The cutting rules are the best 3–4 items per factor plus 4–6
     reversal pairs for the trial (~25 items), with the final call made on the loadings. Gated on the
     amendment.
+- **Study 1 consent and debrief (2026-10-10)**: the approved Rev2 forms with five consent paragraphs and four
+  debrief paragraphs replaced: purpose, the procedure (background + 48 statements + two checks, ~10 min), the
+  "Prefer not to answer" option, risks without the mood screener, and pay (~$2.00 at $12/h, unaffected by
+  answers). The debrief explains the reversed items and the checks, and moves the validity measures to "a later
+  study".
+  - Built by `scripts/sense_foraging/build_study1_forms.py`, which fails unless every replaced paragraph is
+    found verbatim in the approved text.
+  - `study1/forms_changes.md` lists each change, approved text beside new, for the amendment.
+  - Inserted as new form rows; the old ones stay. The live rows were checked equal to the files.
+  - The banner reads "Study 1 wording, pending REB approval of the amendment" and is removed at launch.
 
 **On the platform (2026-10-09)**
 
@@ -8302,7 +8312,8 @@ Onboarding is Wed Oct 14 in class.
 - [ ] Confirm with Prolific's preview that `{{%PROLIFIC_PID%}}` is substituted inside a `#` fragment
 - [ ] P6: posting column in the export
 - [ ] `scripts/sense_foraging/deidentify.py` (shareable file + report)
-- [ ] Amended Study 1 consent/debrief in place; Prolific completion code; 20-person pilot
+- [x] Study 1 consent/debrief revised for the scale-only design (2026-10-10; banner off once the amendment is approved)
+- [ ] Prolific completion code; 20-person pilot
 - [ ] Study 2 (scale-order shuffle P2, validity-scale PNA on the life-satisfaction step) after Study 1 closes
 - [ ] Decide offsite-backup retention for the collection months
 - [x] Pool 5 chosen as the instrument, on the 6-point scale with "Prefer not to answer"; `sf-pool-5` and `psy240-sf-pool-5` converted (2026-10-10)
