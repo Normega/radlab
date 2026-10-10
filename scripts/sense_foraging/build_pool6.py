@@ -34,8 +34,9 @@ SLOTS = [
                       'Matched on referent and time frame ("in everyday life").'),
                      (7, 'Once I notice I have slipped into the doing mode, I stay stuck there until something changes',
                       'Conditions on noticing, so it does not depend on trained insight (rule 6); longer.'), 'a'),
-    ('R3', 'Practice', (3, 'For me, the sensing mode and the doing mode feel like the same thing',
-                        'A clean contradictory of "different in kind"; shorter than its partner.'),
+    ('R3', 'Practice', (3, 'For me, the sensing mode and the doing mode blur together',
+                        'Contradicts "different in kind". Was "feel like the same thing", which fails rule 3: someone '
+                        'who sees a difference of degree disagrees with both items.'),
                        (2, 'The sensing mode feels available to me only at certain times',
                         'Contradicts "always available"; mild, so it is matched in intensity.'), 'a'),
     ('R4', 'Labelling', (33, 'When I try to name what I am sensing, I get caught up in thinking about it',
@@ -90,11 +91,38 @@ SLOTS = [
                              '"little" is a near-negation; weaker match to "look forward to".'), 'a'),
 ]
 
-# Interleave clusters for Study 1 (pool 5's facets; Labelling joins Practice's spacing).
-CLUSTER = {'Action': 'Action', 'Practice': 'Practice', 'Labelling': 'Labelling', 'Completeness': 'Completeness',
-           'Drift awareness': 'Drift-awareness', 'Normalising stress': 'Normalizing', 'Safety': 'Safety',
-           'View': 'View: core', 'View under stress': 'View: under stress', 'Openness': 'View: openness',
-           'Reward / awe': 'Reward / Awe'}
+# The 7 hypothesized factors (Norm, 2026-10-10): pool 5's 11 facets grouped so every
+# factor has at least 3 positively keyed items. They are the EFA's target and the
+# interleave clusters; the 11-facet key stays as the pre-registered alternative.
+FACTOR = {'Action': 'Action', 'View': 'View', 'View under stress': 'View', 'Openness': 'Openness',
+          'Reward / awe': 'Reward / awe', 'Practice': 'Mode awareness', 'Drift awareness': 'Mode awareness',
+          'Completeness': 'Noting without elaborating', 'Labelling': 'Noting without elaborating',
+          'Normalising stress': 'Stress and safety', 'Safety': 'Stress and safety'}
+FACTOR_ORDER = ['Action', 'View', 'Openness', 'Reward / awe', 'Mode awareness', 'Noting without elaborating',
+                'Stress and safety']
+
+# Suggested rewording of pool 5 items: NOT applied. Pool 5 is the PSY240 trial's live
+# wording (launch Oct 17), so any change goes to both, before data, or to neither.
+SUGGEST = {
+    17: ('When stress narrows my attention, I see it as a natural response rather than a personal failing',
+         'Priority. The pool\'s only negation ("I do not view…") and two sentences in one item. Also makes 41 its exact opposite.'),
+    10: ('I feel I have a choice between the sensing mode and the doing mode',
+         '"I realize I always have…" presupposes the course\'s claim is true, so it measures accepting the teaching '
+         '(the RCT\'s agreement threat) more than experience; "always" invites extreme answers.'),
+    2: ('I can find the sensing mode whenever I turn to it',
+        'Same issue as 10: "I recognize that … is always available" presupposes the teaching. This asks about experience.'),
+    18: ('When stress narrows my focus, returning to the sensing mode matters even more to me',
+         'Shorter (21 words to 16); "extra value … narrow, familiar responses" is abstract. Watch it with 16 either way.'),
+    27: ('I look forward to how sensory exploration feels, not just to getting better at it',
+         '"look forward to … the skill of doing it" reads oddly: one does not look forward to a skill.'),
+    32: ('When I am in the sensing mode, I am drawn to uncertainty and ambiguity',
+         '"not just tolerant of it" adds a second claim; a tolerant middle person has nowhere to stand (rule 3).'),
+    8: ('I can move into the sensing mode in new or unfamiliar places, not only at times set aside for it',
+        '"when I set time aside to practise" assumes a practice that most people at intake do not have.'),
+    15: ('(keep, or decide what it measures)',
+         'A belief about people in general ("I understand that stress … pulls people"), which the course teaches; '
+         'after the course, agreeing may mean having learned it. Fine if Stress and safety is meant to include beliefs.'),
+}
 
 RULES = [
     ('1', 'Reverse the construct, not the sentence', 'Describe the low pole\'s stance or behaviour, never the absence of the skill.'),
@@ -113,8 +141,9 @@ RULES = [
 
 PLACEMENT = [
     ('Pages', '48 items + 2 attention checks = 50 slots on 6 pages (9, 9, 8, 8, 8, 8); about 7 minutes.'),
-    ('Kept from pool 5', 'Cluster spacing (3 apart), View never adjacent, flagged pairs 4-13, 16-18, 1-9, 6-16 apart, '
-                         'no more than 2 per cluster per page, the two attention checks in their halves.'),
+    ('Clusters', 'The 7 hypothesized factors: two items of one factor at least 3 positions apart, no more than 2 of a '
+                 'factor on a page. Kept from pool 5: flagged pairs 4-13, 16-18, 1-9, 6-16 apart, and the two attention '
+                 'checks in their halves.'),
     ('New: partners apart', 'Each reversal on a different page from its partner (Weijters, Geuens & Schillewaert 2009).'),
     ('New: reversals spread', 'Never two reversals adjacent; 2-3 per page; no run of more than 5 positive items.'),
     ('New: away from checks', 'No reversal first on page 1, or next to an attention check.'),
@@ -128,7 +157,9 @@ ANALYSIS = [
     ('Screening', 'Exclusion rule unchanged (fail both attention checks). Antonym-pair inconsistency (pairs correlating -.60 or '
                   'below), longstring and seconds per item are FLAGS and a sensitivity analysis, never exclusions: '
                   'inconsistency also tracks reading level and mid-trait position. Tabulate Prefer not to answer by keying.'),
-    ('Study 1 EFA', 'Polychoric, WLSMV, items unrecoded. Random-intercept ESEM with target rotation to the facets. Screen the '
+    ('Factors', 'Hypothesis: 7 factors (Item Pool column F). Pre-registered alternative: pool 5\'s 11 facets (column E). '
+                'Parallel analysis decides the number; expect the data to merge or split some of the 7.'),
+    ('Study 1 EFA', 'Polychoric, WLSMV, items unrecoded. Random-intercept ESEM with target rotation to the 7 factors. Screen the '
                     'flagged near-duplicate pairs first. A factor made mainly of reversals is a method factor, not a facet. '
                     'Sensitivity: siren (Lorenzo-Seva & Ferrando), positive items only, without flagged respondents.'),
     ('Item retention', 'Keep a reversal if it loads on its facet comparably to the facet\'s positive items (random-intercept '
@@ -181,7 +212,14 @@ def main():
     info = [
         ('Sense Foraging outcome questionnaire: item pool 6 (PROPOSAL, 2026-10-10)', ''),
         ('', ''),
-        ('Status', 'Proposal for Norm. Not approved, not on the platform, not yet in the ethics amendment.'),
+        ('Status', "Built to Norm's go-ahead (2026-10-10): 48 items, 7 hypothesized factors. Not yet on the platform or "
+                   'in the ethics amendment; the wording suggestions (Item Pool, columns I-J) await his decision.'),
+        ('Factors', "Pool 5's 11 facets grouped into 7, so that every factor has at least 3 positively keyed items (a "
+                    'factor needs 3 to be identified on its own, and 4+ in an EFA where items get dropped): Action; View '
+                    '(+ View under stress); Openness; Reward / awe; Mode awareness (Practice + Drift awareness); Noting '
+                    'without elaborating (Completeness + Labelling); Stress and safety (Normalising stress + Safety). '
+                    'Counts on the Factors sheet. The 11 facets stay as the pre-registered alternative. Cost: Labelling and '
+                    'Normalising stress cannot be reported as separate outcomes.'),
         ('What it is', 'Pool 5 (34 items, Oct 6 wording, unchanged) plus 14 reverse-keyed items, picked from 28 candidates '
                        '(two per slot, on the Reversal candidates sheet). 48 items, 29% reversed.'),
         ('Why', 'An all-positive scale cannot separate agreeing from the content. That matters most in the RCT: the course '
@@ -191,8 +229,8 @@ def main():
         ('Why 14', 'The only tested ratio for the random-intercept model is about one third reversed (de la Fuente & Abad '
                    '2020). A few reversals among many positives is the design the literature warns against (Weijters, '
                    'Baumgartner & Schillewaert 2013).'),
-        ('Where', 'One per facet except Drift awareness, plus a second in Action, View, Openness and Completeness. '
-                  'Never a whole facet reversed.'),
+        ('Where', 'In every factor, never a whole factor reversed, and none on Drift awareness items. By factor: Action 2, '
+                  'View 3, Openness 2, Reward 1, Mode awareness 1, Noting 3, Stress and safety 2.'),
         ('Not reversed', 'Drift awareness: training raises noticing, so a reversed autopilot item could get WORSE as the '
                          'skill improves (MAAS; FFMQ Acting with Awareness failed invariance over treatment). Its four '
                          'items stay positive and are framed as catching the drift.'),
@@ -223,12 +261,26 @@ def main():
     for n, slot, facet, partner, text in picks:
         partner_of.setdefault(partner, []).append(n)
     for i in POOL5['items']:
-        pool.append((i['n'], i['id'], i['text'], 'positive', i['facet'], CLUSTER[i['facet']],
-                     ', '.join(map(str, partner_of.get(i['n'], []))), 'pool 5 (unchanged)'))
+        sug, why = SUGGEST.get(i['n'], ('', ''))
+        pool.append((i['n'], i['id'], i['text'], 'positive', FACTOR[i['facet']], i['facet'],
+                     ', '.join(map(str, partner_of.get(i['n'], []))), 'pool 5 (unchanged)', sug, why))
     for n, slot, facet, partner, text in picks:
-        pool.append((n, f'sf6_{n}', text, 'REVERSED', facet, CLUSTER[facet], str(partner), f'new (slot {slot})'))
-    sheet(wb, 'Item Pool', ['Item #', 'Platform id', 'Wording', 'Keying', 'Facet (pool 5 key)', 'Interleave cluster',
-                            'Paired with', 'Source'], pool, [8, 12, 90, 11, 20, 18, 10, 18])
+        pool.append((n, f'sf6_{n}', text, 'REVERSED', FACTOR[facet], facet, str(partner), f'new (slot {slot})', '', ''))
+    pool.sort(key=lambda r: (FACTOR_ORDER.index(r[4]), r[3] != 'positive', r[0]))
+    sheet(wb, 'Item Pool', ['Item #', 'Platform id', 'Wording', 'Keying', 'Hypothesized factor (7)', 'Facet (pool 5 key, 11)',
+                            'Paired with', 'Source', 'Suggested rewording (NOT applied)', 'Why'],
+          pool, [8, 12, 80, 11, 24, 20, 10, 16, 60, 70])
+    counts = []
+    for f in FACTOR_ORDER:
+        rows = [r for r in pool if r[4] == f]
+        pos = [r[0] for r in rows if r[3] == 'positive']
+        rev = [r[0] for r in rows if r[3] == 'REVERSED']
+        facets = sorted({r[5] for r in rows}, key=lambda x: [r[5] for r in pool].index(x))
+        counts.append((f, ' + '.join(facets), len(pos), ', '.join(map(str, pos)), len(rev), ', '.join(map(str, rev)), len(rows)))
+        assert len(pos) >= 3, f
+    counts.append(('Total', '', 34, '', 14, '', 48))
+    sheet(wb, 'Factors', ['Hypothesized factor', 'Pool 5 facets', 'Positive', 'Items', 'Reversed', 'Items', 'Total'],
+          counts, [26, 40, 9, 26, 9, 18, 7])
     sheet(wb, 'Reversal candidates', ['Slot', 'Candidate', 'Facet', 'Partner #', 'Partner (pool 5)', 'Reversed candidate',
                                       'Proposed', 'Note'], cand_rows, [6, 10, 18, 9, 60, 60, 10, 70])
     sheet(wb, 'Drafting rules', ['#', 'Rule', 'Detail'], RULES, [5, 36, 110])

@@ -4794,9 +4794,16 @@ $12/h, and offer the separate Borealis deposit consent.
     (`20261010_sf_pool_5_six_point.sql`). Ids `sf5_*`, wording, the facet-rotating order, the instructions
     and the facet key (`scoring`, kept as documentation) are unchanged.
   - Checked against a pre-change backup with the composable validator. Neither instrument had a response.
-- **Pool 6, proposed, not approved**: pool 5 + 14 reverse-keyed items (29%), one per facet except Drift
-  awareness plus a second in the four largest clusters. Each one contradicts a named pool 5 item and uses no
-  negations.
+- **Pool 6, built to Norm's go-ahead (not yet on the platform or in the amendment)**: pool 5 + 14
+  reverse-keyed items (29%), 48 items. Each reversal contradicts a named pool 5 item and uses no negations; none
+  touches Drift awareness.
+  - **Seven hypothesized factors** (Norm, 2026-10-10), so every factor has at least 3 positively keyed items:
+    Action; View (+ View under stress); Openness; Reward / awe; Mode awareness (Practice + Drift awareness);
+    Noting without elaborating (Completeness + Labelling); Stress and safety (Normalising stress + Safety). They
+    are the EFA's rotation target and the interleave clusters; the 11 facets are the pre-registered alternative.
+    Labelling and Normalising stress can no longer be reported as separate outcomes.
+  - The workbook suggests rewordings for 8 pool 5 items (17's negation first), **not applied**: pool 5 is the
+    PSY240 trial's live wording, so a change goes to both before data or to neither.
   - Workbook: `…\MainQuestionnaire\receptive_state_item_pool_6.xlsx`, built by
     `scripts/sense_foraging/build_pool6.py`. It holds 28 candidates with 14 proposed, ten drafting rules, the
     placement rules and the analysis plan.
