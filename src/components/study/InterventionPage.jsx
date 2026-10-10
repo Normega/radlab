@@ -7,6 +7,7 @@ import NoDefaultSlider from './NoDefaultSlider'
 import BreathPracticeBlock from './BreathPracticeBlock'
 import GuidedTextBlock from './GuidedTextBlock'
 import ShowBackBlock from './ShowBackBlock'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,8 @@ export default function InterventionPage({
 
   // Core navigation state
   const [screenIndex, setScreenIndex] = useState(0)
+  // Each screen starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(screenIndex)
   const [nextEnabled, setNextEnabled] = useState(() => initialNextEnabled(screens[0], demoMode))
   const [saveError,   setSaveError]   = useState(null)
   // Ref lock keyed by screen (CLAUDE.md rule 2): a `saving` state flag let two

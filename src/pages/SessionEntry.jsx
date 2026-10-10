@@ -21,6 +21,7 @@ import OpenEmailGate from '../components/study/OpenEmailGate'
 import CompletionRedirectScreen from '../components/study/CompletionRedirectScreen'
 import { useAssignments } from '../hooks/useAssignment'
 import { takeScreenerDraft } from '../lib/screenerDraft'
+import { useScrollToTopOn } from '../lib/scrollToTop'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -36,6 +37,8 @@ export default function SessionEntry() {
   const [state,          setState]          = useState('loading')
   const [sessionData,    setSessionData]    = useState(null)
   const [currentIndex,   setCurrentIndex]   = useState(0)
+  // Each gate and each step starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(`${state}:${currentIndex}`)
   const [consentStudyId, setConsentStudyId] = useState(null)
   // The email gate in its optional form (open_email_after_consent studies).
   const [contactEmailOptional, setContactEmailOptional] = useState(false)
@@ -759,14 +762,14 @@ export default function SessionEntry() {
     const progressPct = totalSteps > 0 ? (currentIndex / totalSteps) * 100 : 0
 
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#FCF0F5', display: 'flex', flexDirection: 'column', zIndex: 200, overflowY: 'auto' }}>
+      <div data-scroll-root style={{ position: 'fixed', inset: 0, background: '#FCF0F5', display: 'flex', flexDirection: 'column', zIndex: 200, overflowY: 'auto' }}>
         <div style={{ height: 4, background: '#e9d5e4', flexShrink: 0 }}>
           <div style={{ height: '100%', background: 'var(--pk)', width: `${progressPct}%`, transition: 'width 0.4s ease' }} />
         </div>
         <p style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textAlign: 'center', padding: '8px 24px 0', margin: 0, flexShrink: 0 }}>
           Step {currentIndex + 1} of {totalSteps}
         </p>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div data-scroll-root style={{ flex: 1, overflowY: 'auto' }}>
           {/* key: adjacent steps of the same category (e.g. two questionnaires)
               must not share a component instance — stale per-step state hangs
               the flow (Zerin baseline PHQ-8 carry-forward → LMS-14).

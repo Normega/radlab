@@ -9,6 +9,7 @@ import { COMPONENT_TYPES } from './componentRegistry'
 import { interleaveOrder } from '../../../lib/interleaveOrder'
 import { visibleComponents, pageIsShown, markNotApplicable } from '../../../lib/composableVisibility'
 import './composableSurvey.css'
+import { useScrollToTopOn } from '../../../lib/scrollToTop'
 
 // The pages this participant sees. Without `interleave` they are the
 // definition's own pages. With it, the listed items are re-ordered by
@@ -54,6 +55,8 @@ export default function ComposableQuestionnaireRenderer({
   const hasInstructions = Boolean(questionnaire.instructions?.trim())
   const [showInstructions, setShowInstructions] = useState(hasInstructions)
   const [pageIndex, setPageIndex] = useState(0)
+  // Each page starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(`${showInstructions}:${pageIndex}`)
   const [responses, setResponses] = useState({})
   const [done, setDone] = useState(false)
   const completedRef = useRef(false)
@@ -121,13 +124,11 @@ export default function ComposableQuestionnaireRenderer({
     }
 
     setPageIndex(nextShown)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function back() {
     if (prevShown != null) {
       setPageIndex(prevShown)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 

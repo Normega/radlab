@@ -76,6 +76,7 @@ import {
 // not copied values, means a change to the survey's look reaches this step too.
 import PreferNotToAnswer from '../questionnaire/composable/PreferNotToAnswer'
 import '../questionnaire/composable/composableSurvey.css'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 // ── Option sets the census does not carry ────────────────────────────────────
 
@@ -274,6 +275,8 @@ export default function StudentDemographicsStep({
   const db = supabaseClient ?? globalSupabase
 
   const [sec, setSec] = useState(0)
+  // Each section starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(sec)
 
   const [age, setAge] = useState(null)
   const [year, setYear] = useState(null)
@@ -480,7 +483,7 @@ export default function StudentDemographicsStep({
 
   async function handleNext() {
     if (!sectionValid[sec] || saving) return
-    if (!isLast) { setSec(s => s + 1); window.scrollTo?.(0, 0); return }
+    if (!isLast) { setSec(s => s + 1); return }
     if (previewMode) { onComplete({ preview: true, responses: buildResponses() }); return }
     // Ref, not just `saving`: setSaving(true) does not take effect until React
     // re-renders, so two events in one tick would both read saving === false and
@@ -773,7 +776,7 @@ export default function StudentDemographicsStep({
           <button
             type="button"
             className="cs-secondary-button"
-            onClick={() => { setSec(s => s - 1); window.scrollTo?.(0, 0) }}
+            onClick={() => setSec(s => s - 1)}
             disabled={saving}
           >
             ← Back

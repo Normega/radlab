@@ -5,6 +5,7 @@ import VasRenderer from '../vas/VasRenderer'
 import SliderQuestion from '../questionnaire/composable/SliderQuestion'
 import { useSubmitLock } from '../../lib/useSubmitLock'
 import '../questionnaire/composable/composableSurvey.css'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 /**
  * Mounts inside StepDispatcher for steps with category 'vas' — or its
@@ -111,6 +112,8 @@ export default function VasStepWrapper({
   }).filter(Boolean)
 
   const [pkgIndex, setPkgIndex] = useState(0)
+  // Each scale starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(pkgIndex)
   // Per-item values collected across the package, reported on completion so
   // each item lands in the session context under its own slider./vas. key.
   const pkgValuesRef = useRef([])

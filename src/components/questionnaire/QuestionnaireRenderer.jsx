@@ -10,6 +10,7 @@ import { buildSlides, prevNavigableIndex, effectiveLabels, isEndpointOnly,
          normalizeChecklistResponses, computeChecklistTotal } from './questionnaireUtils';
 
 import ComposableQuestionnaireRenderer from './composable/ComposableQuestionnaireRenderer';
+import { useScrollToTopOn } from '../../lib/scrollToTop';
 
 const FADE_MS = 150; // slide transition duration
 
@@ -51,6 +52,8 @@ function LegacyQuestionnaireRenderer({
 }) {
   const [slides]  = useState(() => buildSlides(questionnaire)); // built once per mount
   const [slideIdx,   setSlideIdx]   = useState(0);
+  // Each slide starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(slideIdx);
   const [responses,  setResponses]  = useState({});
   const [visible,    setVisible]    = useState(true);  // fade control
   const [done,       setDone]       = useState(false);

@@ -44,6 +44,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 import {
   PNA, GENDER_OPTIONS, TRANS_OPTIONS, TRANS_DEF, ORIENTATION_OPTIONS,
   DISABILITY_DEF, DISABILITY_TYPE_OPTIONS, RACE_OPTIONS, RELIGION_OPTIONS,
@@ -215,6 +216,8 @@ export default function LilianaDemographicsStep({
   const db = supabaseClient ?? globalSupabase
 
   const [sec, setSec] = useState(0)
+  // Each section starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(sec)
 
   const [age, setAge] = useState(null)
   const [gender, setGender] = useState([])
@@ -393,7 +396,7 @@ export default function LilianaDemographicsStep({
 
   async function handleNext() {
     if (!sectionValid[sec] || saving) return
-    if (!isLast) { setSec(s => s + 1); window.scrollTo?.(0, 0); return }
+    if (!isLast) { setSec(s => s + 1); return }
     if (previewMode) { onComplete({ preview: true, responses: buildResponses() }); return }
     // Ref, not just `saving`: setSaving(true) does not take effect until React
     // re-renders, so two events dispatched in the same tick both read
@@ -667,7 +670,7 @@ export default function LilianaDemographicsStep({
         {sec > 0 && (
           <button
             style={S.back}
-            onClick={() => { setSec(s => s - 1); window.scrollTo?.(0, 0) }}
+            onClick={() => setSec(s => s - 1)}
             disabled={saving}
           >
             Back

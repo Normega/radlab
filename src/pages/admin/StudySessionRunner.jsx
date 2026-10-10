@@ -8,6 +8,7 @@ import { advanceSchedule } from '../../lib/scheduleGenerator'
 import StepDispatcher from '../../components/study/StepDispatcher'
 import { PhysioProvider } from '../../components/study/PhysioContext'
 import ConsentGate from '../../components/study/ConsentGate'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 const PHASE = { LOADING: 'LOADING', CONSENT: 'CONSENT', RUNNING: 'RUNNING', SAVING: 'SAVING', COMPLETE: 'COMPLETE' }
 
@@ -48,6 +49,8 @@ export default function StudySessionRunner() {
   const isSimMode  = new URLSearchParams(location.search).get('sim') === '1'
   const [phase,       setPhase]       = useState(PHASE.LOADING)
   const [currentStep, setCurrentStep] = useState(0)
+  // Each step starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(currentStep)
 
   // Fetch enrollment (for participant context and debrief HTML)
   const { data: enrollment, isLoading: enrollLoading } = useQuery({
@@ -225,11 +228,11 @@ export default function StudySessionRunner() {
   return (
     <PhysioProvider isSimMode={isSimMode}>
       {(isLoading || phase === PHASE.LOADING) ? (
-        <div style={S.fullScreen}>
+        <div data-scroll-root style={S.fullScreen}>
           <p style={S.loadingText}>Loading session…</p>
         </div>
       ) : phase === PHASE.CONSENT ? (
-        <div style={S.fullScreen}>
+        <div data-scroll-root style={S.fullScreen}>
           <ConsentGate
             studyId={studyId}
             participantId={enrollment.profile_id}
@@ -239,7 +242,7 @@ export default function StudySessionRunner() {
           />
         </div>
       ) : phase === PHASE.COMPLETE ? (
-        <div style={S.fullScreen}>
+        <div data-scroll-root style={S.fullScreen}>
           <div style={S.completeBox}>
             <div style={S.checkmark}>✓</div>
             <h1 style={S.completeTitle}>Session Complete</h1>
@@ -254,7 +257,7 @@ export default function StudySessionRunner() {
           </div>
         </div>
       ) : phase === PHASE.SAVING ? (
-        <div style={S.fullScreen}>
+        <div data-scroll-root style={S.fullScreen}>
           {advanceStep.isError ? (
             <div style={S.completeBox}>
               <h1 style={S.completeTitle}>Not saved yet</h1>
@@ -271,13 +274,13 @@ export default function StudySessionRunner() {
           )}
         </div>
       ) : (
-        <div style={S.fullScreen}>
+        <div data-scroll-root style={S.fullScreen}>
           <div style={S.progressBarWrap}>
             <div style={{ ...S.progressBarFill, width: `${progressPct}%` }} />
           </div>
           {!['game', 'physio', 'training'].includes(activity?.category) && <p style={S.stepLabel}>{stepLabel}</p>}
 
-          <div style={S.stepContent}>
+          <div data-scroll-root style={S.stepContent}>
             {node ? (
               // key: adjacent steps of the same category (two questionnaires in
               // a row -- here PANAS then PHQ-4) must not share a component

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { interventionStyles as S, OwlScreen } from './InterventionPage'
 import { SESSION_SLOT_LABELS } from './wrapperElements'
 import VasRenderer from '../vas/VasRenderer'
+import { useScrollToTopOn } from '../../lib/scrollToTop'
 
 // Renders one standard session wrapper element (welcome / check-in / farewell).
 // Owl screens use the InterventionPage visual system with the 5-step progress
@@ -15,6 +16,8 @@ export default function WrapperElementPage({ element, onComplete }) {
   const screens = element.screens
   const [screenIndex,   setScreenIndex]   = useState(0)
   const [pkgScaleIndex, setPkgScaleIndex] = useState(0)
+  // Each screen starts at the top of the page (see scrollToTop.js).
+  useScrollToTopOn(`${screenIndex}:${pkgScaleIndex}`)
 
   // At most one vas_package screen per element; fetch its scales in item order.
   const pkgSlug = screens.find(s => s.type === 'vas_package')?.slug ?? null
