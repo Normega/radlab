@@ -125,6 +125,13 @@ ADOPTED = {
          'Shorter (21 words to 16); "extra value … narrow, familiar responses" was abstract.'),
     27: ('I look forward to how sensory exploration feels, not just to getting better at it',
          '"look forward to … the skill of doing it" read oddly.'),
+    4: ('I can see how easily the doing mode becomes my default', 'Trimmed ("clearly", "can become").'),
+    6: ('I can move into the sensing mode even in a stressful or demanding moment', 'Trimmed ("the middle of").'),
+    14: ('I can tell when a moment calls for the doing mode and when it calls for the sensing mode',
+         'Trimmed (23 words to 18).'),
+    23: ('Feeling unsafe or threatened makes it harder for me to stay open to my senses',
+         'Drops the "I notice that" lead-in, which made it partly a noticing item.'),
+    26: ('Engaging my senses fully opens up new ideas or perspectives', 'Trimmed ("I would not have noticed otherwise").'),
     32: ('When I am in the sensing mode, I am drawn to uncertainty and ambiguity',
          '"not just tolerant of it" added a second claim; a tolerant middle person had nowhere to stand (rule 3).'),
 }
@@ -296,6 +303,78 @@ def main():
     sheet(wb, 'Analysis plan', ['Stage', 'Plan (pre-register before Study 1)'], ANALYSIS, [18, 130])
     wb.save(OUT)
     print('wrote', OUT, len(pool), 'items,', sum(1 for r in pool if r[3] == 'REVERSED'), 'reversed')
+    write_study1(pool, picks)
+
+
+# -- Study 1 (EFA) on pool 6 ----------------------------------------------------
+# Every item gets an sf6_ id, the edited pool 5 items included: an id names one
+# wording, and the reduced set the PSY240 trial takes from Oct 17 keeps these ids.
+CHECKS = {'sf6_attn_disagree': (2, 'Disagree'), 'sf6_attn_agree': (5, 'Agree')}
+PAGE_SIZES = [9, 9, 8, 8, 8, 8]          # 48 items + 2 checks; pages 1-3 = slots 1-26
+NEAR_DUPLICATES = [(4, 13), (16, 18), (1, 9), (6, 16), (5, 10)]
+
+
+def study1_interleave(pool, picks):
+    sid = lambda n: f'sf6_{n}'
+    clusters = {f: [sid(r[0]) for r in sorted(pool) if r[4] == f] for f in FACTOR_ORDER}
+    reversed_ids = [sid(n) for n, *_ in picks]
+    return {
+        'items': [sid(n) for n in range(1, 49)] + list(CHECKS),
+        'page_sizes': PAGE_SIZES,
+        'clusters': {k.lower().replace(' / ', '_').replace(' ', '_'): v for k, v in clusters.items()},
+        'cluster_min_gap': 3,
+        'cluster_max_per_page': 2,
+        # Reversals: never adjacent, 2-3 a page, no run of more than 5 positively
+        # keyed items, never the first item, never beside an attention check.
+        'groups': [{'items': reversed_ids, 'min_gap': 2, 'max_per_page': 3, 'min_per_page': 2,
+                    'max_run_outside': 5, 'avoid_positions': [1], 'avoid_adjacent': list(CHECKS)}],
+        'pairs': [[sid(a), sid(b)] for a, b in NEAR_DUPLICATES],
+        'pair_min_gap': 5,
+        # Each reversal on a different page from its partner (Weijters et al. 2009).
+        'apart_pages': [[sid(n), sid(partner)] for n, _slot, _f, partner, _t in picks],
+        'anchored': {
+            'sf6_attn_disagree': {'min_position': 3, 'max_position': 24, 'not_page_edge': True},
+            'sf6_attn_agree': {'min_position': 29, 'max_position': 48, 'not_page_edge': True},
+        },
+    }
+
+
+def write_study1(pool, picks):
+    from build_draft import SFS_POINTS, fallback_pages, likert, lit, questionnaire
+    text = {r[0]: r[2] for r in pool}
+    spec = study1_interleave(pool, picks)
+
+    def component(cid):
+        if cid in CHECKS:
+            c = likert(cid, 'To show that you are reading each statement, please select '
+                       f'{CHECKS[cid][1]} for this one.', SFS_POINTS)
+            del c['allow_pna']        # an instruction, not a question about the person
+            return c
+        return likert(cid, text[int(cid[4:])], SFS_POINTS)
+
+    # The written pages are the renderer's fallback if no order can be drawn, so
+    # they are themselves a valid order (fixed seed).
+    layout = fallback_pages(spec)
+    pages = [{'id': f'sf6_p{p}', 'components': [component(i) for i in ids]} for p, ids in enumerate(layout, 1)]
+    d = questionnaire('sf-pool6', 'How you pay attention', INSTRUCTIONS, pages)
+    d['interleave'] = spec
+    d['factors'] = {f: [f'sf6_{r[0]}' for r in sorted(pool) if r[4] == f] for f in FACTOR_ORDER}
+    d['reverse_keyed'] = [f'sf6_{n}' for n, *_ in picks]
+    out = HERE / 'study1'
+    out.mkdir(exist_ok=True)
+    (out / 'sf-pool6.json').write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding='utf-8')
+    sql = ['BEGIN;',
+           "INSERT INTO questionnaires (slug, name, definition) VALUES ('sf-pool6', 'How you pay attention', "
+           f"{lit(json.dumps(d, ensure_ascii=False))}::jsonb)",
+           "  ON CONFLICT (slug) DO UPDATE SET definition = EXCLUDED.definition, name = EXCLUDED.name, updated_at = now();",
+           # Study 1's scale step moves from sf-sfs (pool 4 wording, test answers only) to pool 6.
+           "UPDATE session_template_nodes SET questionnaire_id = (SELECT id FROM questionnaires WHERE slug = 'sf-pool6'),",
+           "       label = 'Sense Foraging Scale (pool 6)'",
+           " WHERE id = '9325b594-8f19-467c-a1a6-56ad8229b7d7';",
+           'COMMIT;']
+    (out / 'study1_pool6.sql').write_text('\n'.join(sql), encoding='utf-8')
+    n = sum(len(p['components']) for p in pages)
+    print('study 1 definition: sf-pool6,', len(pages), 'pages,', n, 'components')
 
 
 if __name__ == '__main__':

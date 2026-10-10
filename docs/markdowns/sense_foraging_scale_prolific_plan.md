@@ -8,7 +8,8 @@ Plan written 2026-10-08. **Nothing has been built yet.** The plan rests on three
 
 Read §1 (decisions) before writing code. Several choices change what gets built.
 
-**Build status, 2026-10-09** (newest first):
+**Build status, 2026-10-10** (newest first):
+- **Study 1 runs item pool 6** (`sf-pool6`): 48 items (14 reverse-keyed) and two checks, 7 hypothesized factors, the reversal rules in the interleave engine. Item pool decisions, evidence and the EFA plan: website.md §26c, `reports/Reverse keyed items and acquiescence.md`, and `receptive_state_item_pool_6.xlsx`. Where this plan says "32 items", "sfs_*" or four pages, read 48, `sf6_*` and six.
 - **On `dev` (`66bd6c7`), CI green.** Not yet on `main`:
   - **P1 interleave** (`src/lib/interleaveOrder.js`);
   - **P3 `show_if`** (`src/lib/composableVisibility.js`);

@@ -18,8 +18,12 @@
 //     clusters:             { name: [ids] } kept apart:
 //     cluster_min_gap:      3                 same-cluster items >= 3 positions apart
 //     cluster_max_per_page: 2                 and at most 2 on one page
-//     groups:   [{ items, min_gap, max_per_page }]   broader sets with their own limits
+//     groups:   [{ items, min_gap, max_per_page }]   broader sets with their own limits;
+//               a group may also set min_per_page, max_run_outside (at most n
+//               non-members in a row), avoid_positions ([1-indexed]) and
+//               avoid_adjacent ([ids], e.g. anchored checks: never next to them)
 //     pairs:    [[a, b]], pair_min_gap: 3            named pairs kept apart
+//     apart_pages: [[a, b]]                          named pairs never on one page
 //     anchored: { id: { min_position, max_position, not_page_edge } }
 //   }
 // Prototype and its 10,000-seed check: scripts/sense_foraging/interleave_prototype.py
@@ -87,7 +91,17 @@ function compile(spec) {
 
   const groups = (spec.groups ?? []).map(g => ({
     members: new Set(g.items), minGap: g.min_gap ?? 1, maxPerPage: g.max_per_page ?? Infinity,
+    minPerPage: g.min_per_page ?? 0, maxRunOutside: g.max_run_outside ?? Infinity,
+    avoidSlots: new Set((g.avoid_positions ?? []).map(n => n - 1)), avoidAdjacent: new Set(g.avoid_adjacent ?? []),
   }))
+
+  const apart = new Map()
+  for (const [a, b] of spec.apart_pages ?? []) {
+    if (!apart.has(a)) apart.set(a, [])
+    if (!apart.has(b)) apart.set(b, [])
+    apart.get(a).push(b)
+    apart.get(b).push(a)
+  }
 
   const partners = new Map()
   for (const [a, b] of spec.pairs ?? []) {
@@ -110,8 +124,11 @@ function compile(spec) {
     return { id, slots }
   })
 
+  // A page's per-page minimums are checked when its last free slot is filled.
+  const anchoredSlots = new Set()
+  const lastFree = new Map()
   return {
-    pageOf, clusterOf, groups, partners, anchors,
+    pageOf, clusterOf, groups, partners, apart, anchors, anchoredSlots, lastFree,
     clusterGap: spec.cluster_min_gap ?? 1,
     clusterPerPage: spec.cluster_max_per_page ?? Infinity,
     pairGap: spec.pair_min_gap ?? 1,
@@ -136,15 +153,36 @@ function fits(c, seq, pos, id) {
     if (onPage >= c.clusterPerPage) return false
   }
   for (const g of c.groups) {
-    if (!g.members.has(id)) continue
-    if (near(g.minGap, o => g.members.has(o))) return false
+    const member = g.members.has(id)
     let onPage = 0
     for (let s = 0; s < pos; s++) if (c.pageOf[s] === page && seq[s] != null && g.members.has(seq[s])) onPage++
-    if (onPage >= g.maxPerPage) return false
+    if (member) {
+      if (near(g.minGap, o => g.members.has(o))) return false
+      if (onPage >= g.maxPerPage) return false
+      if (g.avoidSlots.has(pos)) return false
+      if (g.avoidAdjacent.has(seq[pos - 1]) || g.avoidAdjacent.has(seq[pos + 1])) return false
+      onPage++
+    } else if (g.maxRunOutside !== Infinity) {
+      // the run of non-members this slot would extend, including anchored slots just after it
+      let run = 1
+      for (let s = pos - 1; s >= 0 && seq[s] != null && !g.members.has(seq[s]); s--) run++
+      for (let s = pos + 1; c.anchoredSlots.has(s) && !g.members.has(seq[s]); s++) run++
+      if (run > g.maxRunOutside) return false
+    }
+    if (g.minPerPage && c.lastFree.get(page) === pos && onPage < g.minPerPage) return false
   }
   const mates = c.partners.get(id)
   if (mates && near(c.pairGap, o => mates.includes(o))) return false
+  const away = c.apart.get(id)
+  if (away) for (let s = 0; s < pos; s++) if (c.pageOf[s] === page && away.includes(seq[s])) return false
   return true
+}
+
+// Which slots hold anchors decides where each page's last free slot is.
+function setAnchoredSlots(c, slots) {
+  c.anchoredSlots = new Set(slots)
+  c.lastFree = new Map()
+  c.pageOf.forEach((p, s) => { if (!c.anchoredSlots.has(s)) c.lastFree.set(p, s) })
 }
 
 function attempt(c, free, rand) {
@@ -158,6 +196,7 @@ function attempt(c, free, rand) {
     seq[s] = a.id
     fixed.add(s)
   }
+  setAnchoredSlots(c, fixed)
   let nodes = 0
   const dfs = (pos, left) => {
     if (++nodes > NODE_BUDGET) return false
@@ -200,10 +239,13 @@ export function orderViolations(spec, order) {
   if (order.length !== c.pageOf.length) out.push(`length ${order.length} != ${c.pageOf.length}`)
   if (new Set(order).size !== order.length) out.push('duplicate item')
   for (const id of spec.items) if (!order.includes(id)) out.push(`missing ${id}`)
+  // Each slot is judged as the search saw it: earlier slots and anchors filled, later slots empty.
+  const anchoredIds = new Set(c.anchors.map(a => a.id))
+  setAnchoredSlots(c, order.flatMap((id, s) => (anchoredIds.has(id) ? [s] : [])))
   for (let pos = 0; pos < order.length; pos++) {
     const id = order[pos]
-    const before = order.slice(0, pos)
-    if (!c.anchors.some(a => a.id === id) && !fits(c, before, pos, id)) out.push(`rule broken at ${pos + 1} (${id})`)
+    const seen = order.map((x, s) => (s < pos || anchoredIds.has(x) ? x : null))
+    if (!anchoredIds.has(id) && !fits(c, seen, pos, id)) out.push(`rule broken at ${pos + 1} (${id})`)
   }
   for (const a of c.anchors) {
     const at = order.indexOf(a.id)
@@ -226,12 +268,18 @@ export function validateInterleaveSpec(spec, componentIds) {
   for (const [name, ids] of Object.entries(spec.clusters ?? {})) for (const id of ids) if (!known(id)) errors.push(`interleave: cluster "${name}" names "${id}", which is not in items.`)
   for (const g of spec.groups ?? []) for (const id of g.items ?? []) if (!known(id)) errors.push(`interleave: a group names "${id}", which is not in items.`)
   for (const pair of spec.pairs ?? []) for (const id of pair) if (!known(id)) errors.push(`interleave: a pair names "${id}", which is not in items.`)
+  for (const pair of spec.apart_pages ?? []) for (const id of pair) if (!known(id)) errors.push(`interleave: apart_pages names "${id}", which is not in items.`)
+  for (const g of spec.groups ?? []) {
+    for (const id of g.avoid_adjacent ?? []) if (!known(id)) errors.push(`interleave: a group avoids "${id}", which is not in items.`)
+    for (const n of g.avoid_positions ?? []) if (!Number.isInteger(n) || n < 1 || n > spec.items.length) errors.push(`interleave: avoid_positions ${n} is not a position.`)
+  }
   // Rules are checked looking backwards from each free slot, and anchors are
   // placed first, so an anchored item must not itself be under a spacing rule.
   const ruled = new Set([
     ...Object.values(spec.clusters ?? {}).flat(),
     ...(spec.groups ?? []).flatMap(g => g.items ?? []),
     ...(spec.pairs ?? []).flat(),
+    ...(spec.apart_pages ?? []).flat(),
   ])
   for (const id of Object.keys(spec.anchored ?? {})) {
     if (!known(id)) errors.push(`interleave: anchored "${id}" is not in items.`)
