@@ -26,12 +26,12 @@ ITEM = {i['n']: i for i in POOL5['items']}
 
 # slot, facet, (partner item n, candidate text, note), (…b), proposed pick
 SLOTS = [
-    ('R1', 'Action', (1, 'I doubt my ability to move into the sensing mode',
+    ('R1', 'Action', (1, 'I question my ability to move into the sensing mode',
                       'Contradicts "confident in my ability". Ability is the construct, so rule 8 allows it.'),
                      (1, 'I feel unsure whether I can move into the sensing mode when I want to',
                       'Softer; "when I want to" adds a condition the partner lacks (rule 4).'), 'a'),
-    ('R2', 'Action', (9, 'Moving into the sensing mode is a struggle for me in everyday life',
-                      'Matched on referent and time frame ("in everyday life").'),
+    ('R2', 'Action', (9, 'Moving into the sensing mode is a struggle for me',
+                      'Matched to 9 as trimmed ("in everyday life" cut from both).'),
                      (7, 'Once I notice I have slipped into the doing mode, I stay stuck there until something changes',
                       'Conditions on noticing, so it does not depend on trained insight (rule 6); longer.'), 'a'),
     ('R3', 'Practice', (3, 'For me, the sensing mode and the doing mode blur together',
@@ -101,28 +101,35 @@ FACTOR = {'Action': 'Action', 'View': 'View', 'View under stress': 'View', 'Open
 FACTOR_ORDER = ['Action', 'View', 'Openness', 'Reward / awe', 'Mode awareness', 'Noting without elaborating',
                 'Stress and safety']
 
-# Suggested rewording of pool 5 items: NOT applied. Pool 5 is the PSY240 trial's live
-# wording (launch Oct 17), so any change goes to both, before data, or to neither.
-SUGGEST = {
-    17: ('When stress narrows my attention, I see it as a natural response rather than a personal failing',
-         'Priority. The pool\'s only negation ("I do not view…") and two sentences in one item. Also makes 41 its exact opposite.'),
-    10: ('I feel I have a choice between the sensing mode and the doing mode',
-         '"I realize I always have…" presupposes the course\'s claim is true, so it measures accepting the teaching '
-         '(the RCT\'s agreement threat) more than experience; "always" invites extreme answers.'),
-    2: ('I can find the sensing mode whenever I turn to it',
-        'Same issue as 10: "I recognize that … is always available" presupposes the teaching. This asks about experience.'),
+# Pool 6 wording of pool 5 items (Norm, 2026-10-10): my suggestions, then his trims.
+# Pool 6 is what Study 1 runs; the reduced set from its EFA replaces pool 5 in the
+# PSY240 trial on Oct 17, so pool 5's wording is not edited in place.
+ADOPTED = {
+    2: ('The sensing mode feels close at hand to me, wherever I am',
+        '"I recognize that … is always available" presupposed the course\'s claim; this asks about experience '
+        'without turning it into an ability item.'),
+    3: ('For me, the sensing mode feels different from the doing mode of planning, fixing, and achieving',
+        'Norm: "in kind" cut.'),
+    8: ('I can move into the sensing mode in new or unfamiliar places',
+        '"when I set time aside to practise" assumed a practice most people at intake do not have; Norm cut the clause.'),
+    9: ('Moving into the sensing mode comes easily to me', 'Norm: "in everyday life" cut.'),
+    10: ('I have a choice between the sensing mode and the doing mode',
+         '"I realize I always have…" presupposed the course\'s claim. Near-duplicate of 5: expect the EFA to keep one.'),
+    11: ('I value time spent in the sensing mode, rather than always focusing on getting things done', "Norm's wording."),
+    15: ('I understand that stress and threat naturally pull me toward familiar habits and the doing mode',
+         'Norm: "people" became "me", so it asks about the person, not people in general.'),
+    17: ('When stress narrows my attention, I see it as a natural response',
+         'Was the pool\'s only negation and two sentences. Norm cut "rather than a personal failing", so 41 is a looser '
+         'opposite: watch the 17-41 correlation.'),
     18: ('When stress narrows my focus, returning to the sensing mode matters even more to me',
-         'Shorter (21 words to 16); "extra value … narrow, familiar responses" is abstract. Watch it with 16 either way.'),
+         'Shorter (21 words to 16); "extra value … narrow, familiar responses" was abstract.'),
     27: ('I look forward to how sensory exploration feels, not just to getting better at it',
-         '"look forward to … the skill of doing it" reads oddly: one does not look forward to a skill.'),
+         '"look forward to … the skill of doing it" read oddly.'),
     32: ('When I am in the sensing mode, I am drawn to uncertainty and ambiguity',
-         '"not just tolerant of it" adds a second claim; a tolerant middle person has nowhere to stand (rule 3).'),
-    8: ('I can move into the sensing mode in new or unfamiliar places, not only at times set aside for it',
-        '"when I set time aside to practise" assumes a practice that most people at intake do not have.'),
-    15: ('(keep, or decide what it measures)',
-         'A belief about people in general ("I understand that stress … pulls people"), which the course teaches; '
-         'after the course, agreeing may mean having learned it. Fine if Stress and safety is meant to include beliefs.'),
+         '"not just tolerant of it" added a second claim; a tolerant middle person had nowhere to stand (rule 3).'),
 }
+INSTRUCTIONS = POOL5['instructions'].replace('How much do you agree', 'In general, how much do you agree')
+assert INSTRUCTIONS != POOL5['instructions']
 
 RULES = [
     ('1', 'Reverse the construct, not the sentence', 'Describe the low pole\'s stance or behaviour, never the absence of the skill.'),
@@ -213,7 +220,7 @@ def main():
         ('Sense Foraging outcome questionnaire: item pool 6 (PROPOSAL, 2026-10-10)', ''),
         ('', ''),
         ('Status', "Built to Norm's go-ahead (2026-10-10): 48 items, 7 hypothesized factors. Not yet on the platform or "
-                   'in the ethics amendment; the wording suggestions (Item Pool, columns I-J) await his decision.'),
+                   'in the ethics amendment. Wording edited with Norm the same day (Item Pool, columns I-J).'),
         ('Factors', "Pool 5's 11 facets grouped into 7, so that every factor has at least 3 positively keyed items (a "
                     'factor needs 3 to be identified on its own, and 4+ in an EFA where items get dropped): Action; View '
                     '(+ View under stress); Openness; Reward / awe; Mode awareness (Practice + Drift awareness); Noting '
@@ -244,7 +251,7 @@ def main():
         ('Before finalising', '(1) Norm picks one candidate per slot (or edits). (2) Think-aloud on phones with 5-8 people, '
                               'probing each reversal. (3) Into the ethics amendment with pool 5. (4) Pre-register the analysis '
                               'plan below before Study 1.'),
-        ('Shown before the items', POOL5['instructions']),
+        ('Shown before the items', INSTRUCTIONS + '  [Pool 5 had no "In general,"; added 2026-10-10.]'),
     ]
     for r in info:
         ws.append(list(r))
@@ -261,14 +268,15 @@ def main():
     for n, slot, facet, partner, text in picks:
         partner_of.setdefault(partner, []).append(n)
     for i in POOL5['items']:
-        sug, why = SUGGEST.get(i['n'], ('', ''))
-        pool.append((i['n'], i['id'], i['text'], 'positive', FACTOR[i['facet']], i['facet'],
-                     ', '.join(map(str, partner_of.get(i['n'], []))), 'pool 5 (unchanged)', sug, why))
+        text, why = ADOPTED.get(i['n'], (i['text'], ''))
+        pool.append((i['n'], i['id'], text, 'positive', FACTOR[i['facet']], i['facet'],
+                     ', '.join(map(str, partner_of.get(i['n'], []))), 'pool 5' + (' (edited)' if why else ''),
+                     i['text'] if why else '', why))
     for n, slot, facet, partner, text in picks:
         pool.append((n, f'sf6_{n}', text, 'REVERSED', FACTOR[facet], facet, str(partner), f'new (slot {slot})', '', ''))
     pool.sort(key=lambda r: (FACTOR_ORDER.index(r[4]), r[3] != 'positive', r[0]))
     sheet(wb, 'Item Pool', ['Item #', 'Platform id', 'Wording', 'Keying', 'Hypothesized factor (7)', 'Facet (pool 5 key, 11)',
-                            'Paired with', 'Source', 'Suggested rewording (NOT applied)', 'Why'],
+                            'Paired with', 'Source', 'Pool 5 wording (if edited)', 'Why'],
           pool, [8, 12, 80, 11, 24, 20, 10, 16, 60, 70])
     counts = []
     for f in FACTOR_ORDER:

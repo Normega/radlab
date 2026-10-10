@@ -4802,8 +4802,11 @@ $12/h, and offer the separate Borealis deposit consent.
     Noting without elaborating (Completeness + Labelling); Stress and safety (Normalising stress + Safety). They
     are the EFA's rotation target and the interleave clusters; the 11 facets are the pre-registered alternative.
     Labelling and Normalising stress can no longer be reported as separate outcomes.
-  - The workbook suggests rewordings for 8 pool 5 items (17's negation first), **not applied**: pool 5 is the
-    PSY240 trial's live wording, so a change goes to both before data or to neither.
+  - **Wording edited with Norm (2026-10-10)**: 11 pool 5 items trimmed or reworded in pool 6 (17's negation
+    gone, presupposing "realize/recognize" removed, "in everyday life" and similar clauses cut), two reversals
+    matched, and "In general," added to the instructions. Pool 5 itself is untouched.
+  - **Plan (Norm)**: run pool 6 as Study 1, a quick EFA, and give the PSY240 trial the reduced set from Oct 17,
+    replacing pool 5 there. Gated on the amendment.
   - Workbook: `…\MainQuestionnaire\receptive_state_item_pool_6.xlsx`, built by
     `scripts/sense_foraging/build_pool6.py`. It holds 28 candidates with 14 proposed, ten drafting rules, the
     placement rules and the analysis plan.
