@@ -3,7 +3,10 @@
 // No Authorization header needed; called unauthenticated from the study join page.
 // Uses the service role key internally.
 //
-// POST body: { study_id, external_id, source: 'sona'|'prolific', prolific_study_id?, prolific_session_id? }
+// POST body: { study_id, external_id, source: 'sona'|'prolific', prolific_study_id?, prolific_session_id?, test? }
+// `test: true` marks a NEW enrollment is_test (staff runs; the join page sends it
+// for `test=1` on the link). A study with separate_external_identity never
+// stores external_id outside external_identities (see _shared/externalIdentity.ts).
 // Returns:   { token } | { error } | { error, exclusion: { can_email } } (409, see findExclusionConflict)
 //
 // With action: 'send_exclusion_withdraw_link' and the same three fields, emails
@@ -16,6 +19,7 @@ import type { Graph } from '../_shared/materializeSchedule.ts'
 import { processAdherenceWithdrawal } from '../_shared/processAdherenceWithdrawal.ts'
 import { todayInLabTz } from '../_shared/labDate.ts'
 import { isPlaceholderExternalId } from '../_shared/externalIdGuard.ts'
+import { surrogateFor } from '../_shared/externalIdentity.ts'
 import { issueLink } from '../_shared/issueLink.ts'
 import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
@@ -170,8 +174,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
-    const { study_id, external_id, source, prolific_study_id, prolific_session_id, action } =
+    const { study_id, external_id: platformId, source, prolific_study_id, prolific_session_id, action, test } =
       await req.json()
+    // Reassigned to a surrogate for separate-identity studies (1a), so that
+    // nothing below can write the platform id anywhere.
+    let external_id: string = platformId
 
     if (!study_id || !external_id || !source) {
       return json({ error: 'Missing required fields: study_id, external_id, source.' }, 400)
@@ -196,7 +203,7 @@ Deno.serve(async (req) => {
     // 1. Verify the study exists and permits external enrollment from this source.
     const { data: study, error: studyErr } = await admin
       .from('studies')
-      .select('id, active, allow_external_enrollment, external_enrollment_source, design_graph, exclusion_group')
+      .select('id, active, allow_external_enrollment, external_enrollment_source, design_graph, exclusion_group, separate_external_identity')
       .eq('id', study_id)
       .single()
 
@@ -218,6 +225,18 @@ Deno.serve(async (req) => {
     const src: string = study.external_enrollment_source
     if (src !== 'both' && src !== source) {
       return json({ error: 'This study does not accept enrollments from this platform.' }, 403)
+    }
+
+    // 1a. Separate external identity (20261009_external_identities.sql). The
+    //     platform id is kept in external_identities and nowhere else; from here
+    //     on every lookup, the auth email, the display name, the enrollment and
+    //     every log line see only the surrogate. A lookup error refuses the join
+    //     rather than fall back to storing the id. Exclusion groups match on
+    //     external_id, so they cannot span separate-identity studies.
+    if (study.separate_external_identity) {
+      const surrogate = await surrogateFor(admin, study_id, external_id)
+      if (!surrogate) return json({ error: 'Enrollment failed. Please contact the study team.' }, 500)
+      external_id = surrogate
     }
 
     // 1b. Withdrawal-link request from the exclusion refusal page. Recomputes the
@@ -431,7 +450,9 @@ Deno.serve(async (req) => {
       // 5. Create the enrollment record.
       const meta: Record<string, string> = {}
       if (prolific_study_id)   meta.prolific_study_id   = prolific_study_id
-      if (prolific_session_id) meta.prolific_session_id = prolific_session_id
+      // The Prolific session id is the submission id on Prolific's dashboard,
+      // so it re-identifies; a separate-identity study does not keep it.
+      if (prolific_session_id && !study.separate_external_identity) meta.prolific_session_id = prolific_session_id
 
       const { error: enrollErr } = await admin.from('study_enrollments').insert({
         study_id,
@@ -439,6 +460,7 @@ Deno.serve(async (req) => {
         external_id,
         external_source: source,
         external_meta:   meta,
+        ...(test === true ? { is_test: true } : {}),
       })
 
       if (enrollErr) {
@@ -627,7 +649,11 @@ Deno.serve(async (req) => {
         study_id,
         study_session_id: session.id,
         scheduled_date:   today,
-        send_time:        session.send_time,
+        // NOT NULL on participant_schedule. A study session with no send_time
+        // used to fail every join here, after the enrollment was created
+        // (found on the Sense Foraging draft, 2026-10-09). A single-shot session
+        // is never sent, so the value is nominal.
+        send_time:        session.send_time ?? '09:00',
         status:           'unlocked',
       })
       .select('id')

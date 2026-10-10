@@ -27,7 +27,7 @@ function useStudy(id) {
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
           allow_self_enrollment, allow_credit_only_consent, offer_repository_consent, require_student_number,
-          screener_id
+          separate_external_identity, screener_id
         `)
         .eq('id', id)
         .single()
@@ -1130,7 +1130,11 @@ function ExternalEnrollmentPanel({ study, qc }) {
 
   // SONA substitutes only the upper-case token; a lower-case one arrives literally.
   const sonaLink    = `${SITE_ROOT}/study/join?study_id=${study.id}&id=%SURVEY_CODE%`
-  const prolificLink = `${SITE_ROOT}/study/join?study_id=${study.id}&PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}`
+  // A separate-identity study (website.md §26c) carries the ids in the fragment,
+  // which no server receives, and drops SESSION_ID (it re-identifies on Prolific).
+  const prolificLink = study.separate_external_identity
+    ? `${SITE_ROOT}/study/join#study_id=${study.id}&PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}`
+    : `${SITE_ROOT}/study/join?study_id=${study.id}&PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}`
 
   const showSona    = enabled && (source === 'sona'    || source === 'both')
   const showProlific = enabled && (source === 'prolific' || source === 'both')

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { joinParams, joinRequest } from '../lib/joinParams'
 
 const ENROLL_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auto-enroll`
 const RESEARCH_EMAIL = 'research@radlab.zone'
@@ -22,29 +23,15 @@ export default function StudyJoin() {
   const [mailError, setMailError] = useState(null)
 
   useEffect(() => {
-    const params      = new URLSearchParams(window.location.search)
-    const study_id    = params.get('study_id')
+    // Query string or fragment (src/lib/joinParams.js): a separate-identity
+    // study's Prolific link carries the ids after `#`, which no server sees.
+    const body = joinRequest(joinParams(window.location))
 
-    let source, external_id, prolific_study_id, prolific_session_id
-
-    if (params.get('PROLIFIC_PID')) {
-      source              = 'prolific'
-      external_id         = params.get('PROLIFIC_PID')
-      prolific_study_id   = params.get('STUDY_ID') ?? null
-      prolific_session_id = params.get('SESSION_ID') ?? null
-    } else if (params.get('id')) {
-      source      = 'sona'
-      external_id = params.get('id')
-    }
-
-    if (!study_id || !source || !external_id) {
+    if (!body) {
       setError('This link is missing required information. Please use the link provided by your study team.')
       return
     }
-
-    const body = { study_id, external_id, source }
-    if (prolific_study_id)   body.prolific_study_id   = prolific_study_id
-    if (prolific_session_id) body.prolific_session_id = prolific_session_id
+    const { study_id, external_id, source } = body
 
     postEnroll(body)
       .then(({ ok, data }) => {
