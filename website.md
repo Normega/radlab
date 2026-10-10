@@ -4989,7 +4989,15 @@ snapshots that are never pruned.
   - A lookup error refuses the join rather than store the id elsewhere.
   - Exclusion groups match on `external_id`, so they cannot span separate-identity studies.
 - **`external_identities`**: RLS on, lab read only, no write policy. Writes come from `auto-enroll`
-  (service role) and the RPC below.
+  (service role) and the RPCs below.
+- **A Prolific ID must never be in a URL.** The API gateway logs every request URL (`edge_logs`).
+  - The first deploy looked the id up with a PostgREST GET filter, and the live test found it in the logs
+    on its first run.
+  - `auto-enroll` now calls `external_identity_surrogate()` (a POST whose body is not logged,
+    find-or-create in one statement, service role only;
+    `20261009_external_identity_surrogate_rpc.sql`).
+  - **Any lab tool that looks a Prolific ID up must also do it through an RPC, never `.eq('external_id', …)`
+    on this table.**
 - **`deidentify_external_enrollments(study, paid_through, confirm := false)`**: lab only, dry run by
   default, returns counts. It deletes identity rows that may go and stamps
   `study_enrollments.deidentified_at`:

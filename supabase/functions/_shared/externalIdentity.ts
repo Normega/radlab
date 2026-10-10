@@ -8,6 +8,13 @@
 // table's rows. Same id in, same surrogate out, so re-entry and a second Prolific
 // posting of the same study still find the person's enrollment.
 //
+// The id must never appear in a URL. The first version looked it up with a
+// PostgREST GET filter (`?external_id=eq.<id>`), and the API gateway logs every
+// request URL: the live test found the id in edge_logs on its first run. The
+// lookup is therefore an RPC, a POST whose body is not logged
+// (20261009_external_identity_surrogate_rpc.sql), which also does find-or-create
+// in one statement.
+//
 // Surrogate shape: "P-" + 12 characters from an alphabet without look-alikes, so
 // it survives the auth-email slugging (lower-case, [a-z0-9-]) unchanged and can
 // never collide with a real Prolific ID (24 hex digits) or SONA id (digits).
@@ -26,9 +33,9 @@ export function randomSurrogate(random: (n: number) => Uint8Array = n => crypto.
   return `P-${out}`
 }
 
-// Minimal shape of the supabase-js calls used, so tests can pass a fake.
+// Minimal shape of the supabase-js call used, so tests can pass a fake.
 interface Db {
-  from(table: string): any
+  rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message?: string; code?: string } | null }>
 }
 
 // The surrogate for this (study, platform id), minted on first sight. Returns
@@ -40,25 +47,20 @@ export async function surrogateFor(
   externalId: string,
   mint: () => string = randomSurrogate,
 ): Promise<string | null> {
-  const lookup = () => db.from('external_identities')
-    .select('surrogate').eq('study_id', studyId).eq('external_id', externalId).maybeSingle()
-
-  const { data: found, error } = await lookup()
-  if (error) {
-    console.error('external identity lookup failed:', error.message)
-    return null
+  // Two tries: a first click racing another for the same person can find the
+  // row locked by the other's insert and, in the same statement, not yet see it.
+  // The second statement does.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await db.rpc('external_identity_surrogate', {
+      p_study_id: studyId, p_external_id: externalId, p_candidate: mint(),
+    })
+    if (error) {
+      // The message never contains the id (it was in the body, not the SQL text).
+      console.error('external identity lookup failed:', error.code ?? error.message)
+      return null
+    }
+    if (typeof data === 'string' && data) return data
   }
-  if (found?.surrogate) return found.surrogate
-
-  const surrogate = mint()
-  const { error: insErr } = await db.from('external_identities')
-    .insert({ study_id: studyId, external_id: externalId, surrogate })
-  if (!insErr) return surrogate
-
-  // Two first clicks from the same person race to insert; the loser reads the
-  // winner's row. Only the constraint name is logged, never the id itself.
-  const { data: again } = await lookup()
-  if (again?.surrogate) return again.surrogate
-  console.error('external identity insert failed:', insErr.code ?? insErr.message)
+  console.error('external identity lookup returned nothing twice')
   return null
 }
