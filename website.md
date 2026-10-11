@@ -8315,7 +8315,8 @@ Onboarding is Wed Oct 14 in class.
 - [ ] P6: posting column in the export
 - [ ] `scripts/sense_foraging/deidentify.py` (shareable file + report)
 - [x] Study 1 consent/debrief revised for the scale-only design (2026-10-10); amendment approved and banner removed (2026-10-11)
-- [ ] Prolific completion code; 20-person pilot
+- [x] Prolific completion code set: `completion_redirect_url` = Prolific complete URL, cc `C1JE3XY5`, shared by both postings (2026-10-11)
+- [ ] 20-person pilot (general posting)
 - [ ] Study 2 (scale-order shuffle P2, validity-scale PNA on the life-satisfaction step) after Study 1 closes
 - [ ] Decide offsite-backup retention for the collection months
 - [x] Pool 5 chosen as the instrument, on the 6-point scale with "Prefer not to answer"; `sf-pool-5` and `psy240-sf-pool-5` converted (2026-10-10)
