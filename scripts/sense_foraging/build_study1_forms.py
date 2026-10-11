@@ -22,9 +22,9 @@ from build_draft import DRAFT_BANNER, build_consent, build_debrief, lit  # noqa:
 OUT = Path(__file__).parent / 'study1'
 STUDY = '74cb6aa5-857c-408e-adfa-a5556acd62b7'
 
-# Shown until the amendment is approved; removed for launch.
-BANNER = ('<p style="border:2px solid #c00000;border-radius:12px;padding:8px 16px;color:#c00000">'
-          '<strong>Study 1 wording, pending REB approval of the amendment.</strong> Not yet recruiting.</p>')
+# The amendment was approved 2026-10-11 (Norm), so the forms carry no banner. Until
+# then they opened with "Study 1 wording, pending REB approval of the amendment".
+BANNER = ''
 
 CONSENT = [
     ('Purpose of the Study',
@@ -121,8 +121,8 @@ def para(text):
 
 
 def apply(doc, edits):
-    assert doc.startswith(DRAFT_BANNER)
-    doc = BANNER + doc[len(DRAFT_BANNER):]
+    assert doc.startswith(DRAFT_BANNER + '\n')
+    doc = (BANNER + '\n' if BANNER else '') + doc[len(DRAFT_BANNER) + 1:]
     for where, old, new in edits:
         assert doc.count(para(old)) == 1, f'approved paragraph not found verbatim: {where}'
         doc = doc.replace(para(old), para(new))

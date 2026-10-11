@@ -4850,7 +4850,9 @@ $12/h, and offer the separate Borealis deposit consent.
     found verbatim in the approved text.
   - `study1/forms_changes.md` lists each change, approved text beside new, for the amendment.
   - Inserted as new form rows; the old ones stay. The live rows were checked equal to the files.
-  - The banner reads "Study 1 wording, pending REB approval of the amendment" and is removed at launch.
+  - **Amendment approved (Norm, 2026-10-11)**, and the banner removed the same day (new form rows again; live
+    rows checked equal to the files). The Word versions for the amendment are in
+    `…\Ethics\Sense Foraging Questionnaire Zindel\Rev3_Study1_Amendment\` (`build_amendment_docs.py`).
 
 **On the platform (2026-10-09)**
 
@@ -8312,7 +8314,7 @@ Onboarding is Wed Oct 14 in class.
 - [ ] Confirm with Prolific's preview that `{{%PROLIFIC_PID%}}` is substituted inside a `#` fragment
 - [ ] P6: posting column in the export
 - [ ] `scripts/sense_foraging/deidentify.py` (shareable file + report)
-- [x] Study 1 consent/debrief revised for the scale-only design (2026-10-10; banner off once the amendment is approved)
+- [x] Study 1 consent/debrief revised for the scale-only design (2026-10-10); amendment approved and banner removed (2026-10-11)
 - [ ] Prolific completion code; 20-person pilot
 - [ ] Study 2 (scale-order shuffle P2, validity-scale PNA on the life-satisfaction step) after Study 1 closes
 - [ ] Decide offsite-backup retention for the collection months
