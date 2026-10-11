@@ -1,0 +1,610 @@
+{
+  "slug": "sf2-bidr16",
+  "name": "About yourself",
+  "questionnaire_type": "composable",
+  "instructions": "Using the scale below, please indicate how much you agree with each statement. (1 = Not True, 4 = Somewhat True, 7 = Very True)",
+  "pages": [
+    {
+      "id": "bidr_p1",
+      "components": [
+        {
+          "id": "bidr_01",
+          "type": "likert",
+          "question": "I have not always been honest with myself.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_02",
+          "type": "likert",
+          "question": "I always know why I like things.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_03",
+          "type": "likert",
+          "question": "It’s hard for me to shut off a disturbing thought.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_04",
+          "type": "likert",
+          "question": "I never regret my decisions.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_05",
+          "type": "likert",
+          "question": "I sometimes lose out on things because I can’t make up my mind soon enough.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_06",
+          "type": "likert",
+          "question": "I am a completely rational person.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_07",
+          "type": "likert",
+          "question": "I am very confident of my judgments.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_08",
+          "type": "likert",
+          "question": "I have sometimes doubted my ability as a lover.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "bidr_p2",
+      "components": [
+        {
+          "id": "bidr_09",
+          "type": "likert",
+          "question": "I sometimes tell lies if I have to.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_10",
+          "type": "likert",
+          "question": "I never cover up my mistakes.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_11",
+          "type": "likert",
+          "question": "There have been occasions when I have taken advantage of someone.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_12",
+          "type": "likert",
+          "question": "I sometimes try to get even rather than forgive and forget.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_13",
+          "type": "likert",
+          "question": "I have said something bad about a friend behind his or her back.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_14",
+          "type": "likert",
+          "question": "When I hear people talking privately, I avoid listening.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_15",
+          "type": "likert",
+          "question": "I never take things that don’t belong to me.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bidr_16",
+          "type": "likert",
+          "question": "I don’t gossip about other people’s business.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not true"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Somewhat true"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Very true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "slug": "sf2-phq4",
+  "name": "Over the last two weeks",
+  "questionnaire_type": "composable",
+  "instructions": "Over the last two weeks, how often have you been bothered by the following problems?",
+  "pages": [
+    {
+      "id": "phq4_p1",
+      "components": [
+        {
+          "id": "phq4_1",
+          "type": "likert",
+          "question": "Feeling nervous, anxious, or on edge",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Not at all"
+            },
+            {
+              "value": 1,
+              "label": "Several days"
+            },
+            {
+              "value": 2,
+              "label": "More than half the days"
+            },
+            {
+              "value": 3,
+              "label": "Nearly every day"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "phq4_2",
+          "type": "likert",
+          "question": "Not being able to stop or control worrying",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Not at all"
+            },
+            {
+              "value": 1,
+              "label": "Several days"
+            },
+            {
+              "value": 2,
+              "label": "More than half the days"
+            },
+            {
+              "value": 3,
+              "label": "Nearly every day"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "phq4_3",
+          "type": "likert",
+          "question": "Feeling down, depressed, or hopeless",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Not at all"
+            },
+            {
+              "value": 1,
+              "label": "Several days"
+            },
+            {
+              "value": 2,
+              "label": "More than half the days"
+            },
+            {
+              "value": 3,
+              "label": "Nearly every day"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "phq4_4",
+          "type": "likert",
+          "question": "Little interest or pleasure in doing things",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Not at all"
+            },
+            {
+              "value": 1,
+              "label": "Several days"
+            },
+            {
+              "value": 2,
+              "label": "More than half the days"
+            },
+            {
+              "value": 3,
+              "label": "Nearly every day"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ]
+}

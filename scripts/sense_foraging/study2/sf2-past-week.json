@@ -1,0 +1,135 @@
+{
+  "slug": "sf2-past-week",
+  "name": "Your past week",
+  "questionnaire_type": "composable",
+  "instructions": "A few questions about the past 7 days.",
+  "pages": [
+    {
+      "id": "crit_p1",
+      "components": [
+        {
+          "id": "crit_pause_days",
+          "type": "multiple_choice",
+          "question": "In the past 7 days, on how many days did you deliberately pause to take in your surroundings through your senses?",
+          "options": [
+            {
+              "id": "d0",
+              "label": "0 days",
+              "value": 0
+            },
+            {
+              "id": "d1",
+              "label": "1 day",
+              "value": 1
+            },
+            {
+              "id": "d2",
+              "label": "2 days",
+              "value": 2
+            },
+            {
+              "id": "d3",
+              "label": "3 days",
+              "value": 3
+            },
+            {
+              "id": "d4",
+              "label": "4 days",
+              "value": 4
+            },
+            {
+              "id": "d5",
+              "label": "5 days",
+              "value": 5
+            },
+            {
+              "id": "d6",
+              "label": "6 days",
+              "value": 6
+            },
+            {
+              "id": "d7",
+              "label": "7 days",
+              "value": 7
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "crit_notice_first",
+          "type": "multiple_choice",
+          "question": "In the past 7 days, when something unexpected happened, how often were you able to simply notice it before reacting?",
+          "options": [
+            {
+              "id": "never",
+              "label": "Never",
+              "value": 1
+            },
+            {
+              "id": "rarely",
+              "label": "Rarely",
+              "value": 2
+            },
+            {
+              "id": "sometimes",
+              "label": "Sometimes",
+              "value": 3
+            },
+            {
+              "id": "often",
+              "label": "Often",
+              "value": 4
+            },
+            {
+              "id": "almost_always",
+              "label": "Almost always",
+              "value": 5
+            },
+            {
+              "id": "nothing_unexpected",
+              "label": "Nothing unexpected happened",
+              "value": "nothing_unexpected"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "crit_outdoors",
+          "type": "multiple_choice",
+          "question": "In the past 7 days, about how much time in total did you spend outdoors not doing anything in particular?",
+          "options": [
+            {
+              "id": "none",
+              "label": "None",
+              "value": 0
+            },
+            {
+              "id": "lt30",
+              "label": "Less than 30 minutes",
+              "value": 1
+            },
+            {
+              "id": "30_120",
+              "label": "30 minutes to 2 hours",
+              "value": 2
+            },
+            {
+              "id": "2_5h",
+              "label": "2 to 5 hours",
+              "value": 3
+            },
+            {
+              "id": "gt5h",
+              "label": "More than 5 hours",
+              "value": 4
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "slug": "sf2-sfs-candidates",
+  "name": "A few more statements",
+  "questionnaire_type": "composable",
+  "instructions": "A few more statements about how you pay attention. In general, how much do you agree with each statement? There are no right or wrong answers.",
+  "pages": [
+    {
+      "id": "sfc_p1",
+      "components": [
+        {
+          "id": "sfc_1",
+          "type": "likert",
+          "question": "I can feel stress pulling me toward my usual ways of doing things",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_2",
+          "type": "likert",
+          "question": "My attention works the same way whether I am stressed or relaxed",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_3",
+          "type": "likert",
+          "question": "To me, sensing and doing are two names for the same thing",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_4",
+          "type": "likert",
+          "question": "When I have free time, I would rather fill it than spend it just sensing",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_5",
+          "type": "likert",
+          "question": "I can feel at ease without knowing what comes next",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_6",
+          "type": "likert",
+          "question": "I am content to notice something without working out what it means",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "sfc_1",
+      "factor": "Understanding the modes",
+      "reverse_keyed": false
+    },
+    {
+      "id": "sfc_2",
+      "factor": "Understanding the modes",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_3",
+      "factor": "Understanding the modes",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_4",
+      "factor": "Valuing and savouring",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_5",
+      "factor": "Letting be",
+      "reverse_keyed": false
+    },
+    {
+      "id": "sfc_6",
+      "factor": "Letting be",
+      "reverse_keyed": false
+    }
+  ]
+}

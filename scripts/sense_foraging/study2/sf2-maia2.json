@@ -1,0 +1,1286 @@
+{
+  "slug": "sf2-maia2",
+  "name": "Body awareness",
+  "questionnaire_type": "composable",
+  "instructions": "Below you will find a list of statements. Please indicate how often each statement applies to you generally in daily life (0 = Never, 5 = Always).",
+  "pages": [
+    {
+      "id": "maia_p1",
+      "components": [
+        {
+          "id": "maia_01",
+          "type": "likert",
+          "question": "When I am tense I notice where the tension is located in my body.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_02",
+          "type": "likert",
+          "question": "I notice when I am uncomfortable in my body.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_03",
+          "type": "likert",
+          "question": "I notice where in my body I am comfortable.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_04",
+          "type": "likert",
+          "question": "I notice changes in my breathing, such as whether it slows down or speeds up.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_05",
+          "type": "likert",
+          "question": "I ignore physical tension or discomfort until they become more severe.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_06",
+          "type": "likert",
+          "question": "I distract myself from sensations of discomfort.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_07",
+          "type": "likert",
+          "question": "When I feel pain or discomfort, I try to power through it.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_08",
+          "type": "likert",
+          "question": "I try to ignore pain.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "maia_p2",
+      "components": [
+        {
+          "id": "maia_09",
+          "type": "likert",
+          "question": "I push feelings of discomfort away by focusing on something else.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_10",
+          "type": "likert",
+          "question": "When I feel unpleasant body sensations, I occupy myself with something else so I don’t have to feel them.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_11",
+          "type": "likert",
+          "question": "When I feel physical pain, I become upset.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_12",
+          "type": "likert",
+          "question": "I start to worry that something is wrong if I feel any discomfort.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_13",
+          "type": "likert",
+          "question": "I can notice an unpleasant body sensation without worrying about it.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_14",
+          "type": "likert",
+          "question": "I can stay calm and not worry when I have feelings of discomfort or pain.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_15",
+          "type": "likert",
+          "question": "When I am in discomfort or pain I can’t get it out of my mind.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_16",
+          "type": "likert",
+          "question": "I can pay attention to my breath without being distracted by things happening around me.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "maia_p3",
+      "components": [
+        {
+          "id": "maia_17",
+          "type": "likert",
+          "question": "I can maintain awareness of my inner bodily sensations even when there is a lot going on around me.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_18",
+          "type": "likert",
+          "question": "When I am in conversation with someone, I can pay attention to my posture.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_19",
+          "type": "likert",
+          "question": "I can return awareness to my body if I am distracted.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_attn_check",
+          "type": "likert",
+          "question": "To show that you are reading each statement, please select 2 for this one.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true
+        },
+        {
+          "id": "maia_20",
+          "type": "likert",
+          "question": "I can refocus my attention from thinking to sensing my body.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_21",
+          "type": "likert",
+          "question": "I can maintain awareness of my whole body even when a part of me is in pain or discomfort.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_22",
+          "type": "likert",
+          "question": "I am able to consciously focus on my body as a whole.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_23",
+          "type": "likert",
+          "question": "I notice how my body changes when I am angry.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "maia_p4",
+      "components": [
+        {
+          "id": "maia_24",
+          "type": "likert",
+          "question": "When something is wrong in my life I can feel it in my body.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_25",
+          "type": "likert",
+          "question": "I notice that my body feels different after a peaceful experience.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_26",
+          "type": "likert",
+          "question": "I notice that my breathing becomes free and easy when I feel comfortable.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_27",
+          "type": "likert",
+          "question": "I notice how my body changes when I feel happy / joyful.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_28",
+          "type": "likert",
+          "question": "When I feel overwhelmed I can find a calm place inside.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_29",
+          "type": "likert",
+          "question": "When I bring awareness to my body I feel a sense of calm.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_30",
+          "type": "likert",
+          "question": "I can use my breath to reduce tension.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "maia_p5",
+      "components": [
+        {
+          "id": "maia_31",
+          "type": "likert",
+          "question": "When I am caught up in thoughts, I can calm my mind by focusing on my body/breathing.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_32",
+          "type": "likert",
+          "question": "I listen for information from my body about my emotional state.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_33",
+          "type": "likert",
+          "question": "When I am upset, I take time to explore how my body feels.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_34",
+          "type": "likert",
+          "question": "I listen to my body to inform me about what to do.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_35",
+          "type": "likert",
+          "question": "I am at home in my body.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_36",
+          "type": "likert",
+          "question": "I feel my body is a safe place.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "maia_37",
+          "type": "likert",
+          "question": "I trust my body sensations.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Never"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Always"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ]
+}

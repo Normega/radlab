@@ -1,0 +1,394 @@
+{
+  "slug": "sf2-ius12",
+  "name": "Uncertainty",
+  "questionnaire_type": "composable",
+  "instructions": "Please select the number that best corresponds to how much you agree with each item.",
+  "pages": [
+    {
+      "id": "ius_p1",
+      "components": [
+        {
+          "id": "ius12_01",
+          "type": "likert",
+          "question": "Unforeseen events upset me greatly.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_02",
+          "type": "likert",
+          "question": "It frustrates me not having all the information I need.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_03",
+          "type": "likert",
+          "question": "Uncertainty keeps me from living a full life.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_04",
+          "type": "likert",
+          "question": "One should always look ahead so as to avoid surprises.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_05",
+          "type": "likert",
+          "question": "A small unforeseen event can spoil everything, even with the best of planning.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_06",
+          "type": "likert",
+          "question": "When it’s time to act, uncertainty paralyses me.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "ius_p2",
+      "components": [
+        {
+          "id": "ius12_07",
+          "type": "likert",
+          "question": "When I am uncertain I can’t function very well.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_08",
+          "type": "likert",
+          "question": "I always want to know what the future has in store for me.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_09",
+          "type": "likert",
+          "question": "I can’t stand being taken by surprise.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_10",
+          "type": "likert",
+          "question": "The smallest doubt can stop me from acting.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_11",
+          "type": "likert",
+          "question": "I should be able to organize everything in advance.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ius12_12",
+          "type": "likert",
+          "question": "I must get away from all uncertain situations.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Not at all characteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "A little characteristic of me"
+            },
+            {
+              "value": 3,
+              "label": "Somewhat characteristic of me"
+            },
+            {
+              "value": 4,
+              "label": "Very characteristic of me"
+            },
+            {
+              "value": 5,
+              "label": "Entirely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "sum",
+    "note": "Carleton, Norton & Asmundson (2007). Lab-form order. Total 12-60.",
+    "subscales": [
+      {
+        "name": "Prospective",
+        "item_ids": [
+          "ius12_01",
+          "ius12_02",
+          "ius12_04",
+          "ius12_05",
+          "ius12_08",
+          "ius12_09",
+          "ius12_11"
+        ]
+      },
+      {
+        "name": "Inhibitory",
+        "item_ids": [
+          "ius12_03",
+          "ius12_06",
+          "ius12_07",
+          "ius12_10",
+          "ius12_12"
+        ]
+      }
+    ]
+  }
+}

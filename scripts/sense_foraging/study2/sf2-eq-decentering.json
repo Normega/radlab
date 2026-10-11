@@ -1,0 +1,341 @@
+{
+  "slug": "sf2-eq-decentering",
+  "name": "Your experiences",
+  "questionnaire_type": "composable",
+  "instructions": "For each statement below, please select the number that best describes your general experiences using a scale from 1 to 5, where 1 = Never and 5 = All the time.",
+  "pages": [
+    {
+      "id": "eq_p1",
+      "components": [
+        {
+          "id": "eq_03",
+          "type": "likert",
+          "question": "I am better able to accept myself as I am.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_15",
+          "type": "likert",
+          "question": "I can observe unpleasant feelings without being drawn into them.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_09",
+          "type": "likert",
+          "question": "I notice that I don’t take difficulties so personally.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_14",
+          "type": "likert",
+          "question": "I can treat myself kindly.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_10",
+          "type": "likert",
+          "question": "I can separate myself from my thoughts and feelings.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_16",
+          "type": "likert",
+          "question": "I have the sense that I am fully aware of what is going on around me and inside me.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "eq_p2",
+      "components": [
+        {
+          "id": "eq_06",
+          "type": "likert",
+          "question": "I can slow my thinking at times of stress.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_17",
+          "type": "likert",
+          "question": "I can actually see that I am not my thoughts.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_18",
+          "type": "likert",
+          "question": "I am consciously aware of a sense of my body as a whole.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_12",
+          "type": "likert",
+          "question": "I can take time to respond to difficulties.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "eq_20",
+          "type": "likert",
+          "question": "I view things from a wider perspective.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Never"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 All the time"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "sum",
+    "note": "Fresco et al. (2007) Decentering, 11 items (EQ numbers in ids), 11-55."
+  }
+}

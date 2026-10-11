@@ -1,0 +1,137 @@
+{
+  "slug": "sf2-pss4",
+  "name": "The last month",
+  "questionnaire_type": "composable",
+  "instructions": "The questions in this scale ask you about your feelings and thoughts during the last month. In each case, please indicate how often you felt or thought a certain way.",
+  "pages": [
+    {
+      "id": "pss_p1",
+      "components": [
+        {
+          "id": "pss4_1",
+          "type": "likert",
+          "question": "In the last month, how often have you felt that you were unable to control the important things in your life?",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Never"
+            },
+            {
+              "value": 1,
+              "label": "Almost never"
+            },
+            {
+              "value": 2,
+              "label": "Sometimes"
+            },
+            {
+              "value": 3,
+              "label": "Fairly often"
+            },
+            {
+              "value": 4,
+              "label": "Very often"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "pss4_2",
+          "type": "likert",
+          "question": "In the last month, how often have you felt confident about your ability to handle your personal problems?",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Never"
+            },
+            {
+              "value": 1,
+              "label": "Almost never"
+            },
+            {
+              "value": 2,
+              "label": "Sometimes"
+            },
+            {
+              "value": 3,
+              "label": "Fairly often"
+            },
+            {
+              "value": 4,
+              "label": "Very often"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "pss4_3",
+          "type": "likert",
+          "question": "In the last month, how often have you felt that things were going your way?",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Never"
+            },
+            {
+              "value": 1,
+              "label": "Almost never"
+            },
+            {
+              "value": 2,
+              "label": "Sometimes"
+            },
+            {
+              "value": 3,
+              "label": "Fairly often"
+            },
+            {
+              "value": 4,
+              "label": "Very often"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "pss4_4",
+          "type": "likert",
+          "question": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?",
+          "scale": [
+            {
+              "value": 0,
+              "label": "Never"
+            },
+            {
+              "value": 1,
+              "label": "Almost never"
+            },
+            {
+              "value": 2,
+              "label": "Sometimes"
+            },
+            {
+              "value": 3,
+              "label": "Fairly often"
+            },
+            {
+              "value": 4,
+              "label": "Very often"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "sum",
+    "note": "Cohen et al. (1983); items 2 and 3 reverse-coded; 0-16. Licence via Mapi ePROVIDE.",
+    "reverse_items": [
+      "pss4_2",
+      "pss4_3"
+    ]
+  }
+}

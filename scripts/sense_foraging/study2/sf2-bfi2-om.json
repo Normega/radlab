@@ -1,0 +1,435 @@
+{
+  "slug": "sf2-bfi2-om",
+  "name": "Characteristics",
+  "questionnaire_type": "composable",
+  "instructions": "Here are a number of characteristics that may or may not apply to you. For example, do you agree that you are someone who likes to spend time with others? Please select a number for each statement to indicate the extent to which you agree or disagree with that statement.",
+  "pages": [
+    {
+      "id": "bfi_p1",
+      "components": [
+        {
+          "id": "bfi2_05",
+          "type": "likert",
+          "question": "I am someone who… has few artistic interests.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_10",
+          "type": "likert",
+          "question": "I am someone who… is curious about many different things.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_15",
+          "type": "likert",
+          "question": "I am someone who… is inventive, finds clever ways to do things.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_20",
+          "type": "likert",
+          "question": "I am someone who… is fascinated by art, music, or literature.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_25",
+          "type": "likert",
+          "question": "I am someone who… avoids intellectual, philosophical discussions.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_30",
+          "type": "likert",
+          "question": "I am someone who… has little creativity.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_35",
+          "type": "likert",
+          "question": "I am someone who… values art and beauty.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "bfi_p2",
+      "components": [
+        {
+          "id": "bfi2_attn_check",
+          "type": "likert",
+          "question": "To show that you are reading each statement, please select \"Agree a little\" for this one.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true
+        },
+        {
+          "id": "bfi2_40",
+          "type": "likert",
+          "question": "I am someone who… is complex, a deep thinker.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_45",
+          "type": "likert",
+          "question": "I am someone who… has difficulty imagining things.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_50",
+          "type": "likert",
+          "question": "I am someone who… thinks poetry and plays are boring.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_55",
+          "type": "likert",
+          "question": "I am someone who… has little interest in abstract ideas.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "bfi2_60",
+          "type": "likert",
+          "question": "I am someone who… is original, comes up with new ideas.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Disagree strongly"
+            },
+            {
+              "value": 2,
+              "label": "Disagree a little"
+            },
+            {
+              "value": 3,
+              "label": "Neutral; no opinion"
+            },
+            {
+              "value": 4,
+              "label": "Agree a little"
+            },
+            {
+              "value": 5,
+              "label": "Agree strongly"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "mean",
+    "note": "Soto & John (2017), Open-Mindedness domain (BFI-2 items).",
+    "reverse_items": [
+      "bfi2_05",
+      "bfi2_25",
+      "bfi2_30",
+      "bfi2_45",
+      "bfi2_50",
+      "bfi2_55"
+    ],
+    "subscales": [
+      {
+        "name": "Aesthetic Sensitivity",
+        "item_ids": [
+          "bfi2_05",
+          "bfi2_20",
+          "bfi2_35",
+          "bfi2_50"
+        ]
+      },
+      {
+        "name": "Intellectual Curiosity",
+        "item_ids": [
+          "bfi2_10",
+          "bfi2_25",
+          "bfi2_40",
+          "bfi2_55"
+        ]
+      },
+      {
+        "name": "Creative Imagination",
+        "item_ids": [
+          "bfi2_15",
+          "bfi2_30",
+          "bfi2_45",
+          "bfi2_60"
+        ]
+      }
+    ]
+  }
+}

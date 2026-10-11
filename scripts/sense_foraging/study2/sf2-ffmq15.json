@@ -1,0 +1,453 @@
+{
+  "slug": "sf2-ffmq15",
+  "name": "Everyday experiences",
+  "questionnaire_type": "composable",
+  "instructions": "Please use the 1 (never or very rarely true) to 5 (very often or always true) scale provided to indicate how true the below statements are of you. Please respond according to what really reflects your experience rather than what you think your experience should be.",
+  "pages": [
+    {
+      "id": "ffmq_p1",
+      "components": [
+        {
+          "id": "ffmq_01",
+          "type": "likert",
+          "question": "When I take a shower or a bath, I stay alert to the sensations of water on my body.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_02",
+          "type": "likert",
+          "question": "I’m good at finding words to describe my feelings.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_03",
+          "type": "likert",
+          "question": "I don’t pay attention to what I’m doing because I’m daydreaming, worrying, or otherwise distracted.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_04",
+          "type": "likert",
+          "question": "I believe some of my thoughts are abnormal or bad and I shouldn’t think that way.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_05",
+          "type": "likert",
+          "question": "When I have distressing thoughts or images, I “step back” and am aware of the thought or image without getting taken over by it.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_06",
+          "type": "likert",
+          "question": "I notice how foods and drinks affect my thoughts, bodily sensations, and emotions.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_07",
+          "type": "likert",
+          "question": "I have trouble thinking of the right words to express how I feel about things.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_08",
+          "type": "likert",
+          "question": "I do jobs or tasks automatically without being aware of what I’m doing.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "ffmq_p2",
+      "components": [
+        {
+          "id": "ffmq_09",
+          "type": "likert",
+          "question": "I think some of my emotions are bad or inappropriate and I shouldn’t feel them.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_10",
+          "type": "likert",
+          "question": "When I have distressing thoughts or images, I am able just to notice them without reacting.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_11",
+          "type": "likert",
+          "question": "I pay attention to sensations, such as the wind in my hair or sun on my face.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_12",
+          "type": "likert",
+          "question": "Even when I’m feeling terribly upset, I can find a way to put it into words.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_13",
+          "type": "likert",
+          "question": "I find myself doing things without paying attention.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_14",
+          "type": "likert",
+          "question": "I tell myself I shouldn’t be feeling the way I’m feeling.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ffmq_15",
+          "type": "likert",
+          "question": "When I have distressing thoughts or images, I just notice them and let them go.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Never or very rarely true"
+            },
+            {
+              "value": 2,
+              "label": "Rarely true"
+            },
+            {
+              "value": 3,
+              "label": "Sometimes true"
+            },
+            {
+              "value": 4,
+              "label": "Often true"
+            },
+            {
+              "value": 5,
+              "label": "Very often or always true"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ]
+}

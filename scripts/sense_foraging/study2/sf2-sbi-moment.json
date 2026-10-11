@@ -1,0 +1,319 @@
+{
+  "slug": "sf2-sbi-moment",
+  "name": "Enjoying good times",
+  "questionnaire_type": "composable",
+  "instructions": "For each statement listed below, please select the one number that best indicates how true the particular statement is for you. There are no right or wrong answers. Please be as honest as you can.",
+  "pages": [
+    {
+      "id": "sbi_p1",
+      "components": [
+        {
+          "id": "sbi_02",
+          "type": "likert",
+          "question": "It’s hard for me to hang onto a good feeling for very long.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_05",
+          "type": "likert",
+          "question": "I know how to make the most of a good time.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_08",
+          "type": "likert",
+          "question": "When it comes to enjoying myself, I’m my own “worst enemy.”",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_11",
+          "type": "likert",
+          "question": "When something good happens, I can make my enjoyment of it last longer by thinking or doing certain things.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_14",
+          "type": "likert",
+          "question": "I can’t seem to capture the joy of happy moments.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_17",
+          "type": "likert",
+          "question": "I feel fully able to appreciate good things that happen to me.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_20",
+          "type": "likert",
+          "question": "I don’t enjoy things as much as I should.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sbi_23",
+          "type": "likert",
+          "question": "It’s easy for me to enjoy myself when I want to.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "mean",
+    "note": "Bryant (2003); Savoring the Moment subscale (SBI items 2, 5, 8, 11, 14, 17, 20, 23).",
+    "reverse_items": [
+      "sbi_02",
+      "sbi_08",
+      "sbi_14",
+      "sbi_20"
+    ]
+  }
+}
