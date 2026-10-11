@@ -3120,6 +3120,13 @@ so `npm test` covers it directly.
   `<prefix>_1`, indistinguishable from item 1. Give non-item components ids that end in a word
   (`sfs_attn_disagree`).
 
+### Step order shuffled within a session (2026-10-11)
+
+`session_template_nodes.shuffle_group` (NULL = fixed). Consecutive steps that share a group run in a per-participant random order, chosen in `SessionEntry` by `src/lib/stepShuffle.js` and seeded by the link token, so a reload or the progress resume sees the same order. Only a contiguous run shuffles; a fixed step between two runs of one group splits them.
+- The order shown is a recorded fact: each response carries its `step_index`, and each node keeps its template `order_index`.
+- `get_session_by_token` returns the field; that was a one-line change, verified against the live definition.
+- Built for Sense Foraging Study 2's "scale order randomized" (plan P2). `stepShuffle.test.mjs` checks fixed steps stay put, a balanced spread over 5,000 seeds, and determinism.
+
 ### Sessions are never machine-translated (2026-10-11)
 
 **What happened.** Sense Foraging Study 1's first day logged 256 `step_crash` rows for 30 participants, all on Chrome or Edge (26/396 Chrome, 4/41 Edge, 0/76 Safari, Firefox and others): "Failed to execute 'removeChild' on 'Node'".
