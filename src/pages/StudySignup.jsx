@@ -261,7 +261,7 @@ export default function StudySignup() {
           )}
 
           <label style={{ ...S.label, marginTop: 16 }} htmlFor="signup-student">
-            Student number{needsStudentNo ? ' *' : ''}
+            {needsStudentNo ? 'Student number *' : 'Student number'}
           </label>
           <input id="signup-student" style={S.input} type="text" inputMode="numeric"
             required={needsStudentNo} autoComplete="off"

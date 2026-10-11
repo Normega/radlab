@@ -22,6 +22,7 @@ import CompletionRedirectScreen from '../components/study/CompletionRedirectScre
 import { useAssignments } from '../hooks/useAssignment'
 import { takeScreenerDraft } from '../lib/screenerDraft'
 import { useScrollToTopOn } from '../lib/scrollToTop'
+import { useNoTranslate } from '../lib/noTranslate'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -39,6 +40,8 @@ export default function SessionEntry() {
   const [currentIndex,   setCurrentIndex]   = useState(0)
   // Each gate and each step starts at the top of the page (see scrollToTop.js).
   useScrollToTopOn(`${state}:${currentIndex}`)
+  // The browser's page translator stays off for the whole session (noTranslate.js).
+  useNoTranslate()
   const [consentStudyId, setConsentStudyId] = useState(null)
   // The email gate in its optional form (open_email_after_consent studies).
   const [contactEmailOptional, setContactEmailOptional] = useState(false)

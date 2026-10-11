@@ -77,6 +77,9 @@ Before registration, the following were inspected, for quality control only:
   - "Prefer not to answer" counts;
   - the standard deviation and number of distinct responses per person (no straightlining).
 - **Full sample:** enrollment and completion counts per posting, and the distribution of the practice-history questions (to judge whether the contemplative posting was needed).
+- **Platform diagnostics (operational):**
+  - 30 participants (all using Chrome or Edge) hit a crash caused by their browser's automatic page translation, before it was fixed on 2026-10-11;
+  - 26 of them reloaded and completed.
 - **One structural statistic (pilot, n = 15):** the correlation within each of the 14 reverse-keyed / partner pairs (range −.84 to +.32), computed as an early check that the reversals behave as opposites. No other inter-item correlations, factor solutions, loadings or reliabilities were computed on any data.
 
 The analysis code will be developed on a copy of the data in which each item's responses are permuted across participants (preserving each item's distribution and destroying its correlations). It will be run on the real data only after this registration is filed.
@@ -180,7 +183,8 @@ The factor analyses are exploratory: decisions follow the criteria above, and fi
   - fewer than 2 seconds per item on the scale;
   - a longstring of 15 or more;
   - an inconsistency index of 7 or more (of 14 pairs);
-  - "Prefer not to answer" on more than 9 of the 48 items.
+  - "Prefer not to answer" on more than 9 of the 48 items;
+  - a recorded translation crash. This shows the browser was machine-translating the page, so the items were read in translation. Translation without a crash cannot be detected, so this flag marks a lower bound.
 
 ### Missing data
 
@@ -191,7 +195,7 @@ The factor analyses are exploratory: decisions follow the criteria above, and fi
 **Sensitivity analyses**, each compared with the primary solution:
 
 1. EFA of the 34 positively keyed items only;
-2. the primary model without flagged respondents;
+2. the primary model without flagged respondents, and separately without the translation-crash group;
 3. an acquiescence-corrected EFA by the Lorenzo-Seva and Ferrando method (siren);
 4. the primary model without the random-intercept factor.
 

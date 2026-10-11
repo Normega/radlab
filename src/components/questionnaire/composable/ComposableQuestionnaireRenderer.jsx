@@ -238,12 +238,22 @@ export default function ComposableQuestionnaireRenderer({
     return c && !responseIsComplete(c, responses[id])
   })
   const canDecline = stillMissing.some(id => page.components.find(x => x.id === id)?.allow_pna === true)
+  // Text that changes is built as ONE string, never as fragments beside other
+  // text ("question{n > 1 ? 's' : ''}"). A browser translating the page swaps
+  // its text nodes for its own, and when React then removes a fragment it no
+  // longer finds it ("removeChild … not a child of this node"): Sense Foraging
+  // Study 1, 2026-10-11, 30 Chrome/Edge participants. A sole string child is
+  // updated through textContent, which survives translation.
+  // noConditionalTextFragments.test.mjs keeps it that way.
+  const missingNote = `Please answer the highlighted question${stillMissing.length > 1 ? 's' : ''}`
+    + `${canDecline ? ' or choose "Prefer not to answer"' : ''}.`
+  const pageLabel = `Page ${shownIndices.indexOf(pageIndex) + 1} of ${shownIndices.length}`
 
   return (
     <div className="cs-player">
       <div className="cs-progress">
         <span>{questionnaire.name}</span>
-        <span>Page {shownIndices.indexOf(pageIndex) + 1} of {shownIndices.length}</span>
+        <span>{pageLabel}</span>
       </div>
 
       <main className="cs-player__content">
@@ -261,10 +271,7 @@ export default function ComposableQuestionnaireRenderer({
         </button>
 
         {stillMissing.length > 0 && (
-          <p className="cs-missing-note" role="status">
-            Please answer the highlighted question{stillMissing.length > 1 ? 's' : ''}
-            {canDecline ? ' or choose "Prefer not to answer"' : ''}.
-          </p>
+          <p className="cs-missing-note" role="status">{missingNote}</p>
         )}
 
         {/* Not `disabled`: a disabled button swallows the tap, and the tap is what

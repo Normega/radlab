@@ -30,6 +30,19 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="RADlab" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!--
+      Participant sessions are never machine-translated (src/lib/noTranslate.js).
+      Set here, in <head>, because Chrome and Edge decide whether to translate as
+      the page loads, before the app mounts; a translated page also crashes React
+      ("removeChild ... not a child of this node"), which ended sessions for 30
+      Sense Foraging Study 1 participants on 2026-10-11. Session routes only.
+    -->
+    <script>
+      if (/^\/(s|study\/join)(\/|$)/.test(window.location.pathname)) {
+        document.documentElement.setAttribute('translate', 'no')
+        document.documentElement.classList.add('notranslate')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
