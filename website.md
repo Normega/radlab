@@ -8316,7 +8316,9 @@ Onboarding is Wed Oct 14 in class.
 - [ ] `scripts/sense_foraging/deidentify.py` (shareable file + report)
 - [x] Study 1 consent/debrief revised for the scale-only design (2026-10-10); amendment approved and banner removed (2026-10-11)
 - [x] Prolific completion code set: `completion_redirect_url` = Prolific complete URL, cc `C1JE3XY5`, shared by both postings (2026-10-11)
-- [ ] 20-person pilot (general posting)
+- [x] 20-person pilot (general posting): 15/15 completers passed both checks, median ~9 min (2026-10-11)
+- [x] Both postings filled 2026-10-11: 510 enrolled, 477 completed (general 256/247, contemplative 254/230)
+- [ ] OSF preregistration filed (`docs/markdowns/sense_foraging_study1_preregistration.md`; Word + supplementary materials + item key in `…\Ethics\Sense Foraging Questionnaire Zindel\OSF_Study1\` via `build_osf_docs.py`). No structural analysis until filed; code is developed on item-permuted data
 - [ ] Study 2 (scale-order shuffle P2, validity-scale PNA on the life-satisfaction step) after Study 1 closes
 - [ ] Decide offsite-backup retention for the collection months
 - [x] Pool 5 chosen as the instrument, on the 6-point scale with "Prefer not to answer"; `sf-pool-5` and `psy240-sf-pool-5` converted (2026-10-10)
