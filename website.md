@@ -5408,6 +5408,13 @@ Studies with a **Completion redirect URL** set (admin → study detail → Exter
 
 ---
 
+
+**Retest linking (2026-10-11).** Each study gives a person its own random code, so a baseline and its retest are tied only by the Prolific ID, which de-identification deletes. Three pieces keep them linkable:
+- `studies.identity_link_study_id` pairs two studies; the retest names its baseline.
+- `studies.retain_identities_until`: no ID of that study is deleted before this date. Set it on the baseline until the retest closes.
+- `deidentify_external_enrollments` writes `external_identity_links` (code ↔ code for the same person) just before it deletes the IDs, and reports `held_until` and `linked`.
+
+Order of work: run the retest; de-identify the baseline after the hold, which writes the links; then de-identify the retest (`20261011_identity_links.sql`).
 ## 28a. Study Data Export (`/admin/export`, 2026-07-23)
 
 **Route/access**: `/admin/export` (AdminLayout nav label "Export"), lab-only. Component `src/pages/admin/DataExportPage.jsx`; data layer `src/lib/studyExport.js`.
