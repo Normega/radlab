@@ -25,8 +25,13 @@ out$positive_only <- sf1_congruence(L0k[pos, ], inspect(m1, "std")$lambda)
 for (which in c("flagged", "translation")) {
   keep <- if (which == "flagged") !A$meta$flagged else !A$meta$flag_translation
   sf1_log("2. without ", which, " respondents (n = ", sum(keep), ")")
-  m2 <- sf1_fit_esem(A$items_raw[keep, ], P$member, TRUE)
-  out[[paste0("without_", which)]] <- sf1_congruence(L0, sf1_loadings(m2, P$fnames)[def$items, ])
+  # A subset can leave an item with an empty response category, which the
+  # ordinal estimator cannot fit; that is recorded as the result, not a crash.
+  m2 <- tryCatch(sf1_fit_esem(A$items_raw[keep, ], P$member, TRUE), error = function(e) e)
+  out[[paste0("without_", which)]] <- if (inherits(m2, "error")) {
+    sf1_log("  not estimable: ", trimws(gsub("[[:space:]]+", " ", conditionMessage(m2))))
+    data.table(factor = P$fnames, matched = NA_character_, congruence = NA_real_)
+  } else sf1_congruence(L0, sf1_loadings(m2, P$fnames)[def$items, ])
 }
 
 sf1_log("3. siren acquiescence-corrected EFA")
