@@ -3187,7 +3187,7 @@ several per page) is the standard for new studies**. The evidence is in
 - **Not changed:** the legacy one-per-screen renderer itself (frozen for running studies), VAS/assessment
   packages, and coded instruments (demographics, census).
 
-**PSY240 class trial:** switched to `stacked` (it had no real enrollments). Its three legacy instruments
+**PSY240 class trial:** switched to `stacked` (it had no real enrollments). (Its Sense Foraging measure is now the 20-item short form, 2026-10-11, §26c.) Its three legacy instruments
 (`psy240-sf-pool-5` → 7/7/7/7/6, `psy240-mpod-t` → 8/7, `smm-8` → 8) were converted with the production code
 and pass the composable validator with item ids and order unchanged. The trial's Sense Foraging copy was
 then moved to the 6-point scale with "Prefer not to answer" the same day (§26c, "Item pool decision"), so it
@@ -8339,7 +8339,7 @@ Onboarding is Wed Oct 14 in class.
 - [x] Pool 5 chosen as the instrument, on the 6-point scale with "Prefer not to answer"; `sf-pool-5` and `psy240-sf-pool-5` converted (2026-10-10)
 - [ ] Pool 6 (reverse-keyed items): Norm's picks, think-aloud on phones, into the amendment
 - [x] Study 1 rebuilt on pool 6 (`sf-pool6`, ids `sf6_*`) with the reversal rules in the interleave engine (2026-10-10)
-- [ ] EFA before Oct 17, then the reduced set into the PSY240 trial (replacing `psy240-sf-pool-5`)
+- [x] EFA done (2026-10-11); the **20-item short form** (`sf-short-20`; trial copy `psy240-sf-short-20`) replaces `psy240-sf-pool-5` in the PSY240 trial's baseline and final survey (`20261011_sf_short_form.sql`). Four factors, five items each, every factor mixing forward and reverse-keyed items: Access 35R 36R 9 8 7; Understanding the modes 22 3 15 31 37R; Valuing and savouring 12 18 11 27 44R; Letting be 40R 46R 43R 47R 21. One fixed order for everyone and both timepoints
 
 ### Accountability Buddy (§29f)
 
