@@ -23,6 +23,7 @@ import { useAssignments } from '../hooks/useAssignment'
 import { takeScreenerDraft } from '../lib/screenerDraft'
 import { useScrollToTopOn } from '../lib/scrollToTop'
 import { useNoTranslate } from '../lib/noTranslate'
+import { shuffleStepGroups } from '../lib/stepShuffle'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -220,6 +221,9 @@ export default function SessionEntry() {
     if (data.error === 'revoked') { setState('revoked');   return }
     if (data.error)               { setState('not_found'); return }
 
+    // Steps sharing a shuffle_group run in a per-participant order, seeded by the
+    // link token so a reload (and the progress resume) sees the same one (P2).
+    data.nodes = shuffleStepGroups(data.nodes ?? [], token)
     const { link, schedule, study } = data
 
     if (link.status === 'revoked')              { setState('revoked');   return }
