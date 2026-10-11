@@ -8,7 +8,12 @@ source("scripts/analysis/sense_foraging_study1/config.R")
 A <- readRDS(sf1_path("derived", sprintf("sf1_%s.rds", SF1$mode)))
 k <- SF1$k_primary
 P <- readRDS(sf1_path("derived", sprintf("primary_%s_k%02d.rds", SF1$mode, k)))
+source("scripts/analysis/sense_foraging_study1/sf1_models.R")
 FS <- as.data.table(lavPredict(P$with_ri))[, P$fnames, with = FALSE]
+Lk <- sf1_loadings(P$with_ri, P$fnames)[A$definition$items, ]
+Lk[A$definition$reversed, ] <- -Lk[A$definition$reversed, ]
+orient <- sf1_orientation(Lk)
+for (j in seq_along(P$fnames)) set(FS, j = P$fnames[j], value = FS[[P$fnames[j]]] * orient[j])
 d <- cbind(A$meta[, .(participant, practice_group, posting)], FS)
 
 kg <- rbindlist(lapply(P$fnames, function(f) {

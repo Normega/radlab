@@ -43,3 +43,14 @@ sf1_congruence <- function(L_ref, L_new) {
   data.table(factor = colnames(L_ref), matched = colnames(L_new)[apply(abs(C), 1, which.max)],
              congruence = round(apply(abs(C), 1, max), 3))
 }
+
+# A factor's sign is arbitrary: an ESEM can return a factor pointing at either
+# pole (Study 1's "letting be" factor came back as "needing to know"). Each factor
+# is oriented so the keyed loadings of the items it defines sum to a positive
+# number. Returns +1/-1 per factor; multiply loadings and factor scores by it.
+sf1_orientation <- function(L_keyed) {
+  pf <- apply(abs(L_keyed), 1, which.max)
+  vapply(seq_len(ncol(L_keyed)), function(j) {
+    s <- sum(L_keyed[pf == j, j]); if (s < 0) -1 else 1
+  }, 1)
+}

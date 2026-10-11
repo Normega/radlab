@@ -18,6 +18,8 @@ P <- readRDS(sf1_path("derived", sprintf("primary_%s_k%02d.rds", SF1$mode, k)))
 source("scripts/analysis/sense_foraging_study1/sf1_models.R")
 L <- sf1_loadings(P$with_ri, P$fnames)[def$items, ]
 L[def$reversed, ] <- -L[def$reversed, ]
+orient <- sf1_orientation(L); L <- sweep(L, 2, orient, `*`)
+fwrite(data.table(factor = colnames(L), orientation = orient), sf1_out(sprintf("06_factor_orientation_k%02d.csv", k)))
 desc <- fread(sf1_out("02_item_descriptives.csv"))
 
 tab <- data.table(item = def$items, n = as.integer(sub("sf6_", "", def$items)),
@@ -52,6 +54,20 @@ pairs[, proposed := qualifies & seq_len(.N) <= 6]
 fwrite(tab, sf1_out(sprintf("06_item_selection_k%02d.csv", k)))
 fwrite(pairs, sf1_out(sprintf("06_reversal_pairs_k%02d.csv", k)))
 short <- unique(c(tab[proposed == TRUE, item], unlist(pairs[proposed == TRUE, .(reversed, partner)])))
+# Ordinal alpha and omega (total) of each proposed subscale, from the polychoric
+# matrix of keyed items: descriptive, for the PI's decision.
+Rk <- psych::polychoric(A$items_keyed, correct = 0)$rho
+sub <- rbindlist(lapply(colnames(L), function(f) {
+  ids <- intersect(short, tab[primary_factor == f, item])
+  if (length(ids) < 2) return(data.table(factor = f, n_items = length(ids)))
+  Rs <- Rk[ids, ids]
+  a <- psych::alpha(Rs, warnings = FALSE)$total$raw_alpha
+  o <- if (length(ids) >= 3) suppressWarnings(psych::omega(Rs, nfactors = 1, plot = FALSE)$omega.tot) else NA
+  data.table(factor = f, n_items = length(ids), items = paste(sub("sf6_", "", ids), collapse = " "),
+             ordinal_alpha = round(a, 3), ordinal_omega = round(o, 3))
+}), fill = TRUE)
+fwrite(sub, sf1_out(sprintf("06_short_form_reliability_k%02d.csv", k)))
+print(sub)
 sf1_log("proposed short form: ", length(short), " items (", sum(tab$proposed), " by loading + pairs); ",
         sum(pairs$qualifies), " of 14 reversal pairs qualify")
 print(tab[proposed == TRUE, .N, by = primary_factor])
