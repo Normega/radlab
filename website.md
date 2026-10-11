@@ -8391,8 +8391,8 @@ Onboarding is Wed Oct 14 in class.
 - [x] R pipeline built on permuted and simulated data (now in the private repo Normega/sense-foraging-scale, `study1/analysis/`): simulated recovery congruence .96–.99, acquiescence variance 0.096 (true 0.10); data stay in `F:/radlab_data/sf_study1` (local, unsynced)
 - [x] Registration approved and analysed (2026-10-11): 500 analysed; four content factors (Access, Understanding the modes, Valuing and savouring, Letting be) plus a general agreement factor (~10% of item variance); proposed 17-item short form; findings for collaborators at senseforaging.com/research/study1. Deviation to note on OSF: Prolific postings were not country-filtered (69% outside the six planned countries)
 - [x] Study 2 built inactive (2026-10-11): short form, six candidate items, validity block in a per-participant order (P2 `shuffle_group`) adding IUS-12, SBI Savoring the Moment, BFI-2 Open-Mindedness, EQ Decentering, PSS-4 and past-week items; retest study linked through `external_identity_links` (§26c "Study 2")
-- [ ] Study 2 amendment to REB (forms, retest, new measures); PSS-4 ePROVIDE licence; SBI permission from Bryant
-- [ ] Study 2 preregistration (validity matrix, incremental validity, invariance, known groups, retest ICC)
+- [ ] Study 2 amendment to REB (forms, retest, new measures): Word documents built 2026-10-11 in `Ethics/…Zindel/Rev4_Study2_Amendment` by `scripts/sense_foraging/build_study2_amendment_docs.py`; still owed: submit, PSS-4 ePROVIDE licence, SBI permission from Bryant
+- [ ] Study 2 preregistration (validity matrix, incremental validity, invariance, known groups, retest ICC): draft at `docs/markdowns/sense_foraging_study2_preregistration.md`, open points marked [Norm]
 - [ ] Before Study 2 launches: `retain_identities_until`, country filter on both postings, remove banners, `active = true`
 - [ ] Decide offsite-backup retention for the collection months
 - [x] Pool 5 chosen as the instrument, on the 6-point scale with "Prefer not to answer"; `sf-pool-5` and `psy240-sf-pool-5` converted (2026-10-10)
