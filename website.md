@@ -8331,7 +8331,9 @@ Onboarding is Wed Oct 14 in class.
 - [x] Prolific completion code set: `completion_redirect_url` = Prolific complete URL, cc `C1JE3XY5`, shared by both postings (2026-10-11)
 - [x] 20-person pilot (general posting): 15/15 completers passed both checks, median ~9 min (2026-10-11)
 - [x] Both postings filled 2026-10-11: 510 enrolled, 477 completed (general 256/247, contemplative 254/230)
-- [ ] OSF preregistration filed (`docs/markdowns/sense_foraging_study1_preregistration.md`; Word + supplementary materials + item key in `…\Ethics\Sense Foraging Questionnaire Zindel\OSF_Study1\` via `build_osf_docs.py`). No structural analysis until filed; code is developed on item-permuted data
+- [x] OSF preregistration submitted (osf.io/48r2y, pending approval, 2026-10-11)
+- [x] R pipeline built on permuted and simulated data (`scripts/analysis/sense_foraging_study1/`, README): simulated recovery congruence .96–.99, acquiescence variance 0.096 (true 0.10); data stay in `F:/radlab_data/sf_study1` (local, unsynced)
+- [ ] Run in `SF1_MODE=real` once the registration is approved (`docs/markdowns/sense_foraging_study1_preregistration.md`; Word + supplementary materials + item key in `…\Ethics\Sense Foraging Questionnaire Zindel\OSF_Study1\` via `build_osf_docs.py`). No structural analysis until filed; code is developed on item-permuted data
 - [ ] Study 2 (scale-order shuffle P2, validity-scale PNA on the life-satisfaction step) after Study 1 closes
 - [ ] Decide offsite-backup retention for the collection months
 - [x] Pool 5 chosen as the instrument, on the 6-point scale with "Prefer not to answer"; `sf-pool-5` and `psy240-sf-pool-5` converted (2026-10-10)
