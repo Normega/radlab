@@ -315,7 +315,7 @@ function Stat({ big, label, sub, color = 'var(--tx)' }) {
   )
 }
 
-const DECK_FIGS = ['/socpers-oct-2026/fig-gating-s5.png', '/socpers-oct-2026/fig-recognition.png', '/socpers-oct-2026/fig-burnout.png', '/socpers-oct-2026/qr-poll.png']
+const DECK_FIGS = ['/socpers-oct-2026/gert-wheel.png', '/socpers-oct-2026/fig-gating-s5.png', '/socpers-oct-2026/fig-recognition.png', '/socpers-oct-2026/fig-burnout.png', '/socpers-oct-2026/qr-poll.png']
 
 // ── Slides ──────────────────────────────────────────────────────────────────
 // `by` = cumulative target time (seconds) at which this slide should be done.
@@ -523,11 +523,11 @@ const SLIDES = [
   {
     label: 'Seeing others: design',
     by: 640,
-    note: '“If noticing gates what we feel, does it reach how we see other people?” Aya Fouad’s thesis, now submitted. 315 students, preregistered. Twelve blocks: three breathing trials at your own threshold, then five short clips of actors expressing one of 14 emotions with face, voice and body. Which emotion, and how intense? Breathing belt and ECG throughout. “So now we can ask: when the body changes, does perception follow the body, or the feeling?”',
+    note: '“If noticing gates what we feel, does it reach how we see other people?” Aya Fouad’s thesis, now submitted. 315 students, preregistered. Walk the storyboard left to right: “Here’s one block. Three breathing trials like yours, the change set at your own threshold. Then five short clips of an actor expressing one of 14 emotions, with face, voice and body, in made-up speech. After each: which emotion, on this wheel, and how intense. Twelve blocks.” (The face is a cartoon: the GERT clips are licensed for research only.) Breathing belt and ECG throughout. “So now we can ask: when the body changes, does perception follow the body, or the feeling?”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered · N = 315">
         <H2>Does what we feel colour how we see others?</H2>
-        <BlockFlow />
+        <GertMethod />
         <Lead>Belt and ECG throughout, so the body, the noticing and the feeling can be pulled apart.</Lead>
         <Detail density={d}>
           Geneva Emotion Recognition Test (GERT): 14 emotions, short audio-video clips with pseudo-linguistic speech.
@@ -542,7 +542,7 @@ const SLIDES = [
   {
     label: 'Felt, not bodily, arousal',
     by: 720,
-    note: 'Walk the chain left to right. Bodily change → noticed (strong) → felt arousal (only via noticing) → perceived intensity (dashed: suggestive). The direct line from the body to perception: equivalent to zero. Then the two stats: people who felt more aroused saw others’ emotions as more intense; heart rate didn’t move with the breathing change, so this isn’t general autonomic arousal. Honest caveat in one breath: “Small, correlational within person, and it varied a lot across people. The next study manipulates the feeling directly.”',
+    note: 'Say first: “This chain is within each person, block to block.” Walk the chain left to right. Bodily change → noticed (strong) → felt arousal (only via noticing) → perceived intensity (dashed: suggestive). The direct line from the body to perception: equivalent to zero. Then the two stats, starting with the contrast: “The arrow says .05, the card says .08, because they ask different questions. The chain is within a person, adjusted for the breathing change and for noticing; the card compares people: those who felt more aroused overall saw others’ emotions as more intense.” people who felt more aroused saw others’ emotions as more intense; heart rate didn’t move with the breathing change, so this isn’t general autonomic arousal. Honest caveat in one breath: “Small, correlational within person, and it varied a lot across people. The next study manipulates the feeling directly.”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · within person, n = 224 with a working belt">
         <H2>We see others as we feel, not as our bodies change</H2>
@@ -660,34 +660,125 @@ const WELLBEING = [
   { t: 'Social life', s: 'Our felt state colours how intense others look. Noticing it is a chance to set it aside.' },
 ]
 
-// One combined-task block: three breathing trials, then five emotion clips.
-function BlockFlow() {
-  const box = (title, sub, color) => (
-    <div style={{ ...K2.flowBox, borderColor: color }}>
-      <div style={{ ...K2.flowT, color }}>{title}</div>
-      <div style={K2.flowS}>{sub}</div>
-    </div>
+// One combined-task block, drawn as the screens a participant saw: three
+// breathing trials, then five emotion clips, each followed by the GERT wheel
+// (the real response screen from the task, Task/images/RatingScreen.png) and
+// the 1-7 intensity scale. The actor is a caricature: GERT clips are licensed
+// for research use, not for showing.
+function GertMethod() {
+  const W = 1080, H = 372
+  const sw = 230, sh = 168, sy = 66
+  const xs = [10, 320, 580, 840]
+  const ink = '#1c1c1e', grey = '#6b6c70', pink = '#F068A4', pkd = '#BA417A'
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  const screen = (x, children) => (
+    <g>
+      <rect x={x} y={sy} width={sw} height={sh} rx="14" fill="#fff" stroke={grey} strokeWidth="3" />
+      <rect x={x + sw / 2 - 18} y={sy + sh} width="36" height="10" fill={grey} />
+      <rect x={x + sw / 2 - 44} y={sy + sh + 10} width="88" height="6" rx="3" fill={grey} />
+      {children}
+    </g>
   )
+  const caption = (x, t, s) => (
+    <g>
+      <text x={x + sw / 2} y={sy + sh + 46} textAnchor="middle" fontSize="20" fontWeight="600" fill={ink} fontFamily={sans}>{t}</text>
+      <text x={x + sw / 2} y={sy + sh + 70} textAnchor="middle" fontSize="16" fill={grey} fontFamily={sans}>{s}</text>
+    </g>
+  )
+  const arrow = (x1, x2) => (
+    <line x1={x1} y1={sy + sh / 2} x2={x2} y2={sy + sh / 2} stroke={grey} strokeWidth="3" markerEnd="url(#gm-arrow)" />
+  )
+  const cx2 = xs[1] + sw / 2, cy = sy + sh / 2
   return (
-    <div style={K2.flow}>
-      {box('3 breathing trials', 'changes set at your own threshold · noticed? how activated?', 'var(--pk)')}
-      <span style={K2.flowArrow}>→</span>
-      {box('5 emotion clips', 'actors, face + voice + body · which emotion? how intense?', BLUE)}
-      <span style={K2.flowTimes}>× 12 blocks</span>
-    </div>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 1080, height: 'auto' }} role="img"
+      aria-label="One block: three breathing trials, then five emotion clips, each followed by a 14-emotion wheel and a 1 to 7 intensity rating; twelve blocks in all">
+      <defs>
+        <marker id="gm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill={grey} />
+        </marker>
+        <radialGradient id="gm-pk" cx="50%" cy="42%" r="65%">
+          <stop offset="0%" stopColor="#ff9ec9" />
+          <stop offset="72%" stopColor={pink} />
+        </radialGradient>
+      </defs>
+
+      {/* 1 · breathing trial (the circle breathes) */}
+      {screen(xs[0], (
+        <circle cx={xs[0] + sw / 2} cy={cy} r="40" fill="url(#gm-pk)">
+          <animate attributeName="r" values="28;62;28" dur="4s" repeatCount="indefinite" />
+        </circle>
+      ))}
+      <g>
+        <rect x={xs[0] + sw - 58} y={sy - 18} width="70" height="36" rx="18" fill={pink} />
+        <text x={xs[0] + sw - 23} y={sy + 7} textAnchor="middle" fontSize="20" fontWeight="700" fill="#fff" fontFamily={mono}>× 3</text>
+      </g>
+      {caption(xs[0], 'Breathing trial', 'at your threshold · faster, slower, same?')}
+      {arrow(xs[0] + sw + 10, xs[1] - 12)}
+
+      {/* 2 · emotion clip: a caricatured actor mid-expression, with voice */}
+      {screen(xs[1], (
+        <g>
+          <ellipse cx={cx2} cy={cy - 4} rx="44" ry="52" fill="#FBEAF3" stroke={ink} strokeWidth="3" />
+          <path d={`M${cx2 - 28},${cy - 30} q10,-12 20,-4 M${cx2 + 8},${cy - 34} q10,-8 20,4`} fill="none" stroke={ink} strokeWidth="3" strokeLinecap="round" />
+          <circle cx={cx2 - 16} cy={cy - 14} r="5" fill={ink} />
+          <circle cx={cx2 + 16} cy={cy - 14} r="5" fill={ink} />
+          <ellipse cx={cx2} cy={cy + 22} rx="14" ry="10" fill={ink} />
+          <path d={`M${cx2 + 58},${cy - 14} q10,14 0,28 M${cx2 + 72},${cy - 24} q16,24 0,48`} fill="none" stroke={pkd} strokeWidth="3" strokeLinecap="round" />
+          <path d={`M${xs[1] + 16},${sy + sh - 30} l0,16 l13,-8 z`} fill={grey} />
+          <rect x={xs[1] + 38} y={sy + sh - 24} width={sw - 56} height="4" rx="2" fill="#e6e6e8" />
+          <rect x={xs[1] + 38} y={sy + sh - 24} width={(sw - 56) * 0.45} height="4" rx="2" fill={pink} />
+        </g>
+      ))}
+      {caption(xs[1], 'Emotion clip', 'an actor: face, voice, body')}
+      {arrow(xs[1] + sw + 6, xs[2] - 8)}
+
+      {/* 3 · the GERT response wheel, as participants saw it */}
+      {screen(xs[2], (
+        <image href="/socpers-oct-2026/gert-wheel.png" x={xs[2] + 10} y={sy + 10} width={sw - 20} height={sh - 20} preserveAspectRatio="xMidYMid meet" />
+      ))}
+      {caption(xs[2], 'Which emotion?', '14 choices')}
+      {arrow(xs[2] + sw + 6, xs[3] - 8)}
+
+      {/* 4 · intensity, 1-7 */}
+      {screen(xs[3], (
+        <g>
+          <text x={xs[3] + sw / 2} y={sy + 54} textAnchor="middle" fontSize="18" fontWeight="600" fill={ink} fontFamily={sans}>How intense?</text>
+          <line x1={xs[3] + 24} x2={xs[3] + sw - 24} y1={sy + 100} y2={sy + 100} stroke={ink} strokeWidth="2.5" />
+          {[1, 2, 3, 4, 5, 6, 7].map((v, k) => {
+            const x = xs[3] + 24 + k * ((sw - 48) / 6)
+            return (
+              <g key={v}>
+                <line x1={x} x2={x} y1={sy + 92} y2={sy + 108} stroke={ink} strokeWidth="2" />
+                <text x={x} y={sy + 132} textAnchor="middle" fontSize="15" fill={grey} fontFamily={mono}>{v}</text>
+              </g>
+            )
+          })}
+          <circle cx={xs[3] + 24 + 4 * ((sw - 48) / 6)} cy={sy + 100} r="9" fill={pink} />
+        </g>
+      ))}
+      {caption(xs[3], 'How intense?', '1 = not at all · 7 = extremely')}
+
+      {/* × 5: the clip, wheel and scale repeat five times */}
+      <path d={`M${xs[1]},${sy - 14} L${xs[1]},${sy - 26} L${xs[3] + sw},${sy - 26} L${xs[3] + sw},${sy - 14}`} fill="none" stroke={pkd} strokeWidth="2.5" />
+      <rect x={(xs[1] + xs[3] + sw) / 2 - 62} y={sy - 44} width="124" height="34" rx="17" fill="#fff" stroke={pkd} strokeWidth="2.5" />
+      <text x={(xs[1] + xs[3] + sw) / 2} y={sy - 21} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>× 5 clips</text>
+
+      {/* × 12 blocks */}
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>one block · × 12 blocks</text>
+    </svg>
   )
 }
 
 // The within-person chain from Fouad & Farb (Figure 4C), drawn for the projector.
 function PathDiagram() {
-  const W = 1000, H = 268
+  const W = 1000, H = 284
   const boxes = [
     { x: 20,  t1: 'Breathing', t2: 'change made' },
     { x: 270, t1: 'Change', t2: 'noticed' },
     { x: 520, t1: 'Felt', t2: 'arousal' },
     { x: 770, t1: 'Perceived', t2: 'intensity in others' },
   ]
-  const bw = 210, bh = 76, by = 72
+  const bw = 210, bh = 76, by = 88
   const arrows = [
     { from: 0, b: 'b = 0.45', p: 'p < .001', solid: true },
     { from: 1, b: 'b = 0.10', p: 'p = .012', solid: true },
@@ -704,6 +795,7 @@ function PathDiagram() {
           <path d="M0,0 L10,5 L0,10 z" fill="#ABADB0" />
         </marker>
       </defs>
+      <text x={20} y={20} fontSize="17" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily="'Space Mono',monospace">WITHIN PERSON · BLOCK TO BLOCK</text>
       {boxes.map((b, k) => (
         <g key={k}>
           <rect x={b.x} y={by} width={bw} height={bh} rx="12" fill={k === 3 ? '#FBEAF3' : '#fff'} stroke={k === 3 ? '#F068A4' : '#6b6c70'} strokeWidth="2" />
