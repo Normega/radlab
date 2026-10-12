@@ -210,6 +210,18 @@
   <p class="small hidden-until">Precision improves with √n: quadrupling your sample halves the interval. Which is why precision gets expensive fast.</p>
 </section>
 
+<section class="dense">
+  <p class="kicker">Confidence intervals</p>
+  <h1>Do two estimates differ?</h1>
+  <p class="lead">A rough guide for two separate groups, each shown with its 95% interval:</p>
+  <div class="svgwrap"><svg viewBox="0 0 620 200" role="img" aria-labelledby="ov-t ov-d"><title id="ov-t">Reading the overlap of two confidence intervals</title><desc id="ov-d">Three pairs of 95% confidence intervals for two separate groups, all the same width. Top: a gap between them, a clear difference. Middle: they overlap by about half of one arm, which often still means a difference at about p equals .05. Bottom: heavy overlap, which cannot be read from the picture.</desc><line x1="88.0" y1="33" x2="212.0" y2="33" stroke="#1F5C8B" stroke-width="5" stroke-linecap="round"/><circle cx="150.0" cy="33" r="5.5" fill="#141B22"/><line x1="230.6" y1="47" x2="354.6" y2="47" stroke="#B5540F" stroke-width="5" stroke-linecap="round"/><circle cx="292.6" cy="47" r="5.5" fill="#141B22"/><text x="361" y="38" font-size="13.5" font-weight="bold" fill="#141B22">Gap between them</text><text x="361" y="55" font-size="12" fill="#5C6773">a clear difference (roughly p < .01)</text><line x1="88.0" y1="95" x2="212.0" y2="95" stroke="#1F5C8B" stroke-width="5" stroke-linecap="round"/><circle cx="150.0" cy="95" r="5.5" fill="#141B22"/><line x1="181.0" y1="109" x2="305.0" y2="109" stroke="#B5540F" stroke-width="5" stroke-linecap="round"/><circle cx="243.0" cy="109" r="5.5" fill="#141B22"/><text x="361" y="100" font-size="13.5" font-weight="bold" fill="#141B22">Overlap of about half an arm</text><text x="361" y="117" font-size="12" fill="#5C6773">often still a difference (about p = .05)</text><line x1="88.0" y1="157" x2="212.0" y2="157" stroke="#1F5C8B" stroke-width="5" stroke-linecap="round"/><circle cx="150.0" cy="157" r="5.5" fill="#141B22"/><line x1="125.2" y1="171" x2="249.2" y2="171" stroke="#B5540F" stroke-width="5" stroke-linecap="round"/><circle cx="187.2" cy="171" r="5.5" fill="#141B22"/><text x="361" y="162" font-size="13.5" font-weight="bold" fill="#141B22">Heavy overlap</text><text x="361" y="179" font-size="12" fill="#5C6773">can&#8217;t tell from the picture</text><text x="88" y="196" font-size="11.5" fill="#5C6773">blue = group A &#183; orange = group B &#183; each bar a 95% CI around a group mean</text></svg></div>
+  <ul class="hidden-until">
+    <li><strong>Overlap is not proof of &#8220;no difference.&#8221;</strong> Eyeballing overlap is cautious: intervals that overlap a little can still differ.</li>
+    <li><strong>The real test is the interval around the difference itself</strong>, and whether it excludes zero. We&#8217;ll build that in later lectures, when we compare groups in experiments.</li>
+  </ul>
+  <aside class="notes"><p>This slide is the Cumming and Finch (2005) rule of thumb for 95% CIs on two independent means: no overlap at all corresponds to roughly p &lt; .01, and overlap of up to about half the average margin of error still corresponds to about p &lt; .05. It does not apply to repeated measures, where the two estimates are correlated and the intervals say almost nothing about the difference. The proper tool is the CI on the difference (the t-test's interval in R), which arrives with the experimental designs in L7 and the within-subject designs after reading week. This is the same caution the Field Guide's confidence-intervals page gives for "the effect shrank!" headlines.</p></aside>
+</section>
+
 <section data-kind="break">
   <p class="kicker">Break 1 · ten minutes</p>
   <h1>Check in</h1>
