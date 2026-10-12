@@ -383,7 +383,7 @@ const SLIDES = [
   {
     label: 'Your results (live)',
     by: 270,
-    note: 'Read it in this order. (1) “How many of you noticed trial 1?” read the n. “And trial 2?” Usually more. (2) Compare gold to blue within each panel: people who noticed vs missed the same change. (3) The bottom line: how many felt more activated after trial 2. If it matches: “That’s the paper in one room.” If it doesn’t: “With this many people that’s close to a coin toss. That’s why we ran 787. Let’s see what they did.” Either way, don’t over-read it. Refreshes every 2 s, so late answers still land.',
+    note: 'Read it in this order. (1) “How many of you noticed trial 1?” read the n. “And trial 2?” Usually more. (2) Compare gold to blue within each panel: people who noticed vs missed the same change. (3) The bottom line: how many felt more activated after trial 2. If it matches: “That’s the paper in one room.” If it doesn’t: “With this many people that’s close to a coin toss. That’s why we ran 787. Let’s see what they did.” Either way, don’t over-read it. Refreshes every 2 s, so late answers still land. If no answers reached the server, this slide shows three hands-up questions instead of empty axes: ask them in order, read the room, then “keep your hands in mind” and move on.',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="You, a minute ago · live">
         <H2>Did noticing change how activated you felt?</H2>
