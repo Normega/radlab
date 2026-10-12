@@ -892,16 +892,18 @@ const BONUS = [
     ),
   },
   {
-    q: 'Is breath sensitivity just task engagement?',
-    note: '“Partly possible.” It survived response bias, confidence, MAIA, demographics, PHQ-4 and burnout (β = −.14). But among people whose belt worked, controlling how closely they followed the pacer weakened it to β = −.10, p = .18. “So shared engagement can’t be fully excluded; a common precision for weak signals is the other reading.”',
+    q: 'Is breath sensitivity just general ability or engagement?',
+    note: '“It could be, and we can’t rule it out yet: we didn’t measure cognitive ability.” What argues against a purely general account: it survived response bias, confidence, MAIA, demographics, PHQ-4 and burnout (β = −.14); and heartbeat counting, also an effortful attention task, predicted neither the threshold (r = −.08) nor recognition (r = −.05), though counting has its own problems. What argues for it: among people whose belt worked, controlling how closely they followed the pacer (synchrony, entrainment gain) and false alarms weakened it from β = −.13 to −.10, p = .18, and emotion-recognition tests generally track cognitive ability modestly. “The clean test is the BCAT’s visual condition: the same pacer and the same change, watched without breathing along. If visual thresholds predict reading others just as well, it’s general ability. If breath predicts over and above visual, it’s interoceptive. Add a short ability measure as a covariate.”',
     render: () => (
-      <Frame kicker="Bonus · sensitivity or engagement?">
-        <H2>Two readings of the sensitivity–accuracy link</H2>
+      <Frame kicker="Bonus · interoception or general ability?">
+        <H2>Is it the body, or just being good at tasks?</H2>
         <Bullets items={[
+          'Not measured: no cognitive-ability or working-memory task in this study.',
           'Survives response bias, confidence, MAIA, demographics, PHQ-4 and burnout: β = −.14, p = .028.',
-          'Controlling breathing compliance weakens it: β = −.10, p = .18.',
-          'Shared precision for weak signals, or shared engagement: the next study separates them.',
+          'Heartbeat counting, also effortful, predicted neither threshold (r = −.08) nor recognition (r = −.05).',
+          'Controlling how closely breathing followed the pacer, plus false alarms, weakens it: β = −.10, p = .18.',
         ]} />
+        <Lead>Next: the BCAT’s visual condition (same pacer, no breathing) plus a short ability measure. Breath beyond visual = interoceptive.</Lead>
       </Frame>
     ),
   },
