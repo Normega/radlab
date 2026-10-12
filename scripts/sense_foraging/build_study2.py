@@ -3,7 +3,7 @@ that creates both studies, inactive, for review (Norm, 2026-10-11).
 
 Session (Study 2):
   background (sf-background, as Study 1) -> the 20-item short form (sf-short-20, fixed
-  order, as the PSY240 trial) -> 14 candidate items (unscored, in a per-participant order) -> the validity block in
+  order, as the PSY240 trial) -> 24 candidate items (unscored, in a per-participant order) -> the validity block in
   a per-participant order (session_template_nodes.shuffle_group = 'validity'):
   FFMQ-15, MAIA-2, BIDR-16, PHQ-4 (the REB-approved appendix, verbatim, via
   build_draft.build_validity), IUS-12, SBI Savoring the Moment, BFI-2 Open-Mindedness,
@@ -132,19 +132,38 @@ CANDIDATES = [
     ('sfc_14', 'When I notice something, I have trouble just letting it be', 'Letting be', True),
     ('sfc_4', 'When I have free time, I would rather fill it than spend it just sensing', 'Valuing and savouring', True),
     ('sfc_15', 'Time spent just taking things in feels like time wasted', 'Valuing and savouring', True),
+    # Forage, the seeking itself (Norm, 2026-10-12): searching for something without knowing where it will turn
+    # up. Study 1's discovery items measured valuing discovery and loaded with Valuing.
+    ('sfc_16', 'When I am bored, I search my senses for something interesting', 'Forage', False),
+    ('sfc_17', 'In familiar places, I look for something I have not noticed before', 'Forage', False),
+    ('sfc_18', 'When I feel too busy, I look for something to take in through my senses', 'Forage', False),
+    ('sfc_19', 'I wait for something interesting to come along rather than looking for it', 'Forage', True),
+    ('sfc_20', 'There is not much left to discover in my everyday surroundings', 'Forage', True),
+    # Five Study 1 items, wording unchanged, so Study 2 can test the more reliable Access-8 / Valuing-6 form.
+    # New ids because exports name columns by an id's trailing number (sf6_2 would collide with sfc_2).
+    ('sfc_21', 'I can move into the sensing mode even in a stressful or demanding moment', 'Access', False),
+    ('sfc_22', 'The sensing mode feels close at hand to me, wherever I am', 'Access', False),
+    ('sfc_23', 'I can tell when a moment calls for the doing mode and when it calls for the sensing mode', 'Access', False),
+    ('sfc_24', 'Time in the sensing mode leaves me with a sense of awe or wonder', 'Valuing and savouring', False),
+    ('sfc_25', 'I welcome surprise when I am in the sensing mode, rather than trying to predict or control what happens',
+     'Valuing and savouring', False),
 ]
+STUDY1_ITEM = {'sfc_21': 'sf6_6', 'sfc_22': 'sf6_2', 'sfc_23': 'sf6_14', 'sfc_24': 'sf6_25', 'sfc_25': 'sf6_28'}
 # Per-participant order (the renderer's interleave engine): same-factor items never adjacent, reversed
-# items 3-5 a page and never first, opposite pairs (and the two items sharing an opening) on different pages. Checked feasible for 2,000 seeds.
+# items 3-4 a page and never first, opposite or look-alike pairs on different pages. Checked feasible for 2,000 seeds.
 def candidates_interleave():
     by = lambda f: [c for c, _, ff, _ in CANDIDATES if ff == f]
-    return {'items': [c for c, *_ in CANDIDATES], 'page_sizes': [7, 7],
+    return {'items': [c for c, *_ in CANDIDATES], 'page_sizes': [8, 8, 8],
             'clusters': {'understanding': by('Understanding the modes'), 'letting_be': by('Letting be'),
-                         'valuing': by('Valuing and savouring')},
-            'cluster_min_gap': 2, 'cluster_max_per_page': 4,
-            'groups': [{'items': [c for c, _, _, r in CANDIDATES if r], 'min_gap': 1, 'max_per_page': 5, 'min_per_page': 3,
-                        'avoid_positions': [1], 'max_run_outside': 3}],
+                         'valuing': by('Valuing and savouring'), 'forage': by('Forage'), 'access': by('Access')},
+            'cluster_min_gap': 2, 'cluster_max_per_page': 3,
+            'groups': [{'items': [c for c, _, _, r in CANDIDATES if r], 'min_gap': 1, 'max_per_page': 4, 'min_per_page': 3,
+                        'avoid_positions': [1], 'max_run_outside': 4}],
             'apart_pages': [['sfc_8', 'sfc_9'], ['sfc_11', 'sfc_12'], ['sfc_4', 'sfc_15'],
-                            ['sfc_12', 'sfc_14']]}     # same opening, "When I notice something"
+                            ['sfc_12', 'sfc_14'],      # same opening, "When I notice something"
+                            ['sfc_17', 'sfc_20'],      # look for something new / nothing left to discover
+                            ['sfc_16', 'sfc_19'],      # search / wait
+                            ['sfc_7', 'sfc_23']]}      # both "I can tell…"
 
 
 def build_new():
@@ -210,7 +229,8 @@ def build_new():
         'There are no right or wrong answers.',
         [{'id': f'sfc_p{k}', 'components': [comp[i] for i in ids]} for k, ids in enumerate(layout, 1)])
     out['cand']['interleave'] = spec
-    out['cand']['candidates'] = [{'id': c, 'factor': f, 'reverse_keyed': r} for c, _, f, r in CANDIDATES]
+    out['cand']['candidates'] = [{'id': c, 'factor': f, 'reverse_keyed': r, **({'study1_item': STUDY1_ITEM[c]} if c in STUDY1_ITEM else {})}
+                                 for c, _, f, r in CANDIDATES]
     return out
 
 
