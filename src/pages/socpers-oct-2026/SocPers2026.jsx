@@ -499,14 +499,40 @@ const SLIDES = [
     ),
   },
 
-  // 10 — MAIA (hands)
+  // 10 — What the MAIA is (hands)
   {
-    label: 'Self-report (MAIA)',
-    by: 600,
-    note: '“Hands up if you’d say you notice subtle changes in your breathing.” Smile at the count. “That’s close to an item on the MAIA, the most-used body-awareness questionnaire. Across five studies it predicted how confident people were, not how small a change they could detect.” For this audience: “It looks less like a sensory ability and more like a disposition: a habit of attending to and trusting the body. And Aya’s new sample, coming next, finds the same: MAIA unrelated to thresholds.”',
+    label: 'The MAIA',
+    by: 575,
+    note: '“If you study individual differences in body awareness, the questionnaire you reach for is the MAIA.” It was built to capture the adaptive kind: noticing sensations, staying with them without worrying, trusting your body. “And it behaves like a wellbeing measure. In Aya’s sample, people who scored higher had fewer anxiety and depression symptoms and less burnout.” Then the item: “Here’s one of its items. Hands up if that’s you.” Smile at the count, and hold it for the next slide.',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
-        <H2>Hands up if you notice subtle changes in your breathing</H2>
+        <H2>The standard questionnaire for body awareness</H2>
+        <Lead>The MAIA measures adaptive interoceptive awareness: noticing sensations, staying with them without worry, trusting the body. Higher scores go with better mental health.</Lead>
+        <div style={K.stats}>
+          <Stat big="r = −.32" label="higher MAIA, fewer anxiety and depression symptoms" sub="PHQ-4 · n = 315" color="var(--pkd)" />
+          <Stat big="r = −.34" label="higher MAIA, less burnout" sub="BAT-C · n = 315" color="var(--pkd)" />
+        </div>
+        <div style={K2.itemCard}>
+          <p style={K.quote}>“I notice changes in my breathing, such as whether it slows down or speeds up.”</p>
+          <span style={K2.itemHands}>One MAIA item · hands up if that’s you</span>
+        </div>
+        <Detail density={d}>
+          Multidimensional Assessment of Interoceptive Awareness (Mehling et al., 2012): 32 items in eight scales
+          (noticing, not-distracting, not-worrying, attention regulation, emotional awareness, self-regulation, body
+          listening, trusting). Correlations from the Fouad & Farb sample.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 10a — MAIA predicts confidence, not sensitivity
+  {
+    label: 'MAIA: confidence, not sensitivity',
+    by: 610,
+    note: '“So, all of you with your hands up: across five studies the MAIA predicted how confident people were in their judgements, not how small a change they could detect.” For this audience: “It looks less like a sensory ability and more like a disposition: a habit of attending to and trusting the body. And Aya’s new sample finds the same: MAIA unrelated to thresholds.”',
+    render: (d) => (
+      <Frame kicker="Self-reported body awareness (MAIA)">
+        <H2>It predicts confidence, not sensitivity</H2>
         <div style={K.stats}>
           <Stat big="r = .26" label="MAIA → confidence in your judgement" sub="5 of 5 studies · [.20, .32]" color="var(--pkd)" />
           <Stat big="r = .07" label="MAIA → smallest change you can detect" sub="0 of 4 studies · BF₀₁ 2.5–5.5" color="#8a8b8f" />
@@ -523,7 +549,7 @@ const SLIDES = [
   // 10b — Study 1, what we learned (bridge to Study 2)
   {
     label: 'Study 1: what we learned',
-    by: 630,
+    by: 635,
     note: 'Wrap up the first paper in three beats, one per line. “We only feel a bodily change once we detect it: a missed change felt like no change at all. And the detail, how big the change was, only arrives with detection. And who detects isn’t something people can tell you about themselves: the questionnaire tracked confidence, not sensitivity.” Then the picture: “Two people working just as hard. One digs up a barrel of toxic waste, the other digs up treasure. If feeling waits on detection, then what we spend our attention digging for decides what we get to feel.” Bridge: “So does what we feel reach how we see other people?”',
     render: () => (
       <div style={K.twoCol}>
@@ -1208,6 +1234,8 @@ const K2 = {
   figShort: { maxWidth: '100%', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   figBurn: { maxWidth: 'min(440px, 90vw)', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
+  itemCard: { background: '#fff', border: '2px solid var(--pk)', borderRadius: 24, padding: '16px 32px', maxWidth: 860, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
+  itemHands: { fontFamily: '"Space Mono",monospace', fontSize: 16, fontWeight: 700, color: 'var(--pkd)', letterSpacing: '0.05em', textTransform: 'uppercase' },
   digImg: { width: '100%', maxWidth: 520, maxHeight: '70vh', objectFit: 'cover', borderRadius: 24, justifySelf: 'center' },
   digTake: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.3 },
   wellGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 16, width: '100%' },
