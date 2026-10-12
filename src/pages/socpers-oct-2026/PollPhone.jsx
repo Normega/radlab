@@ -4,7 +4,10 @@
 // activation rating, written through talk_poll_submit().
 //
 // The phone does not follow the projector. It walks the person through
-// trial 1 → wait → trial 2 → done, and the presenter says when to answer.
+// welcome (what is about to happen) → trial 1 → wait → trial 2 → done, and
+// the presenter says when to answer. The welcome screen is there because
+// people scan the QR before the demo starts: landing straight on "Did the
+// pace change?" left them not knowing what they were rating.
 // Progress is remembered per poll round, so a refresh does not restart it
 // and a new round (talk_poll_new_round, before the real talk) does.
 import { useEffect, useState } from 'react'
@@ -38,6 +41,7 @@ export default function PollPhone() {
   const [info, setInfo] = useState(undefined)        // undefined = loading, null = unknown poll
   const [done, setDone] = useState([])               // trials answered this round
   const [waiting, setWaiting] = useState(false)      // between trial 1 and trial 2
+  const [ready, setReady] = useState(false)          // past the welcome screen
 
   useEffect(() => {
     document.title = 'Breathing demo'
@@ -69,6 +73,19 @@ export default function PollPhone() {
     <div style={P.center}>
       <h1 style={P.h1}>Thank you</h1>
       <p style={P.sub}>Both answers are in. Watch the screen.</p>
+    </div>
+  )
+  else if (done.length === 0 && !ready) body = (
+    <div style={P.form}>
+      <h1 style={P.h1}>Welcome</h1>
+      <p style={P.sub}>In a moment the screen at the front will show a pulsing circle.</p>
+      <ol style={P.steps}>
+        <li style={P.step}><b>Breathe with the circle</b> for about 15 seconds: in as it grows, out as it shrinks.</li>
+        <li style={P.step}><b>When it stops, answer two quick questions here:</b> did the circle’s pace change, and how activated do you feel right now?</li>
+        <li style={P.step}><b>Then we do it once more,</b> with the same two questions.</li>
+      </ol>
+      <p style={P.sub}>Keep this page open. Tap below once the circle has stopped.</p>
+      <button style={P.primary} onClick={() => setReady(true)}>The circle has stopped →</button>
     </div>
   )
   else if (waiting) body = (
@@ -156,5 +173,7 @@ const P = {
   ends: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx3)' },
   primary: { marginTop: 16, padding: '16px 24px', fontSize: 16, fontWeight: 600, borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   err: { color: '#A32D2D', fontSize: 14, margin: 0 },
+  steps: { margin: '8px 0', paddingLeft: 24, listStyle: 'decimal', display: 'flex', flexDirection: 'column', gap: 12 },
+  step: { fontSize: 16, lineHeight: 1.5, color: 'var(--tx)' },
   foot: { fontSize: 12, color: 'var(--tx3)', margin: '24px 0 0', lineHeight: 1.5 },
 }
