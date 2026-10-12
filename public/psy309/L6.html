@@ -434,6 +434,21 @@ mean(many[abs(many) &gt; crit])   # average r among the significant studies</pre
 </section>
 
 <section class="dense" data-kind="activity">
+  <p class="kicker">Practical 3 · Part 3 · your topic</p>
+  <h1>Justify the difference you expect</h1>
+  <ol>
+    <li><strong>Find your DV&#8217;s spread.</strong> Look up a published mean and SD for your measure: its validation paper, or any study that used it. That SD is your ruler.</li>
+    <li class="hidden-until"><strong>Decide what difference would matter.</strong> On that scale, what change would a participant, a clinician or a teacher actually notice? Then <strong>d = difference &#247; SD</strong>.</li>
+    <li class="hidden-until"><strong>Check it against the literature.</strong> Find a study with a similar manipulation. Use its d, or compute one from its group means and SDs: (M&#8321; &#8722; M&#8322;) &#247; SD.</li>
+    <li class="hidden-until"><strong>Lean small.</strong> Published effects run hot, as Round 3 just showed, especially from small studies. Most of psychology sits at d = 0.2 to 0.6; a d above 1 needs a very good reason.</li>
+  </ol>
+  <div class="box hidden-until">
+    <p class="small"><strong>One sentence in your Method does it:</strong> &#8220;Optimism scores have an SD of about 10 (Author, year). I treat a 5-point gain, half an SD, as the smallest meaningful change, and similar gratitude interventions report effects near d = 0.5 (Author, year). The pilot therefore simulates a 5-point difference.&#8221;</p>
+  </div>
+  <aside class="notes"><p>Walk it with the worked example in Practical3_2026.Rmd (optimism, SD 10, +5), then ask two or three students to say their own DV, its scale, and the difference that would matter, before anyone touches R. The next slide turns the answer into rnorm() lines. Handy conversions when a paper doesn't report d: with equal groups the pooled SD is about the square root of the average of the two variances; an SD can be recovered from a standard error as SE &#215; &#8730;n; from an independent-groups t, d &#8776; 2t &#247; &#8730;df; from a correlation, d = 2r &#247; &#8730;(1 &#8722; r&#178;). The &#8220;Author, year&#8221; placeholders in the template are deliberate: the example sentence models the structure, not real citations. Practical 5 reuses this d for the power analysis, so a well-justified number now saves them work in November.</p></aside>
+</section>
+
+<section class="dense" data-kind="activity">
   <p class="kicker">Practical 3 · Part 3 meets today</p>
   <h1>Choosing your pilot&#8217;s numbers</h1>
   <p>&#8220;Make the difference between conditions the size you actually expect.&#8221; That&#8217;s an effect size, so choose it as one.</p>
