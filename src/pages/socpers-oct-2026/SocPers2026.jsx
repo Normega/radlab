@@ -315,7 +315,7 @@ function Stat({ big, label, sub, color = 'var(--tx)' }) {
   )
 }
 
-const DECK_FIGS = ['/socpers-oct-2026/gert-wheel.png', '/socpers-oct-2026/fig-gating-s5.png', '/socpers-oct-2026/fig-recognition.png', '/socpers-oct-2026/fig-burnout.png', '/socpers-oct-2026/qr-poll.png']
+const DECK_FIGS = ['/socpers-oct-2026/dig.jpg', '/socpers-oct-2026/gert-wheel.png', '/socpers-oct-2026/fig-gating-s5.png', '/socpers-oct-2026/fig-recognition.png', '/socpers-oct-2026/fig-burnout.png', '/socpers-oct-2026/qr-poll.png']
 
 // ── Slides ──────────────────────────────────────────────────────────────────
 // `by` = cumulative target time (seconds) at which this slide should be done.
@@ -519,10 +519,32 @@ const SLIDES = [
     ),
   },
 
+  // 10b — Study 1, what we learned (bridge to Study 2)
+  {
+    label: 'Study 1: what we learned',
+    by: 630,
+    note: 'Wrap up the first paper in three beats, one per line. “We only feel a bodily change once we detect it: a missed change felt like no change at all. And the detail, how big the change was, only arrives with detection. And who detects isn’t something people can tell you about themselves: the questionnaire tracked confidence, not sensitivity.” Then the picture: “Two people working just as hard. One digs up a barrel of toxic waste, the other digs up treasure. If feeling waits on detection, then what we spend our attention digging for decides what we get to feel.” Bridge: “So does what we feel reach how we see other people?”',
+    render: () => (
+      <div style={K.twoCol}>
+        <img src="/socpers-oct-2026/dig.jpg" alt="Two people digging with equal effort: one unearths a barrel of toxic waste, the other a trove of treasure" style={K2.digImg} />
+        <div style={{ ...K.col, alignItems: 'flex-start', textAlign: 'left' }}>
+          <div style={K.kicker}>Study 1 · what we learned</div>
+          <H2>We feel what we detect</H2>
+          <Bullets items={[
+            'A missed change felt like no change at all.',
+            'The detail, how big the change was, arrived only with detection.',
+            'People can’t report who detects: self-rated body awareness tracked confidence, not sensitivity.',
+          ]} />
+          <p style={K2.digTake}>So what we spend our attention detecting decides what we get to feel.</p>
+        </div>
+      </div>
+    ),
+  },
+
   // 11 — Aya: the question and design
   {
     label: 'Seeing others: design',
-    by: 640,
+    by: 665,
     note: '“If noticing gates what we feel, does it reach how we see other people?” Aya Fouad’s thesis, now submitted. 315 students, preregistered. Walk the storyboard left to right: “Here’s one block. Three breathing trials like yours, the change set at your own threshold. Then five short clips of an actor expressing one of 14 emotions, with face, voice and body, in made-up speech. After each: which emotion, on this wheel, and how intense. Twelve blocks.” (The face is a cartoon: the GERT clips are licensed for research only.) Breathing belt and ECG throughout. “So now we can ask: when the body changes, does perception follow the body, or the feeling?”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered · N = 315">
@@ -541,7 +563,7 @@ const SLIDES = [
   // 12 — We see others as we feel
   {
     label: 'Felt, not bodily, arousal',
-    by: 720,
+    by: 740,
     note: 'Say first: “This chain is within each person, block to block.” Walk the chain left to right. Bodily change → noticed (strong) → felt arousal (only via noticing) → perceived intensity (dashed: suggestive). The direct line from the body to perception: equivalent to zero. Then the two stats, starting with the contrast: “The arrow says .05, the card says .08, because they ask different questions. The chain is within a person, adjusted for the breathing change and for noticing; the card compares people: those who felt more aroused overall saw others’ emotions as more intense.” people who felt more aroused saw others’ emotions as more intense; heart rate didn’t move with the breathing change, so this isn’t general autonomic arousal. Honest caveat in one breath: “Small, correlational within person, and it varied a lot across people. The next study manipulates the feeling directly.”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · within person, n = 224 with a working belt">
@@ -564,7 +586,7 @@ const SLIDES = [
   // 13 — Breath sensitivity and recognition accuracy
   {
     label: 'Sensitivity → accuracy',
-    by: 775,
+    by: 790,
     note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). For this room: “The questionnaire didn’t predict it, and neither did heartbeat counting. A performance measure of the body found an individual difference that self-report missed.” Corrected for threshold unreliability it’s about −.25.',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
@@ -583,7 +605,7 @@ const SLIDES = [
   // 14 — Burnout: same body, less feeling
   {
     label: 'Burnout',
-    by: 830,
+    by: 840,
     note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “We predicted burnout would impair reading others. It didn’t, and those nulls are equivalent to zero. What burnout did change was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ.” Land it: “Same body, less feeling. Burnout turned down the felt response, not the bodily one.”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · burnout (BAT), exploratory">
@@ -607,7 +629,7 @@ const SLIDES = [
   // 15 — Wellbeing
   {
     label: 'Wellbeing',
-    by: 880,
+    by: 885,
     note: '“Put together, a lot of wellbeing may live in what we notice.” One line per row, then the caveat: “These are hypotheses, not findings, and the nice thing is that each one is testable with these tasks.” The burnout line is the one with data behind it today.',
     render: () => (
       <Frame kicker="For wellbeing">
@@ -974,6 +996,8 @@ const K2 = {
   split: { display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   figSide: { maxWidth: 'min(560px, 90vw)', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
+  digImg: { width: '100%', maxWidth: 520, maxHeight: '70vh', objectFit: 'cover', borderRadius: 24, justifySelf: 'center' },
+  digTake: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.3 },
   wellGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 16, width: '100%' },
   well: { background: '#fff', border: '1px solid var(--bd)', borderRadius: 18, padding: '16px 22px', textAlign: 'left' },
   wellT: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--pkd)' },
