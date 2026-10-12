@@ -8,9 +8,9 @@
       "id": "sfc_p1",
       "components": [
         {
-          "id": "sfc_5",
+          "id": "sfc_7",
           "type": "likert",
-          "question": "I can feel at ease without knowing what comes next",
+          "question": "I can tell which mode I am in while it is happening",
           "scale": [
             {
               "value": 1,
@@ -41,9 +41,42 @@
           "allow_pna": true
         },
         {
-          "id": "sfc_3",
+          "id": "sfc_12",
           "type": "likert",
-          "question": "To me, sensing and doing are two names for the same thing",
+          "question": "When I notice something, I start explaining it to myself straight away",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_4",
+          "type": "likert",
+          "question": "When I have free time, I would rather fill it than spend it just sensing",
           "scale": [
             {
               "value": 1,
@@ -173,42 +206,9 @@
           "allow_pna": true
         },
         {
-          "id": "sfc_4",
+          "id": "sfc_2",
           "type": "likert",
-          "question": "When I have free time, I would rather fill it than spend it just sensing",
-          "scale": [
-            {
-              "value": 1,
-              "label": "Strongly disagree"
-            },
-            {
-              "value": 2,
-              "label": "Disagree"
-            },
-            {
-              "value": 3,
-              "label": "Mildly disagree"
-            },
-            {
-              "value": 4,
-              "label": "Mildly agree"
-            },
-            {
-              "value": 5,
-              "label": "Agree"
-            },
-            {
-              "value": 6,
-              "label": "Strongly agree"
-            }
-          ],
-          "required": true,
-          "allow_pna": true
-        },
-        {
-          "id": "sfc_11",
-          "type": "likert",
-          "question": "Once I have named what I notice, I am happy to leave it there",
+          "question": "My attention works the same way whether I am stressed or relaxed",
           "scale": [
             {
               "value": 1,
@@ -244,105 +244,6 @@
       "id": "sfc_p2",
       "components": [
         {
-          "id": "sfc_8",
-          "type": "likert",
-          "question": "I notice the moment my attention shifts from sensing to doing",
-          "scale": [
-            {
-              "value": 1,
-              "label": "Strongly disagree"
-            },
-            {
-              "value": 2,
-              "label": "Disagree"
-            },
-            {
-              "value": 3,
-              "label": "Mildly disagree"
-            },
-            {
-              "value": 4,
-              "label": "Mildly agree"
-            },
-            {
-              "value": 5,
-              "label": "Agree"
-            },
-            {
-              "value": 6,
-              "label": "Strongly agree"
-            }
-          ],
-          "required": true,
-          "allow_pna": true
-        },
-        {
-          "id": "sfc_14",
-          "type": "likert",
-          "question": "I have trouble just letting what I notice be",
-          "scale": [
-            {
-              "value": 1,
-              "label": "Strongly disagree"
-            },
-            {
-              "value": 2,
-              "label": "Disagree"
-            },
-            {
-              "value": 3,
-              "label": "Mildly disagree"
-            },
-            {
-              "value": 4,
-              "label": "Mildly agree"
-            },
-            {
-              "value": 5,
-              "label": "Agree"
-            },
-            {
-              "value": 6,
-              "label": "Strongly agree"
-            }
-          ],
-          "required": true,
-          "allow_pna": true
-        },
-        {
-          "id": "sfc_2",
-          "type": "likert",
-          "question": "My attention works the same way whether I am stressed or relaxed",
-          "scale": [
-            {
-              "value": 1,
-              "label": "Strongly disagree"
-            },
-            {
-              "value": 2,
-              "label": "Disagree"
-            },
-            {
-              "value": 3,
-              "label": "Mildly disagree"
-            },
-            {
-              "value": 4,
-              "label": "Mildly agree"
-            },
-            {
-              "value": 5,
-              "label": "Agree"
-            },
-            {
-              "value": 6,
-              "label": "Strongly agree"
-            }
-          ],
-          "required": true,
-          "allow_pna": true
-        },
-        {
           "id": "sfc_10",
           "type": "likert",
           "question": "I can notice that something feels unpleasant without trying to change it",
@@ -376,9 +277,42 @@
           "allow_pna": true
         },
         {
-          "id": "sfc_7",
+          "id": "sfc_3",
           "type": "likert",
-          "question": "I can tell which mode I am in while it is happening",
+          "question": "To me, sensing and doing are two names for the same thing",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_11",
+          "type": "likert",
+          "question": "Once I have named what I notice, I am happy to leave it there",
           "scale": [
             {
               "value": 1,
@@ -442,9 +376,75 @@
           "allow_pna": true
         },
         {
-          "id": "sfc_12",
+          "id": "sfc_14",
           "type": "likert",
-          "question": "When I notice something, I start explaining it to myself straight away",
+          "question": "When I notice something, I have trouble just letting it be",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_8",
+          "type": "likert",
+          "question": "I notice the moment my attention shifts from sensing to doing",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_5",
+          "type": "likert",
+          "question": "I can feel at ease without knowing what comes next",
           "scale": [
             {
               "value": 1,
@@ -555,6 +555,10 @@
       [
         "sfc_4",
         "sfc_15"
+      ],
+      [
+        "sfc_12",
+        "sfc_14"
       ]
     ]
   },

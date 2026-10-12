@@ -129,12 +129,12 @@ CANDIDATES = [
     ('sfc_11', 'Once I have named what I notice, I am happy to leave it there', 'Letting be', False),
     ('sfc_12', 'When I notice something, I start explaining it to myself straight away', 'Letting be', True),
     ('sfc_13', 'After I name a sensation, one thought quickly leads to another', 'Letting be', True),
-    ('sfc_14', 'I have trouble just letting what I notice be', 'Letting be', True),
+    ('sfc_14', 'When I notice something, I have trouble just letting it be', 'Letting be', True),
     ('sfc_4', 'When I have free time, I would rather fill it than spend it just sensing', 'Valuing and savouring', True),
     ('sfc_15', 'Time spent just taking things in feels like time wasted', 'Valuing and savouring', True),
 ]
 # Per-participant order (the renderer's interleave engine): same-factor items never adjacent, reversed
-# items 3-5 a page and never first, opposite pairs on different pages. Checked feasible for 2,000 seeds.
+# items 3-5 a page and never first, opposite pairs (and the two items sharing an opening) on different pages. Checked feasible for 2,000 seeds.
 def candidates_interleave():
     by = lambda f: [c for c, _, ff, _ in CANDIDATES if ff == f]
     return {'items': [c for c, *_ in CANDIDATES], 'page_sizes': [7, 7],
@@ -143,7 +143,8 @@ def candidates_interleave():
             'cluster_min_gap': 2, 'cluster_max_per_page': 4,
             'groups': [{'items': [c for c, _, _, r in CANDIDATES if r], 'min_gap': 1, 'max_per_page': 5, 'min_per_page': 3,
                         'avoid_positions': [1], 'max_run_outside': 3}],
-            'apart_pages': [['sfc_8', 'sfc_9'], ['sfc_11', 'sfc_12'], ['sfc_4', 'sfc_15']]}
+            'apart_pages': [['sfc_8', 'sfc_9'], ['sfc_11', 'sfc_12'], ['sfc_4', 'sfc_15'],
+                            ['sfc_12', 'sfc_14']]}     # same opening, "When I notice something"
 
 
 def build_new():

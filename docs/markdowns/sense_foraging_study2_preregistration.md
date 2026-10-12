@@ -76,7 +76,7 @@ No blinding is involved. The debrief explains the aims.
 The main session takes about 20 minutes and runs in this order:
 1. **Background questions:** the 13 questions from Study 1, unchanged.
 2. **The short form:** the 20 items in one fixed order on 3 pages (7/7/6). The response scale is 1 Strongly disagree to 6 Strongly agree, with no midpoint, plus "Prefer not to answer".
-3. **Fourteen candidate items:** unscored, on the same scale, on 2 pages of 7 in a constrained random order per participant (items written for the same factor never adjacent; reversed items 3–5 a page, never first; three opposite pairs on different pages).
+3. **Fourteen candidate items:** unscored, on the same scale, on 2 pages of 7 in a constrained random order per participant (items written for the same factor never adjacent; reversed items 3–5 a page, never first; three opposite pairs, and the two items opening "When I notice something", on different pages).
 4. **The validity block,** in a random order for each participant:
    - FFMQ-15;
    - MAIA-2, including its instructed-response check;
