@@ -480,19 +480,20 @@ const SLIDES = [
   {
     label: 'The bridge, at threshold',
     by: 545,
-    note: '“So we went back to the bridge.” Study 3: after each breathing trial, people rated the attractiveness of faces. Faster breathing raised arousal, and that arousal carried over to the faces, but only on trials where the change was noticed. On missed trials, the same bodily change carried nothing. “Dutton and Aron’s men noticed the bridge shaking. Ours, half the time, didn’t, and then there was no transfer.” Signs flipped on the slide so that faster = positive.',
+    note: '“So we went back to the bridge.” Point along the strip: “Breathe with the circle for eight breaths, say whether it changed, rate how activated you feel, then rate four faces for attractiveness. Thirty-two times.” Then the numbers: faster breathing raised arousal, and that arousal carried over to the faces, but only on trials where the change was noticed. On missed trials, the same bodily change carried nothing. “Dutton and Aron’s men noticed the bridge shaking. Ours, half the time, didn’t, and then there was no transfer.” Signs flipped on the slide so that faster = positive.',
     render: (d) => (
-      <Frame kicker="Study 3 · Dutton & Aron, at threshold">
+      <Frame wide kicker="Study 3 · Dutton & Aron, at threshold">
         <H2>Arousal carried over to attraction only when the change was noticed</H2>
+        <BridgeMethod />
         <div style={K.stats}>
           <Stat big=".06" label="noticed trials: breathing → arousal → attractiveness" sub="indirect effect, 95% CI [.04, .09]" color={GOLD} />
           <Stat big=".00" label="missed trials: the same path" sub="indirect effect, 95% CI [−.01, .00]" color={BLUE} />
         </div>
-        <Lead>N = 103. Faces rated after every breathing trial, at fixed change sizes.</Lead>
         <Detail density={d}>
-          Bayesian moderated mediation; the paper codes faster breathing as negative change (ACME noticed = −.062
-          [−.085, −.040], missed = .001 [−.003, .006]). Signs flipped here so faster = positive. Chicago Face
-          Database faces, two high- and two average-attractiveness per trial.
+          N = 103, fixed change sizes. Bayesian moderated mediation; the paper codes faster breathing as negative
+          change (ACME noticed = −.062 [−.085, −.040], missed = .001 [−.003, .006]). Signs flipped here so faster =
+          positive. Confidence and mood were also rated (1–9) after the detection question. Chicago Face Database
+          faces, two high- and two average-attractiveness per trial, matched to stated preference.
         </Detail>
       </Frame>
     ),
@@ -682,6 +683,120 @@ const WELLBEING = [
   { t: 'Burnout', s: 'The body still answers; the feeling is turned down. The one with data so far.' },
   { t: 'Social life', s: 'Our felt state colours how intense others look. Noticing it is a chance to set it aside.' },
 ]
+
+// One Study 3 trial, in the task's order (Study3.py runmisattribution): eight
+// breaths with the circle, the faster/slower/same question, arousal 1-9 (the
+// confidence and mood ratings around it are left to the Detail line), then four
+// faces rated 0-10. The face is a caricature: Chicago Face Database images are
+// licensed for research, not for showing.
+function BridgeMethod() {
+  const W = 1000, H = 296
+  const sw = 210, sh = 148, sy = 44
+  const xs = [6, 260, 514, 768]
+  const ink = '#1c1c1e', grey = '#6b6c70', pink = '#F068A4', pkd = '#BA417A'
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  const cy = sy + sh / 2
+  const screen = (x, children) => (
+    <g>
+      <rect x={x} y={sy} width={sw} height={sh} rx="12" fill="#fff" stroke={grey} strokeWidth="3" />
+      <rect x={x + sw / 2 - 16} y={sy + sh} width="32" height="9" fill={grey} />
+      <rect x={x + sw / 2 - 40} y={sy + sh + 9} width="80" height="5" rx="2.5" fill={grey} />
+      {children}
+    </g>
+  )
+  const caption = (x, t, s) => (
+    <g>
+      <text x={x + sw / 2} y={sy + sh + 42} textAnchor="middle" fontSize="20" fontWeight="600" fill={ink} fontFamily={sans}>{t}</text>
+      <text x={x + sw / 2} y={sy + sh + 66} textAnchor="middle" fontSize="16" fill={grey} fontFamily={sans}>{s}</text>
+    </g>
+  )
+  const arrow = (x1, x2) => (
+    <line x1={x1} y1={cy} x2={x2} y2={cy} stroke={grey} strokeWidth="3" markerEnd="url(#bm-arrow)" />
+  )
+  const badge = (x, t, w) => (
+    <g>
+      <rect x={x + sw - w + 14} y={sy - 18} width={w} height="34" rx="17" fill={pink} />
+      <text x={x + sw - w / 2 + 14} y={sy + 6} textAnchor="middle" fontSize="18" fontWeight="700" fill="#fff" fontFamily={mono}>{t}</text>
+    </g>
+  )
+  const slider = (x, y, n0, n1, at) => {
+    const a = x + 22, b = x + sw - 22
+    return (
+      <g>
+        <line x1={a} x2={b} y1={y} y2={y} stroke={ink} strokeWidth="2.5" />
+        <text x={a} y={y + 24} textAnchor="middle" fontSize="14" fill={grey} fontFamily={mono}>{n0}</text>
+        <text x={b} y={y + 24} textAnchor="middle" fontSize="14" fill={grey} fontFamily={mono}>{n1}</text>
+        <circle cx={a + at * (b - a)} cy={y} r="8" fill={pink} />
+      </g>
+    )
+  }
+  const fx = xs[3] + sw / 2, fy = sy + 58
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 960, height: 'auto' }} role="img"
+      aria-label="One trial: breathe with the circle for eight breaths, say whether it got faster, slower or stayed the same, rate arousal from 1 to 9, then rate four faces for attractiveness from 0 to 10; 32 trials in all">
+      <defs>
+        <marker id="bm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill={grey} />
+        </marker>
+        <radialGradient id="bm-pk" cx="50%" cy="42%" r="65%">
+          <stop offset="0%" stopColor="#ff9ec9" />
+          <stop offset="72%" stopColor={pink} />
+        </radialGradient>
+      </defs>
+
+      {/* 1 · breathe with the circle */}
+      {screen(xs[0], (
+        <circle cx={xs[0] + sw / 2} cy={cy} r="40" fill="url(#bm-pk)">
+          <animate attributeName="r" values="24;56;24" dur="5s" repeatCount="indefinite" />
+        </circle>
+      ))}
+      {badge(xs[0], '× 8 breaths', 140)}
+      {caption(xs[0], 'Breathe with it', 'it may speed up or slow down')}
+      {arrow(xs[0] + sw + 8, xs[1] - 10)}
+
+      {/* 2 · did it change? */}
+      {screen(xs[1], (
+        <g>
+          <text x={xs[1] + sw / 2} y={sy + 44} textAnchor="middle" fontSize="17" fontWeight="600" fill={ink} fontFamily={sans}>Did it change?</text>
+          {['faster', 'slower', 'same'].map((t, k) => (
+            <g key={t}>
+              <rect x={xs[1] + 14 + k * 62} y={sy + 70} width="58" height="34" rx="17" fill={k === 0 ? '#FBEAF3' : '#fff'} stroke={k === 0 ? pink : grey} strokeWidth="2" />
+              <text x={xs[1] + 43 + k * 62} y={sy + 92} textAnchor="middle" fontSize="14" fill={ink} fontFamily={sans}>{t}</text>
+            </g>
+          ))}
+        </g>
+      ))}
+      {caption(xs[1], 'Noticed?', 'faster · slower · same')}
+      {arrow(xs[1] + sw + 8, xs[2] - 10)}
+
+      {/* 3 · arousal */}
+      {screen(xs[2], (
+        <g>
+          <text x={xs[2] + sw / 2} y={sy + 44} textAnchor="middle" fontSize="17" fontWeight="600" fill={ink} fontFamily={sans}>How aroused?</text>
+          {slider(xs[2], sy + 92, '1', '9', 0.62)}
+        </g>
+      ))}
+      {caption(xs[2], 'Felt arousal', '1 = calm · 9 = activated')}
+      {arrow(xs[2] + sw + 8, xs[3] - 10)}
+
+      {/* 4 · a face, rated for attractiveness */}
+      {screen(xs[3], (
+        <g>
+          <ellipse cx={fx} cy={fy + 4} rx="26" ry="32" fill="#F6E3D5" stroke={ink} strokeWidth="2.5" />
+          <path d={`M${fx - 30},${fy - 6} q2,-36 30,-36 q28,0 30,36 q-10,-16 -30,-16 q-20,0 -30,16 z`} fill="#5a4636" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
+          <circle cx={fx - 10} cy={fy + 2} r="3.5" fill={ink} />
+          <circle cx={fx + 10} cy={fy + 2} r="3.5" fill={ink} />
+          <path d={`M${fx - 10},${fy + 18} q10,8 20,0`} fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" />
+          {slider(xs[3], sy + 112, '0', '10', 0.7)}
+        </g>
+      ))}
+      {badge(xs[3], '× 4 faces', 118)}
+      {caption(xs[3], 'How attractive?', '0–10 · two high, two average')}
+
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="18" fontWeight="700" fill={pkd} fontFamily={mono}>one trial · × 32 trials · N = 103</text>
+    </svg>
+  )
+}
 
 // One combined-task block, drawn as the screens a participant saw: three
 // breathing trials, then five emotion clips, each followed by the GERT wheel
