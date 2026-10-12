@@ -152,8 +152,8 @@ export function PaceTraces({ width = 640 }) {
         <line x1={padL} x2={W - padR} y1={yOf(hi)} y2={yOf(hi)} stroke="#e7d3dd" strokeDasharray="4 4" />
         <line x1={padL} x2={W - padR} y1={yOf(lo)} y2={yOf(lo)} stroke="#e7d3dd" strokeDasharray="4 4" />
         <path d={d} fill="none" stroke={color} strokeWidth="3.5" strokeLinejoin="round" />
-        <text x={W - padR + 8} y={yOf(hi) + 4} fontSize="12" fill="#6b6c70" fontFamily="monospace">{hi.toFixed(1)}/min</text>
-        <text x={W - padR + 8} y={yOf(lo) + 4} fontSize="12" fill="#6b6c70" fontFamily="monospace">{lo.toFixed(0)}/min</text>
+        <text x={W - padR + 8} y={yOf(hi) + 4} fontSize="12" fill="#6b6c70" fontFamily="'Space Mono',monospace">{hi.toFixed(1)}/min</text>
+        <text x={W - padR + 8} y={yOf(lo) + 4} fontSize="12" fill="#6b6c70" fontFamily="'Space Mono',monospace">{lo.toFixed(0)}/min</text>
       </g>
     )
   }
@@ -165,7 +165,7 @@ export function PaceTraces({ width = 640 }) {
       {[0, 4, 8, 12].map(s => (
         <g key={s}>
           <line x1={xOf(s)} x2={xOf(s)} y1={H - 26} y2={H - 21} stroke="#c9cacd" />
-          <text x={xOf(s)} y={H - 8} fontSize="11" fill="#8a8b8f" textAnchor="middle" fontFamily="monospace">{s}s</text>
+          <text x={xOf(s)} y={H - 8} fontSize="11" fill="#8a8b8f" textAnchor="middle" fontFamily="'Space Mono',monospace">{s}s</text>
         </g>
       ))}
     </svg>

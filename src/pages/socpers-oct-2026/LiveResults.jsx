@@ -40,7 +40,7 @@ function Panel({ title, split }) {
       {[1, 2, 3, 4, 5, 6].map(v => (
         <g key={v}>
           <line x1={padL} x2={W - 12} y1={yOf(v)} y2={yOf(v)} stroke="#f0e4ea" />
-          <text x={padL - 10} y={yOf(v) + 4} textAnchor="end" fontSize="12" fill="#8a8b8f" fontFamily="monospace">{v}</text>
+          <text x={padL - 10} y={yOf(v) + 4} textAnchor="end" fontSize="12" fill="#8a8b8f" fontFamily="'Space Mono',monospace">{v}</text>
         </g>
       ))}
       <text x={14} y={(padT + H - padB) / 2} fontSize="12" fill="#8a8b8f" textAnchor="middle" transform={`rotate(-90 14 ${(padT + H - padB) / 2})`} fontFamily="'DM Sans',sans-serif">felt activation</text>
@@ -59,11 +59,11 @@ function Panel({ title, split }) {
             {m !== null && (
               <g>
                 <line x1={c.x - 46} x2={c.x + 46} y1={yOf(m)} y2={yOf(m)} stroke={c.color} strokeWidth="4" strokeLinecap="round" />
-                <text x={c.x + 50} y={yOf(m) + 4} fontSize="13" fontWeight="700" fill={c.color} fontFamily="monospace">{m.toFixed(1)}</text>
+                <text x={c.x + 50} y={yOf(m) + 4} fontSize="13" fontWeight="700" fill={c.color} fontFamily="'Space Mono',monospace">{m.toFixed(1)}</text>
               </g>
             )}
             <text x={c.x} y={H - padB + 24} textAnchor="middle" fontSize="14" fontWeight="600" fill={c.color} fontFamily="'DM Sans',sans-serif">{c.label}</text>
-            <text x={c.x} y={H - padB + 42} textAnchor="middle" fontSize="12" fill="#8a8b8f" fontFamily="monospace">n = {c.vals.length}</text>
+            <text x={c.x} y={H - padB + 42} textAnchor="middle" fontSize="12" fill="#8a8b8f" fontFamily="'Space Mono',monospace">n = {c.vals.length}</text>
           </g>
         )
       })}
