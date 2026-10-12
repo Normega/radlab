@@ -357,7 +357,7 @@ const SLIDES = [
     label: 'Breathing demo',
     by: 165,
     exercise: true,
-    note: '“Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer on your phone.” ① Begin; say nothing for ~14 s. ② “On your phone: did the pace change, and how activated do you feel right now?” Watch the count climb; move on at ~80% of the room. ③ Trial 2 (“once more”), ~14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
+    note: '“Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer on your phone.” Phones are on a welcome screen that explains all this. ① Begin; say nothing for ~14 s. ② “On your phone, tap ‘The circle has stopped’, then: did the pace change, and how activated do you feel right now?” Watch the count climb; move on at ~80% of the room. ③ Trial 2 (“once more”), ~14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
     render: (_d, _b, ctx) => (
       <Frame wide>
         <RoomTrials code={ctx.code} />
@@ -369,7 +369,7 @@ const SLIDES = [
   {
     label: 'Reveal: same change',
     by: 190,
-    note: '“Here’s what the circle did. Both trials sped your breathing up by exactly the same amount, from 15 to about 21 breaths a minute, and they ended at the same moment. The first crept up across three breaths; the second jumped.” Then: “So your body did the same thing twice. Let’s see what you felt.”',
+    note: '“Here’s what the circle did. Both trials sped your breathing up by exactly the same amount, from 15 to about 19½ breaths a minute, 30% faster, and they ended at the same moment. The first crept up across three breaths; the second jumped.” Then: “So your body did the same thing twice. Let’s see what you felt.”',
     render: () => (
       <Frame wide kicker="What the circle did">
         <H2>Both trials sped up by the same amount</H2>
