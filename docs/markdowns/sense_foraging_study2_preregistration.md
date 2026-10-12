@@ -56,9 +56,9 @@ Confirmatory hypotheses are numbered H1–H7. Their tests and decision rules are
   - Access and Valuing and savouring correlate positively with the number of past-week days on which the participant deliberately paused to take in their surroundings (`crit_pause_days`).
   - Letting be and Access correlate positively with noticing unexpected events before reacting (`crit_notice_first`).
 - **H5 (incremental validity).** The four factors together explain variance in at least one of three outcomes: life satisfaction, PHQ-4 or PSS-4. This is variance beyond FFMQ-15, MAIA-2, age and gender (ΔR² > 0, p < .05).
-- **H6 (known groups).** Dedicated practitioners score higher than people who have never practised regularly on Access and on Understanding the modes (d ≥ 0.30). Dedicated means practising 3 or more times a week, for at least a year, with formal teacher-led training.
-  - Study 1 found no differences under a looser definition: any regular practice at least weekly, d = −0.16 to 0.11.
-  - H6 tests whether the sharper definition separates the groups. A null result is informative and will be reported as such.
+- **H6 (known groups).** Dedicated practitioners score higher than people who have never practised regularly on Access and on Valuing and savouring (d ≥ 0.50). Dedicated means practising 3 or more times a week, for at least a year, with formal teacher-led training.
+  - In Study 1, practitioners at least weekly scored higher than never-practitioners on Access (d = 0.72) and Valuing and savouring (d = 1.22), on factor scores with agreement removed. Understanding the modes and Letting be did not differ.
+  - H6 tests whether this replicates under the stricter definition. Understanding the modes and Letting be are compared too, with no directional prediction.
 - **H7 (stability).** Over 14–21 days, each factor score has a test–retest ICC(2,1) (absolute agreement) of at least .70.
 
 ## 2. Design plan
@@ -141,9 +141,9 @@ The short form is also the baseline and final measure of a separate course trial
 - **Correlations.** With N = 500, a correlation of .30 has a 95% CI of about ±.08, enough to tell a moderate correlation from a small one.
   - H3b compares two dependent correlations. It has about 80% power to detect a difference of .10 when both correlations are near .40 and the two measures correlate .50 with each other.
 - **Known groups.**
-  - In Study 1, 35 of 500 participants met the dedicated-practitioner definition; they came mostly from the contemplative posting.
+  - In Study 1, 34 of 500 participants met the dedicated-practitioner definition.
   - A screened contemplative posting of 200 should yield about 60–80, against about 150 never-practitioners.
-  - With 60 and 150, power is 80% for d = 0.43 and 50% for d = 0.30 (two-tailed α = .05). **H6 is therefore powered for medium effects only.** A larger contemplative posting, or a stricter screener, would raise this. **[Norm]**
+  - With 60 and 150, power is 80% for d = 0.43, comfortably below the d ≥ 0.50 predicted from Study 1.
 - **Stability.** With 150 retest pairs and a true ICC of .75, the 95% CI is about ±.08.
 
 ### Stopping rule
@@ -255,7 +255,7 @@ All analyses use R with lavaan, semTools, psych and irr; versions will be report
 5. **H6, known groups.**
    - Compare dedicated practitioners with never-practitioners on each factor score using a linear model with posting as a covariate.
    - Report Cohen's d with a 95% CI and Holm correction across the four factors.
-   - **H6 is supported** for a factor when the difference favours dedicated practitioners, p_Holm < .05, and d ≥ 0.30.
+   - **H6 is supported** for Access and for Valuing and savouring when the difference favours dedicated practitioners, p_Holm < .05, and d ≥ 0.50.
    - **Secondary:** a linear trend across frequency categories in all practising participants.
    - The known-groups comparison is repeated on latent means in the posting-invariant model, if scalar invariance holds across practice groups.
 6. **H7, stability.**
