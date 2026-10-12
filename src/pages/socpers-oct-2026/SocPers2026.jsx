@@ -586,17 +586,18 @@ const SLIDES = [
   // 13 — Breath sensitivity and recognition accuracy
   {
     label: 'Sensitivity → accuracy',
-    by: 790,
-    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). For this room: “The questionnaire didn’t predict it, and neither did heartbeat counting. A performance measure of the body found an individual difference that self-report missed.” Corrected for threshold unreliability it’s about −.25.',
+    by: 800,
+    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
         <H2>Sensitive to your own breath, better at reading others</H2>
-        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={K2.figWide} />
-        <Lead>Replicated on 60 new clips. MAIA and heartbeat counting predicted neither.</Lead>
+        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={K2.figShort} />
+        <RobustLadder />
         <Detail density={d}>
-          Held with response bias, confidence, MAIA, demographics, PHQ-4 and burnout controlled (β = −.14), each
-          direction alone, and as a rank correlation. Controlling how closely breathing followed the pacer weakened
-          it (β = −.10, p = .18), so general engagement cannot be fully excluded.
+          Higher threshold = less sensitive. Also held for each direction alone, as a rank correlation and without the
+          ceiling thresholds; MAIA and heartbeat counting predicted neither threshold nor recognition. The pacer
+          subsample alone keeps it (β = −.13, p = .039); adding synchrony, entrainment gain and false alarms removes it.
+          Corrected for threshold unreliability, the raw association is about −.25.
         </Detail>
       </Frame>
     ),
@@ -605,22 +606,22 @@ const SLIDES = [
   // 14 — Burnout: same body, less feeling
   {
     label: 'Burnout',
-    by: 840,
-    note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “We predicted burnout would impair reading others. It didn’t, and those nulls are equivalent to zero. What burnout did change was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ.” Land it: “Same body, less feeling. Burnout turned down the felt response, not the bodily one.”',
+    by: 855,
+    note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “What burnout changed was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ. Same body, less feeling.” Then the path: “Does that reach how they see other people? A little, and only through feeling. Lower felt arousal went with seeing others’ emotions as less intense, so burnout has a small indirect effect, −.03, whose interval excludes zero. Burnout on its own didn’t predict intensity at all, because what’s left over runs slightly the other way.” If pressed: exploratory, cross-sectional, and both arousal and intensity are ratings, so a shared rating style could feed the felt → perceived link.',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · burnout (BAT), exploratory">
         <H2>Burnout: the same body, less feeling</H2>
         <div style={K2.split}>
-          <img src="/socpers-oct-2026/fig-burnout.png" alt="Burnout against mean felt arousal, r = −.20" style={K2.figSide} />
+          <img src="/socpers-oct-2026/fig-burnout.png" alt="Burnout against mean felt arousal, r = −.20" style={K2.figBurn} />
           <div style={K2.sideStats}>
-            <div><Stat big="r = −.20" label="burnout → felt arousal" sub="[−.31, −.08] · n = 286" color="var(--pkd)" /></div>
-            <div><Stat big="r = .01" label="burnout → how closely breathing followed the pacer" sub="equivalent to zero (±.17)" color="#8a8b8f" /></div>
+            <div><Stat big="r = .01" label="burnout → how closely breathing followed the pacer" sub="equivalent to zero (±.17): same body" color="#8a8b8f" /></div>
           </div>
         </div>
+        <BurnoutMediation />
         <Detail density={d}>
-          Preregistered burnout predictions (recognition, intensity, thresholds) were not supported and were equivalent
-          to zero. Burnout was unrelated to task heart rate; resting heart rate and HRV associations up to |r| ≈ .2
-          cannot be excluded. High-burnout participants’ arousal still rose with faster breathing.
+          Person level, n = 286, standardised; indirect effect from 10,000 bootstrap resamples. Preregistered burnout
+          predictions (recognition, intensity, thresholds) were not supported and were equivalent to zero. Burnout was
+          unrelated to task heart rate; resting heart rate and HRV associations up to |r| ≈ .2 cannot be excluded.
         </Detail>
       </Frame>
     ),
@@ -629,7 +630,7 @@ const SLIDES = [
   // 15 — Wellbeing
   {
     label: 'Wellbeing',
-    by: 885,
+    by: 890,
     note: '“Put together, a lot of wellbeing may live in what we notice.” One line per row, then the caveat: “These are hypotheses, not findings, and the nice thing is that each one is testable with these tasks.” The burnout line is the one with data behind it today.',
     render: () => (
       <Frame kicker="For wellbeing">
@@ -841,6 +842,100 @@ function PathDiagram() {
   )
 }
 
+// The H2B estimate as covariates are added (Aya repo, Results/h2b_robustness/
+// report.md). Standardised, 95% CIs; higher threshold = less sensitive, so
+// negative = sensitive people read emotions better.
+function RobustLadder() {
+  const rows = [
+    { t: 'As preregistered', s: 'n = 305', e: -0.174, lo: -0.281, hi: -0.063, v: 'r = −.17', p: 'p = .002' },
+    { t: '+ bias, confidence, MAIA, mood, burnout', s: 'n = 301', e: -0.138, lo: -0.262, hi: -0.015, v: 'β = −.14', p: 'p = .028' },
+    { t: 'Belt followed the pacer', s: 'subsample, n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
+    { t: '+ how closely breathing followed it', s: 'synchrony, entrainment, false alarms · n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
+  ]
+  const W = 1000, rh = 54, top = 30, H = top + rows.length * rh + 26
+  const px0 = 520, px1 = 790, lo = -0.35, hi = 0.1
+  const X = v => px0 + (v - lo) / (hi - lo) * (px1 - px0)
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 1000, height: 'auto' }} role="img"
+      aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in the subsample whose belt followed the pacer; −.10, p = .18, not significant, once pacer-following is controlled">
+      <text x={16} y={16} fontSize="16" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
+      {rows.map((r, k) => {
+        const y = top + k * rh + rh / 2
+        const c = r.ns ? '#8a8b8f' : '#1c1c1e'
+        return (
+          <g key={k}>
+            {r.ns && <rect x={0} y={y - rh / 2 + 2} width={W} height={rh - 4} rx="12" fill="#FBEAF3" />}
+            <text x={16} y={y - 3} fontSize="19" fontWeight="600" fill={r.ns ? '#3a3a3e' : c} fontFamily={sans}>{r.t}</text>
+            <text x={16} y={y + 18} fontSize="15" fill="#6b6c70" fontFamily={sans}>{r.s}</text>
+            <line x1={X(r.lo)} x2={X(r.hi)} y1={y} y2={y} stroke={c} strokeWidth="3" strokeLinecap="round" />
+            <circle cx={X(r.e)} cy={y} r="8" fill={r.ns ? '#fff' : c} stroke={c} strokeWidth="3" />
+            <text x={px1 + 28} y={y + 6} fontSize="20" fontWeight="700" fill={r.ns ? '#BA417A' : c} fontFamily={mono}>{r.v}</text>
+            <text x={px1 + 136} y={y + 6} fontSize="17" fill={r.ns ? '#BA417A' : '#3a3a3e'} fontFamily={mono}>{r.p}</text>
+          </g>
+        )
+      })}
+      <line x1={X(0)} x2={X(0)} y1={top - 6} y2={H - 24} stroke="#6b6c70" strokeWidth="2" strokeDasharray="5 5" />
+      {[[-0.3, '−.30'], [-0.15, '−.15'], [0, '0']].map(([v, t]) => (
+        <text key={t} x={X(v)} y={H - 4} textAnchor="middle" fontSize="15" fill="#6b6c70" fontFamily={mono}>{t}</text>
+      ))}
+    </svg>
+  )
+}
+
+// Burnout → felt arousal → perceived intensity, person level (n = 286,
+// standardised; indirect from 10,000 bootstrap resamples, run 2026-10-12 on
+// the Aya repo's Results/Combined_data.csv + questionnaireFile.csv, set_combined).
+function BurnoutMediation() {
+  const W = 1000, H = 300
+  const boxes = [
+    { x: 20,  t1: 'Burnout', t2: 'BAT-C' },
+    { x: 395, t1: 'Felt', t2: 'arousal' },
+    { x: 770, t1: 'Perceived', t2: 'intensity in others' },
+  ]
+  const bw = 210, bh = 72, by = 64
+  const arrows = [
+    { from: 0, b: 'β = −.20', p: 'p < .001' },
+    { from: 1, b: 'β = .15', p: 'p = .012' },
+  ]
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 980, height: 'auto' }} role="img"
+      aria-label="Burnout lowers felt arousal (β = −.20), felt arousal predicts perceived intensity (β = .15), so burnout has a small indirect effect on perceived intensity, β = −.03, 95% CI −.065 to −.005; the direct path is +.08, not significant, and the total is .05, not significant">
+      <defs>
+        <marker id="sp-arrow-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1c1c1e" />
+        </marker>
+        <marker id="sp-arrow-mg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ABADB0" />
+        </marker>
+      </defs>
+      <text x={20} y={18} fontSize="16" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>BETWEEN PEOPLE · n = 286</text>
+      {boxes.map((b, k) => (
+        <g key={k}>
+          <rect x={b.x} y={by} width={bw} height={bh} rx="12" fill={k === 2 ? '#FBEAF3' : '#fff'} stroke={k === 2 ? '#F068A4' : '#6b6c70'} strokeWidth="2" />
+          <text x={b.x + bw / 2} y={by + 31} textAnchor="middle" fontSize="20" fontWeight="600" fill="#1c1c1e" fontFamily={sans}>{b.t1}</text>
+          <text x={b.x + bw / 2} y={by + 54} textAnchor="middle" fontSize="17" fill="#3a3a3e" fontFamily={sans}>{b.t2}</text>
+        </g>
+      ))}
+      {arrows.map(a => {
+        const x1 = boxes[a.from].x + bw + 4, x2 = boxes[a.from + 1].x - 6
+        return (
+          <g key={a.from}>
+            <line x1={x1} y1={by + bh / 2} x2={x2} y2={by + bh / 2} stroke="#1c1c1e" strokeWidth="3" markerEnd="url(#sp-arrow-m)" />
+            <text x={(x1 + x2) / 2} y={by + bh / 2 - 14} textAnchor="middle" fontSize="22" fontWeight="700" fill="#1c1c1e" fontFamily={mono}>{a.b}</text>
+            <text x={(x1 + x2) / 2} y={by + bh / 2 + 30} textAnchor="middle" fontSize="16" fill="#3a3a3e" fontFamily={mono}>{a.p}</text>
+          </g>
+        )
+      })}
+      <path d={`M${20 + bw / 2},${by + bh + 4} Q500,${by + bh + 110} ${770 + bw / 2},${by + bh + 6}`} fill="none" stroke="#ABADB0" strokeWidth="2" strokeDasharray="6 6" markerEnd="url(#sp-arrow-mg)" />
+      <text x={500} y={by + bh + 82} textAnchor="middle" fontSize="17" fill="#6b6c70" fontFamily={sans}>direct β = +.08, n.s.</text>
+      <text x={500} y={H - 34} textAnchor="middle" fontSize="20" fontWeight="700" fill="#BA417A" fontFamily={mono}>indirect β = −.03 [−.065, −.005]</text>
+      <text x={500} y={H - 8} textAnchor="middle" fontSize="17" fill="#6b6c70" fontFamily={sans}>total β = .05, n.s.: burnout alone doesn’t predict intensity</text>
+    </svg>
+  )
+}
+
 // ── Bonus slides (Q&A only) ─────────────────────────────────────────────────
 // B opens the index, 1–9 jump to one, Esc returns. Nothing here goes beyond the
 // two manuscripts and the /iscr-2026 and /keynote decks.
@@ -931,14 +1026,14 @@ const BONUS = [
   },
   {
     q: 'Did burnout change emotion perception?',
-    note: '“No, and the nulls are informative: equivalent to zero at |r| = .17, with burnout scores spanning 31 to 110 of 115.” Burnout did predict lower felt arousal (r = −.20). Why didn’t that reach perception? Scale: burnout explains ~4% of felt arousal, which shares ~2% with intensity, so the implied effect is about r = −.03.',
+    note: '“No, and the nulls are informative: equivalent to zero at |r| = .17, with burnout scores spanning 31 to 110 of 115.” Burnout did predict lower felt arousal (r = −.20). Did that reach perception? Only through feeling, and only a little: tested directly, the indirect path burnout → felt arousal → intensity is β = −.03 [−.065, −.005]. The total stays at zero because the remaining direct path runs slightly the other way (+.08, n.s.).',
     render: () => (
       <Frame kicker="Bonus · burnout and emotion perception">
         <H2>Burnout did not impair reading others</H2>
         <Bullets items={[
           'Recognition r = −.01, intensity r = .04, thresholds r = .02: all equivalent to zero (±.17).',
           'Scores spanned 31 to 110 of a possible 115, so not restricted range.',
-          'Implied burnout → intensity via felt arousal ≈ r = −.03, too small to detect.',
+          'Through felt arousal, a small indirect effect on intensity: β = −.03 [−.065, −.005].',
         ]} />
       </Frame>
     ),
@@ -995,6 +1090,8 @@ const K2 = {
   figWide: { maxWidth: '100%', maxHeight: '44vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   split: { display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   figSide: { maxWidth: 'min(560px, 90vw)', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figShort: { maxWidth: '100%', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figBurn: { maxWidth: 'min(440px, 90vw)', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
   digImg: { width: '100%', maxWidth: 520, maxHeight: '70vh', objectFit: 'cover', borderRadius: 24, justifySelf: 'center' },
   digTake: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.3 },
