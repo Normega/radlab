@@ -107,7 +107,7 @@ DEBRIEF = [
         "experience be. This study checks that structure in a new group of people and examines how the questionnaire "
         "relates to established measures of trait mindfulness (FFMQ-15), interoceptive (bodily) awareness (MAIA-2), "
         "decentering (Experiences Questionnaire), intolerance of uncertainty (IUS-12), savouring (Savoring Beliefs "
-        "Inventory) and openness to experience (BFI-2). Fourteen further statements were new ones we are testing for a future "
+        "Inventory) and openness to experience (BFI-2). Twenty-four further statements are ones we are testing for a future "
         "version, and some statements were worded in the opposite direction from others, which helps us separate what "
         "people agree with from a general tendency to agree."]),
     ('About This Study (second paragraph)',

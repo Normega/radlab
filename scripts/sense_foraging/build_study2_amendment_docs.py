@@ -83,7 +83,7 @@ def consent():
     d0 = docx.Document(REV2 / 'Consent_Form_v3.docx')
     revised = next(p.text for p in d0.paragraphs if p.text.startswith('REVISED'))
     edits.append((revised, [f'REVISED ({AMENDMENT}): Study 2 administers the background questions, the 20-statement '
-                            'Sense Foraging short form, 14 new candidate statements, and the validity, wellbeing and '
+                            'Sense Foraging short form, 24 candidate statements, and the validity, wellbeing and '
                             'stress measures (about 20 minutes). A random subsample is invited to an optional ~3-minute '
                             'follow-up about two weeks later, under its own consent form.']))
     edit_doc(REV2 / 'Consent_Form_v3.docx', 'Consent_Form_v5_Study2', edits)
@@ -133,9 +133,11 @@ SESSION = [
     ('Sense Foraging Scale, short form (20 statements)', 'sf-short-20',
      'NEW. The 20 statements are a subset of the 48 approved for Study 1 (Rev3), selected from the Study 1 '
      'factor analysis, wording unchanged. One fixed order for everyone, 3 pages.'),
-    ('Fourteen candidate statements (unscored)', 'sf2-sfs-candidates',
-     'NEW. Written for a future version of the scale; analysed, not scored. Two pages of 7, in a random order per '
-     'participant: statements written for the same part never adjacent, reversed statements spread across both pages.'),
+    ('Twenty-four candidate statements (unscored)', 'sf2-sfs-candidates',
+     'NEW. 19 statements written for a future version of the scale (including 5 about seeking out sensory experience), '
+     'and 5 from the approved Study 1 pool, wording unchanged (items 2, 6, 14, 25, 28); analysed, not scored. Three pages '
+     'of 8, in a random order per participant: statements written for the same part never adjacent, reversed statements '
+     'spread across the pages.'),
     ('— Validity block: the measures below in a random order per participant —', None, None),
     ('FFMQ-15', 'sf2-ffmq15', 'As approved (Rev2 Validity Scales Appendix).'),
     ('MAIA-2, with its attention check', 'sf2-maia2', 'As approved (Rev2 Validity Scales Appendix).'),
@@ -203,12 +205,15 @@ def questionnaire_section(d, slug, rel):
         d.add_paragraph('Response options: ' + ' / '.join(sc) + '.')
     rev = set(q.get('scoring', {}).get('reverse_items', []) or q.get('reverse_keyed', []))
     rev |= {c['id'] for c in q.get('candidates', []) if c['reverse_keyed']}
+    s1 = {c['id']: c['study1_item'] for c in q.get('candidates', []) if 'study1_item' in c}
     for c in comps:
         text = f'{c["id"]}\t{c["question"]}'
         if c['id'] in rev:
             text += '   (reverse-scored)'
         if 'attn' in c['id']:
             text += '   (attention check)'
+        if c['id'] in s1:
+            text += f'   (Study 1 item {s1[c["id"]][4:]}, approved wording)'
         d.add_paragraph(text)
         if c['type'] == 'multiple_choice':
             d.add_paragraph('Options: ' + ' / '.join(o['label'] for o in c['options']) + ' / Prefer not to answer',

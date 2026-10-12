@@ -14,10 +14,14 @@ import { useBreathCycle } from '../../games/EbbAndFlow/useBreathCycle'
 import { usePollResults } from './talkPoll'
 
 const BASE_MS   = 4000          // 15/min, the Study 4/5 baseline
-const TARGET_MS = 2800          // −.30; Study 5 mean thresholds −.38 gradual, −.32 abrupt
+// 30% faster breathing rate (15 → 19.5/min), i.e. breaths 23% shorter (change −.23).
+// Norm's call 2026-10-12, after a live test: −.30 (4.0 → 2.8 s) was too overt.
+// Study 5 mean 75%-correct thresholds were −.38 gradual and −.32 abrupt, so both
+// trials now sit below the average threshold: expect fewer noticers on trial 2 too.
+const TARGET_MS = Math.round(BASE_MS / 1.3)   // 3077
 const STEP_MS = (TARGET_MS - BASE_MS) / 3
-const TRIAL_A = [BASE_MS, BASE_MS + STEP_MS, BASE_MS + 2 * STEP_MS, TARGET_MS]   // 4.0 3.6 3.2 2.8
-const TRIAL_B = [BASE_MS, BASE_MS, TARGET_MS, TARGET_MS]                         // 4.0 4.0 2.8 2.8
+const TRIAL_A = [BASE_MS, BASE_MS + STEP_MS, BASE_MS + 2 * STEP_MS, TARGET_MS]   // 4.0 3.69 3.38 3.08
+const TRIAL_B = [BASE_MS, BASE_MS, TARGET_MS, TARGET_MS]                         // 4.0 4.0 3.08 3.08
 
 const CIRCLE_MIN = 0.42
 const CIRCLE_MAX = 1.0
