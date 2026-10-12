@@ -102,6 +102,8 @@ const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const AdobeAug2026 = lazy(() => import('./pages/adobe-aug-2026/AdobeAug2026'))
 const Iscr2026 = lazy(() => import('./pages/iscr-2026/Iscr2026'))
+const SocPers2026 = lazy(() => import('./pages/socpers-oct-2026/SocPers2026'))
+const TalkPollPhone = lazy(() => import('./pages/socpers-oct-2026/PollPhone'))
 const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
@@ -736,6 +738,8 @@ export default function App() {
           </Route>
           {/* Keynote opener — whole-room pacer, no device, no data */}
           <Route path="/demo/pacer-opener" element={<PacerOpenerDemo />} />
+          {/* Talk audience poll — public, anonymous; answers via talk_poll_submit() (20261012_talk_polls) */}
+          <Route path="/poll/:code" element={<TalkPollPhone />} />
           {/* Ember — breath biofeedback campfire; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/ember" element={<Ember />} />
           {/* Mirror — breath-driven avatar + materializing calibration; ?sim=1 beltless */}
@@ -760,6 +764,8 @@ export default function App() {
             <Route path="/bpmh-sep-2026" element={<BpmhSep2026 />} />
             {/* ISCR 2026 — 8-minute BCAT talk; the room runs two trials in the first minute */}
             <Route path="/iscr-2026" element={<Iscr2026 />} />
+            {/* Social-personality group talk, Oct 2026 — room breathing demo with a live phone poll */}
+            <Route path="/socpers-oct-2026" element={<SocPers2026 />} />
           </Route>
 
           {/*

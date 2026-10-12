@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/socpers-oct-2026',
+    kicker: 'U of T social-personality group · October 2026',
+    title: 'What You Miss Won’t Move You',
+    sub: 'Noticing the body, feeling, and seeing others. The room breathes through two BCAT trials, answers on phones, and sees its own result live.',
+    tags: ['Interoception', 'Emotion perception', 'Wellbeing'],
+    accent: 'var(--pk)',
+  },
+  {
     to: '/iscr-2026',
     kicker: 'ISCR · 2026 · 8-minute talk',
     title: 'What You Miss Won’t Move You',
