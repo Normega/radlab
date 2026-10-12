@@ -680,18 +680,18 @@ function BlockFlow() {
 
 // The within-person chain from Fouad & Farb (Figure 4C), drawn for the projector.
 function PathDiagram() {
-  const W = 1000, H = 230
+  const W = 1000, H = 268
   const boxes = [
     { x: 20,  t1: 'Breathing', t2: 'change made' },
     { x: 270, t1: 'Change', t2: 'noticed' },
     { x: 520, t1: 'Felt', t2: 'arousal' },
     { x: 770, t1: 'Perceived', t2: 'intensity in others' },
   ]
-  const bw = 210, bh = 76, by = 40
+  const bw = 210, bh = 76, by = 72
   const arrows = [
-    { from: 0, label: 'b = 0.45, p < .001', solid: true },
-    { from: 1, label: 'b = 0.10, p = .012', solid: true },
-    { from: 2, label: 'b = 0.05, p = .070', solid: false },
+    { from: 0, b: 'b = 0.45', p: 'p < .001', solid: true },
+    { from: 1, b: 'b = 0.10', p: 'p = .012', solid: true },
+    { from: 2, b: 'b = 0.05', p: 'p = .070', solid: false },
   ]
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 980, height: 'auto' }} role="img"
@@ -716,12 +716,13 @@ function PathDiagram() {
         return (
           <g key={a.from}>
             <line x1={x1} y1={by + bh / 2} x2={x2} y2={by + bh / 2} stroke="#1c1c1e" strokeWidth={a.solid ? 3 : 2} strokeDasharray={a.solid ? '' : '6 6'} markerEnd="url(#sp-arrow)" />
-            <text x={(x1 + x2) / 2} y={by - 12} textAnchor="middle" fontSize="15" fill="#3a3a3e" fontFamily="monospace">{a.label}</text>
+            <text x={(x1 + x2) / 2} y={by - 34} textAnchor="middle" fontSize="24" fontWeight="700" fill="#1c1c1e" fontFamily="'Space Mono',monospace">{a.b}</text>
+            <text x={(x1 + x2) / 2} y={by - 10} textAnchor="middle" fontSize="18" fill="#3a3a3e" fontFamily="'Space Mono',monospace">{a.p}</text>
           </g>
         )
       })}
       <path d={`M${20 + bw / 2},${by + bh + 4} Q500,${H + 30} ${770 + bw / 2},${by + bh + 6}`} fill="none" stroke="#ABADB0" strokeWidth="2" strokeDasharray="6 6" markerEnd="url(#sp-arrow-g)" />
-      <text x={500} y={H - 22} textAnchor="middle" fontSize="16" fill="#6b6c70" fontFamily="'DM Sans',sans-serif">bodily change → perception directly: 0.01 per SD, equivalent to zero</text>
+      <text x={500} y={H - 22} textAnchor="middle" fontSize="19" fill="#6b6c70" fontFamily="'DM Sans',sans-serif">bodily change → perception directly: 0.01 per SD, equivalent to zero</text>
     </svg>
   )
 }
