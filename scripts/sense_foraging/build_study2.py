@@ -3,7 +3,7 @@ that creates both studies, inactive, for review (Norm, 2026-10-11).
 
 Session (Study 2):
   background (sf-background, as Study 1) -> the 20-item short form (sf-short-20, fixed
-  order, as the PSY240 trial) -> six candidate items (unscored) -> the validity block in
+  order, as the PSY240 trial) -> 14 candidate items (unscored, in a per-participant order) -> the validity block in
   a per-participant order (session_template_nodes.shuffle_group = 'validity'):
   FFMQ-15, MAIA-2, BIDR-16, PHQ-4 (the REB-approved appendix, verbatim, via
   build_draft.build_validity), IUS-12, SBI Savoring the Moment, BFI-2 Open-Mindedness,
@@ -27,7 +27,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
-from build_draft import build_validity, likert, lit, mc, opt, questionnaire, chunk, SFS_POINTS  # noqa: E402
+from build_draft import build_validity, fallback_pages, likert, lit, mc, opt, questionnaire, chunk, SFS_POINTS  # noqa: E402
 
 OUT = HERE / 'study2'
 STUDY1 = '74cb6aa5-857c-408e-adfa-a5556acd62b7'
@@ -111,15 +111,39 @@ PSS4 = [
     ('In the last month, how often have you felt that things were going your way?', True),
     ('In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?', False),
 ]
-# Six new items to test, unscored (drafted from Study 1's gaps); 6-point + PNA.
+# New items to test, unscored; 6-point + PNA. Drafted from Study 1's gaps (sfc_2-6) and from its item
+# analysis with Norm, 2026-10-11 (sfc_7-15): Understanding items ask about recognising one's own mode in
+# the moment (the old ones were truisms ~90% agreed with); Letting be items count elaborating, explaining
+# or acting against letting be, never quiet labelling or noticing pleasant/unpleasant, which the course
+# teaches as part of the sensing mode (and which loaded on Access in Study 1). sfc_1 was dropped (it
+# repeats item 15's truism). Ids are not reused.
 CANDIDATES = [
-    ('sfc_1', 'I can feel stress pulling me toward my usual ways of doing things', 'Understanding the modes', False),
     ('sfc_2', 'My attention works the same way whether I am stressed or relaxed', 'Understanding the modes', True),
     ('sfc_3', 'To me, sensing and doing are two names for the same thing', 'Understanding the modes', True),
-    ('sfc_4', 'When I have free time, I would rather fill it than spend it just sensing', 'Valuing and savouring', True),
+    ('sfc_7', 'I can tell which mode I am in while it is happening', 'Understanding the modes', False),
+    ('sfc_8', 'I notice the moment my attention shifts from sensing to doing', 'Understanding the modes', False),
+    ('sfc_9', 'I usually realize I was in the doing mode only long afterwards', 'Understanding the modes', True),
     ('sfc_5', 'I can feel at ease without knowing what comes next', 'Letting be', False),
     ('sfc_6', 'I am content to notice something without working out what it means', 'Letting be', False),
+    ('sfc_10', 'I can notice that something feels unpleasant without trying to change it', 'Letting be', False),
+    ('sfc_11', 'Once I have named what I notice, I am happy to leave it there', 'Letting be', False),
+    ('sfc_12', 'When I notice something, I start explaining it to myself straight away', 'Letting be', True),
+    ('sfc_13', 'After I name a sensation, one thought quickly leads to another', 'Letting be', True),
+    ('sfc_14', 'I have trouble just letting what I notice be', 'Letting be', True),
+    ('sfc_4', 'When I have free time, I would rather fill it than spend it just sensing', 'Valuing and savouring', True),
+    ('sfc_15', 'Time spent just taking things in feels like time wasted', 'Valuing and savouring', True),
 ]
+# Per-participant order (the renderer's interleave engine): same-factor items never adjacent, reversed
+# items 3-5 a page and never first, opposite pairs on different pages. Checked feasible for 2,000 seeds.
+def candidates_interleave():
+    by = lambda f: [c for c, _, ff, _ in CANDIDATES if ff == f]
+    return {'items': [c for c, *_ in CANDIDATES], 'page_sizes': [7, 7],
+            'clusters': {'understanding': by('Understanding the modes'), 'letting_be': by('Letting be'),
+                         'valuing': by('Valuing and savouring')},
+            'cluster_min_gap': 2, 'cluster_max_per_page': 4,
+            'groups': [{'items': [c for c, _, _, r in CANDIDATES if r], 'min_gap': 1, 'max_per_page': 5, 'min_per_page': 3,
+                        'avoid_positions': [1], 'max_run_outside': 3}],
+            'apart_pages': [['sfc_8', 'sfc_9'], ['sfc_11', 'sfc_12'], ['sfc_4', 'sfc_15']]}
 
 
 def build_new():
@@ -177,10 +201,14 @@ def build_new():
     ]
     out['crit'] = questionnaire('sf2-past-week', 'Your past week', 'A few questions about the past 7 days.', pages('crit', crit, [3]))
 
-    comps = [likert(cid, t, SFS_POINTS) for cid, t, _, _ in CANDIDATES]
+    comp = {cid: likert(cid, t, SFS_POINTS) for cid, t, _, _ in CANDIDATES}
+    spec = candidates_interleave()
+    layout = fallback_pages(spec)      # the renderer's fallback is itself a valid order (fixed seed)
     out['cand'] = questionnaire('sf2-sfs-candidates', 'A few more statements',
         'A few more statements about how you pay attention. In general, how much do you agree with each statement? '
-        'There are no right or wrong answers.', pages('sfc', comps, [6]))
+        'There are no right or wrong answers.',
+        [{'id': f'sfc_p{k}', 'components': [comp[i] for i in ids]} for k, ids in enumerate(layout, 1)])
+    out['cand']['interleave'] = spec
     out['cand']['candidates'] = [{'id': c, 'factor': f, 'reverse_keyed': r} for c, _, f, r in CANDIDATES]
     return out
 

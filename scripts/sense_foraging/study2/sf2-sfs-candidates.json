@@ -8,42 +8,9 @@
       "id": "sfc_p1",
       "components": [
         {
-          "id": "sfc_1",
+          "id": "sfc_5",
           "type": "likert",
-          "question": "I can feel stress pulling me toward my usual ways of doing things",
-          "scale": [
-            {
-              "value": 1,
-              "label": "Strongly disagree"
-            },
-            {
-              "value": 2,
-              "label": "Disagree"
-            },
-            {
-              "value": 3,
-              "label": "Mildly disagree"
-            },
-            {
-              "value": 4,
-              "label": "Mildly agree"
-            },
-            {
-              "value": 5,
-              "label": "Agree"
-            },
-            {
-              "value": 6,
-              "label": "Strongly agree"
-            }
-          ],
-          "required": true,
-          "allow_pna": true
-        },
-        {
-          "id": "sfc_2",
-          "type": "likert",
-          "question": "My attention works the same way whether I am stressed or relaxed",
+          "question": "I can feel at ease without knowing what comes next",
           "scale": [
             {
               "value": 1,
@@ -107,6 +74,105 @@
           "allow_pna": true
         },
         {
+          "id": "sfc_6",
+          "type": "likert",
+          "question": "I am content to notice something without working out what it means",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_9",
+          "type": "likert",
+          "question": "I usually realize I was in the doing mode only long afterwards",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_13",
+          "type": "likert",
+          "question": "After I name a sensation, one thought quickly leads to another",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
           "id": "sfc_4",
           "type": "likert",
           "question": "When I have free time, I would rather fill it than spend it just sensing",
@@ -140,9 +206,47 @@
           "allow_pna": true
         },
         {
-          "id": "sfc_5",
+          "id": "sfc_11",
           "type": "likert",
-          "question": "I can feel at ease without knowing what comes next",
+          "question": "Once I have named what I notice, I am happy to leave it there",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "sfc_p2",
+      "components": [
+        {
+          "id": "sfc_8",
+          "type": "likert",
+          "question": "I notice the moment my attention shifts from sensing to doing",
           "scale": [
             {
               "value": 1,
@@ -173,9 +277,174 @@
           "allow_pna": true
         },
         {
-          "id": "sfc_6",
+          "id": "sfc_14",
           "type": "likert",
-          "question": "I am content to notice something without working out what it means",
+          "question": "I have trouble just letting what I notice be",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_2",
+          "type": "likert",
+          "question": "My attention works the same way whether I am stressed or relaxed",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_10",
+          "type": "likert",
+          "question": "I can notice that something feels unpleasant without trying to change it",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_7",
+          "type": "likert",
+          "question": "I can tell which mode I am in while it is happening",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_15",
+          "type": "likert",
+          "question": "Time spent just taking things in feels like time wasted",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sfc_12",
+          "type": "likert",
+          "question": "When I notice something, I start explaining it to myself straight away",
           "scale": [
             {
               "value": 1,
@@ -208,12 +477,88 @@
       ]
     }
   ],
-  "candidates": [
-    {
-      "id": "sfc_1",
-      "factor": "Understanding the modes",
-      "reverse_keyed": false
+  "interleave": {
+    "items": [
+      "sfc_2",
+      "sfc_3",
+      "sfc_7",
+      "sfc_8",
+      "sfc_9",
+      "sfc_5",
+      "sfc_6",
+      "sfc_10",
+      "sfc_11",
+      "sfc_12",
+      "sfc_13",
+      "sfc_14",
+      "sfc_4",
+      "sfc_15"
+    ],
+    "page_sizes": [
+      7,
+      7
+    ],
+    "clusters": {
+      "understanding": [
+        "sfc_2",
+        "sfc_3",
+        "sfc_7",
+        "sfc_8",
+        "sfc_9"
+      ],
+      "letting_be": [
+        "sfc_5",
+        "sfc_6",
+        "sfc_10",
+        "sfc_11",
+        "sfc_12",
+        "sfc_13",
+        "sfc_14"
+      ],
+      "valuing": [
+        "sfc_4",
+        "sfc_15"
+      ]
     },
+    "cluster_min_gap": 2,
+    "cluster_max_per_page": 4,
+    "groups": [
+      {
+        "items": [
+          "sfc_2",
+          "sfc_3",
+          "sfc_9",
+          "sfc_12",
+          "sfc_13",
+          "sfc_14",
+          "sfc_4",
+          "sfc_15"
+        ],
+        "min_gap": 1,
+        "max_per_page": 5,
+        "min_per_page": 3,
+        "avoid_positions": [
+          1
+        ],
+        "max_run_outside": 3
+      }
+    ],
+    "apart_pages": [
+      [
+        "sfc_8",
+        "sfc_9"
+      ],
+      [
+        "sfc_11",
+        "sfc_12"
+      ],
+      [
+        "sfc_4",
+        "sfc_15"
+      ]
+    ]
+  },
+  "candidates": [
     {
       "id": "sfc_2",
       "factor": "Understanding the modes",
@@ -225,8 +570,18 @@
       "reverse_keyed": true
     },
     {
-      "id": "sfc_4",
-      "factor": "Valuing and savouring",
+      "id": "sfc_7",
+      "factor": "Understanding the modes",
+      "reverse_keyed": false
+    },
+    {
+      "id": "sfc_8",
+      "factor": "Understanding the modes",
+      "reverse_keyed": false
+    },
+    {
+      "id": "sfc_9",
+      "factor": "Understanding the modes",
       "reverse_keyed": true
     },
     {
@@ -238,6 +593,41 @@
       "id": "sfc_6",
       "factor": "Letting be",
       "reverse_keyed": false
+    },
+    {
+      "id": "sfc_10",
+      "factor": "Letting be",
+      "reverse_keyed": false
+    },
+    {
+      "id": "sfc_11",
+      "factor": "Letting be",
+      "reverse_keyed": false
+    },
+    {
+      "id": "sfc_12",
+      "factor": "Letting be",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_13",
+      "factor": "Letting be",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_14",
+      "factor": "Letting be",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_4",
+      "factor": "Valuing and savouring",
+      "reverse_keyed": true
+    },
+    {
+      "id": "sfc_15",
+      "factor": "Valuing and savouring",
+      "reverse_keyed": true
     }
   ]
 }

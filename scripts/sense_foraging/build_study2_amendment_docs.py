@@ -83,7 +83,7 @@ def consent():
     d0 = docx.Document(REV2 / 'Consent_Form_v3.docx')
     revised = next(p.text for p in d0.paragraphs if p.text.startswith('REVISED'))
     edits.append((revised, [f'REVISED ({AMENDMENT}): Study 2 administers the background questions, the 20-statement '
-                            'Sense Foraging short form, six new candidate statements, and the validity, wellbeing and '
+                            'Sense Foraging short form, 14 new candidate statements, and the validity, wellbeing and '
                             'stress measures (about 20 minutes). A random subsample is invited to an optional ~3-minute '
                             'follow-up about two weeks later, under its own consent form.']))
     edit_doc(REV2 / 'Consent_Form_v3.docx', 'Consent_Form_v5_Study2', edits)
@@ -133,8 +133,9 @@ SESSION = [
     ('Sense Foraging Scale, short form (20 statements)', 'sf-short-20',
      'NEW. The 20 statements are a subset of the 48 approved for Study 1 (Rev3), selected from the Study 1 '
      'factor analysis, wording unchanged. One fixed order for everyone, 3 pages.'),
-    ('Six candidate statements (unscored)', 'sf2-sfs-candidates',
-     'NEW. Written for a future version of the scale; analysed, not scored.'),
+    ('Fourteen candidate statements (unscored)', 'sf2-sfs-candidates',
+     'NEW. Written for a future version of the scale; analysed, not scored. Two pages of 7, in a random order per '
+     'participant: statements written for the same part never adjacent, reversed statements spread across both pages.'),
     ('— Validity block: the measures below in a random order per participant —', None, None),
     ('FFMQ-15', 'sf2-ffmq15', 'As approved (Rev2 Validity Scales Appendix).'),
     ('MAIA-2, with its attention check', 'sf2-maia2', 'As approved (Rev2 Validity Scales Appendix).'),
