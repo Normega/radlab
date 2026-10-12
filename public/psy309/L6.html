@@ -320,6 +320,37 @@ n      &lt;- 20     # an ordinary
   <aside class="notes"><p>Reveal one at a time. The second number is the winner's curse, and they derived it — do not let it go by as a bullet. Checked 2026-10-12 in R 4.6 over 100,000 studies: power .25, middle 95% of r from &#8722;.16 to .66, mean significant r .54. Each student's own 10,000 will land within a point or two of these.</p></aside>
 </section>
 
+<section class="dense" data-kind="activity">
+  <p class="kicker">Round 4 · in your script, live</p>
+  <h1>Buy power, lose the exaggeration</h1>
+  <p>Rerun Part 3 at n = 200. The threshold moves too: at n = 200 an r beyond &#177;.139 is significant.</p>
+  <pre>n    &lt;- 200     # was 20
+crit &lt;- 0.139   # significance threshold at n = 200 (was 0.444)
+many &lt;- replicate(10000, {
+  xx &lt;- rnorm(n)
+  yy &lt;- true_r * xx + sqrt(1 - true_r^2) * rnorm(n)
+  cor(xx, yy)
+})
+mean(abs(many) &gt; crit)         # power
+mean(many[abs(many) &gt; crit])   # average r among the significant studies</pre>
+  <p class="small">Fast? Try n = 50 with crit = 0.279.</p>
+  <aside class="notes"><p>Adapt the code live from Part 3 of L5_sampling.R. The trap: Part 3 hard-codes 0.444, the n = 20 threshold, in three places, so changing only n gives a power near 1% and a misleading average. crit is the r at which p = .05 two-tailed: n = 50 is 0.279, n = 85 is 0.213. true_r is still defined from Part 1 if they ran the script in one session; if R restarted, add true_r &lt;- 0.30 first. Table from 20,000 simulated studies per n (R 4.6, 2026-10-12); students' 10,000 will land within a point or two. The n = 85 row is the one to linger on: the conventional 80% power still leaves published effects about 10% hot. Fast students can try n = 50 with crit 0.279.</p></aside>
+</section>
+
+<section class="dense">
+  <p class="kicker">Round 4 · what power buys</p>
+  <h1>The same world at four sample sizes</h1>
+  <table>
+    <tr><th>n</th><th>Power</th><th>Average significant r</th><th>Exaggeration</th></tr>
+    <tr><td class="rowhead">20</td><td>.25</td><td>.55</td><td>+82%</td></tr>
+    <tr><td class="rowhead">50</td><td>.57</td><td>.39</td><td>+29%</td></tr>
+    <tr><td class="rowhead">85</td><td>.81</td><td>.33</td><td>+11%</td></tr>
+    <tr class="hidden-until"><td class="rowhead">200</td><td>.99</td><td class="margin"><strong>.30</strong></td><td class="margin"><strong>none</strong></td></tr>
+  </table>
+  <p class="hidden-until"><strong>The exaggeration comes from low power, not from significance testing itself.</strong> When nearly every study clears the bar, filtering removes nothing. That&#8217;s why Practical 5 starts with a power analysis.</p>
+  <aside class="notes"><p>Ask for their n = 200 numbers before showing the n = 200 row: power near .99 and an average significant r near .30. From 20,000 simulated studies per n (R 4.6, 2026-10-12).</p></aside>
+</section>
+
 <section>
   <h1>Three things you now know from your own data</h1>
   <ol>
@@ -341,7 +372,8 @@ n      &lt;- 20     # an ordinary
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
-  <aside class="notes"><p>Check-in position 25.</p></aside>
+  <p class="small"><strong>After the break we walk through Practical3_2026.Rmd.</strong> It&#8217;s in the same place as this morning&#8217;s script: <a href="https://q.utoronto.ca/courses/464046" style="color:inherit">PSY309H5 F PRA0101</a> &#8594; <a href="https://q.utoronto.ca/courses/464046/files" style="color:inherit">Files</a> &#8594; <a href="https://q.utoronto.ca/courses/464046/files/folder/Rcode" style="color:inherit">Rcode</a>. Upload it with <strong>psy309_apa_reference.docx</strong>, which it needs to knit to Word.</p>
+  <aside class="notes"><p>Check-in position 25. The Rmd knits to Word through the reference .docx (reference_docx in its header), so a student who uploads only the Rmd gets a knit error.</p></aside>
 </section>
 
 <section data-kind="divider">
@@ -407,6 +439,7 @@ n      &lt;- 20     # an ordinary
   <p>&#8220;Make the difference between conditions the size you actually expect.&#8221; That&#8217;s an effect size, so choose it as one.</p>
   <pre>Neutral   &lt;- rnorm(100, mean = 50, sd = 10)
 Gratitude &lt;- rnorm(100, mean = 55, sd = 10)   # expected +5</pre>
+  <p class="small">From the worked example, <code>Practical3_2026.Rmd</code>: <a href="https://q.utoronto.ca/courses/464046">PSY309H5 F PRA0101</a> &#8594; <a href="https://q.utoronto.ca/courses/464046/files">Files</a> &#8594; <a href="https://q.utoronto.ca/courses/464046/files/folder/Rcode">Rcode</a>.</p>
   <ul>
     <li class="hidden-until"><strong>d = (55 &#8722; 50) / 10 = 0.5.</strong> A medium effect: you just wrote a prediction about size.</li>
     <li class="hidden-until"><strong>SE = SD / &#8730;n = 10 / &#8730;100 = 1.</strong> That&#8217;s the column in your table, and why it shrinks as n grows.</li>
