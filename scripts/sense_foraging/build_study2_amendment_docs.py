@@ -143,7 +143,8 @@ SESSION = [
     ('MAIA-2, with its attention check', 'sf2-maia2', 'As approved (Rev2 Validity Scales Appendix).'),
     ('BIDR-16', 'sf2-bidr16', 'As approved (Rev2 Validity Scales Appendix).'),
     ('PHQ-4', 'sf2-phq4', 'As approved (Rev2 Validity Scales Appendix).'),
-    ('Life satisfaction (one slider item)', None, 'As approved (Rev2 Validity Scales Appendix).'),
+    ('Life satisfaction (one item)', None, 'CHANGED FORMAT. The approved wording (Rev2 Validity Scales Appendix), answered on '
+     'a six-point face scale (unhappy to delighted) instead of the appendix’s 1–7.'),
     ('IUS-12', 'sf2-ius12', 'NEW.'),
     ('SBI, Savoring the Moment subscale', 'sf2-sbi-moment', 'NEW.'),
     ('BFI-2 Open-Mindedness domain, plus one attention check', 'sf2-bfi2-om', 'NEW.'),
@@ -229,6 +230,15 @@ def measures():
     d.add_paragraph(f'{AMENDMENT}. Protocol # 00051180. Online, single session, about 20 minutes, Prolific '
                     '(general and contemplative-practitioner postings, as in Study 1).')
 
+    d.add_heading('Sample', level=2)
+    d.add_paragraph('CHANGED. About 1,000 completers (about 600 on the general posting and 400 on the contemplative '
+                    'posting), up from the approved 450–500 for Study 2. The larger sample lets the candidate statements '
+                    'be chosen in one random half of the sample and checked in the other, each half the size of Study 1. '
+                    'Recruitment is otherwise as approved: two postings that differ only in how the study is described, '
+                    'no screening on contemplative practice, adults 18+ fluent in English, resident in the United States, '
+                    'United Kingdom, Canada, Australia, Ireland or New Zealand, and Study 1 participants excluded. '
+                    'Payment is unchanged (USD 12 per hour, prorated).')
+
     d.add_heading('The session, in order', level=2)
     t = d.add_table(rows=1, cols=2)
     t.style = 'Table Grid'
@@ -264,8 +274,8 @@ def measures():
 
     d.add_page_break()
     d.add_heading('Items as shown', level=2)
-    d.add_paragraph('Measures already approved (background questions, FFMQ-15, MAIA-2, BIDR-16, PHQ-4, life '
-                    'satisfaction) are not repeated here.')
+    d.add_paragraph('Measures already approved (background questions, FFMQ-15, MAIA-2, BIDR-16, PHQ-4, and the life-'
+                    'satisfaction wording) are not repeated here.')
     for label, slug, status in SESSION:
         if not slug or not status.startswith('NEW'):
             continue
