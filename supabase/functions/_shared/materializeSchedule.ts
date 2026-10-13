@@ -274,9 +274,10 @@ const CONCURRENT_LINK_POLL_MS = 250
  * phase — Liliana-specific (liliana_participants/liliana_day_data/
  * intervention_modules), not a generic graph-position count. See
  * get_liliana_credit_report (20260714_liliana_sona_credit_report.sql) for
- * the same pattern used by the SONA credit report.
+ * the same pattern used by the SONA credit report. Exported for phaseReach.ts,
+ * so the missed-session copy reads the exact count this gate enforces.
  */
-async function countCompletedPhaseDays(
+export async function countCompletedPhaseDays(
   db: SupabaseClient,
   participantId: string,
   studyId: string,

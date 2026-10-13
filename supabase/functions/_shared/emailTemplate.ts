@@ -24,6 +24,11 @@ export function renderEmail(vars: {
   // one or the other, never both. Selects the get-back-on-track lead-in and
   // the formal-withdrawal offer instead of the warm single-miss ack.
   lapsed?: boolean
+  // The enforcing adherence rule for this session's phase can no longer be met
+  // (see phaseReach.ts). Replaces both the warm ack and the lapsed copy, whose
+  // "nothing to make up" / "get back on track" would then be false, and drops
+  // the response-rate line (a different count, which would contradict it).
+  phase_out_of_reach?: { min_required: number; of_total: number; ends: string } | null
   // Self-serve withdrawal link (/withdraw/{token}); only provided on lapsed
   // sends. The page it opens requires an explicit confirmation click, so this
   // link itself is safe against inbox link-scanner prefetch.
@@ -111,6 +116,7 @@ export function renderEmail(vars: {
     : vars.baseline_hold === 'catchup' ? BASELINE_CATCHUP_INTRO
     : vars.baseline_hold === 'repeat' ? (vars.hold_calendar ? holdCalendarIntro(vars.hold_calendar) : BASELINE_REPEAT_INTRO)
     : vars.is_reminder ? REMINDER_INTRO
+    : vars.phase_out_of_reach ? outOfReachIntro(vars.phase_out_of_reach)
     : vars.lapsed ? LAPSED_INTRO
     : vars.after_missed ? missedIntro : null
 
@@ -124,7 +130,7 @@ export function renderEmail(vars: {
   // Suppressed on the final notice: that email is about one deadline and one
   // action, and a completion percentage beside a "this is your last chance"
   // paragraph reads as a verdict on the participant rather than context.
-  const progressLine = !vars.final_notice && !vars.baseline_hold && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
+  const progressLine = !vars.final_notice && !vars.baseline_hold && !vars.phase_out_of_reach && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
     ? progressSentence(vars.progress)
     : null
 
@@ -395,6 +401,18 @@ const MISSED_INTRO_LOW_RATE = `We noticed your last session's window closed befo
 // participant about whether the study still fits — an honest exit offered
 // kindly beats a slow fade of ignored emails, for them and for the data.
 const LAPSED_INTRO = `We noticed you've missed a few check-ins in a row — that's okay, and there's nothing to make up. Now is a great time to get back on track, and your next check-in is below. On the other hand, if the study no longer fits your circumstances, you're welcome to formally withdraw using the link at the bottom of this email. Either way, we're glad to have you for whatever part of the study you can do.`
+
+// ─── Out-of-reach lead-in ────────────────────────────────────────────────────
+// Replaces MISSED_INTRO / LAPSED_INTRO once the phase's enforcing adherence
+// rule can no longer be met (phaseReach.ts). Both of those say there is
+// "nothing to make up" and the lapsed one says "now is a great time to get back
+// on track" -- false here: the participant will be withdrawn when the phase
+// ends whatever they do. Says so plainly, with the real numbers and date, and
+// still offers the remaining sessions and the exit. States the threshold only
+// because phaseReach computes it from the rule that is actually enforced.
+function outOfReachIntro(r: { min_required: number; of_total: number; ends: string }): string {
+  return `We noticed you've missed several check-ins. To continue to the next part of the study, this block of daily sessions needs at least ${r.min_required} of its ${r.of_total} completed, and there are no longer enough sessions left in it to reach that. The block ends on ${r.ends}, and your participation in the study will end after that. Until then, you're welcome to do the sessions that remain — today's is below. If you'd rather stop now, you can withdraw using the link at the bottom of this email. Thank you for the sessions you've done.`
+}
 
 // ─── Response-rate line ───────────────────────────────────────────────────────
 // Deliberately DESCRIPTIVE, not normative: it reports what the participant has

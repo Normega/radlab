@@ -34,6 +34,7 @@ import { studyDayPosition, scheduleRank } from '../_shared/studyDayPosition.ts'
 import { RESEARCH_REPLY_TO } from '../_shared/replyTo.ts'
 import { holdCalendar } from '../_shared/holdCalendar.ts'
 import { todayInLabTz } from '../_shared/labDate.ts'
+import { loadPhaseOutOfReach, formatPhaseEnd } from '../_shared/phaseReach.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -316,11 +317,19 @@ Deno.serve(async (req) => {
     const afterMissed = missState === 'ack'
     const lapsed = missState === 'lapsed'
 
-    // The withdrawal offer that rides the lapsed email. Reuses the permanent
-    // per-participant/study token the unsubscribe link is built from — the
-    // route decides the action, and /withdraw requires an explicit confirm
-    // click before anything changes (safe against link-scanner prefetch).
-    const withdrawUrl = lapsed && unsubToken ? `${siteUrl}/withdraw/${unsubToken}` : null
+    // Only on an email that already speaks to a miss: once the phase's
+    // enforcing adherence rule can't be met, that email's "nothing to make up"
+    // would be false (see phaseReach.ts). Copy only; enforcement is unchanged.
+    const outOfReach = afterMissed || lapsed
+      ? await loadPhaseOutOfReach(db, row, study?.design_graph)
+      : null
+
+    // The withdrawal offer that rides the lapsed (and out-of-reach) email.
+    // Reuses the permanent per-participant/study token the unsubscribe link is
+    // built from — the route decides the action, and /withdraw requires an
+    // explicit confirm click before anything changes (safe against link-scanner
+    // prefetch).
+    const withdrawUrl = (lapsed || outOfReach) && unsubToken ? `${siteUrl}/withdraw/${unsubToken}` : null
 
     // Response rate so far — on reminders and on the email that follows a
     // missed session (single miss or lapsed streak), i.e. only where the
@@ -354,6 +363,9 @@ Deno.serve(async (req) => {
       is_reminder:     !!is_reminder,
       after_missed:    afterMissed,
       lapsed,
+      phase_out_of_reach: outOfReach
+        ? { min_required: outOfReach.minRequired, of_total: outOfReach.ofTotal, ends: formatPhaseEnd(outOfReach.endDate) }
+        : null,
       withdraw_url:    withdrawUrl,
       final_notice:    final_notice ?? null,
       compensation:    study?.compensation_kind === 'pay' ? 'pay' : 'credit',
