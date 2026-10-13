@@ -668,7 +668,7 @@ const SLIDES = [
   {
     label: 'Sensitivity → accuracy',
     by: 900,
-    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
+    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, and false alarms, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
         <H2>Sensitive to your own breath, better at reading others</H2>
@@ -1071,8 +1071,8 @@ function RobustLadder() {
   const rows = [
     { t: 'As preregistered', s: 'n = 305', e: -0.174, lo: -0.281, hi: -0.063, v: 'r = −.17', p: 'p = .002' },
     { t: '+ bias, confidence, MAIA, mood, burnout', s: 'n = 301', e: -0.138, lo: -0.262, hi: -0.015, v: 'β = −.14', p: 'p = .028' },
-    { t: 'Belt followed the pacer', s: 'n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
-    { t: '+ how closely breathing followed it', s: 'n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
+    { t: 'Usable belt recording only', s: 'n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
+    { t: '+ pacer synchrony, gain, false alarms', s: 'n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
   ]
   const W = 1000, rh = 38, top = 26, H = top + rows.length * rh + 22
   const px0 = 540, px1 = 780, lo = -0.35, hi = 0.1
@@ -1080,7 +1080,7 @@ function RobustLadder() {
   const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ height: 'min(19vh, 210px)', width: 'auto', maxWidth: '100%' }} role="img"
-      aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in the subsample whose belt followed the pacer; −.10, p = .18, not significant, once pacer-following is controlled">
+      aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in those with a usable belt recording; −.10, p = .18, not significant, once pacer synchrony, entrainment gain and false alarms are controlled">
       <text x={16} y={15} fontSize="15" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
       {rows.map((r, k) => {
         const y = top + k * rh + rh / 2
