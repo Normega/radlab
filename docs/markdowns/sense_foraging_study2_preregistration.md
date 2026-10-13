@@ -12,7 +12,7 @@
 - **Scoring.** The primary score is **Access + Valuing and savouring**: the mean of their 10 items, with the two subscales reported. Understanding the modes and Letting be are secondary. No 20-item total is scored: Study 1's general factor was overstated. ω_h is .54 for the pool and .50 for the 20 items, not the .70 and .66 first reported.
 - **Letting be.** IUS-12 is no longer a convergent test for Letting be, because two of its items paraphrase IUS-12 items. A wording-factor model now tests whether Letting be is separable from reversed wording.
 - **No practice screening on either posting,** as the approved protocol says.
-- **N = 1,000,** up from 500. Each selection half is then the size of Study 1, and H6 keeps its power without screening.
+- **N = 1,000,** up from 500. Each selection half is then the size of Study 1, and H3b's power rises from 68% to 93%.
 - **No country filter** (Norm, later on 12 October): adults fluent in English anywhere, as Study 1 recruited in practice. Country is compared as the six countries named in the REB application against everywhere else.
 - **Forage's curiosity neighbour** is the BFI-2 Intellectual Curiosity facet, already in the battery (Norm, 12 October). No separate curiosity measure is added.
 - **H7 is per subscale.**
@@ -190,7 +190,8 @@ The short form is also the baseline and final measure of a separate course trial
   - H3b compares two dependent correlations. By simulation, it has about 93% power to detect .40 against .30 when the two measures correlate .50 with each other (68% at N = 500).
 - **Known groups (H6).**
   - In Study 1, which was unscreened like Study 2, 34 of 500 participants met the dedicated definition and 143 had never practised regularly. At those rates, 1,000 gives about 68 against 286.
-  - Power is then 80% for d = 0.38, and 93% for the predicted d = 0.50 at the Holm-adjusted α of .025.
+  - The contemplative posting did not recruit more dedicated practitioners: 13 of its 249 participants, against 21 of 251 on the general posting.
+  - H6 needs an estimated d of at least 0.50 as well as significance, so its power depends on the true d. At N = 1,000, H6 passes about 93% of the time if the true d is 0.70, and 98% if it is 0.80; at N = 500, 85% and 94%. Study 1's in-sample d were 1.00 for Access and 1.64 for Valuing and savouring.
 - **Stability.** With 150 retest pairs and a true ICC of .75, the 95% CI is about ±.07.
 
 ### Stopping rule
