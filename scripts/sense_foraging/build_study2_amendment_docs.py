@@ -235,9 +235,12 @@ def measures():
                     'posting), up from the approved 450–500 for Study 2. The larger sample lets the candidate statements '
                     'be chosen in one random half of the sample and checked in the other, each half the size of Study 1. '
                     'Recruitment is otherwise as approved: two postings that differ only in how the study is described, '
-                    'no screening on contemplative practice, adults 18+ fluent in English, resident in the United States, '
-                    'United Kingdom, Canada, Australia, Ireland or New Zealand, and Study 1 participants excluded. '
-                    'Payment is unchanged (USD 12 per hour, prorated).')
+                    'no screening on contemplative practice, adults 18+ fluent in English, and Study 1 participants '
+                    'excluded. Payment is unchanged (USD 12 per hour, prorated).')
+    d.add_paragraph('CHANGED. No country-of-residence filter. The application named the United States, United Kingdom, '
+                    'Canada, Australia, Ireland and New Zealand; Study 2 is open to adults fluent in English in any '
+                    'country. The debrief already lists crisis lines for those six countries and points participants '
+                    'anywhere else to Find a Helpline (findahelpline.com), a free directory of crisis lines by country.')
 
     d.add_heading('The session, in order', level=2)
     t = d.add_table(rows=1, cols=2)

@@ -13,6 +13,8 @@
 - **Letting be.** IUS-12 is no longer a convergent test for Letting be, because two of its items paraphrase IUS-12 items. A wording-factor model now tests whether Letting be is separable from reversed wording.
 - **No practice screening on either posting,** as the approved protocol says.
 - **N = 1,000,** up from 500. Each selection half is then the size of Study 1, and H6 keeps its power without screening.
+- **No country filter** (Norm, later on 12 October): adults fluent in English anywhere, as Study 1 recruited in practice. Country is compared as the six countries named in the REB application against everywhere else.
+- **Forage's curiosity neighbour** is the BFI-2 Intellectual Curiosity facet, already in the battery (Norm, 12 October). No separate curiosity measure is added.
 - **H7 is per subscale.**
 - **Specification errors fixed:** missing data, the agreement factor's item count, the attention-check rule for partial sessions, score definitions, the life-satisfaction format and the fit-index version.
 
@@ -161,9 +163,10 @@ The short form is also the baseline and final measure of a separate course trial
 ### Data collection procedures
 
 - **Participants:**
-  - Prolific participants, 18 or older, fluent in English.
-  - **Resident in the United States, United Kingdom, Canada, Australia, Ireland or New Zealand.** Both postings filter on this with Prolific's "current country of residence".
-  - Study 1 set no country filter, and 69% of its sample lived elsewhere. The six countries are the ones the approved materials and the debrief's crisis resources cover.
+  - Prolific participants, 18 or older, fluent in English (Prolific's "fluent languages" filter).
+  - **No country filter.** The REB application named six countries (the United States, United Kingdom, Canada, Australia, Ireland and New Zealand), and the amendment removes that restriction.
+  - Study 1 set no country filter either, and 69% of its sample lived outside the six. Their answers held together about as well: α was .81 against .82 for Access and .67 against .75 for Valuing and savouring.
+  - The debrief lists crisis lines for the six countries and points everyone else to Find a Helpline (findahelpline.com).
 - **Excluded from both postings:** Study 1 participants (Prolific exclusion list). The contemplative posting also excludes general-posting participants.
 - **Platform:**
   - The RADlab research platform. Prolific IDs are held in a separate table and replaced by a random code in all study data.
@@ -260,7 +263,11 @@ None. Posting is a recruitment condition, recorded and used as a grouping variab
     - teacher-led training "Yes".
   - **Never:** regular practice "No".
   - **Other** (everyone else): reported descriptively, and used in the frequency analysis.
-- **Country group:** United Kingdom; United States and Canada; Australia, Ireland and New Zealand. A group under 200 is merged with the United Kingdom group if it is Australia, Ireland and New Zealand, and otherwise country is not analysed.
+- **Country group:** two groups from the background question on country of residence:
+  - the six listed countries (United States, United Kingdom, Canada, Australia, Ireland, New Zealand);
+  - everywhere else.
+
+  In Study 1 these were 31% and 69%. If either group has fewer than 200 participants, country is not analysed.
 - **Short-form scores (observed):** the mean of available items after reverse-scoring, when at least 80% of the scale's items are answered.
   - Access (5 items), Valuing and savouring (5), Access + Valuing (the mean of their 10 items: the primary score), Understanding the modes (5) and Letting be (5).
   - There is no 20-item total.
@@ -375,7 +382,7 @@ All analyses use R with lavaan, semTools, psych and irr; versions will be report
 9. **Forage (exploratory).** On the full sample:
    - (a) the five Forage items' α, mean inter-item correlation and correlation with the agreement index;
    - (b) whether they form a factor of their own in an ESEM with five content factors (Forage targeted) plus the random intercept, or load with Valuing and savouring or Access as Study 1's discovery items did;
-   - (c) their correlations with the past-week item on deliberately pausing to take in one's surroundings, with practice frequency, and with BFI-2 Open-Mindedness and SBI Savoring the Moment.
+   - (c) their correlations with the past-week item on deliberately pausing to take in one's surroundings, with practice frequency, with BFI-2 Intellectual Curiosity (general curiosity) and the rest of BFI-2 Open-Mindedness, and with SBI Savoring the Moment.
 10. **The 14-item Access + Valuing form (exploratory).**
     - Fit the two-factor model (Access 8 items, Valuing and savouring 6) with the random intercept, by the H1 fit criteria.
     - Report its ordinal ω per factor, and its known-groups and validity correlations beside the fixed form's Access and Valuing subscales.
@@ -469,7 +476,7 @@ The amount of missing data per measure is reported.
     - it raises the target to about 1,000;
     - it changes the life-satisfaction item's format to a six-point face scale, keeping the approved wording.
   - It also adds IUS-12, SBI, BFI-2 Open-Mindedness, EQ Decentering, PSS-4, three past-week items, 24 candidate items (19 new, 5 from Study 1) and the follow-up.
-  - Recruitment is unchanged: two postings that differ in framing only, no screening on practice, and the approved country-of-residence filter.
+  - Recruitment keeps two postings that differ in framing only, with no screening on practice. The amendment removes the application's country-of-residence filter.
 - **Licences.**
   - The PSS-4 is used under a Mapi Research Trust (ePROVIDE) licence for electronic administration.
   - The SBI is used with the author's permission. **[pending]**
@@ -478,8 +485,7 @@ The amount of missing data per measure is reported.
 - **Open points from the review, not yet decided [Norm].** Each would change materials, so the amendment:
   - asking the past-week items again at the follow-up, about the intervening fortnight, so H4 has a forward-looking criterion;
   - adding 4–6 parallel items without "sensing mode" wording to the candidate block, to test whether the course's vocabulary carries variance of its own;
-  - adding an instructed-response item to the candidate block, so there is a check before the validity block;
-  - a short curiosity measure (for example CEI-II) as Forage's neighbour.
+  - adding an instructed-response item to the candidate block, so there is a check before the validity block.
 
 ### References
 
