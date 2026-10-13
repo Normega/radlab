@@ -1,11 +1,14 @@
-// /poll/:code — the audience's phone during the room breathing demo. Public,
-// no login, nothing personal: a random device id (kept in localStorage so a
-// person's two trials pair up) and, per trial, a pace judgment and a 1-6
-// activation rating, written through talk_poll_submit().
+// /poll/:code — the audience's phone during the talk's opening. Public, no
+// login, nothing personal: a random device id (kept in localStorage so a
+// person's answers pair up), one tap on the mood circle (talk_poll_mood_submit,
+// 20261013_talk_poll_moods.sql) and, per breathing trial, a pace judgment and a
+// 1-6 activation rating (talk_poll_submit).
 //
 // The phone does not follow the projector. It walks the person through
-// welcome (what is about to happen) → trial 1 → wait → trial 2 → done, and
-// the presenter says when to answer. The welcome screen is there because
+// mood circle → "your dot is on the screen" → welcome (what is about to
+// happen) → trial 1 → wait → trial 2 → done, and the presenter says when to
+// move on. The pause after the mood tap is there so the room looks up for the
+// reveal instead of reading ahead. The welcome screen is there because
 // people scan the QR before the demo starts: landing straight on "Did the
 // pace change?" left them not knowing what they were rating.
 // Progress is remembered per poll round, so a refresh does not restart it
@@ -14,8 +17,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSubmitLock } from '../../lib/useSubmitLock'
+import WheelSVG from '../../games/StillWater/WheelSVG'
+import { EMOTIONS } from '../../games/StillWater/constants'
 
 const PACES = [['faster', 'Faster'], ['slower', 'Slower'], ['same', 'Same']]
+// WheelSVG only takes clicks when activeIds is an array (null = static preview).
+const ALL_EMOTION_IDS = EMOTIONS.map(e => e.id)
 
 function deviceId() {
   const key = 'talkpoll:device'
@@ -42,9 +49,11 @@ export default function PollPhone() {
   const [done, setDone] = useState([])               // trials answered this round
   const [waiting, setWaiting] = useState(false)      // between trial 1 and trial 2
   const [ready, setReady] = useState(false)          // past the welcome screen
+  const [mood, setMood] = useState(false)            // mood circle answered this round ('change' = re-answering)
+  const [moodSeen, setMoodSeen] = useState(true)     // past "your dot is on the screen"
 
   useEffect(() => {
-    document.title = 'Breathing demo'
+    document.title = 'Live poll'
     supabase.rpc('talk_poll_info', { p_code: code }).then(({ data }) => {
       const row = data?.[0] ?? null
       setInfo(row)
@@ -53,6 +62,7 @@ export default function PollPhone() {
           const saved = JSON.parse(localStorage.getItem(`talkpoll:${code}:${row.round}`) || '[]')
           setDone(saved)
           setWaiting(saved.length === 1)
+          setMood(localStorage.getItem(`talkpoll:${code}:${row.round}:mood`) === '1' || saved.length > 0)
         } catch { /* fresh start */ }
       }
     })
@@ -65,7 +75,14 @@ export default function PollPhone() {
     if (trial === 1) setWaiting(true)
   }
 
+  const moodDone = () => {
+    setMood(true)
+    setMoodSeen(false)
+    try { localStorage.setItem(`talkpoll:${code}:${info.round}:mood`, '1') } catch { /* ignore */ }
+  }
+
   let body
+  let kicker = 'Breathing demo'
   if (info === undefined) body = <p style={P.sub}>Loading…</p>
   else if (info === null) body = <p style={P.sub}>This poll link isn’t active.</p>
   else if (!info.is_open) body = <p style={P.sub}>This poll is closed. Thanks for taking part.</p>
@@ -75,9 +92,24 @@ export default function PollPhone() {
       <p style={P.sub}>Both answers are in. Watch the screen.</p>
     </div>
   )
+  else if (mood !== true) {
+    kicker = 'Check-in'
+    body = <MoodForm code={code} device={device} onDone={moodDone} />
+  }
+  else if (!moodSeen) {
+    kicker = 'Check-in'
+    body = (
+      <div style={P.center}>
+        <h1 style={P.h1}>You’re on the screen</h1>
+        <p style={P.sub}>Look up: your dot is one of the pink ones. Tap Next when you’re asked to.</p>
+        <button style={P.primary} onClick={() => setMoodSeen(true)}>Next: the breathing demo →</button>
+        <button style={P.secondary} onClick={() => setMood('change')}>Change my answer</button>
+      </div>
+    )
+  }
   else if (done.length === 0 && !ready) body = (
     <div style={P.form}>
-      <h1 style={P.h1}>Welcome</h1>
+      <h1 style={P.h1}>Next: a breathing demo</h1>
       <p style={P.sub}>In a moment the screen at the front will show a pulsing circle.</p>
       <ol style={P.steps}>
         <li style={P.step}><b>Breathe with the circle</b> for about 15 seconds: in as it grows, out as it shrinks.</li>
@@ -103,10 +135,54 @@ export default function PollPhone() {
   return (
     <div style={P.page}>
       <div style={P.card}>
-        <p style={P.kicker}>Breathing demo · {info?.title ?? ''}</p>
+        <p style={P.kicker}>{kicker} · {info?.title ?? ''}</p>
         {body}
         <p style={P.foot}>Anonymous. No name, no login. Answers are shown only as a group.</p>
       </div>
+    </div>
+  )
+}
+
+// One tap on the mood circle, then Send. Same wheel as the Lecture Lounge mood
+// check-in (MoodTap), but the tap only selects: a mis-tap can be fixed before
+// sending. The neutral centre is an answer like any other.
+function MoodForm({ code, device, onDone }) {
+  const [sel, setSel] = useState(null)
+  const [hovered, setHovered] = useState(null)
+  const [err, setErr] = useState(null)
+  const { submit, busy } = useSubmitLock('mood')
+
+  const send = () => submit(async () => {
+    setErr(null)
+    const { data, error } = await supabase.rpc('talk_poll_mood_submit', {
+      p_code: code, p_device: device,
+      p_emotion: sel.neutral ? null : sel.emotionId, p_zone: sel.neutral ? null : sel.zone,
+    })
+    if (error || data !== 'ok') {
+      setErr(data === 'closed' ? 'The poll has closed.' : data === 'limit' ? 'That’s the most changes this poll takes.' : 'That didn’t go through. Try again.')
+      throw error ?? new Error(data)
+    }
+    onDone()
+  })
+
+  return (
+    <div style={P.form}>
+      <h1 style={P.h1}>How are you feeling right now?</h1>
+      <p style={P.sub}>Tap where you are on the circle. The centre is neutral.</p>
+      <div style={P.wheel}>
+        <WheelSVG
+          activeIds={ALL_EMOTION_IDS}
+          selection={sel}
+          hovered={hovered}
+          onHover={setHovered}
+          onZoneClick={({ emotion, zone }) => setSel({ neutral: false, emotionId: emotion.id, zone })}
+          onNeutral={() => setSel({ neutral: true, emotionId: null, zone: null })}
+        />
+      </div>
+      {err && <p style={P.err}>{err}</p>}
+      <button style={{ ...P.primary, opacity: sel && !busy ? 1 : 0.4 }} disabled={!sel || busy} onClick={send}>
+        {busy ? 'Sending…' : 'Send'}
+      </button>
     </div>
   )
 }
@@ -171,6 +247,8 @@ const P = {
   num: { padding: '16px 0', fontSize: 20, fontWeight: 600, borderRadius: 12, border: '2px solid var(--tx3)', background: '#fff', color: 'var(--tx)', cursor: 'pointer' },
   optOn: { borderColor: 'var(--pk)', background: 'var(--pk)', color: '#fff' },
   ends: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--tx3)' },
+  wheel: { display: 'flex', justifyContent: 'center', touchAction: 'manipulation' },
+  secondary: { padding: '16px 24px', fontSize: 16, fontWeight: 600, borderRadius: 24, border: '2px solid var(--tx3)', background: '#fff', color: 'var(--tx2)', cursor: 'pointer' },
   primary: { marginTop: 16, padding: '16px 24px', fontSize: 16, fontWeight: 600, borderRadius: 24, border: 'none', background: 'var(--pk)', color: '#fff', cursor: 'pointer' },
   err: { color: '#A32D2D', fontSize: 14, margin: 0 },
   steps: { margin: '8px 0', paddingLeft: 24, listStyle: 'decimal', display: 'flex', flexDirection: 'column', gap: 12 },
