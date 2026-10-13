@@ -3,9 +3,11 @@
 // paper (Farb, Logie-Hagen & Amir Pour) at the centre, extended by Fouad &
 // Farb ("We See Others as We Feel") into emotion perception and burnout.
 //
-// The room takes part: phones scan the title-slide QR (radlab.zone/poll/socpers),
-// the room breathes through two BCAT trials (RoomTrials) and answers each on
-// the phone (PollPhone), and slide 4 plots the room's noticers vs missers live
+// The room takes part: phones scan the title-slide QR (radlab.zone/poll/socpers)
+// and tap where they are on the mood circle, which slide 2 plots live (RoomMood,
+// talk_poll_mood_results(), supabase/migrations/20261013_talk_poll_moods.sql).
+// Then the room breathes through two BCAT trials (RoomTrials) and answers each
+// on the phone (PollPhone), and slide 5 plots the room's noticers vs missers live
 // (LiveResults) from talk_poll_results() (supabase/migrations/20261012_talk_polls.sql).
 //
 // Shell copied from /iscr-2026: click / → / Space advance, ← back, P opens the
@@ -19,6 +21,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import RoomTrials, { PaceTraces } from './RoomTrials'
 import LiveResults from './LiveResults'
+import RoomMood from './RoomMood'
 import { pollCodeFromUrl, LIVE_POLL } from './talkPoll'
 
 export default function SocPers2026() {
@@ -325,8 +328,8 @@ const SLIDES = [
   // 1 — Title + QR (up while you are introduced)
   {
     label: 'Title + phones out',
-    by: 40,
-    note: 'Up during the introduction. First words: “Before I say anything about the research, please take out your phone and scan this. It’s anonymous: no name, no login. You’ll answer two quick questions in a minute.” Give it ~20 s; watch for people struggling and read the short URL aloud. Then click.',
+    by: 50,
+    note: 'Up during the introduction. First words: “Before I say anything about the research, please take out your phone and scan this. It’s anonymous: no name, no login. The first thing it asks is how you’re feeling right now: just tap where you are on the circle and send.” Give it ~30 s; watch for people struggling and read the short URL aloud. Then click: the dots come in live on the next slide.',
     render: (_d, _b, ctx) => (
       <Frame wide>
         <div style={K2.titleRow}>
@@ -352,12 +355,25 @@ const SLIDES = [
     ),
   },
 
-  // 2 — The room does two trials, answering on phones
+  // 2 — The room's mood, live, and the question the talk is about
+  {
+    label: 'The room’s mood (live)',
+    by: 110,
+    note: 'Let the dots land; late taps keep arriving every 2 s. Read it quickly: “Most of you are on the right, pleasant side; this many up top, this many down below.” Then the question: “How did you know whether to put yourself high or low? What did you check?” Take two or three answers. Expect: heart rate, breathing, energy, tiredness, coffee, the time of day, or “I just guessed.” Land it: “Some of you checked your body, some of you reasoned from the situation, and some of you couldn’t say. That gap, between what the body is doing and what we notice of it, is what this talk is about.” Then: “On your phone, tap Next. It explains the breathing demo.” If no phones got through, the slide asks by hands (top half? bottom half?) and the same question.',
+    render: (_d, _b, ctx) => (
+      <Frame wide kicker="You, right now · live">
+        <H2>Where the room is right now</H2>
+        <RoomMood code={ctx.code} active />
+      </Frame>
+    ),
+  },
+
+  // 3 — The room does two trials, answering on phones
   {
     label: 'Breathing demo',
-    by: 165,
+    by: 225,
     exercise: true,
-    note: '“Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer on your phone.” Phones are on a welcome screen that explains all this. ① Begin; say nothing for ~14 s. ② “On your phone, tap ‘The circle has stopped’, then: did the pace change, and how activated do you feel right now?” Watch the count climb; move on at ~80% of the room. ③ Trial 2 (“once more”), ~14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
+    note: '“Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer on your phone.” Phones are on the screen that explains all this (after they tapped Next on the mood slide). ① Begin; say nothing for ~14 s. ② “On your phone, tap ‘The circle has stopped’, then: did the pace change, and how activated do you feel right now?” Watch the count climb; move on at ~80% of the room. ③ Trial 2 (“once more”), ~14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
     render: (_d, _b, ctx) => (
       <Frame wide>
         <RoomTrials code={ctx.code} />
@@ -365,10 +381,10 @@ const SLIDES = [
     ),
   },
 
-  // 3 — Reveal: same change, different onset
+  // 4 — Reveal: same change, different onset
   {
     label: 'Reveal: same change',
-    by: 190,
+    by: 250,
     note: '“Here’s what the circle did. Both trials sped your breathing up by exactly the same amount, from 15 to about 19½ breaths a minute, 30% faster, and they ended at the same moment. The first crept up across three breaths; the second jumped.” Then: “So your body did the same thing twice. Let’s see what you felt.”',
     render: () => (
       <Frame wide kicker="What the circle did">
@@ -379,10 +395,10 @@ const SLIDES = [
     ),
   },
 
-  // 4 — The room's data, live
+  // 5 — The room's data, live
   {
     label: 'Your results (live)',
-    by: 270,
+    by: 330,
     note: 'Read it in this order. (1) “How many of you noticed trial 1?” read the n. “And trial 2?” Usually more. (2) Compare gold to blue within each panel: people who noticed vs missed the same change. (3) The bottom line: how many felt more activated after trial 2. If it matches: “That’s the paper in one room.” If it doesn’t: “With this many people that’s close to a coin toss. That’s why we ran 787. Let’s see what they did.” Either way, don’t over-read it. Refreshes every 2 s, so late answers still land. If no answers reached the server, this slide shows three hands-up questions instead of empty axes: ask them in order, read the room, then “keep your hands in mind” and move on.',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="You, a minute ago · live">
@@ -392,10 +408,10 @@ const SLIDES = [
     ),
   },
 
-  // 5 — Social psychology's arousal classics
+  // 6 — Social psychology's arousal classics
   {
     label: 'The classics',
-    by: 330,
+    by: 390,
     note: '“This room knows these studies better than I do.” One line each. Schachter and Singer: same adrenaline, and a euphoric or an angry confederate decided what it became. Dutton and Aron: the shaky bridge on the Capilano. Valins: change only the belief about the heart, and the photos look more attractive. “Arousal is the engine of some of the field’s most famous findings. But every one of them varied the body, or the belief about it. None varied whether the bodily change was noticed. That’s the gap.”',
     render: () => (
       <Frame wide kicker="Arousal in social psychology">
@@ -414,10 +430,10 @@ const SLIDES = [
     ),
   },
 
-  // 6 — Three positions (hands bet)
+  // 7 — Three positions (hands bet)
   {
     label: 'Three positions (bet)',
-    by: 380,
+    by: 440,
     note: 'One clause per card. A: missed changes move you just as much, noticing only adds a lift. B: missed changes still move you, noticing amplifies it. C, James and Lange: noticing is the feeling. “Hands up for A… B… C.” Ten seconds, keep moving. “It was never settled, because bigger changes are both easier to notice and more arousing.”',
     render: (d) => (
       <Frame wide kicker="Does a bodily change have to be noticed to be felt?">
@@ -432,10 +448,10 @@ const SLIDES = [
     ),
   },
 
-  // 7 — BCAT
+  // 8 — BCAT
   {
     label: 'The task (BCAT)',
-    by: 420,
+    by: 480,
     note: '“You’ve just done our task, the Breath Change Awareness Task.” Gradual onset hides a change; abrupt onset reveals it. A staircase sets the change at each person’s own threshold, so we get noticed and missed trials at the same size of change, in the same person. Five studies, 787 people; the last preregistered, with a respiration belt.',
     render: (d) => (
       <Frame wide kicker="The Breath Change Awareness Task">
@@ -454,10 +470,10 @@ const SLIDES = [
     ),
   },
 
-  // 8 — Result
+  // 9 — Result
   {
     label: 'Result',
-    by: 490,
+    by: 550,
     note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all; Bayes factors favour the null 9 to 30 to 1. And the belt shows breathing really did change on missed trials: 89% of them moved the cued way.” “The answer is C.” Callback to the live slide if it matched.',
     render: (d) => (
       <Frame wide kicker="Result">
@@ -476,10 +492,10 @@ const SLIDES = [
     ),
   },
 
-  // 9 — The bridge, at threshold (Study 3)
+  // 10 — The bridge, at threshold (Study 3)
   {
     label: 'The bridge, at threshold',
-    by: 545,
+    by: 605,
     note: '“So we went back to the bridge.” Point along the strip: “Breathe with the circle for eight breaths, say whether it changed, rate how activated you feel, then rate four faces for attractiveness. Thirty-two times.” Then the numbers: faster breathing raised arousal, and that arousal carried over to the faces, but only on trials where the change was noticed. On missed trials, the same bodily change carried nothing. “Dutton and Aron’s men noticed the bridge shaking. Ours, half the time, didn’t, and then there was no transfer.” Signs flipped on the slide so that faster = positive.',
     render: (d) => (
       <Frame wide kicker="Study 3 · Dutton & Aron, at threshold">
@@ -499,10 +515,10 @@ const SLIDES = [
     ),
   },
 
-  // 10 — What the MAIA is (hands)
+  // 11 — What the MAIA is (hands)
   {
     label: 'The MAIA',
-    by: 575,
+    by: 635,
     note: '“If you study individual differences in body awareness, the questionnaire you reach for is the MAIA.” It was built to capture the adaptive kind: noticing sensations, staying with them without worrying, trusting your body. “And it behaves like a wellbeing measure. In Aya’s sample, people who scored higher had fewer anxiety and depression symptoms and less burnout.” Then the item: “Here’s one of its items. Hands up if that’s you.” Smile at the count, and hold it for the next slide.',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
@@ -525,10 +541,10 @@ const SLIDES = [
     ),
   },
 
-  // 10a — MAIA predicts confidence, not sensitivity
+  // 12 — MAIA predicts confidence, not sensitivity
   {
     label: 'MAIA: confidence, not sensitivity',
-    by: 610,
+    by: 670,
     note: '“So, all of you with your hands up: across five studies the MAIA predicted how confident people were in their judgements, not how small a change they could detect.” For this audience: “It looks less like a sensory ability and more like a disposition: a habit of attending to and trusting the body. And Aya’s new sample finds the same: MAIA unrelated to thresholds.”',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
@@ -546,10 +562,10 @@ const SLIDES = [
     ),
   },
 
-  // 10b — Study 1, what we learned (bridge to Study 2)
+  // 13 — Study 1, what we learned (bridge to Study 2)
   {
     label: 'Study 1: what we learned',
-    by: 635,
+    by: 695,
     note: 'Wrap up the first paper in three beats, one per line. “We only feel a bodily change once we detect it: a missed change felt like no change at all. And the detail, how big the change was, only arrives with detection. And who detects isn’t something people can tell you about themselves: the questionnaire tracked confidence, not sensitivity.” Then the picture: “Two people working just as hard. One digs up a barrel of toxic waste, the other digs up treasure. If feeling waits on detection, then what we spend our attention digging for decides what we get to feel.” Bridge: “So does what we feel reach how we see other people?”',
     render: () => (
       <div style={K.twoCol}>
@@ -568,10 +584,10 @@ const SLIDES = [
     ),
   },
 
-  // 11 — Aya: the question and design
+  // 14 — Aya: the question and design
   {
     label: 'Seeing others: design',
-    by: 665,
+    by: 725,
     note: '“If noticing gates what we feel, does it reach how we see other people?” Aya Fouad’s thesis, now submitted. 315 students, preregistered. Walk the storyboard left to right: “Here’s one block. Three breathing trials like yours, the change set at your own threshold. Then five short clips of an actor expressing one of 14 emotions, with face, voice and body, in made-up speech. After each: which emotion, on this wheel, and how intense. Twelve blocks.” (The face is a cartoon: the GERT clips are licensed for research only.) Breathing belt and ECG throughout. “So now we can ask: when the body changes, does perception follow the body, or the feeling?”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered · N = 315">
@@ -587,10 +603,10 @@ const SLIDES = [
     ),
   },
 
-  // 12 — We see others as we feel
+  // 15 — We see others as we feel
   {
     label: 'Felt, not bodily, arousal',
-    by: 740,
+    by: 800,
     note: 'Say first: “This chain is within each person, block to block.” Walk the chain left to right. Bodily change → noticed (strong) → felt arousal (only via noticing) → perceived intensity (dashed: suggestive). The direct line from the body to perception: equivalent to zero. Then the two stats, starting with the contrast: “The arrow says .05, the card says .08, because they ask different questions. The chain is within a person, adjusted for the breathing change and for noticing; the card compares people: those who felt more aroused overall saw others’ emotions as more intense.” people who felt more aroused saw others’ emotions as more intense; heart rate didn’t move with the breathing change, so this isn’t general autonomic arousal. Honest caveat in one breath: “Small, correlational within person, and it varied a lot across people. The next study manipulates the feeling directly.”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · within person, n = 224 with a working belt">
@@ -610,10 +626,10 @@ const SLIDES = [
     ),
   },
 
-  // 13 — Breath sensitivity and recognition accuracy
+  // 16 — Breath sensitivity and recognition accuracy
   {
     label: 'Sensitivity → accuracy',
-    by: 800,
+    by: 860,
     note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
@@ -630,10 +646,10 @@ const SLIDES = [
     ),
   },
 
-  // 14 — Burnout: same body, less feeling
+  // 17 — Burnout: same body, less feeling
   {
     label: 'Burnout',
-    by: 855,
+    by: 915,
     note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “What burnout changed was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ. Same body, less feeling.” Then the path: “Does that reach how they see other people? A little, and only through feeling. Lower felt arousal went with seeing others’ emotions as less intense, so burnout has a small indirect effect, −.03, whose interval excludes zero. Burnout on its own didn’t predict intensity at all, because what’s left over runs slightly the other way.” If pressed: exploratory, cross-sectional, and both arousal and intensity are ratings, so a shared rating style could feed the felt → perceived link.',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · burnout (BAT), exploratory">
@@ -654,10 +670,10 @@ const SLIDES = [
     ),
   },
 
-  // 15 — Wellbeing
+  // 18 — Wellbeing
   {
     label: 'Wellbeing',
-    by: 890,
+    by: 950,
     note: '“Put together, a lot of wellbeing may live in what we notice.” One line per row, then the caveat: “These are hypotheses, not findings, and the nice thing is that each one is testable with these tasks.” The burnout line is the one with data behind it today.',
     render: () => (
       <Frame kicker="For wellbeing">
@@ -675,10 +691,10 @@ const SLIDES = [
     ),
   },
 
-  // 16 — Close
+  // 19 — Close
   {
     label: 'Close',
-    by: 900,
+    by: 960,
     note: 'Slow down. “Your first trial was a change your body made that your feelings never registered. What you miss won’t move you, and what you feel colours what you see.” Thank Kyle Logie-Hagen, Rose Amir Pour and Aya Fouad; NSERC and SSHRC. “Happy to take questions.” (B opens the bonus slides.)',
     render: () => (
       <Frame>
