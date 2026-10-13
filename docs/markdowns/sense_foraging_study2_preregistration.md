@@ -5,7 +5,7 @@
 - OSF Preregistration (standard template).
 - University of Toronto REB Protocol #00051180; the Study 2 amendment is not yet submitted.
 - Decisions still marked **[Norm]** must be settled before filing.
-- **Before filing:** the analysis code (`study2/analysis/`) is run end to end on simulated and permuted data, as Study 1's was, and its commit is cited here. The code is the specification wherever this text is less precise.
+- **Analysis code:** `study2/analysis/` at commit b1006fb (Normega/sense-foraging-scale). It has run end to end on simulated data generated from a known model, and recovered that model (loadings' Tucker congruence .99–1.00; over eight further simulated samples, 108 of 112 intervals for the known-group differences, retest ICCs and following-week coefficients covered the true values). Before the real analysis it is run on the real data with every item's answers shuffled, as Study 1's was. The code is the specification wherever this text is less precise. Where the text allowed more than one reading, the code's reading is marked `PREREG:` and listed in `study2/analysis/README.md`.
 
 **What changed in the 12 October revision** (Norm's decisions, 12 October, after the review):
 - **The confirmatory model is now an ESEM.** It is target-rotated, uses Study 1's item key as the targets, and includes the agreement factor. The simple-structure CFA (Model A) is still fitted and reported. Fitted to Study 1's own data, the CFA already fails the fit criteria (Section 3, *Existing data*), so a CFA-only test was set up to fail on cross-loadings rather than on the structure.
@@ -148,12 +148,12 @@ Both postings lead to the identical study, and the posting is recorded.
 
 | Model | CFI | RMSEA (90% CI upper) | SRMR |
 |---|---|---|---|
-| 20 items, simple-structure CFA + random intercept (Model A) | .850 | .086 (.093) | .072 |
+| 20 items, simple-structure CFA + random intercept (Model A) | .851 | .087 (.093) | .073 |
 | 20 items, target-rotated ESEM + random intercept (the H1 model) | .969 | .047 (.055) | .028 |
 | 10 Access + Valuing items, two-factor CFA + random intercept | .974 | .069 (.083) | .038 |
 | 14-item Access + Valuing form, two-factor CFA + random intercept | .958 | .077 (.086) | .046 |
 
-All are WLSMV with scaled indices. Model A's misfit comes from cross-loadings of about .20–.30 that it forces to zero. The ESEM's largest are:
+All are WLSMV with scaled indices, the theta parameterization and pairwise-available data, as Study 2 uses; the delta parameterization gives values within .005. Model A's misfit comes from cross-loadings of about .20–.30 that it forces to zero. The ESEM's largest are:
 - item 7 on Valuing (.23);
 - item 22 on Valuing (.27);
 - item 27 on Understanding (.28);
@@ -283,11 +283,15 @@ None. Posting is a recruitment condition, recorded and used as a grouping variab
 
 ### Statistical models
 
-All analyses use R with lavaan, semTools, psych and irr; versions will be reported.
+All analyses use R with lavaan, psych, irr, MASS (H5b) and logistf (H5b's sensitivity analysis); versions will be reported.
 
 **General settings:**
 - Short-form and candidate items are treated as ordinal, with WLSMV and the theta parameterization.
 - Missing responses use pairwise-available data (`missing = "pairwise"`, set explicitly in the code).
+- **Estimation safeguards** (found necessary on simulated data):
+  - Every ESEM is also estimated from its CFA's estimates as starting values, and the solution with the lower fit-function minimum is kept. From lavaan's default starts, a 39-item ESEM reached a local optimum.
+  - Models with covariates set `conditional.x = FALSE`.
+  - Each invariance step starts from the previous step's estimates, with up to 3,000 iterations. A step that still does not converge counts as non-invariant and goes to the item-by-item search.
 - Fit is judged on the **scaled** indices (`cfi.scaled`, `rmsea.scaled` and its CI, `srmr`); the robust versions are reported alongside.
 - The random intercept has loadings fixed at 1 on every unrecoded item in the model, a free variance, and no correlation with the content factors.
 
@@ -295,7 +299,7 @@ All analyses use R with lavaan, semTools, psych and irr; versions will be report
    - **Primary model:** an ESEM with four correlated content factors and the random intercept.
      - **Rotation:** oblique partially specified target rotation (lavaan `rotation = "pst"`, 30 random starts).
      - **Targets:** each item's Section 4 factor; all its other loadings are targeted to 0.
-   - **H1 is supported** when the primary model has scaled CFI ≥ .95, RMSEA ≤ .06 (upper 90% CI ≤ .08) and SRMR ≤ .08, and the random-intercept variance is > 0 (p < .05). **Partial support** is CFI .90–.95 with RMSEA ≤ .08.
+   - **H1 is supported** when the primary model has scaled CFI ≥ .95, RMSEA ≤ .06 (upper 90% CI ≤ .08) and SRMR ≤ .08, and the random-intercept variance is > 0 (p < .05). **Partial support** is any result short of full support with CFI ≥ .90 and RMSEA ≤ .08.
    - **Each factor is confirmed** when, in the primary model:
      - at least four of its five items load ≥ .40 on it, in their keyed direction;
      - none of its items loads more strongly on another factor.
@@ -350,7 +354,7 @@ All analyses use R with lavaan, semTools, psych and irr; versions will be report
      - thresholds and loadings;
      - thresholds, loadings and intercepts.
    - The random-intercept loadings stay fixed at 1 in every group, and its variance is free across groups.
-   - Non-invariance is a ΔCFI below −.010 with ΔRMSEA above .015 (Chen, 2007). Partial invariance is then examined item by item.
+   - Non-invariance is a ΔCFI below −.010 together with a ΔRMSEA above .015 (Chen, 2007); both must hold. Partial invariance is then examined item by item.
    - **Sparse categories:** a response category with fewer than 5 answers in any group is merged with its neighbour toward the scale's centre, for that item, in all groups.
    - **Over time:** longitudinal invariance between baseline and follow-up (the same steps, with the item residuals of the two occasions correlated) is fitted for Access + Valuing in the follow-up sample. The course trial depends on this for its change scores.
 5. **H6, known groups.**
