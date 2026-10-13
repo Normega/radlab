@@ -661,7 +661,7 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
         <H2>Sensitive to your own breath, better at reading others</H2>
-        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={K2.figShort} />
+        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={d === 'reading' ? { ...K2.figRecog, maxHeight: '34vh' } : K2.figRecog} />
         <RobustLadder />
         <Detail density={d}>
           Higher threshold = less sensitive. Also held for each direction alone, as a rank correlation and without the
@@ -887,7 +887,7 @@ function BridgeMethod() {
       {badge(xs[3], '× 4 faces', 118)}
       {caption(xs[3], 'How attractive?', '0–10 · two high, two average')}
 
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="18" fontWeight="700" fill={pkd} fontFamily={mono}>one trial · × 32 trials · N = 103</text>
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="18" fontWeight="700" fill={pkd} fontFamily={mono}>32 trials · N = 103</text>
     </svg>
   )
 }
@@ -995,8 +995,8 @@ function GertMethod() {
       <rect x={(xs[1] + xs[3] + sw) / 2 - 62} y={sy - 44} width="124" height="34" rx="17" fill="#fff" stroke={pkd} strokeWidth="2.5" />
       <text x={(xs[1] + xs[3] + sw) / 2} y={sy - 21} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>× 5 clips</text>
 
-      {/* × 12 blocks */}
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>one block · × 12 blocks</text>
+      {/* 12 blocks */}
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>12 blocks</text>
     </svg>
   )
 }
@@ -1054,39 +1054,42 @@ function PathDiagram() {
 // The H2B estimate as covariates are added (Aya repo, Results/h2b_robustness/
 // report.md). Standardised, 95% CIs; higher threshold = less sensitive, so
 // negative = sensitive people read emotions better.
+// A byline under the figure, not a second figure: one line per model, n inline,
+// capped in height so the scatter stays the main event.
 function RobustLadder() {
   const rows = [
     { t: 'As preregistered', s: 'n = 305', e: -0.174, lo: -0.281, hi: -0.063, v: 'r = −.17', p: 'p = .002' },
     { t: '+ bias, confidence, MAIA, mood, burnout', s: 'n = 301', e: -0.138, lo: -0.262, hi: -0.015, v: 'β = −.14', p: 'p = .028' },
-    { t: 'Belt followed the pacer', s: 'subsample, n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
-    { t: '+ how closely breathing followed it', s: 'synchrony, entrainment, false alarms · n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
+    { t: 'Belt followed the pacer', s: 'n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
+    { t: '+ how closely breathing followed it', s: 'n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
   ]
-  const W = 1000, rh = 54, top = 30, H = top + rows.length * rh + 26
-  const px0 = 520, px1 = 790, lo = -0.35, hi = 0.1
+  const W = 1000, rh = 38, top = 26, H = top + rows.length * rh + 22
+  const px0 = 540, px1 = 780, lo = -0.35, hi = 0.1
   const X = v => px0 + (v - lo) / (hi - lo) * (px1 - px0)
   const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 1000, height: 'auto' }} role="img"
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ height: 'min(19vh, 210px)', width: 'auto', maxWidth: '100%' }} role="img"
       aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in the subsample whose belt followed the pacer; −.10, p = .18, not significant, once pacer-following is controlled">
-      <text x={16} y={16} fontSize="16" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
+      <text x={16} y={15} fontSize="15" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
       {rows.map((r, k) => {
         const y = top + k * rh + rh / 2
         const c = r.ns ? '#8a8b8f' : '#1c1c1e'
         return (
           <g key={k}>
             {r.ns && <rect x={0} y={y - rh / 2 + 2} width={W} height={rh - 4} rx="12" fill="#FBEAF3" />}
-            <text x={16} y={y - 3} fontSize="19" fontWeight="600" fill={r.ns ? '#3a3a3e' : c} fontFamily={sans}>{r.t}</text>
-            <text x={16} y={y + 18} fontSize="15" fill="#6b6c70" fontFamily={sans}>{r.s}</text>
+            <text x={16} y={y + 6} fontSize="19" fontWeight="600" fill={r.ns ? '#3a3a3e' : c} fontFamily={sans}>
+              {r.t}<tspan fontSize="15" fontWeight="400" fill="#6b6c70">{'  ·  '}{r.s}</tspan>
+            </text>
             <line x1={X(r.lo)} x2={X(r.hi)} y1={y} y2={y} stroke={c} strokeWidth="3" strokeLinecap="round" />
-            <circle cx={X(r.e)} cy={y} r="8" fill={r.ns ? '#fff' : c} stroke={c} strokeWidth="3" />
-            <text x={px1 + 28} y={y + 6} fontSize="20" fontWeight="700" fill={r.ns ? '#BA417A' : c} fontFamily={mono}>{r.v}</text>
-            <text x={px1 + 136} y={y + 6} fontSize="17" fill={r.ns ? '#BA417A' : '#3a3a3e'} fontFamily={mono}>{r.p}</text>
+            <circle cx={X(r.e)} cy={y} r="7" fill={r.ns ? '#fff' : c} stroke={c} strokeWidth="3" />
+            <text x={px1 + 28} y={y + 6} fontSize="19" fontWeight="700" fill={r.ns ? '#BA417A' : c} fontFamily={mono}>{r.v}</text>
+            <text x={px1 + 132} y={y + 6} fontSize="16" fill={r.ns ? '#BA417A' : '#3a3a3e'} fontFamily={mono}>{r.p}</text>
           </g>
         )
       })}
-      <line x1={X(0)} x2={X(0)} y1={top - 6} y2={H - 24} stroke="#6b6c70" strokeWidth="2" strokeDasharray="5 5" />
+      <line x1={X(0)} x2={X(0)} y1={top - 4} y2={H - 20} stroke="#6b6c70" strokeWidth="2" strokeDasharray="5 5" />
       {[[-0.3, '−.30'], [-0.15, '−.15'], [0, '0']].map(([v, t]) => (
-        <text key={t} x={X(v)} y={H - 4} textAnchor="middle" fontSize="15" fill="#6b6c70" fontFamily={mono}>{t}</text>
+        <text key={t} x={X(v)} y={H - 3} textAnchor="middle" fontSize="14" fill="#6b6c70" fontFamily={mono}>{t}</text>
       ))}
     </svg>
   )
@@ -1299,7 +1302,7 @@ const K2 = {
   figWide: { maxWidth: '100%', maxHeight: '44vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   split: { display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   figSide: { maxWidth: 'min(560px, 90vw)', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
-  figShort: { maxWidth: '100%', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figRecog: { maxWidth: '100%', maxHeight: '48vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   figBurn: { maxWidth: 'min(440px, 90vw)', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
   itemCard: { background: '#fff', border: '2px solid var(--pk)', borderRadius: 24, padding: '16px 32px', maxWidth: 860, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
