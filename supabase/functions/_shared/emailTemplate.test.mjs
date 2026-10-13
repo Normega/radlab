@@ -87,6 +87,40 @@ test('single-miss ack is unchanged and never shows a withdrawal link', () => {
   assert.ok(!html.includes('{{withdraw_html}}'), 'placeholder is cleared, not leaked')
 })
 
+// Out of reach (phaseReach.ts): the enforcing rule can't be met, so "nothing
+// to make up" and "get back on track" would be false.
+const OUT = { min_required: 10, of_total: 12, ends: 'Thursday, October 23' }
+
+test('out of reach replaces the lapsed copy, states the rule and date, keeps the exit', () => {
+  const { html, text } = renderEmail({
+    ...BASE,
+    lapsed: true,
+    phase_out_of_reach: OUT,
+    withdraw_url: WITHDRAW_URL,
+    progress: { completed: 1, total: 12, pct: 8 },
+  })
+  assert.match(text, /needs at least 10 of its 12 completed/)
+  assert.match(text, /ends on Thursday, October 23, and your participation in the study will end after that/)
+  assert.ok(!text.includes('get back on track'), 'no promise that catching up helps')
+  assert.ok(!text.includes('nothing to make up'))
+  // The response-rate line counts check-ins (baseline included); beside a
+  // 10-of-12 rule it would read as a contradiction.
+  assert.ok(!text.includes('responded to'))
+  assert.ok(html.includes(WITHDRAW_URL), 'the withdrawal link the copy points to is there')
+})
+
+test('out of reach also replaces the single-miss ack', () => {
+  const { text } = renderEmail({ ...BASE, after_missed: true, phase_out_of_reach: OUT, withdraw_url: WITHDRAW_URL })
+  assert.match(text, /no longer enough sessions left/)
+  assert.ok(!text.includes('Missing the occasional session is normal'))
+})
+
+test('a reminder resend is not where the news lands -- reminder copy wins', () => {
+  const { text } = renderEmail({ ...BASE, is_reminder: true, phase_out_of_reach: OUT })
+  assert.match(text, /Just a friendly reminder/)
+  assert.ok(!text.includes('no longer enough sessions left'))
+})
+
 test('reminder lead-in wins over lapsed', () => {
   const { text } = renderEmail({
     ...BASE,
