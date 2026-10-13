@@ -3,12 +3,12 @@
 // private repo Normega/psy240internal2026; keep the two in step when either changes.
 // Status values: 'done' | 'now' | 'next' | 'blocked'.
 
-export const UPDATED = 'Oct 9, 2026'
+export const UPDATED = 'Oct 13, 2026'
 export const ONBOARDING = '2026-10-14T10:30:00-04:00'   // Wed Oct 14, after the midterm, IB 120
 export const REPO = 'https://github.com/Normega/psy240internal2026'
 
 export const SUMMARY = [
-  'A teaching trial, not research: PSY240 students consent, complete a baseline survey, are randomized to one of three 28-day arms, repeat the wellbeing measures after day 28, and are debriefed. The class sees its own aggregate results on Dec 2. Data are never shared or published.',
+  'A teaching trial, not research: PSY240 students consent, complete a baseline survey, are randomized to one of three 28-day arms, repeat the wellbeing measures after day 28, and are debriefed. The class sees its own aggregate results on Nov 18. Data are never shared or published.',
   'Every arm is about five minutes a day: stress and mood on six faces, a practice of about three minutes, the same two ratings again, and one line inviting the practice into the rest of the day. Good enough, not polished.',
 ]
 
@@ -25,7 +25,7 @@ export const MILESTONES = [
   { when: 'Sun Oct 11', what: 'The study: join link, consent, randomization, schedule, reminders, withdrawal, debrief (built early, Oct 9; switched off until launch)', status: 'done' },
   { when: 'Mon Oct 12', what: 'Smoke test with fake participants in every arm; fix list (done early, Oct 9)', status: 'done' },
   { when: 'Mon–Tue', what: 'Norm previews every day of every arm', status: 'next' },
-  { when: 'Tue Oct 13', what: 'Fixes, freeze, onboarding slide with the join QR', status: 'next' },
+  { when: 'Tue Oct 13', what: 'Pre-launch review: three attention checks and “Prefer not to answer” on every survey item (live); the onboarding deck (lecture 6’s L6.html) with the join QR; the controls’ leftover five-step strip removed (deck and strip on dev)', status: 'done' },
   { when: 'Wed Oct 14', what: '10:55 join email; Norm guides the class through consent and baseline; Quercus announcement after class', status: 'next' },
   { when: 'Thu–Fri Oct 15–16', what: 'Baseline reminder, then last call (baseline closes Fri night; late joiners still welcome)', status: 'next' },
   { when: 'Sat Oct 17', what: 'Day 1 for everyone', status: 'next' },
@@ -39,7 +39,7 @@ export const DECISIONS = [
   { id: 'D1', q: 'The schedule', decided: 'Join email Oct 14 10:55; baseline reminders Oct 15 and 16; day 1 Sat Oct 17 for everyone; day 28 Nov 13; post Nov 14–16; debrief Nov 18. Fixed window (missed days count, the count moves on): each day’s email at 7 am, open until 6 am, one 7 pm reminder if not done. Baseline is a hard gate; late finishers join on the calendar’s current day, with baseline reminders daily to Oct 23, then every three days to Nov 6. Answers deleted by Jan 31, 2027.', status: 'decided' },
   { id: 'D2', q: 'The dose, matched', decided: 'Every arm: stress and mood on six faces, before and after. Sense Foraging runs 3 minutes of practice (the day’s own practice, cut short; no wheel or hand) and ends with a one-line Quest, with no follow-up. The controls end with a matching line inviting that day’s practice into the rest of the day.', status: 'decided' },
   { id: 'D3', q: 'Delivery', decided: 'Embedded: every arm runs the same way, one radlab link a day. Sense Foraging’s practice runs full-screen inside the radlab session and hands back when done (finished, and how long it ran); an “open in a new tab” link inside the step is the fallback. No senseforaging.com account.', status: 'decided' },
-  { id: 'D4', q: 'The arms’ own measures', decided: 'One measure allied with each arm: Sense Foraging, the 20-item short form from Study 1 (psy240-sf-short-20, “Paying attention”; 6 points with Prefer not to answer, 8 items reverse-keyed); Nonreactivity, the MPoD-t (15 items, with a nonreactivity facet; a copy, since Study 3 uses the original); Stress mindset, Crum’s Stress Mindset Measure (8 items). The wellbeing scales are the arm-neutral outcomes.', status: 'decided' },
+  { id: 'D4', q: 'The arms’ own measures', decided: 'One measure allied with each arm: Sense Foraging, the 20-item short form from Study 1 (psy240-sf-short-20, “Paying attention”; 6 points with Prefer not to answer, 8 items reverse-keyed); Nonreactivity, the MPoD-t (15 items, with a nonreactivity facet; a copy, since Study 3 uses the original); Stress mindset, Crum’s Stress Mindset Measure (8 items). The wellbeing scales are the arm-neutral outcomes. Every item offers “Prefer not to answer”; three attention checks (in MPoD-t, SPANE and Flourishing) at both timepoints (Oct 13).', status: 'decided' },
   { id: 'D5', q: 'The wellbeing set', decided: 'SPANE (2 weeks), Flourishing, life satisfaction (Study 3’s six-face item, reused), PHQ-4, self-rated health, pre and post. Everyone sees the support resources (UTMAP 2026’s sheet) at the end of each survey, on withdrawal and in the debrief, with a Support link in every trial email. Nobody reads individual rows; the export is de-identified first.', status: 'decided' },
   { id: 'D6', q: 'Randomization', decided: '1:1:1 in shuffled blocks of three (radlab’s own draw), at the moment baseline is submitted. Study 3 students (9 today, matched by email) go to Sense Foraging outside the blocks, flagged, so Nov 18 can show results with and without them. Arm names stay out of the emails and consent; arms and hypotheses revealed at the debrief.', status: 'decided' },
   { id: 'D7', q: 'Students who decline or withdraw', decided: 'Participation credit moves, at the same weight, to an alternative: a 2.5–3 page proposal for a daily practice to improve students’ mental health (thesis and argument, no citations). Its prompts ask why students might not take a practice up, never why the writer chose not to. Everyone writes the RCT reflection. Due Mon Nov 16, when the trial ends.', status: 'decided' },
@@ -82,9 +82,9 @@ export const CHECKLIST = [
     { what: 'Smoke test (Oct 9, live, Norm’s address): join → consent → baseline → a Sense Foraging day → a Nonreactivity day; 3 fixes; test participant deleted, study off', status: 'done' },
   ] },
   { group: 'Class', items: [
-    { what: 'Onboarding slide: what happens, the join QR, “your first practice arrives Saturday” (drafted, QR made)', status: 'now' },
-    { what: 'Quercus: 10:55 announcement with the join link, Thu and Fri reminders (drafted)', status: 'now' },
+    { what: 'Onboarding deck (L6.html in the course’s decks): join now (QR), the next five weeks, your choice; speaking notes on “n” (Oct 13, on dev)', status: 'now' },
+    { what: 'Quercus: 10:55 announcement with the join link, Thu and Fri reminders; then Mon Oct 19 (emails arriving?), Sat Nov 14 (final survey), Mon Nov 16 (last day) (drafted)', status: 'now' },
     { what: 'Nov 4 adherence check-in', status: 'next' },
-    { what: 'Dec 2 results deck (adapt the 2025 “RCT Initial Results” slides)', status: 'next' },
+    { what: 'Nov 18 results deck (adapt the 2025 “RCT Initial Results” slides)', status: 'next' },
   ] },
 ]
