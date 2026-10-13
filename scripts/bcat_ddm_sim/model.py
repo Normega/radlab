@@ -281,3 +281,179 @@ def find_m50(vL, vT, delta, a, lam, base_s=4.0, n_post=5, n_trials=600, seed=1):
         else:
             hi = mid
     return math.exp(0.5 * (lo + hi))
+
+
+# ── Round 5: the mechanisms from Nansi's review (2026-10-10) ─────────────────
+# One generalized observer; every round-4 observer is the special case
+# kappa = 0, tau_r = 10, restart_mode = 0, omega = 0, nu = 0, lo = 0.
+#   kappa         direction asymmetry: evidence for slowing x (1 + kappa), for speeding x (1 - kappa)
+#   tau_r         breaths for the running baseline to catch up (free per person)
+#   restart_mode  0 = accumulation restarts a fixed REFRACT after the press;
+#                 1 = it restarts at the next inhale onset after the press
+#   omega         urgency: the criterion relaxes with time since accumulation last restarted,
+#                 delta_eff = delta - omega * (1 - exp(-t / URGENCY_TAU))
+#   nu, lo        Shiryaev-Roberts-style soft floor: drift gains + nu * exp(-x) and x may go
+#                 down to lo (< 0) instead of reflecting hard at 0 (CUSUM)
+URGENCY_TAU = 60.0     # s
+
+
+@njit(cache=True)
+def signed_channels(L, pause_before, base_log, tau_r):
+    """Signed deviations: sL = L_k - R_k (positive = slower than baseline), sT = L_k - L_(k-1)."""
+    n = L.shape[0]
+    sL = np.zeros(n)
+    sT = np.zeros(n)
+    alpha = 1.0 / tau_r
+    R = base_log
+    for k in range(n):
+        if pause_before[k] and k > 0:
+            R = L[k]
+        sL[k] = L[k] - R
+        R = R + alpha * (L[k] - R)
+        if k > 0 and not pause_before[k]:
+            sT[k] = L[k] - L[k - 1]
+    return sL, sT
+
+
+def drive_from(sL, sT, vL, vT, kappa):
+    return (vL * np.abs(sL) * (1.0 + kappa * np.sign(sL))
+            + vT * np.abs(sT) * (1.0 + kappa * np.sign(sT)))
+
+
+def breath_start_steps(schedule):
+    return np.array([int(round(b['startMs'] / 1000.0 / DT)) for b in schedule['breaths']], np.int64)
+
+
+@njit(cache=True)
+def _reset_point(lo, a, ngrid):
+    h = (a - lo) / ngrid
+    idx0 = int((0.0 - lo) / h)
+    if idx0 >= ngrid:
+        idx0 = ngrid - 1
+    return idx0, lo + (idx0 + 0.5) * h
+
+
+@njit(cache=True)
+def _restart_after(s, restart_mode, bstarts, n):
+    if restart_mode == 0:
+        return s + 1 + TER_STEPS + REF_STEPS
+    press = s + TER_STEPS
+    i = np.searchsorted(bstarts, press + 1)
+    return bstarts[i] if i < bstarts.shape[0] else n
+
+
+@njit(cache=True)
+def simulate2(step_breath, drive, bstarts, delta, a, lam, omega, nu, lo, restart_mode, seed):
+    np.random.seed(seed)
+    n = step_breath.shape[0]
+    cross = np.zeros(n, np.bool_)
+    idx0, x0 = _reset_point(lo, a, NGRID)
+    x = x0
+    off_until = -1
+    rs = 0                       # step at which accumulation last restarted
+    cur_b = -2
+    d_eff = delta
+    sq = math.sqrt(DT)
+    for s in range(n):
+        b = step_breath[s]
+        if b < 0:
+            x = x0
+            rs = s + 1
+            cur_b = -2
+            continue
+        if s < off_until:
+            continue
+        if b != cur_b:
+            d_eff = delta - omega * (1.0 - math.exp(-(s - rs) * DT / URGENCY_TAU))
+            cur_b = b
+        x += (drive[b] - d_eff - lam * x + nu * math.exp(-x)) * DT + sq * np.random.randn()
+        if x < lo:
+            x = 2.0 * lo - x
+        if x >= a:
+            cross[s] = True
+            x = x0
+            off_until = _restart_after(s, restart_mode, bstarts, n)
+            rs = off_until
+            cur_b = -2           # re-evaluate the criterion at the restart
+    return cross
+
+
+@njit(cache=True)
+def _build2(M, A, mu, lam, nu, lo, a, ngrid):
+    h = (a - lo) / ngrid
+    sd = math.sqrt(DT)
+    cdf = np.empty(ngrid + 1)
+    mcdf = np.empty(ngrid + 1)
+    for j in range(ngrid):
+        xj = lo + (j + 0.5) * h
+        m = xj + (mu - lam * xj + nu * math.exp(-xj)) * DT
+        for e in range(ngrid + 1):
+            cdf[e] = _phi((lo + e * h - m) / sd)
+            mcdf[e] = _phi((lo - e * h - m) / sd)      # mirror image about lo
+        A[j] = 1.0 - cdf[ngrid]
+        for i in range(ngrid):
+            M[i, j] = (cdf[i + 1] - cdf[i]) + (mcdf[i] - mcdf[i + 1])
+
+
+@njit(cache=True)
+def loglik2(step_breath, drive, cross, bstarts, delta, a, lam, omega, nu, lo, restart_mode):
+    ngrid = NGRID
+    n = step_breath.shape[0]
+    M = np.empty((ngrid, ngrid))
+    A = np.empty(ngrid)
+    idx0, _x0 = _reset_point(lo, a, ngrid)
+    p = np.zeros(ngrid)
+    p[idx0] = 1.0
+    tmp = np.empty(ngrid)
+    cur_b = -2
+    off_until = -1
+    rs = 0
+    ll = 0.0
+    for s in range(n):
+        b = step_breath[s]
+        if b < 0:
+            p[:] = 0.0
+            p[idx0] = 1.0
+            rs = s + 1
+            cur_b = -2
+            continue
+        if s < off_until:
+            # Dead time still scores the data: a press here can only be a contaminant.
+            # Skipping it instead would let a model with longer dead time (restart at the
+            # next inhale) drop presses it can't explain and win for free.
+            if cross[s]:
+                ll += math.log(H0)
+            else:
+                ll += math.log(1.0 - H0)
+            continue
+        if b != cur_b:
+            d_eff = delta - omega * (1.0 - math.exp(-(s - rs) * DT / URGENCY_TAU))
+            _build2(M, A, drive[b] - d_eff, lam, nu, lo, a, ngrid)
+            cur_b = b
+        absorbed = 0.0
+        for j in range(ngrid):
+            absorbed += A[j] * p[j]
+        haz = absorbed + (1.0 - absorbed) * H0
+        if cross[s]:
+            ll += math.log(max(haz, 1e-300))
+            p[:] = 0.0
+            p[idx0] = 1.0
+            off_until = _restart_after(s, restart_mode, bstarts, n)
+            rs = off_until
+            cur_b = -2
+        else:
+            ll += math.log(max(1.0 - haz, 1e-300))
+            tot = 0.0
+            for i in range(ngrid):
+                acc = 0.0
+                for j in range(ngrid):
+                    acc += M[i, j] * p[j]
+                tmp[i] = acc
+                tot += acc
+            if tot < 1e-280:
+                p[:] = 0.0
+                p[ngrid - 1] = 1.0
+            else:
+                for i in range(ngrid):
+                    p[i] = tmp[i] / tot
+    return ll

@@ -635,6 +635,111 @@ alternative if ramps prove unpleasant or too noticeable in piloting.
 
 ---
 
+## 6g. Nansi's review (comments of 2026-10-09/10) and round 5 (2026-10-12)
+
+**Review:** 12 comment threads on the 5 October Google Doc. Draft replies for Norm, plus 3
+wording fixes for the doc, are in his My Drive root:
+`TEMP (for Norm): draft replies to Nansi's BCAT-DDM comments + 3 doc fixes, 12 Oct` (doc id
+`1WxOG_d5OpGnGSIGXGXwmShbPUVz2E4g-31Pto_waBVY`). They are not in the shared Nansi folder.
+
+**What she got right, and what we do about it:**
+
+| Her point | Action |
+|---|---|
+| Faster vs slower aren't symmetric (Study 1: slowing easier) | direction asymmetry κ, round 5b |
+| Restart at the next inhale, not after a fixed 1 s; a press disrupts interoception and the breath | restart-mode model, 5b; flag press-containing breaths in real data |
+| The 10-breath baseline should be estimated | free τ_R, 5b |
+| Criterion as a function | urgency: δ relaxes with time since restart, 5b |
+| Collapsing boundary (Fudenberg et al. 2020) | same mechanism as urgency in a continuous stream, 5b |
+| CUSUM's optimality assumptions don't hold | doc reworded (fix 1); Shiryaev–Roberts soft-floor observer, 5b. Note: the leaky model is already an OU process |
+| Interleaving is better | round 2's interleaved test used ramps too small to notice; retest with 2× ramps, 5a |
+| 60/40 split between aims | 40% ramp share, 5a |
+| No 5-breath window | already true of the likelihood; doc wording fixed (fix 3) |
+| Free-response pre-run, not the 3AFC Quest | agreed in draft reply; an adaptive rule is still to design |
+| Watch under 50%; visual-timing strategy contamination; LC-NE tone | agreed; LC-NE for the next meeting; pupillometry if eye tracking exists |
+| "Detection need not be conscious" | it's about *reported* arousal; Norm to answer (it's his paper); doc fix 2 names the paper |
+
+**Round 5 setup.**
+- **5a (designs):** `roving_mixed_big` (interleaved, ramps 2× the step sizes via the new
+  `mixedRampMagBoost` option; boost 1 reproduces earlier schedules exactly) and `roving_ramp40`.
+  Same four memory populations and same people as rounds 3–4 (`results_round5a/`); round 3's
+  `roving_ramp` is the reference.
+- **5b (mechanisms):** `scripts/bcat_ddm_sim/run_round5b.py`. Six populations on the
+  medium-memory mixed observer, each adding one mechanism; six matching fits per session
+  (`results_round5b/`).
+  - **New model code:** `model.py` "Round 5": `signed_channels`, `drive_from`, `simulate2`,
+    `loglik2`.
+  - **Check:** with defaults these reproduce the round-4 observer exactly (identical presses;
+    the log-likelihood differs only by a constant, see the dead-time fix below).
+  - **Dead-time fix (first 5b run discarded).** The first full run picked "restart at next inhale"
+    for 60% of people who restart after a fixed 1 s. Cause: the likelihood skipped the dead time
+    after a press, so a model with a longer dead window simply dropped the quick follow-up
+    presses it couldn't explain. `loglik2` now charges a dead-time press at the contaminant rate
+    H0 and a quiet dead step log(1 − H0), so every model scores every press. After the fix the
+    true restart mode wins at the true parameters in 17 of 20 test sessions. Rounds 1–4 were
+    unaffected: all their fitted models shared one dead window, and the simulator never presses
+    inside it.
+  - **Early signal:** at true parameters each mechanism improves the likelihood by only ~1–4
+    log-units per session, so expect group-level rather than per-person identification.
+
+### Round-5a results (240 sessions; reference = round 3's `roving_ramp`, same people)
+
+| | roving_ramp (75/25 block) | roving_ramp40 (60/40) | roving_mixed_big (interleaved, 2× ramps) |
+|---|---|---|---|
+| Steps / ramps per session | 39 / 10 | 32 / 16 | 23 / 22 |
+| Ramp hit rate | .74 | .73 | .71 |
+| Stable false alarms / min | .41 | .41 | .50 |
+| Late presses / session | 8.8 | 7.2 | 11.4 |
+| Per-person model recovery | .64 | .63 | **.68** |
+| Breath-to-breath share s, ρ (pooled) | .87 | .87 | **.92** |
+| Group leak test: ΔAIC for the leak, long-leaky people | **+28.7** ✓ | +11.3 ✓ | −12.0 ✗ |
+| Bootstrap P(leak model wins), N = 30 | **.93** | .70 | .19 |
+| Memory span ρ (medium / long) | .56 / .57 | .59 / .08 | .55 / .33 |
+
+- **Interleaving with big ramps does help individual differences**, slightly: s recovers at ρ .92
+  vs .87, and per-person model choice is right 68% vs 64% of the time. Nansi's instinct was
+  right on that measure, and round 2's test was unfair because its ramps were too small.
+- **It loses the central question's leak test.** With the leaky long-memory people, the
+  interleaved design picks the no-leak model at group level (bootstrap: leak wins 19% of
+  resamples, against 93% for the 75/25 block). It also has no null stretches, more false alarms
+  and more late presses, which is what you'd expect when ramps overlap step responses.
+- **60/40 buys nothing.** Twice the ramps, but the same recovery and a weaker leak test (70%).
+- **In every design the leak evidence rests on a minority of people.** The median person's ΔAIC
+  favours no leak even when everyone leaks, so the leak question is group-level by nature;
+  N = 30 is borderline even for the best design.
+- **Recommendation unchanged: roving steps + a 25% ramp block.** If individual differences in s
+  become the main aim, the interleaved design is the alternative. That is a trade to put to
+  Norm and Nansi, not a free win.
+
+### Round-5b results (180 sessions × 6 fits, after the dead-time fix; roving_ramp, medium memory)
+
+| Population (mechanism present) | Group winner (ΔAIC to runner-up) | Correct per person | Parameter recovery ρ (median true → fit) |
+|---|---|---|---|
+| none | base ✓ (17) | 30% | — |
+| direction asymmetry κ | asym ✓ (654) | **93%** | κ .81 (.27 → .28) |
+| free baseline rate τ_R | τ_R ✓ (35) | 30% | τ_R .63 (10.4 → 10.3 breaths) |
+| restart at next inhale | inhale ✓ (169) | **73%** | (no parameter) |
+| urgency ω | urgency ✓ (58) | 50% | ω .50 (.22 → .43, biased high) |
+| Shiryaev–Roberts soft floor ν | base ✗ (17; SR is 52 behind) | 17% | ν .02 |
+
+- **No false positives.** With no mechanism present, the base model wins for the group; per
+  person, the five extra models share the rest roughly evenly (the AIC penalty doesn't fully
+  protect single people, which is expected at 1–4 log-units per mechanism).
+- **Direction asymmetry is the easiest to find**, per person as well as for the group. Since
+  Study 1 already suggests slowing is easier to notice, κ should be in the base model of the
+  real analysis rather than tested as an add-on.
+- **Restart at the next inhale is identifiable** (73% per person), so the real data can test
+  Nansi's account of what a press does to the breath. Logging the inhale phase at each press is
+  enough; no design change is needed.
+- **Urgency and the baseline rate are group-level questions.** ω is overestimated: it trades off
+  against the criterion δ, so treat its size with caution even when it is detected.
+- **The soft floor is not identifiable from presses.** People simulated with it press less often
+  and have fewer false alarms, but the base model absorbs that with a different criterion and
+  boundary, and ν is not recovered at all. Nansi's CUSUM-optimality point therefore stands as a
+  wording fix (the doc's fix 1) rather than something the study can test.
+
+---
+
 ## 7. Decisions (append with dates)
 
 *(none yet — waiting on §5)*
@@ -674,3 +779,9 @@ alternative if ramps prove unpleasant or too noticeable in piloting.
 - **2026-10-06** — Prototype moved to `main` on its own (live at radlab.zone/prototypes/bcat-ddm.html).
   Built `/breathevidence`, a planning page for Nansi (lab roles + a guest list with her two accounts),
   on `dev` for review.
+- **2026-10-12/13** — Nansi's review (§6g): draft replies + 3 doc fixes in a TEMP doc in Norm's
+  My Drive. Round 5a (interleaving with 2× ramps; 60/40): interleaving improves per-person
+  estimates but loses the group leak test, so the 75/25 ramp block stays. Round 5b (her
+  mechanisms): the first run was discarded after finding the dead-time scoring bug in `loglik2`;
+  the rerun recovers asymmetry, inhale restart, urgency and τ_R at group level with no false
+  positives; the soft floor is not identifiable. Planning page updated with rounds 5a/5b.

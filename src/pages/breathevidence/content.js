@@ -4,7 +4,7 @@
 // When a decision is made, move it from DECISIONS (status 'open') to 'decided' with the
 // date and the answer, and add a line to the plan's §7 Decisions log.
 
-export const UPDATED = '2026-10-06'
+export const UPDATED = '2026-10-13'
 
 export const STAGE = [
   { label: 'Design simulations', state: 'done', note: 'Four rounds, 2,000+ simulated sessions' },
@@ -63,6 +63,14 @@ export const ROUNDS = [
     title: 'Round 4: smooth 3–4-breath "bumps"',
     finding: 'Bumps beat blips but still lost when used alone. A bump block can stand in for the ramp block, with no meaningful difference between them. The design search ends here.',
   },
+  {
+    title: "Round 5a: Nansi's design ideas",
+    finding: 'Mixing ramps in among the steps, with ramps big enough to notice, gives slightly better per-person estimates (breath-to-breath share ρ .92 vs .87). But it loses the group test for a leak (found in 19% of resamples vs 93%). A 60/40 split gained nothing. The ramp block stays the recommendation unless per-person differences become the main aim.',
+  },
+  {
+    title: "Round 5b: Nansi's mechanisms",
+    finding: 'Each mechanism she proposed was simulated and fitted with every model. Faster-vs-slower asymmetry, restarting at the next inhale, urgency (a criterion that relaxes over time) and an estimated baseline rate are all found at group level, and none is found when absent. Asymmetry is found for 93% of individuals and inhale restart for 73%. A soft floor (Shiryaev–Roberts) cannot be told apart from the basic model.',
+  },
 ]
 
 export const COMPARISON = {
@@ -72,6 +80,8 @@ export const COMPARISON = {
     ['Roving + bump block', '.59', '.88', 'Weakly', '.81–.85'],
     ['Double blips', '.26', '.56', 'No', '.71'],
     ['Smooth bumps alone', '.27', '.65', 'No', '.76–.77'],
+    ['Roving with ramps mixed in (2× size)', '.68', '.92', 'No', '—'],
+    ['Roving + 40% ramp block', '.63', '.87', 'Weakly', '—'],
   ],
   note: 'Same 30 simulated people per group in each design, 40 minutes each. Differences smaller than about .1 are within noise.',
 }

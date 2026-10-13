@@ -60,10 +60,14 @@ DESIGN_VARIANTS = {
     'bump_train':       ('bump_train', {}),
     'roving_bump':      ('roving_bump', {}),
     'roving_ramp_bump': ('roving_ramp_bump', {}),
+    # round 5a (Nansi's review): interleaving with ramps big enough to notice; her 60/40 split
+    'roving_mixed_big': ('roving_mixed', {'mixedRampMagBoost': 2}),
+    'roving_ramp40':    ('roving_ramp', {'rampFrac': 0.4}),
 }
 ROUND2_DESIGNS = ['roving_ramp', 'roving_ramp50', 'roving_mixed', 'ramp']
 ROUND3_DESIGNS = ['roving_ramp', 'double_blip', 'blip_train', 'blip_combo']
 ROUND4_DESIGNS = ['double_bump', 'bump_train', 'roving_bump', 'roving_ramp_bump']
+ROUND5A_DESIGNS = ['roving_mixed_big', 'roving_ramp40']
 # Blip sizes tuned so a single blip is usually missed (~20% small, ~45% large) by a typical observer
 BLIP_OPTIONS = {'blipSizes': [0.5, 0.8], 'blipTrainRelMin': 0.4, 'blipTrainRelMax': 0.9}
 
