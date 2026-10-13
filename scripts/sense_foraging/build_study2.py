@@ -277,13 +277,14 @@ def main():
                ('sbi', 'SBI Savoring the Moment'), ('bfi', 'BFI-2 Open-Mindedness'), ('eqd', 'EQ Decentering'),
                ('pss4', 'PSS-4'), ('crit', 'Past-week behaviour'))]
     steps += [('a', LIFESAT_ACTIVITY, 'Life satisfaction', 'validity'), ('a', DEBRIEF_ACTIVITY, 'Debrief', None)]
-    retest_steps = [('q', 'sf-short-20', 'Sense Foraging Scale (short form)', None), ('a', DEBRIEF_ACTIVITY, 'Debrief', None)]
+    retest_steps = [('q', 'sf-short-20', 'Sense Foraging Scale (short form)', None), ('q', defs['crit']['slug'], 'Past-week behaviour', None),
+                    ('a', DEBRIEF_ACTIVITY, 'Debrief', None)]
 
     for tkey, skey, study, label, folder, desc, st in (
             ('template', 'session', 'study', 'SenseForaging_Study2', 'Sense Foraging',
              'Study 2: background, short form, candidates, then the validity block in a per-participant order (shuffle_group validity), debrief.', steps),
             ('retest_template', 'retest_session', 'retest', 'SenseForaging_Study2_retest', 'Sense Foraging',
-             'Study 2 retest: the short form again, ~2 weeks after Study 2, for an invited random subsample.', retest_steps)):
+             'Study 2 retest: the short form and the past-week items again, ~2 weeks after Study 2, for an invited random subsample.', retest_steps)):
         sql.append(f"INSERT INTO session_templates (id, label, folder, description) VALUES ({lit(ids[tkey])}, {lit(label)}, "
                    f"{lit(folder)}, {lit(desc)}) ON CONFLICT (id) DO NOTHING;")
         sql.append(f"DELETE FROM session_template_nodes WHERE session_template_id = {lit(ids[tkey])};")

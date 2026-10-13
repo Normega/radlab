@@ -84,7 +84,7 @@ def consent():
     revised = next(p.text for p in d0.paragraphs if p.text.startswith('REVISED'))
     edits.append((revised, [f'REVISED ({AMENDMENT}): Study 2 administers the background questions, the 20-statement '
                             'Sense Foraging short form, 24 candidate statements, and the validity, wellbeing and '
-                            'stress measures (about 20 minutes). A random subsample is invited to an optional ~3-minute '
+                            'stress measures (about 20 minutes). A random subsample is invited to an optional ~4-minute '
                             'follow-up about two weeks later, under its own consent form.']))
     edit_doc(REV2 / 'Consent_Form_v3.docx', 'Consent_Form_v5_Study2', edits)
 
@@ -257,10 +257,11 @@ def measures():
                     'approved; BFI-2, new). Failing both excludes from analysis; the participant is paid regardless.')
 
     d.add_heading('Optional follow-up (about 2 weeks later)', level=2)
-    d.add_paragraph('About 200 randomly chosen Study 2 completers are invited through Prolific (a custom allowlist), '
-                    'with a 7-day window, aiming for about 150 completions. The follow-up repeats the 20-statement '
-                    'short form only (about 3 minutes, paid at the same rate) under its own consent and debrief. The '
-                    'two sets of answers are linked by a random code before Prolific IDs are deleted.')
+    d.add_paragraph('About 400 randomly chosen Study 2 completers are invited through Prolific (a custom allowlist), '
+                    'with a 7-day window, aiming for about 300 completions. The follow-up repeats the 20-statement '
+                    'short form and the three past-week questions (about 4 minutes, paid at the same rate) under its '
+                    'own consent and debrief. The two sets of answers are linked by a random code before Prolific IDs '
+                    'are deleted.')
 
     d.add_heading('Sources and licences of the new measures', level=2)
     for slug, (src, lic) in SOURCES.items():

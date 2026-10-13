@@ -15,6 +15,8 @@
 - **N = 1,000,** up from 500. Each selection half is then the size of Study 1, and H3b's power rises from 68% to 93%.
 - **No country filter** (Norm, later on 12 October): adults fluent in English anywhere, as Study 1 recruited in practice. Country is compared as the six countries named in the REB application against everywhere else.
 - **Forage's curiosity neighbour** is the BFI-2 Intellectual Curiosity facet, already in the battery (Norm, 12 October). No separate curiosity measure is added.
+- **The retest is larger and asks more** (Norm, 12 October): about 400 invited for about 300 completions (was 200 and 150), and it repeats the three past-week items after the 20 statements, so baseline scores can be checked against the following week.
+- **H5 is split** (Norm, 12 October). H5a (wellbeing) now also requires ΔR² ≥ .02, because at N = 1,000 a ΔR² of about .004 is already significant. H5b (new) asks whether Access + Valuing predicts practice frequency beyond the FFMQ-15, the MAIA-2, spirituality and religiosity.
 - **H7 is per subscale.**
 - **Specification errors fixed:** missing data, the agreement factor's item count, the attention-check rule for partial sessions, score definitions, the life-satisfaction format and the fit-index version.
 
@@ -49,7 +51,7 @@ From these results we fixed a 20-item short form: five items per factor, each fa
 Study 2 tests that short form in a new sample:
 1. **Structure:** whether the four-factor structure with an agreement factor holds.
 2. **Validity:** whether each factor relates to established measures as predicted, including measures it should *not* resemble, and whether Access and Valuing are more than their nearest neighbours combined.
-3. **Incremental validity:** whether Access and Valuing explain wellbeing and stress beyond trait mindfulness and interoceptive awareness.
+3. **Incremental validity:** whether Access and Valuing explain wellbeing and stress beyond trait mindfulness and interoceptive awareness, and whether they track contemplative practice beyond those and spirituality.
 4. **Invariance:** whether the structure is equivalent across recruitment postings, countries and gender.
 5. **Stability:** how stable scores are over two weeks, in an invited subsample.
 
@@ -76,7 +78,8 @@ Confirmatory hypotheses are numbered H1–H7. Their tests and decision rules are
 - **H4 (criterion validity).**
   - Access and Valuing and savouring correlate positively with the number of past-week days on which the participant deliberately paused to take in their surroundings (`crit_pause_days`).
   - Letting be and Access correlate positively with noticing unexpected events before reacting (`crit_notice_first`).
-- **H5 (incremental validity).** Access and Valuing and savouring together explain variance beyond age, gender, the five FFMQ-15 facets and the eight MAIA-2 subscales (ΔR² > 0, p < .05). The test holds if this is true for at least one of three outcomes: life satisfaction, PHQ-4 or PSS-4.
+- **H5a (incremental validity: wellbeing).** Access and Valuing and savouring together explain variance beyond age, gender, the five FFMQ-15 facets and the eight MAIA-2 subscales: ΔR² ≥ .02 and p < .05 (Holm). The test holds if this is true for at least one of three outcomes: life satisfaction, PHQ-4 or PSS-4.
+- **H5b (incremental validity: practice).** The Access + Valuing score predicts practice frequency (Section 4) beyond age, gender, posting, spirituality, religiosity, the five FFMQ-15 facets and the eight MAIA-2 subscales, with a positive coefficient and p < .05.
 - **H6 (known groups).** Dedicated practitioners score higher than people who have never practised regularly on Access and on Valuing and savouring (d ≥ 0.50). Dedicated means practising 3 or more times a week, for at least a year, with formal teacher-led training.
   - In Study 1, practitioners at least weekly scored higher than never-practitioners on Access (d = 0.72) and Valuing and savouring (d = 1.22), on factor scores with agreement removed. Understanding the modes and Letting be did not differ.
   - The differences shrank by about a third to a half once spirituality and religiosity were controlled. Study 2 reports that adjustment as a pre-specified sensitivity analysis.
@@ -119,7 +122,7 @@ The main session takes about 20 minutes and runs in this order:
 
 Every item except the two checks and the life-satisfaction item offers "Prefer not to answer". **[Norm: the platform's face-scale step has no "Prefer not to answer" yet; add one before launch, or say in the amendment that this one item has none.]** The exact materials are in the supplementary file *Study2_Measures.docx*.
 
-**Follow-up.** About 14 days after their main session, about 200 randomly selected completers are invited through a Prolific custom allowlist. The window is 7 days and the target is about 150 completions. The follow-up repeats the 20-item short form only, in the same fixed order.
+**Follow-up.** About 14 days after their main session, about 400 randomly selected completers are invited through a Prolific custom allowlist. The window is 7 days and the target is about 300 completions. The follow-up repeats the 20-item short form in the same fixed order, then the three past-week items, and takes about 4 minutes.
 
 **Recruitment.** Two Prolific postings, as in Study 1 and as the approved protocol describes. They differ only in framing:
 - **General posting:** a neutral, general-interest description.
@@ -171,12 +174,12 @@ The short form is also the baseline and final measure of a separate course trial
 - **Platform:**
   - The RADlab research platform. Prolific IDs are held in a separate table and replaced by a random code in all study data.
   - The IDs are kept until the follow-up closes. They are deleted after the main and follow-up codes are linked.
-- **Compensation:** USD 12 per hour, prorated: about USD 4.00 for the main session and about USD 0.60 for the follow-up. Payment does not depend on answers.
+- **Compensation:** USD 12 per hour, prorated: about USD 4.00 for the main session and about USD 0.80 for the follow-up. Payment does not depend on answers.
 
 ### Sample size
 
 - **Main session:** 1,000 completers, 600 on the general posting and 400 on the contemplative posting.
-- **Follow-up:** about 150 completers out of about 200 invited.
+- **Follow-up:** about 300 completers out of about 400 invited.
 
 ### Sample size rationale
 
@@ -192,13 +195,13 @@ The short form is also the baseline and final measure of a separate course trial
   - In Study 1, which was unscreened like Study 2, 34 of 500 participants met the dedicated definition and 143 had never practised regularly. At those rates, 1,000 gives about 68 against 286.
   - The contemplative posting did not recruit more dedicated practitioners: 13 of its 249 participants, against 21 of 251 on the general posting.
   - H6 needs an estimated d of at least 0.50 as well as significance, so its power depends on the true d. At N = 1,000, H6 passes about 93% of the time if the true d is 0.70, and 98% if it is 0.80; at N = 500, 85% and 94%. Study 1's in-sample d were 1.00 for Access and 1.64 for Valuing and savouring.
-- **Stability.** With 150 retest pairs and a true ICC of .75, the 95% CI is about ±.07.
+- **Stability.** With 300 retest pairs and a true ICC of .75, the 95% CI is about ±.05 (±.07 with 150). The over-time invariance model for Access + Valuing (10 items, six categories, two occasions) also needs more than 150 people to keep response categories from becoming sparse.
 
 ### Stopping rule
 
 Places are fixed on Prolific in advance:
 - **Main:** 600 general and 400 contemplative.
-- **Follow-up:** places equal to completions reached, invitations capped at 200, closing after 7 days.
+- **Follow-up:** places equal to completions reached, invitations capped at 400, closing after 7 days.
 
 There is no interim analysis, and excluded participants are not replaced.
 
@@ -244,7 +247,7 @@ None. Posting is a recruitment condition, recorded and used as a grouping variab
 - **PSS-4:** 0–16; items 2 and 3 reverse-scored.
 - **PHQ-4:** 0–12, plus anxiety and depression subscales (0–6 each).
 - **Life satisfaction:** one item, six-point face scale, scored 1–6.
-- **Past week:**
+- **Past week** (main session, and again at the follow-up):
   - `crit_pause_days` (0–7);
   - `crit_notice_first` (1–5, with "nothing unexpected happened" set to missing);
   - `crit_outdoors` (0–4, ordinal).
@@ -264,6 +267,7 @@ None. Posting is a recruitment condition, recorded and used as a grouping variab
     - teacher-led training "Yes".
   - **Never:** regular practice "No".
   - **Other** (everyone else): reported descriptively, and used in the frequency analysis.
+- **Practice frequency (H5b):** five ordered levels from the background questions: no regular practice, or none in the past three months; less than weekly; 1–2 times a week; 3–5 times a week; daily or near-daily.
 - **Country group:** two groups from the background question on country of residence:
   - the six listed countries (United States, United Kingdom, Canada, Australia, Ireland, New Zealand);
   - everywhere else.
@@ -322,12 +326,18 @@ All analyses use R with lavaan, semTools, psych and irr; versions will be report
      - Its multiple correlation with the set is R = √(r′Σ⁻¹r). The same is done for Valuing and savouring.
      - H3d is supported for a factor when the upper bound of a 2,000-resample bootstrap 95% CI for that multiple correlation is below .80.
    - **H4:** the listed correlations are positive, one-tailed α = .05, Holm-corrected across the four tests.
-3. **H5, incremental validity.** For each outcome (life satisfaction, PHQ-4 total, PSS-4) there is a hierarchical regression on observed scores:
+3. **H5a and H5b, incremental validity.** For H5a, each outcome (life satisfaction, PHQ-4 total, PSS-4) has a hierarchical regression on observed scores:
    - **Step 1:** age, gender, the five FFMQ-15 facets and the eight MAIA-2 subscales;
    - **Step 2:** Access and Valuing and savouring;
    - **Step 3 (secondary):** Understanding the modes and Letting be.
-   - The Step 2 ΔR² F-test is Holm-corrected across the three outcomes. ΔR² and the standardized coefficients are reported. **[Norm: whether to require a minimum ΔR² of .02, as the review suggests.]**
+   - **H5a is supported** for an outcome when the Step 2 ΔR² is at least .02 and its F-test is significant after Holm correction across the three outcomes. ΔR² and the standardized coefficients are reported.
+   - **Sensitivity:** spirituality and religiosity added to Step 1.
    - A latent version is reported alongside. In it, the outcome is regressed on the latent factors, with agreement modelled, and on the covariates.
+   - **H5b, practice.** A proportional-odds (ordinal logistic) regression of practice frequency, in everyone who reached the end of the validity block:
+     - **Step 1:** age, gender, posting, spirituality, religiosity, the five FFMQ-15 facets and the eight MAIA-2 subscales;
+     - **Step 2:** the Access + Valuing score.
+     - **Supported** when the Access + Valuing coefficient is positive and the 1-df likelihood-ratio test gives p < .05. The odds ratio per SD and the change in McFadden's R² are reported.
+     - **Sensitivity:** Access and Valuing and savouring entered separately; and dedicated practitioners against never-practitioners, by Firth-penalized logistic regression with the same covariates (about 68 against 286, too few events for an unpenalized model with 17 predictors).
 4. **Invariance.** This analysis is exploratory but specified in advance.
    - **Groups compared:**
      - posting;
@@ -467,6 +477,7 @@ The amount of missing data per measure is reported.
   - It is not computed with `psych::omega`. That function's default `flip = TRUE` re-reverses keyed items and inflated Study 1's reported ω_h from .54 to .70.
 - **Latent means:** country and posting differences, where invariance permits.
 - **Further outcomes:** `crit_outdoors` and life satisfaction with each factor.
+- **The following week (follow-up sample):** each past-week item at the follow-up regressed on baseline Access + Valuing, controlling for the same item at baseline. A positive coefficient means baseline scores predict the next week's behaviour beyond what people reported doing at baseline.
 - **The candidate items,** as in steps 7–10.
 
 ## 6. Other
@@ -484,7 +495,6 @@ The amount of missing data per measure is reported.
   - The BFI-2 and the EQ are used under their published research-use terms.
 - **Data sharing.** A de-identified dataset is shared as described in the consent form. The analysis code is in the project repository (Normega/sense-foraging-scale), to be made public at publication.
 - **Open points from the review, not yet decided [Norm].** Each would change materials, so the amendment:
-  - asking the past-week items again at the follow-up, about the intervening fortnight, so H4 has a forward-looking criterion;
   - adding 4–6 parallel items without "sensing mode" wording to the candidate block, to test whether the course's vocabulary carries variance of its own;
   - adding an instructed-response item to the candidate block, so there is a check before the validity block.
 
