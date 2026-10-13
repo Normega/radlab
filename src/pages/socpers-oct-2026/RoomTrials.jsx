@@ -11,7 +11,7 @@
 // answers → done, then release the keys to the deck. R resets.
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useBreathCycle } from '../../games/EbbAndFlow/useBreathCycle'
-import { usePollResults } from './talkPoll'
+import { usePoll } from './talkPoll'
 
 const BASE_MS   = 4000          // 15/min, the Study 4/5 baseline
 // 30% faster breathing rate (15 → 19.5/min), i.e. breaths 23% shorter (change −.23).
@@ -34,7 +34,8 @@ export default function RoomTrials({ code }) {
   const circleRef = useRef(null)
   const rafRef = useRef(null)
   const seq = useRef(0)
-  const rows = usePollResults(code, act === 'ANS_A' || act === 'ANS_B')
+  const { rows, status } = usePoll(code, act === 'ANS_A' || act === 'ANS_B')
+  const offline = status === 'error' && rows.length === 0
   const answered = t => rows.filter(r => r.trial === t).length
 
   useEffect(() => {
@@ -106,13 +107,19 @@ export default function RoomTrials({ code }) {
         {running && <p style={X.cue}>{act === 'RUN_B' ? 'once more · ' : ''}in as it grows · out as it shrinks</p>}
         {(act === 'ANS_A' || act === 'ANS_B') && (
           <>
-            <p style={X.mono}>on your phone</p>
+            <p style={X.mono}>{offline ? 'by hand' : 'on your phone'}</p>
             <h2 style={X.title}>Trial {act === 'ANS_A' ? 1 : 2}: did the pace change? How activated do you feel?</h2>
-            <div style={X.count}>
-              <span style={X.countN}>{answered(act === 'ANS_A' ? 1 : 2)}</span>
-              <span style={X.countL}>answered</span>
-            </div>
-            <p style={X.url}>radlab.zone/poll/{code}</p>
+            {offline ? (
+              <div style={X.count}>
+                <span style={X.countL}>can’t reach the poll · hands up if the pace changed</span>
+              </div>
+            ) : (
+              <div style={X.count}>
+                <span style={X.countN}>{answered(act === 'ANS_A' ? 1 : 2)}</span>
+                <span style={X.countL}>answered</span>
+              </div>
+            )}
+            {!offline && <p style={X.url}>radlab.zone/poll/{code}</p>}
             <button style={X.btn} onClick={forward}>{act === 'ANS_A' ? 'Trial 2 →' : 'Done →'}</button>
           </>
         )}

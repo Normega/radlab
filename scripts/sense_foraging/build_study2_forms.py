@@ -25,8 +25,8 @@ BANNER = ('<p style="border:2px solid #c00000;border-radius:12px;padding:8px 16p
 OLD = {w: o for w, o, _ in S1_CONSENT}   # approved Rev2 paragraphs, keyed by heading
 
 FOLLOW_UP = ("About two weeks later, some participants, chosen at random, will be invited through Prolific to an optional "
-             "short follow-up: the 20 statements about how you pay attention again, which takes about 3 minutes and is paid "
-             "separately. You can decline the invitation without any effect on this study or your payment.")
+             "short follow-up: the 20 statements about how you pay attention again and three short questions about your past "
+             "week, which takes about 4 minutes and is paid separately. You can decline the invitation without any effect on this study or your payment.")
 
 CONSENT = [
     ('Purpose of the Study', OLD['Purpose of the Study'], [
@@ -142,13 +142,15 @@ RETEST_CONSENT = [
     ('p', 'About two weeks ago you took part in our study of a new questionnaire about how people pay attention. You were '
           'chosen at random to be invited to this optional follow-up. Answering the same statements again a short time '
           'later tells us how stable the questionnaire’s scores are, which is how researchers judge whether a change '
-          'in scores is real.'),
+          'in scores is real. Three short questions about your past week tell us how the scores relate to everyday life.'),
     ('h2', 'What you will be asked to do'),
-    ('p', 'Answer the same 20 statements about how you pay attention. It takes about 3 minutes, in a single session.'),
+    ('p', 'Answer the same 20 statements about how you pay attention, then the same three short questions about your '
+          'past week as before (for example, on how many days you paused to take in your surroundings). It takes about '
+          '4 minutes, in a single session.'),
     ('h2', 'Voluntary participation and risks'),
     ('p', 'Taking part is entirely voluntary, and declining has no effect on your earlier participation or payment. Every '
           'statement offers a "Prefer not to answer" option, and you may stop at any time by closing the browser window. '
-          'The statements are the same everyday-experience statements as before; we do not expect any risk beyond '
+          'The statements and questions are the same everyday-experience ones as before; we do not expect any risk beyond '
           'everyday life. A list of mental health resources is shown at the end.'),
     ('h2', 'Confidentiality'),
     ('p', 'We do not collect your name or email address. Your Prolific ID is used only to process your payment and to '
@@ -158,8 +160,8 @@ RETEST_CONSENT = [
           'results are reported only in aggregate. The choice you made earlier about depositing your de-identified data '
           'in the University of Toronto’s Dataverse applies to your follow-up answers too.'),
     ('h2', 'Compensation'),
-    ('p', 'You will be paid at the same rate as before, $12.00 USD per hour, prorated (approximately $0.60 for an '
-          'estimated 3-minute follow-up), through Prolific.'),
+    ('p', 'You will be paid at the same rate as before, $12.00 USD per hour, prorated (approximately $0.80 for an '
+          'estimated 4-minute follow-up), through Prolific.'),
     ('h2', 'Withdrawing your data'),
     ('p', 'To withdraw your follow-up answers, email norman.farb@utoronto.ca with your Prolific ID within 48 hours of '
           'completing the follow-up. After de-identification your responses can no longer be located or removed.'),
@@ -175,7 +177,8 @@ RETEST_DEBRIEF_INTRO = [
     ('h2', 'Thank you'),
     ('p', 'Thank you for completing the follow-up. Comparing your answers today with your answers about two weeks ago '
           'tells us how stable the questionnaire’s scores are over a short time, when nothing in particular has '
-          'been done to change them. This is needed before the questionnaire can be used to measure change, for example '
+          'been done to change them, and your answers about the past week show how the scores relate to everyday life. '
+          'This is needed before the questionnaire can be used to measure change, for example '
           'before and after a course. No deception was used. If you would like to withdraw your follow-up answers, email '
           'norman.farb@utoronto.ca with your Prolific ID within 48 hours.'),
 ]

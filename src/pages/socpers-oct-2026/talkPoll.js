@@ -16,21 +16,32 @@ export function pollCodeFromUrl() {
   } catch { return LIVE_POLL }
 }
 
-// Polls results every `ms` while `active`. Returns rows (or [] before the first read).
-export function usePollResults(code, active, ms = 2000) {
+// Polls results every `ms` while `active`. Returns { rows, status }: rows are []
+// before the first read; status is 'loading' until a read returns, then 'ok' or
+// 'error' for the latest read. A failed read keeps the last rows it had, so a
+// wifi blip doesn't blank a figure that already filled.
+export function usePoll(code, active, ms = 2000) {
   const [rows, setRows] = useState([])
+  const [status, setStatus] = useState('loading')
   useEffect(() => {
     if (!active) return
     let alive = true
     const read = async () => {
-      const { data, error } = await supabase.rpc('talk_poll_results', { p_code: code })
-      if (alive && !error) setRows(data ?? [])
+      let res
+      try { res = await supabase.rpc('talk_poll_results', { p_code: code }) } catch (e) { res = { error: e } }
+      if (!alive) return
+      if (res.error) { setStatus('error'); return }
+      setRows(res.data ?? []); setStatus('ok')
     }
     read()
     const id = setInterval(read, ms)
     return () => { alive = false; clearInterval(id) }
   }, [code, active, ms])
-  return rows
+  return { rows, status }
+}
+
+export function usePollResults(code, active, ms = 2000) {
+  return usePoll(code, active, ms).rows
 }
 
 // Noticing = answering "faster": both trials sped up.

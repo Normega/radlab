@@ -383,7 +383,7 @@ const SLIDES = [
   {
     label: 'Your results (live)',
     by: 270,
-    note: 'Read it in this order. (1) “How many of you noticed trial 1?” read the n. “And trial 2?” Usually more. (2) Compare gold to blue within each panel: people who noticed vs missed the same change. (3) The bottom line: how many felt more activated after trial 2. If it matches: “That’s the paper in one room.” If it doesn’t: “With this many people that’s close to a coin toss. That’s why we ran 787. Let’s see what they did.” Either way, don’t over-read it. Refreshes every 2 s, so late answers still land.',
+    note: 'Read it in this order. (1) “How many of you noticed trial 1?” read the n. “And trial 2?” Usually more. (2) Compare gold to blue within each panel: people who noticed vs missed the same change. (3) The bottom line: how many felt more activated after trial 2. If it matches: “That’s the paper in one room.” If it doesn’t: “With this many people that’s close to a coin toss. That’s why we ran 787. Let’s see what they did.” Either way, don’t over-read it. Refreshes every 2 s, so late answers still land. If no answers reached the server, this slide shows three hands-up questions instead of empty axes: ask them in order, read the room, then “keep your hands in mind” and move on.',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="You, a minute ago · live">
         <H2>Did noticing change how activated you felt?</H2>
@@ -480,32 +480,59 @@ const SLIDES = [
   {
     label: 'The bridge, at threshold',
     by: 545,
-    note: '“So we went back to the bridge.” Study 3: after each breathing trial, people rated the attractiveness of faces. Faster breathing raised arousal, and that arousal carried over to the faces, but only on trials where the change was noticed. On missed trials, the same bodily change carried nothing. “Dutton and Aron’s men noticed the bridge shaking. Ours, half the time, didn’t, and then there was no transfer.” Signs flipped on the slide so that faster = positive.',
+    note: '“So we went back to the bridge.” Point along the strip: “Breathe with the circle for eight breaths, say whether it changed, rate how activated you feel, then rate four faces for attractiveness. Thirty-two times.” Then the numbers: faster breathing raised arousal, and that arousal carried over to the faces, but only on trials where the change was noticed. On missed trials, the same bodily change carried nothing. “Dutton and Aron’s men noticed the bridge shaking. Ours, half the time, didn’t, and then there was no transfer.” Signs flipped on the slide so that faster = positive.',
     render: (d) => (
-      <Frame kicker="Study 3 · Dutton & Aron, at threshold">
+      <Frame wide kicker="Study 3 · Dutton & Aron, at threshold">
         <H2>Arousal carried over to attraction only when the change was noticed</H2>
+        <BridgeMethod />
         <div style={K.stats}>
           <Stat big=".06" label="noticed trials: breathing → arousal → attractiveness" sub="indirect effect, 95% CI [.04, .09]" color={GOLD} />
           <Stat big=".00" label="missed trials: the same path" sub="indirect effect, 95% CI [−.01, .00]" color={BLUE} />
         </div>
-        <Lead>N = 103. Faces rated after every breathing trial, at fixed change sizes.</Lead>
         <Detail density={d}>
-          Bayesian moderated mediation; the paper codes faster breathing as negative change (ACME noticed = −.062
-          [−.085, −.040], missed = .001 [−.003, .006]). Signs flipped here so faster = positive. Chicago Face
-          Database faces, two high- and two average-attractiveness per trial.
+          N = 103, fixed change sizes. Bayesian moderated mediation; the paper codes faster breathing as negative
+          change (ACME noticed = −.062 [−.085, −.040], missed = .001 [−.003, .006]). Signs flipped here so faster =
+          positive. Confidence and mood were also rated (1–9) after the detection question. Chicago Face Database
+          faces, two high- and two average-attractiveness per trial, matched to stated preference.
         </Detail>
       </Frame>
     ),
   },
 
-  // 10 — MAIA (hands)
+  // 10 — What the MAIA is (hands)
   {
-    label: 'Self-report (MAIA)',
-    by: 600,
-    note: '“Hands up if you’d say you notice subtle changes in your breathing.” Smile at the count. “That’s close to an item on the MAIA, the most-used body-awareness questionnaire. Across five studies it predicted how confident people were, not how small a change they could detect.” For this audience: “It looks less like a sensory ability and more like a disposition: a habit of attending to and trusting the body. And Aya’s new sample, coming next, finds the same: MAIA unrelated to thresholds.”',
+    label: 'The MAIA',
+    by: 575,
+    note: '“If you study individual differences in body awareness, the questionnaire you reach for is the MAIA.” It was built to capture the adaptive kind: noticing sensations, staying with them without worrying, trusting your body. “And it behaves like a wellbeing measure. In Aya’s sample, people who scored higher had fewer anxiety and depression symptoms and less burnout.” Then the item: “Here’s one of its items. Hands up if that’s you.” Smile at the count, and hold it for the next slide.',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
-        <H2>Hands up if you notice subtle changes in your breathing</H2>
+        <H2>The standard questionnaire for body awareness</H2>
+        <Lead>The MAIA measures adaptive interoceptive awareness: noticing sensations, staying with them without worry, trusting the body. Higher scores go with better mental health.</Lead>
+        <div style={K.stats}>
+          <Stat big="r = −.32" label="higher MAIA, fewer anxiety and depression symptoms" sub="PHQ-4 · n = 315" color="var(--pkd)" />
+          <Stat big="r = −.34" label="higher MAIA, less burnout" sub="BAT-C · n = 315" color="var(--pkd)" />
+        </div>
+        <div style={K2.itemCard}>
+          <p style={K.quote}>“I notice changes in my breathing, such as whether it slows down or speeds up.”</p>
+          <span style={K2.itemHands}>One MAIA item · hands up if that’s you</span>
+        </div>
+        <Detail density={d}>
+          Multidimensional Assessment of Interoceptive Awareness (Mehling et al., 2012): 32 items in eight scales
+          (noticing, not-distracting, not-worrying, attention regulation, emotional awareness, self-regulation, body
+          listening, trusting). Correlations from the Fouad & Farb sample.
+        </Detail>
+      </Frame>
+    ),
+  },
+
+  // 10a — MAIA predicts confidence, not sensitivity
+  {
+    label: 'MAIA: confidence, not sensitivity',
+    by: 610,
+    note: '“So, all of you with your hands up: across five studies the MAIA predicted how confident people were in their judgements, not how small a change they could detect.” For this audience: “It looks less like a sensory ability and more like a disposition: a habit of attending to and trusting the body. And Aya’s new sample finds the same: MAIA unrelated to thresholds.”',
+    render: (d) => (
+      <Frame kicker="Self-reported body awareness (MAIA)">
+        <H2>It predicts confidence, not sensitivity</H2>
         <div style={K.stats}>
           <Stat big="r = .26" label="MAIA → confidence in your judgement" sub="5 of 5 studies · [.20, .32]" color="var(--pkd)" />
           <Stat big="r = .07" label="MAIA → smallest change you can detect" sub="0 of 4 studies · BF₀₁ 2.5–5.5" color="#8a8b8f" />
@@ -522,7 +549,7 @@ const SLIDES = [
   // 10b — Study 1, what we learned (bridge to Study 2)
   {
     label: 'Study 1: what we learned',
-    by: 630,
+    by: 635,
     note: 'Wrap up the first paper in three beats, one per line. “We only feel a bodily change once we detect it: a missed change felt like no change at all. And the detail, how big the change was, only arrives with detection. And who detects isn’t something people can tell you about themselves: the questionnaire tracked confidence, not sensitivity.” Then the picture: “Two people working just as hard. One digs up a barrel of toxic waste, the other digs up treasure. If feeling waits on detection, then what we spend our attention digging for decides what we get to feel.” Bridge: “So does what we feel reach how we see other people?”',
     render: () => (
       <div style={K.twoCol}>
@@ -586,17 +613,18 @@ const SLIDES = [
   // 13 — Breath sensitivity and recognition accuracy
   {
     label: 'Sensitivity → accuracy',
-    by: 790,
-    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). For this room: “The questionnaire didn’t predict it, and neither did heartbeat counting. A performance measure of the body found an individual difference that self-report missed.” Corrected for threshold unreliability it’s about −.25.',
+    by: 800,
+    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
         <H2>Sensitive to your own breath, better at reading others</H2>
-        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={K2.figWide} />
-        <Lead>Replicated on 60 new clips. MAIA and heartbeat counting predicted neither.</Lead>
+        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={K2.figShort} />
+        <RobustLadder />
         <Detail density={d}>
-          Held with response bias, confidence, MAIA, demographics, PHQ-4 and burnout controlled (β = −.14), each
-          direction alone, and as a rank correlation. Controlling how closely breathing followed the pacer weakened
-          it (β = −.10, p = .18), so general engagement cannot be fully excluded.
+          Higher threshold = less sensitive. Also held for each direction alone, as a rank correlation and without the
+          ceiling thresholds; MAIA and heartbeat counting predicted neither threshold nor recognition. The pacer
+          subsample alone keeps it (β = −.13, p = .039); adding synchrony, entrainment gain and false alarms removes it.
+          Corrected for threshold unreliability, the raw association is about −.25.
         </Detail>
       </Frame>
     ),
@@ -605,22 +633,22 @@ const SLIDES = [
   // 14 — Burnout: same body, less feeling
   {
     label: 'Burnout',
-    by: 840,
-    note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “We predicted burnout would impair reading others. It didn’t, and those nulls are equivalent to zero. What burnout did change was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ.” Land it: “Same body, less feeling. Burnout turned down the felt response, not the bodily one.”',
+    by: 855,
+    note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “What burnout changed was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ. Same body, less feeling.” Then the path: “Does that reach how they see other people? A little, and only through feeling. Lower felt arousal went with seeing others’ emotions as less intense, so burnout has a small indirect effect, −.03, whose interval excludes zero. Burnout on its own didn’t predict intensity at all, because what’s left over runs slightly the other way.” If pressed: exploratory, cross-sectional, and both arousal and intensity are ratings, so a shared rating style could feed the felt → perceived link.',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · burnout (BAT), exploratory">
         <H2>Burnout: the same body, less feeling</H2>
         <div style={K2.split}>
-          <img src="/socpers-oct-2026/fig-burnout.png" alt="Burnout against mean felt arousal, r = −.20" style={K2.figSide} />
+          <img src="/socpers-oct-2026/fig-burnout.png" alt="Burnout against mean felt arousal, r = −.20" style={K2.figBurn} />
           <div style={K2.sideStats}>
-            <div><Stat big="r = −.20" label="burnout → felt arousal" sub="[−.31, −.08] · n = 286" color="var(--pkd)" /></div>
-            <div><Stat big="r = .01" label="burnout → how closely breathing followed the pacer" sub="equivalent to zero (±.17)" color="#8a8b8f" /></div>
+            <div><Stat big="r = .01" label="burnout → how closely breathing followed the pacer" sub="equivalent to zero (±.17): same body" color="#8a8b8f" /></div>
           </div>
         </div>
+        <BurnoutMediation />
         <Detail density={d}>
-          Preregistered burnout predictions (recognition, intensity, thresholds) were not supported and were equivalent
-          to zero. Burnout was unrelated to task heart rate; resting heart rate and HRV associations up to |r| ≈ .2
-          cannot be excluded. High-burnout participants’ arousal still rose with faster breathing.
+          Person level, n = 286, standardised; indirect effect from 10,000 bootstrap resamples. Preregistered burnout
+          predictions (recognition, intensity, thresholds) were not supported and were equivalent to zero. Burnout was
+          unrelated to task heart rate; resting heart rate and HRV associations up to |r| ≈ .2 cannot be excluded.
         </Detail>
       </Frame>
     ),
@@ -629,7 +657,7 @@ const SLIDES = [
   // 15 — Wellbeing
   {
     label: 'Wellbeing',
-    by: 885,
+    by: 890,
     note: '“Put together, a lot of wellbeing may live in what we notice.” One line per row, then the caveat: “These are hypotheses, not findings, and the nice thing is that each one is testable with these tasks.” The burnout line is the one with data behind it today.',
     render: () => (
       <Frame kicker="For wellbeing">
@@ -681,6 +709,120 @@ const WELLBEING = [
   { t: 'Burnout', s: 'The body still answers; the feeling is turned down. The one with data so far.' },
   { t: 'Social life', s: 'Our felt state colours how intense others look. Noticing it is a chance to set it aside.' },
 ]
+
+// One Study 3 trial, in the task's order (Study3.py runmisattribution): eight
+// breaths with the circle, the faster/slower/same question, arousal 1-9 (the
+// confidence and mood ratings around it are left to the Detail line), then four
+// faces rated 0-10. The face is a caricature: Chicago Face Database images are
+// licensed for research, not for showing.
+function BridgeMethod() {
+  const W = 1000, H = 296
+  const sw = 210, sh = 148, sy = 44
+  const xs = [6, 260, 514, 768]
+  const ink = '#1c1c1e', grey = '#6b6c70', pink = '#F068A4', pkd = '#BA417A'
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  const cy = sy + sh / 2
+  const screen = (x, children) => (
+    <g>
+      <rect x={x} y={sy} width={sw} height={sh} rx="12" fill="#fff" stroke={grey} strokeWidth="3" />
+      <rect x={x + sw / 2 - 16} y={sy + sh} width="32" height="9" fill={grey} />
+      <rect x={x + sw / 2 - 40} y={sy + sh + 9} width="80" height="5" rx="2.5" fill={grey} />
+      {children}
+    </g>
+  )
+  const caption = (x, t, s) => (
+    <g>
+      <text x={x + sw / 2} y={sy + sh + 42} textAnchor="middle" fontSize="20" fontWeight="600" fill={ink} fontFamily={sans}>{t}</text>
+      <text x={x + sw / 2} y={sy + sh + 66} textAnchor="middle" fontSize="16" fill={grey} fontFamily={sans}>{s}</text>
+    </g>
+  )
+  const arrow = (x1, x2) => (
+    <line x1={x1} y1={cy} x2={x2} y2={cy} stroke={grey} strokeWidth="3" markerEnd="url(#bm-arrow)" />
+  )
+  const badge = (x, t, w) => (
+    <g>
+      <rect x={x + sw - w + 14} y={sy - 18} width={w} height="34" rx="17" fill={pink} />
+      <text x={x + sw - w / 2 + 14} y={sy + 6} textAnchor="middle" fontSize="18" fontWeight="700" fill="#fff" fontFamily={mono}>{t}</text>
+    </g>
+  )
+  const slider = (x, y, n0, n1, at) => {
+    const a = x + 22, b = x + sw - 22
+    return (
+      <g>
+        <line x1={a} x2={b} y1={y} y2={y} stroke={ink} strokeWidth="2.5" />
+        <text x={a} y={y + 24} textAnchor="middle" fontSize="14" fill={grey} fontFamily={mono}>{n0}</text>
+        <text x={b} y={y + 24} textAnchor="middle" fontSize="14" fill={grey} fontFamily={mono}>{n1}</text>
+        <circle cx={a + at * (b - a)} cy={y} r="8" fill={pink} />
+      </g>
+    )
+  }
+  const fx = xs[3] + sw / 2, fy = sy + 58
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 960, height: 'auto' }} role="img"
+      aria-label="One trial: breathe with the circle for eight breaths, say whether it got faster, slower or stayed the same, rate arousal from 1 to 9, then rate four faces for attractiveness from 0 to 10; 32 trials in all">
+      <defs>
+        <marker id="bm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill={grey} />
+        </marker>
+        <radialGradient id="bm-pk" cx="50%" cy="42%" r="65%">
+          <stop offset="0%" stopColor="#ff9ec9" />
+          <stop offset="72%" stopColor={pink} />
+        </radialGradient>
+      </defs>
+
+      {/* 1 · breathe with the circle */}
+      {screen(xs[0], (
+        <circle cx={xs[0] + sw / 2} cy={cy} r="40" fill="url(#bm-pk)">
+          <animate attributeName="r" values="24;56;24" dur="5s" repeatCount="indefinite" />
+        </circle>
+      ))}
+      {badge(xs[0], '× 8 breaths', 140)}
+      {caption(xs[0], 'Breathe with it', 'it may speed up or slow down')}
+      {arrow(xs[0] + sw + 8, xs[1] - 10)}
+
+      {/* 2 · did it change? */}
+      {screen(xs[1], (
+        <g>
+          <text x={xs[1] + sw / 2} y={sy + 44} textAnchor="middle" fontSize="17" fontWeight="600" fill={ink} fontFamily={sans}>Did it change?</text>
+          {['faster', 'slower', 'same'].map((t, k) => (
+            <g key={t}>
+              <rect x={xs[1] + 14 + k * 62} y={sy + 70} width="58" height="34" rx="17" fill={k === 0 ? '#FBEAF3' : '#fff'} stroke={k === 0 ? pink : grey} strokeWidth="2" />
+              <text x={xs[1] + 43 + k * 62} y={sy + 92} textAnchor="middle" fontSize="14" fill={ink} fontFamily={sans}>{t}</text>
+            </g>
+          ))}
+        </g>
+      ))}
+      {caption(xs[1], 'Noticed?', 'faster · slower · same')}
+      {arrow(xs[1] + sw + 8, xs[2] - 10)}
+
+      {/* 3 · arousal */}
+      {screen(xs[2], (
+        <g>
+          <text x={xs[2] + sw / 2} y={sy + 44} textAnchor="middle" fontSize="17" fontWeight="600" fill={ink} fontFamily={sans}>How aroused?</text>
+          {slider(xs[2], sy + 92, '1', '9', 0.62)}
+        </g>
+      ))}
+      {caption(xs[2], 'Felt arousal', '1 = calm · 9 = activated')}
+      {arrow(xs[2] + sw + 8, xs[3] - 10)}
+
+      {/* 4 · a face, rated for attractiveness */}
+      {screen(xs[3], (
+        <g>
+          <ellipse cx={fx} cy={fy + 4} rx="26" ry="32" fill="#F6E3D5" stroke={ink} strokeWidth="2.5" />
+          <path d={`M${fx - 30},${fy - 6} q2,-36 30,-36 q28,0 30,36 q-10,-16 -30,-16 q-20,0 -30,16 z`} fill="#5a4636" stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
+          <circle cx={fx - 10} cy={fy + 2} r="3.5" fill={ink} />
+          <circle cx={fx + 10} cy={fy + 2} r="3.5" fill={ink} />
+          <path d={`M${fx - 10},${fy + 18} q10,8 20,0`} fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" />
+          {slider(xs[3], sy + 112, '0', '10', 0.7)}
+        </g>
+      ))}
+      {badge(xs[3], '× 4 faces', 118)}
+      {caption(xs[3], 'How attractive?', '0–10 · two high, two average')}
+
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="18" fontWeight="700" fill={pkd} fontFamily={mono}>one trial · × 32 trials · N = 103</text>
+    </svg>
+  )
+}
 
 // One combined-task block, drawn as the screens a participant saw: three
 // breathing trials, then five emotion clips, each followed by the GERT wheel
@@ -841,6 +983,100 @@ function PathDiagram() {
   )
 }
 
+// The H2B estimate as covariates are added (Aya repo, Results/h2b_robustness/
+// report.md). Standardised, 95% CIs; higher threshold = less sensitive, so
+// negative = sensitive people read emotions better.
+function RobustLadder() {
+  const rows = [
+    { t: 'As preregistered', s: 'n = 305', e: -0.174, lo: -0.281, hi: -0.063, v: 'r = −.17', p: 'p = .002' },
+    { t: '+ bias, confidence, MAIA, mood, burnout', s: 'n = 301', e: -0.138, lo: -0.262, hi: -0.015, v: 'β = −.14', p: 'p = .028' },
+    { t: 'Belt followed the pacer', s: 'subsample, n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
+    { t: '+ how closely breathing followed it', s: 'synchrony, entrainment, false alarms · n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
+  ]
+  const W = 1000, rh = 54, top = 30, H = top + rows.length * rh + 26
+  const px0 = 520, px1 = 790, lo = -0.35, hi = 0.1
+  const X = v => px0 + (v - lo) / (hi - lo) * (px1 - px0)
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 1000, height: 'auto' }} role="img"
+      aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in the subsample whose belt followed the pacer; −.10, p = .18, not significant, once pacer-following is controlled">
+      <text x={16} y={16} fontSize="16" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
+      {rows.map((r, k) => {
+        const y = top + k * rh + rh / 2
+        const c = r.ns ? '#8a8b8f' : '#1c1c1e'
+        return (
+          <g key={k}>
+            {r.ns && <rect x={0} y={y - rh / 2 + 2} width={W} height={rh - 4} rx="12" fill="#FBEAF3" />}
+            <text x={16} y={y - 3} fontSize="19" fontWeight="600" fill={r.ns ? '#3a3a3e' : c} fontFamily={sans}>{r.t}</text>
+            <text x={16} y={y + 18} fontSize="15" fill="#6b6c70" fontFamily={sans}>{r.s}</text>
+            <line x1={X(r.lo)} x2={X(r.hi)} y1={y} y2={y} stroke={c} strokeWidth="3" strokeLinecap="round" />
+            <circle cx={X(r.e)} cy={y} r="8" fill={r.ns ? '#fff' : c} stroke={c} strokeWidth="3" />
+            <text x={px1 + 28} y={y + 6} fontSize="20" fontWeight="700" fill={r.ns ? '#BA417A' : c} fontFamily={mono}>{r.v}</text>
+            <text x={px1 + 136} y={y + 6} fontSize="17" fill={r.ns ? '#BA417A' : '#3a3a3e'} fontFamily={mono}>{r.p}</text>
+          </g>
+        )
+      })}
+      <line x1={X(0)} x2={X(0)} y1={top - 6} y2={H - 24} stroke="#6b6c70" strokeWidth="2" strokeDasharray="5 5" />
+      {[[-0.3, '−.30'], [-0.15, '−.15'], [0, '0']].map(([v, t]) => (
+        <text key={t} x={X(v)} y={H - 4} textAnchor="middle" fontSize="15" fill="#6b6c70" fontFamily={mono}>{t}</text>
+      ))}
+    </svg>
+  )
+}
+
+// Burnout → felt arousal → perceived intensity, person level (n = 286,
+// standardised; indirect from 10,000 bootstrap resamples, run 2026-10-12 on
+// the Aya repo's Results/Combined_data.csv + questionnaireFile.csv, set_combined).
+function BurnoutMediation() {
+  const W = 1000, H = 300
+  const boxes = [
+    { x: 20,  t1: 'Burnout', t2: 'BAT-C' },
+    { x: 395, t1: 'Felt', t2: 'arousal' },
+    { x: 770, t1: 'Perceived', t2: 'intensity in others' },
+  ]
+  const bw = 210, bh = 72, by = 64
+  const arrows = [
+    { from: 0, b: 'β = −.20', p: 'p < .001' },
+    { from: 1, b: 'β = .15', p: 'p = .012' },
+  ]
+  const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 980, height: 'auto' }} role="img"
+      aria-label="Burnout lowers felt arousal (β = −.20), felt arousal predicts perceived intensity (β = .15), so burnout has a small indirect effect on perceived intensity, β = −.03, 95% CI −.065 to −.005; the direct path is +.08, not significant, and the total is .05, not significant">
+      <defs>
+        <marker id="sp-arrow-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1c1c1e" />
+        </marker>
+        <marker id="sp-arrow-mg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ABADB0" />
+        </marker>
+      </defs>
+      <text x={20} y={18} fontSize="16" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>BETWEEN PEOPLE · n = 286</text>
+      {boxes.map((b, k) => (
+        <g key={k}>
+          <rect x={b.x} y={by} width={bw} height={bh} rx="12" fill={k === 2 ? '#FBEAF3' : '#fff'} stroke={k === 2 ? '#F068A4' : '#6b6c70'} strokeWidth="2" />
+          <text x={b.x + bw / 2} y={by + 31} textAnchor="middle" fontSize="20" fontWeight="600" fill="#1c1c1e" fontFamily={sans}>{b.t1}</text>
+          <text x={b.x + bw / 2} y={by + 54} textAnchor="middle" fontSize="17" fill="#3a3a3e" fontFamily={sans}>{b.t2}</text>
+        </g>
+      ))}
+      {arrows.map(a => {
+        const x1 = boxes[a.from].x + bw + 4, x2 = boxes[a.from + 1].x - 6
+        return (
+          <g key={a.from}>
+            <line x1={x1} y1={by + bh / 2} x2={x2} y2={by + bh / 2} stroke="#1c1c1e" strokeWidth="3" markerEnd="url(#sp-arrow-m)" />
+            <text x={(x1 + x2) / 2} y={by + bh / 2 - 14} textAnchor="middle" fontSize="22" fontWeight="700" fill="#1c1c1e" fontFamily={mono}>{a.b}</text>
+            <text x={(x1 + x2) / 2} y={by + bh / 2 + 30} textAnchor="middle" fontSize="16" fill="#3a3a3e" fontFamily={mono}>{a.p}</text>
+          </g>
+        )
+      })}
+      <path d={`M${20 + bw / 2},${by + bh + 4} Q500,${by + bh + 110} ${770 + bw / 2},${by + bh + 6}`} fill="none" stroke="#ABADB0" strokeWidth="2" strokeDasharray="6 6" markerEnd="url(#sp-arrow-mg)" />
+      <text x={500} y={by + bh + 82} textAnchor="middle" fontSize="17" fill="#6b6c70" fontFamily={sans}>direct β = +.08, n.s.</text>
+      <text x={500} y={H - 34} textAnchor="middle" fontSize="20" fontWeight="700" fill="#BA417A" fontFamily={mono}>indirect β = −.03 [−.065, −.005]</text>
+      <text x={500} y={H - 8} textAnchor="middle" fontSize="17" fill="#6b6c70" fontFamily={sans}>total β = .05, n.s.: burnout alone doesn’t predict intensity</text>
+    </svg>
+  )
+}
+
 // ── Bonus slides (Q&A only) ─────────────────────────────────────────────────
 // B opens the index, 1–9 jump to one, Esc returns. Nothing here goes beyond the
 // two manuscripts and the /iscr-2026 and /keynote decks.
@@ -931,14 +1167,14 @@ const BONUS = [
   },
   {
     q: 'Did burnout change emotion perception?',
-    note: '“No, and the nulls are informative: equivalent to zero at |r| = .17, with burnout scores spanning 31 to 110 of 115.” Burnout did predict lower felt arousal (r = −.20). Why didn’t that reach perception? Scale: burnout explains ~4% of felt arousal, which shares ~2% with intensity, so the implied effect is about r = −.03.',
+    note: '“No, and the nulls are informative: equivalent to zero at |r| = .17, with burnout scores spanning 31 to 110 of 115.” Burnout did predict lower felt arousal (r = −.20). Did that reach perception? Only through feeling, and only a little: tested directly, the indirect path burnout → felt arousal → intensity is β = −.03 [−.065, −.005]. The total stays at zero because the remaining direct path runs slightly the other way (+.08, n.s.).',
     render: () => (
       <Frame kicker="Bonus · burnout and emotion perception">
         <H2>Burnout did not impair reading others</H2>
         <Bullets items={[
           'Recognition r = −.01, intensity r = .04, thresholds r = .02: all equivalent to zero (±.17).',
           'Scores spanned 31 to 110 of a possible 115, so not restricted range.',
-          'Implied burnout → intensity via felt arousal ≈ r = −.03, too small to detect.',
+          'Through felt arousal, a small indirect effect on intensity: β = −.03 [−.065, −.005].',
         ]} />
       </Frame>
     ),
@@ -995,7 +1231,11 @@ const K2 = {
   figWide: { maxWidth: '100%', maxHeight: '44vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   split: { display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   figSide: { maxWidth: 'min(560px, 90vw)', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figShort: { maxWidth: '100%', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figBurn: { maxWidth: 'min(440px, 90vw)', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
+  itemCard: { background: '#fff', border: '2px solid var(--pk)', borderRadius: 24, padding: '16px 32px', maxWidth: 860, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
+  itemHands: { fontFamily: '"Space Mono",monospace', fontSize: 16, fontWeight: 700, color: 'var(--pkd)', letterSpacing: '0.05em', textTransform: 'uppercase' },
   digImg: { width: '100%', maxWidth: 520, maxHeight: '70vh', objectFit: 'cover', borderRadius: 24, justifySelf: 'center' },
   digTake: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.3 },
   wellGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 16, width: '100%' },

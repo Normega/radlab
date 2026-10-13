@@ -84,7 +84,7 @@ def consent():
     revised = next(p.text for p in d0.paragraphs if p.text.startswith('REVISED'))
     edits.append((revised, [f'REVISED ({AMENDMENT}): Study 2 administers the background questions, the 20-statement '
                             'Sense Foraging short form, 24 candidate statements, and the validity, wellbeing and '
-                            'stress measures (about 20 minutes). A random subsample is invited to an optional ~3-minute '
+                            'stress measures (about 20 minutes). A random subsample is invited to an optional ~4-minute '
                             'follow-up about two weeks later, under its own consent form.']))
     edit_doc(REV2 / 'Consent_Form_v3.docx', 'Consent_Form_v5_Study2', edits)
 
@@ -143,7 +143,8 @@ SESSION = [
     ('MAIA-2, with its attention check', 'sf2-maia2', 'As approved (Rev2 Validity Scales Appendix).'),
     ('BIDR-16', 'sf2-bidr16', 'As approved (Rev2 Validity Scales Appendix).'),
     ('PHQ-4', 'sf2-phq4', 'As approved (Rev2 Validity Scales Appendix).'),
-    ('Life satisfaction (one slider item)', None, 'As approved (Rev2 Validity Scales Appendix).'),
+    ('Life satisfaction (one item)', None, 'CHANGED FORMAT. The approved wording (Rev2 Validity Scales Appendix), answered on '
+     'a six-point face scale (unhappy to delighted) instead of the appendix’s 1–7.'),
     ('IUS-12', 'sf2-ius12', 'NEW.'),
     ('SBI, Savoring the Moment subscale', 'sf2-sbi-moment', 'NEW.'),
     ('BFI-2 Open-Mindedness domain, plus one attention check', 'sf2-bfi2-om', 'NEW.'),
@@ -229,6 +230,18 @@ def measures():
     d.add_paragraph(f'{AMENDMENT}. Protocol # 00051180. Online, single session, about 20 minutes, Prolific '
                     '(general and contemplative-practitioner postings, as in Study 1).')
 
+    d.add_heading('Sample', level=2)
+    d.add_paragraph('CHANGED. About 1,000 completers (about 600 on the general posting and 400 on the contemplative '
+                    'posting), up from the approved 450–500 for Study 2. The larger sample lets the candidate statements '
+                    'be chosen in one random half of the sample and checked in the other, each half the size of Study 1. '
+                    'Recruitment is otherwise as approved: two postings that differ only in how the study is described, '
+                    'no screening on contemplative practice, adults 18+ fluent in English, and Study 1 participants '
+                    'excluded. Payment is unchanged (USD 12 per hour, prorated).')
+    d.add_paragraph('CHANGED. No country-of-residence filter. The application named the United States, United Kingdom, '
+                    'Canada, Australia, Ireland and New Zealand; Study 2 is open to adults fluent in English in any '
+                    'country. The debrief already lists crisis lines for those six countries and points participants '
+                    'anywhere else to Find a Helpline (findahelpline.com), a free directory of crisis lines by country.')
+
     d.add_heading('The session, in order', level=2)
     t = d.add_table(rows=1, cols=2)
     t.style = 'Table Grid'
@@ -244,10 +257,11 @@ def measures():
                     'approved; BFI-2, new). Failing both excludes from analysis; the participant is paid regardless.')
 
     d.add_heading('Optional follow-up (about 2 weeks later)', level=2)
-    d.add_paragraph('About 200 randomly chosen Study 2 completers are invited through Prolific (a custom allowlist), '
-                    'with a 7-day window, aiming for about 150 completions. The follow-up repeats the 20-statement '
-                    'short form only (about 3 minutes, paid at the same rate) under its own consent and debrief. The '
-                    'two sets of answers are linked by a random code before Prolific IDs are deleted.')
+    d.add_paragraph('About 400 randomly chosen Study 2 completers are invited through Prolific (a custom allowlist), '
+                    'with a 7-day window, aiming for about 300 completions. The follow-up repeats the 20-statement '
+                    'short form and the three past-week questions (about 4 minutes, paid at the same rate) under its '
+                    'own consent and debrief. The two sets of answers are linked by a random code before Prolific IDs '
+                    'are deleted.')
 
     d.add_heading('Sources and licences of the new measures', level=2)
     for slug, (src, lic) in SOURCES.items():
@@ -264,8 +278,8 @@ def measures():
 
     d.add_page_break()
     d.add_heading('Items as shown', level=2)
-    d.add_paragraph('Measures already approved (background questions, FFMQ-15, MAIA-2, BIDR-16, PHQ-4, life '
-                    'satisfaction) are not repeated here.')
+    d.add_paragraph('Measures already approved (background questions, FFMQ-15, MAIA-2, BIDR-16, PHQ-4, and the life-'
+                    'satisfaction wording) are not repeated here.')
     for label, slug, status in SESSION:
         if not slug or not status.startswith('NEW'):
             continue
