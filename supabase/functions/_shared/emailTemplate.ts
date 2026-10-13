@@ -116,7 +116,7 @@ export function renderEmail(vars: {
     : vars.baseline_hold === 'catchup' ? BASELINE_CATCHUP_INTRO
     : vars.baseline_hold === 'repeat' ? (vars.hold_calendar ? holdCalendarIntro(vars.hold_calendar) : BASELINE_REPEAT_INTRO)
     : vars.is_reminder ? REMINDER_INTRO
-    : vars.phase_out_of_reach ? outOfReachIntro(vars.phase_out_of_reach)
+    : vars.phase_out_of_reach ? outOfReachIntro(vars.phase_out_of_reach, vars.compensation ?? 'credit')
     : vars.lapsed ? LAPSED_INTRO
     : vars.after_missed ? missedIntro : null
 
@@ -407,11 +407,20 @@ const LAPSED_INTRO = `We noticed you've missed a few check-ins in a row — that
 // rule can no longer be met (phaseReach.ts). Both of those say there is
 // "nothing to make up" and the lapsed one says "now is a great time to get back
 // on track" -- false here: the participant will be withdrawn when the phase
-// ends whatever they do. Says so plainly, with the real numbers and date, and
-// still offers the remaining sessions and the exit. States the threshold only
-// because phaseReach computes it from the rule that is actually enforced.
-function outOfReachIntro(r: { min_required: number; of_total: number; ends: string }): string {
-  return `We noticed you've missed several check-ins. To continue to the next part of the study, this block of daily sessions needs at least ${r.min_required} of its ${r.of_total} completed, and there are no longer enough sessions left in it to reach that. The block ends on ${r.ends}, and your participation in the study will end after that. Until then, you're welcome to do the sessions that remain — today's is below. If you'd rather stop now, you can withdraw using the link at the bottom of this email. Thank you for the sessions you've done.`
+// ends whatever they do. States the threshold only because phaseReach computes
+// it from the rule that is actually enforced.
+//
+// Leads with what is still true and worth doing (Norm, 2026-10-13): each
+// remaining session still earns compensation (4 min of earned time per daily
+// session, credited or paid on withdrawal -- get_liliana_credit_report and
+// LilianaPaymentTable), so the copy encourages the rest of the block. It never
+// says "catch up", which would imply the threshold can still be met.
+function outOfReachIntro(
+  r: { min_required: number; of_total: number; ends: string },
+  compensation: 'credit' | 'pay',
+): string {
+  const earn = compensation === 'pay' ? 'payment' : 'participation credit'
+  return `We noticed you've missed several check-ins. You can still earn ${earn} for every session you complete between now and ${r.ends}, when this block of daily sessions ends — today's is below. To continue to the next part of the study, the block needs at least ${r.min_required} of its ${r.of_total} completed, and there are no longer enough sessions left to reach that, so your participation will end with the block. If you'd rather stop now, you can withdraw using the link at the bottom of this email.`
 }
 
 // ─── Response-rate line ───────────────────────────────────────────────────────
