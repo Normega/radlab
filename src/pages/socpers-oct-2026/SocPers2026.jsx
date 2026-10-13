@@ -256,6 +256,17 @@ function Cite({ children }) {
   return <p style={K.cite}>{children}</p>
 }
 
+// A one-line stat for slides where the figure is the main event.
+function MiniStat({ big, label, sub, color = 'var(--tx)' }) {
+  return (
+    <div style={K2.miniStat}>
+      <span style={{ ...K2.miniBig, color }}>{big}</span>
+      <span style={K2.miniLabel}>{label}</span>
+      {sub && <span style={K2.miniSub}>{sub}</span>}
+    </div>
+  )
+}
+
 // Colours match the paper's figure: detected = gold, missed = blue.
 const GOLD = '#D99A00'
 const BLUE = '#0072B2'
@@ -505,11 +516,11 @@ const SLIDES = [
     render: (d) => (
       <Frame wide kicker="Result">
         <H2>Noticed changes move us. Missed ones don’t.</H2>
-        <img src="/socpers-oct-2026/fig-gating-s5.png" alt="Study 5: felt arousal by breathing-rate change for detected and missed trials, with a forest plot of the Change × Detection interaction across five studies" style={K.fig} />
+        <img src="/socpers-oct-2026/fig-gating-s5.png" alt="Study 5: felt arousal by breathing-rate change for detected and missed trials, with a forest plot of the Change × Detection interaction across five studies" style={d === 'reading' ? { ...K2.figGate, maxHeight: '44vh' } : K2.figGate} />
         <p style={K.figCap}>Left: Study 5, felt arousal by breathing change · Right: all five studies</p>
-        <div style={K.stats}>
-          <Stat big="5 / 5" label="studies replicate the gating" sub="pooled r = −.11 [−.15, −.06]" />
-          <Stat big="9–30 : 1" label="evidence that a missed change = no change" sub="BF₀₁, 4 studies with a no-change baseline" color={BLUE} />
+        <div style={K2.miniStats}>
+          <MiniStat big="5 / 5" label="studies replicate the gating" sub="pooled r = −.11 [−.15, −.06]" />
+          <MiniStat big="9–30 : 1" label="a missed change = no change" sub="BF₀₁, 4 studies" color={BLUE} />
         </div>
         <Detail density={d}>
           Missed-change trials did not differ from no-change trials (BF₀₁ = 8.7, 20.7, 9.6, 29.6). Study 5 belt:
@@ -1302,6 +1313,12 @@ const K2 = {
   figWide: { maxWidth: '100%', maxHeight: '44vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   split: { display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   figSide: { maxWidth: 'min(560px, 90vw)', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figGate: { maxWidth: '100%', maxHeight: '58vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  miniStats: { display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
+  miniStat: { display: 'flex', alignItems: 'baseline', gap: 12, background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '8px 16px' },
+  miniBig: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(22px, 2.6vw, 30px)', lineHeight: 1, whiteSpace: 'nowrap' },
+  miniLabel: { fontSize: 'clamp(16px, 1.5vw, 18px)', color: 'var(--tx)' },
+  miniSub: { fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--tx2)', whiteSpace: 'nowrap' },
   figRecog: { maxWidth: '100%', maxHeight: '48vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   figBurn: { maxWidth: 'min(440px, 90vw)', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
