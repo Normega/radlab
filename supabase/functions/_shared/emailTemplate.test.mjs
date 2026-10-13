@@ -99,14 +99,23 @@ test('out of reach replaces the lapsed copy, states the rule and date, keeps the
     withdraw_url: WITHDRAW_URL,
     progress: { completed: 1, total: 12, pct: 8 },
   })
+  // Leads with what still earns something, then the rule and the date.
+  assert.match(text, /You can still earn participation credit for every session you complete between now and Thursday, October 23/)
   assert.match(text, /needs at least 10 of its 12 completed/)
-  assert.match(text, /ends on Thursday, October 23, and your participation in the study will end after that/)
-  assert.ok(!text.includes('get back on track'), 'no promise that catching up helps')
+  assert.match(text, /your participation will end with the block/)
+  assert.ok(!/catch up/i.test(text), 'never implies the threshold can still be met')
+  assert.ok(!text.includes('get back on track'))
   assert.ok(!text.includes('nothing to make up'))
   // The response-rate line counts check-ins (baseline included); beside a
   // 10-of-12 rule it would read as a contradiction.
   assert.ok(!text.includes('responded to'))
   assert.ok(html.includes(WITHDRAW_URL), 'the withdrawal link the copy points to is there')
+})
+
+test('out of reach on a paid study says payment, not credit', () => {
+  const { text } = renderEmail({ ...BASE, lapsed: true, phase_out_of_reach: OUT, compensation: 'pay' })
+  assert.match(text, /You can still earn payment for every session you complete/)
+  assert.ok(!text.includes('participation credit'))
 })
 
 test('out of reach also replaces the single-miss ack', () => {
