@@ -26,8 +26,13 @@ test('two misses: 10 of 12 is still reachable -- ordinary copy', () => {
 test('three misses with nothing completed: out of reach, ends on the last phase day', () => {
   assert.deepEqual(
     phaseOutOfReach({ check: P1, completed: 0, phaseRows: rows(3) }),
-    { minRequired: 10, ofTotal: 12, endDate: '2026-10-13' },
+    { minRequired: 10, ofTotal: 12, endDate: '2026-10-13', assessFirst: false },
   )
+})
+
+test("assess_then_withdraw: still out of reach, and flagged so the copy promises the midpoint", () => {
+  const check = { ...P1, on_fail: 'assess_then_withdraw' }
+  assert.equal(phaseOutOfReach({ check, completed: 0, phaseRows: rows(3) })?.assessFirst, true)
 })
 
 test("Liliana's test enrollment, 2026-10-13: 11 missed, 1 left -- out of reach", () => {

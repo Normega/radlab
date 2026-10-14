@@ -227,6 +227,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         enrollment={enrollment}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
+        debriefHtml={debriefHtml}
         isSimMode={isSimMode}
         demoMode={demoMode}
       />

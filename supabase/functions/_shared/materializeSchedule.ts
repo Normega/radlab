@@ -65,19 +65,29 @@ export interface GraphNode {
   // (the default, and the historical behaviour) formally withdraws the
   // participant; 'continue' records the shortfall and walks on, so the rest
   // of the study is still delivered and the criterion becomes an analysis
-  // classification rather than a gate. See ADHERENCE_ON_FAIL.
+  // classification rather than a gate; 'assess_then_withdraw' still delivers
+  // the assessment that follows the check and withdraws at the fork after it.
+  // See ADHERENCE_ON_FAIL.
   on_fail?: AdherenceOnFail
 }
 
 // Deliberately a graph-level property rather than a global switch: whether a
 // missed adherence threshold ends participation is a per-study design
 // decision, and two checks in the same graph can differ (Liliana's phase-1
-// check still withdraws — it decides who enters phase 2 — while its phase-2
-// check only records, so everyone who reaches phase 2 is offered the final
-// assessment and intention-to-treat analysis is possible alongside
-// per-protocol).
-export type AdherenceOnFail = 'withdraw' | 'continue'
-export const ADHERENCE_ON_FAIL: AdherenceOnFail[] = ['withdraw', 'continue']
+// check decides who enters phase 2, while its phase-2 check only records, so
+// everyone who reaches phase 2 is offered the final assessment and
+// intention-to-treat analysis is possible alongside per-protocol).
+//
+// 'assess_then_withdraw' (Norm, 2026-10-14): the participant still sits the
+// assessment that follows the check — the session gating the next randomize
+// fork, i.e. Liliana's midpoint — so change in low-adherence participants can
+// be analysed, and is withdrawn at that fork instead of being drawn into an
+// arm. Liliana's phase-1 check, which until then withdrew before the midpoint
+// was ever scheduled. The midpoint screen (MidpointStep) asks the database
+// the same question (adherence_assess_only) and ends the session with the
+// debrief rather than feedback and a choice.
+export type AdherenceOnFail = 'withdraw' | 'continue' | 'assess_then_withdraw'
+export const ADHERENCE_ON_FAIL: AdherenceOnFail[] = ['withdraw', 'continue', 'assess_then_withdraw']
 export const DEFAULT_ADHERENCE_ON_FAIL: AdherenceOnFail = 'withdraw'
 
 export interface AdherenceWithdrawal {
@@ -91,7 +101,17 @@ export interface AdherenceWithdrawal {
   completed?: number // adherence only
   minRequired?: number // adherence only
   ofTotal?: number // adherence only
-  gateLabel?: string // missed_assessment only — the gating session's label
+  // missed_assessment, and an assess_then_withdraw adherence withdrawal: the
+  // gating session's label
+  gateLabel?: string
+  // adherence only: the check was authored 'assess_then_withdraw', so the
+  // withdrawal happened at the fork AFTER the assessment, not at the check.
+  afterAssessment?: boolean
+  // afterAssessment only: whether that assessment was completed (true) or its
+  // window lapsed (false). Decides which termination email is sent — a
+  // participant who has just been told on screen gets a thank-you, not a
+  // notice.
+  assessmentCompleted?: boolean
 }
 
 // A below-minimum adherence_check that did NOT withdraw, because the node is
@@ -396,6 +416,10 @@ export async function materializeSchedule(
   let lastSessionNodeKey: string | undefined
   let stoppedAt: string | null = null
   let withdrawal: AdherenceWithdrawal | null = null
+  // An 'assess_then_withdraw' check the participant is below: the walk goes
+  // on to deliver the assessment after it, and this becomes the withdrawal at
+  // the next randomize fork (or the end of the walk) instead of an arm draw.
+  let deferredWithdrawal: AdherenceWithdrawal | null = null
   const adherenceShortfalls: AdherenceShortfall[] = []
   // Days by which this participant's calendar runs ahead of the graph's
   // nominal day_offsets (negative = behind) — see the timepoint and randomize
@@ -592,6 +616,25 @@ export async function materializeSchedule(
         stoppedAt = node.id
         break
       }
+      if (deferredWithdrawal) {
+        // Below an 'assess_then_withdraw' check upstream: the assessment
+        // gating this fork was delivered for the analysis, and the fork is
+        // where participation ends — never drawn, so no arm and no balance
+        // count is spent on someone who will not do the arm. Completed or
+        // lapsed, it ends the same way; only the email differs. Any other
+        // state (e.g. 'blocked') stalls so an admin can intervene, exactly as
+        // below.
+        if (lastSessionStatus === 'completed' || lastSessionStatus === 'missed') {
+          const gateLabel = lastSessionNodeKey ? nodeMap[lastSessionNodeKey]?.label : undefined
+          withdrawal = {
+            ...deferredWithdrawal,
+            ...(gateLabel ? { gateLabel } : {}),
+            assessmentCompleted: lastSessionStatus === 'completed',
+          }
+        }
+        stoppedAt = node.id
+        break
+      }
       if (lastSessionStatus !== 'completed') {
         // 'missed' is terminal — the gating assessment's window lapsed and
         // it can never complete, so the fork can never resolve. Formal
@@ -676,8 +719,15 @@ export async function materializeSchedule(
         // criterion, not a gate — record the shortfall and deliver the rest
         // of the study anyway. Everything downstream, notably the final
         // assessment, is materialized exactly as for an adherent participant.
-        if ((node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'continue') {
+        const onFail = node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL
+        if (onFail === 'continue') {
           adherenceShortfalls.push({ nodeId: node.id, phase, completed, minRequired, ofTotal })
+        } else if (onFail === 'assess_then_withdraw') {
+          // Walk on so the next assessment is scheduled; the withdrawal
+          // waits for the fork after it (see the randomize branch).
+          deferredWithdrawal = deferredWithdrawal ?? {
+            kind: 'adherence', nodeId: node.id, phase, completed, minRequired, ofTotal, afterAssessment: true,
+          }
         } else {
           withdrawal = { kind: 'adherence', nodeId: node.id, phase, completed, minRequired, ofTotal }
           stoppedAt = node.id
@@ -691,11 +741,24 @@ export async function materializeSchedule(
     }
   }
 
+  // An 'assess_then_withdraw' check with no fork after its assessment: the
+  // walk ran off the end, so the end is where participation stops — as a
+  // withdrawal, never as a completed study.
+  if (deferredWithdrawal && withdrawal === null && stoppedAt === null && !anyUpstreamActionable &&
+      (lastSessionStatus === 'completed' || lastSessionStatus === 'missed')) {
+    const gateLabel = lastSessionNodeKey ? nodeMap[lastSessionNodeKey]?.label : undefined
+    withdrawal = {
+      ...deferredWithdrawal,
+      ...(gateLabel ? { gateLabel } : {}),
+      assessmentCompleted: lastSessionStatus === 'completed',
+    }
+  }
+
   // Ran off the end of the graph (no gate break), nothing left actionable,
   // and the last session — the final assessment — is completed: the
   // participant has finished the study.
   const completedStudy =
-    cur === null && stoppedAt === null && withdrawal === null &&
+    cur === null && stoppedAt === null && withdrawal === null && deferredWithdrawal === null &&
     !anyUpstreamActionable && lastSessionStatus === 'completed'
 
   if (inserts.length === 0) return { inserted: 0, stoppedAt, withdrawal, completedStudy, adherenceShortfalls }

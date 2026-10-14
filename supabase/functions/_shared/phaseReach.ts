@@ -27,6 +27,10 @@ export interface PhaseOutOfReach {
   ofTotal: number
   // Last scheduled day of the phase, YYYY-MM-DD (lab calendar).
   endDate: string
+  // The check is 'assess_then_withdraw': falling short still ends
+  // participation, but only after the assessment that follows the phase, so
+  // the copy must say that assessment is still coming.
+  assessFirst: boolean
 }
 
 /**
@@ -43,7 +47,8 @@ export function phaseOutOfReach(args: {
   if (!check) return null
   // A 'continue' check is a classification, not an ending: nothing is lost by
   // falling short, so the encouraging copy stays true.
-  if ((check.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) !== 'withdraw') return null
+  const onFail = check.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL
+  if (onFail !== 'withdraw' && onFail !== 'assess_then_withdraw') return null
 
   const minRequired = check.min_required ?? 10
   const ofTotal = check.of_total ?? 12
@@ -55,7 +60,7 @@ export function phaseOutOfReach(args: {
 
   const dates = phaseRows.map((r) => r.scheduled_date).filter((d): d is string => !!d).sort()
   if (dates.length === 0) return null
-  return { minRequired, ofTotal, endDate: dates[dates.length - 1] }
+  return { minRequired, ofTotal, endDate: dates[dates.length - 1], assessFirst: onFail === 'assess_then_withdraw' }
 }
 
 /** "Thursday, October 23" for a YYYY-MM-DD lab-calendar date. */

@@ -561,4 +561,83 @@ const HOLD_GRAPH = {
   assert.equal(result.withdrawal, null)
 }
 
-console.log('materializeSchedule: 18/18 calendar + adherence + concurrency + hold checks passed')
+// 16-19. on_fail 'assess_then_withdraw' (Norm, 2026-10-14): a participant
+//        below the Phase 1 minimum still sits the midpoint, for a sensitivity
+//        analysis of change in low-adherence participants, and is withdrawn
+//        at the Phase 2 fork rather than drawn into an arm.
+const ASSESS_GRAPH = {
+  nodes: GRAPH.nodes.map((n) => n.id === 'ac_p1' ? { ...n, on_fail: 'assess_then_withdraw' } : n),
+  edges: GRAPH.edges,
+}
+
+/** Baseline + a closed Phase 1 in which only the first `done` days completed. */
+function throughPhase1(t0, done) {
+  const rows = [row('s_base', t0, 'completed', completedAt(t0))]
+  let offset = 1
+  for (const p of PRACTICES) {
+    for (const i of [1, 2, 3, 4]) {
+      const ok = offset <= done
+      rows.push(row(`s_p1_${p}${i}`, addDays(t0, offset), ok ? 'completed' : 'missed',
+        ok ? completedAt(addDays(t0, offset)) : null))
+      offset++
+    }
+  }
+  return rows
+}
+
+// 16. Phase 1 closes at 7 of 12: the midpoint is scheduled on its usual day,
+//     nobody is withdrawn yet, and the walk waits at the fork.
+{
+  const t0 = addDays(labToday(), -13) // today is study day 14
+  const { db, result } = await run(t0, throughPhase1(t0, 7), {
+    graph: ASSESS_GRAPH, phaseDays: { phase1: 7, phase2: 0 },
+  })
+  const next = plan(db)
+  assert.equal(next.length, 1, 'the midpoint, and nothing past it')
+  assert.equal(next[0].nodeKey, 's_mid')
+  assert.equal(next[0].date, addDays(t0, 13), 'on the day an adherent participant gets it')
+  assert.equal(result.withdrawal, null, 'not withdrawn before the midpoint')
+  assert.equal(result.stoppedAt, 'rnd_mid')
+}
+
+// 17. Midpoint completed: withdrawn at the fork, never drawn, nothing
+//     materialized, and the withdrawal says the assessment was sat.
+{
+  const t0 = addDays(labToday(), -14)
+  const schedule = [...throughPhase1(t0, 7),
+    row('s_mid', addDays(t0, 13), 'completed', completedAt(addDays(t0, 13)))]
+  const { db, result } = await run(t0, schedule, {
+    graph: ASSESS_GRAPH, phaseDays: { phase1: 7, phase2: 0 },
+  })
+  assert.equal(db.inserted.length, 0, 'no Phase 2 arm')
+  assert.deepEqual(result.withdrawal, {
+    kind: 'adherence', nodeId: 'ac_p1', phase: 'phase1',
+    completed: 7, minRequired: 10, ofTotal: 12,
+    afterAssessment: true, gateLabel: 'Midpoint assessment', assessmentCompleted: true,
+  })
+  assert.equal(result.completedStudy, false)
+}
+
+// 18. Midpoint missed: withdrawn the same way, flagged as not sat, so the
+//     ordinary termination email goes out rather than the thank-you.
+{
+  const t0 = addDays(labToday(), -17)
+  const schedule = [...throughPhase1(t0, 7), row('s_mid', addDays(t0, 13), 'missed')]
+  const { db, result } = await run(t0, schedule, {
+    graph: ASSESS_GRAPH, phaseDays: { phase1: 7, phase2: 0 },
+  })
+  assert.equal(db.inserted.length, 0)
+  assert.equal(result.withdrawal?.afterAssessment, true)
+  assert.equal(result.withdrawal?.assessmentCompleted, false)
+}
+
+// 19. An adherent participant is untouched by the setting: midpoint done,
+//     Phase 2 materializes exactly as test 1.
+{
+  const t0 = addDays(labToday(), -13)
+  const { db, result } = await run(t0, throughMidpoint(t0, addDays(t0, 13)), { graph: ASSESS_GRAPH })
+  assert.equal(result.withdrawal, null)
+  assert.equal(plan(db).length, 12, 'the whole Phase 2 arm')
+}
+
+console.log('materializeSchedule: 22/22 calendar + adherence + concurrency + hold checks passed')

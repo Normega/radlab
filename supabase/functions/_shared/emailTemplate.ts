@@ -28,7 +28,13 @@ export function renderEmail(vars: {
   // (see phaseReach.ts). Replaces both the warm ack and the lapsed copy, whose
   // "nothing to make up" / "get back on track" would then be false, and drops
   // the response-rate line (a different count, which would contradict it).
-  phase_out_of_reach?: { min_required: number; of_total: number; ends: string } | null
+  phase_out_of_reach?: { min_required: number; of_total: number; ends: string; assess_first?: boolean } | null
+  // The assessment a participant below an 'assess_then_withdraw' check still
+  // sits (send_message). Replaces every other lead-in on that session's
+  // emails, final notice included -- its "miss this and you're withdrawn"
+  // would be false. told_out: the participant was sent a termination email
+  // before being reinstated for this assessment, so the copy acknowledges it.
+  assess_only_checkin?: { min_required: number; of_total: number; told_out: boolean } | null
   // Self-serve withdrawal link (/withdraw/{token}); only provided on lapsed
   // sends. The page it opens requires an explicit confirmation click, so this
   // link itself is safe against inbox link-scanner prefetch.
@@ -111,7 +117,10 @@ export function renderEmail(vars: {
   const missedIntro = vars.progress && vars.progress.pct < LOW_RATE_PCT
     ? MISSED_INTRO_LOW_RATE
     : MISSED_INTRO
-  const intro = vars.final_notice
+  const intro = vars.assess_only_checkin
+    ? assessOnlyIntro(vars.assess_only_checkin, vars.compensation ?? 'credit',
+        vars.final_notice ? vars.expires_hours : null, !!vars.is_reminder)
+    : vars.final_notice
     ? finalNoticeIntro(vars.final_notice, vars.session_label, vars.expires_hours, vars.compensation ?? 'credit')
     : vars.baseline_hold === 'catchup' ? BASELINE_CATCHUP_INTRO
     : vars.baseline_hold === 'repeat' ? (vars.hold_calendar ? holdCalendarIntro(vars.hold_calendar) : BASELINE_REPEAT_INTRO)
@@ -130,7 +139,7 @@ export function renderEmail(vars: {
   // Suppressed on the final notice: that email is about one deadline and one
   // action, and a completion percentage beside a "this is your last chance"
   // paragraph reads as a verdict on the participant rather than context.
-  const progressLine = !vars.final_notice && !vars.baseline_hold && !vars.phase_out_of_reach && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
+  const progressLine = !vars.final_notice && !vars.baseline_hold && !vars.phase_out_of_reach && !vars.assess_only_checkin && (vars.is_reminder || vars.after_missed || vars.lapsed) && vars.progress
     ? progressSentence(vars.progress)
     : null
 
@@ -191,8 +200,12 @@ export function renderTerminationEmail(vars: {
   first_name: string
   study_name: string
   is_test?: boolean
-  variant?: 'adherence' | 'missed_assessment'
-  gate_label?: string // missed_assessment: the assessment's label, e.g. "Midpoint Assessment"
+  // 'adherence_assessed': below an 'assess_then_withdraw' check, and the
+  // assessment after it was completed. The participant was told why on the
+  // screen that ended that session (MidpointStep), so this confirms it and
+  // thanks them rather than breaking the news.
+  variant?: 'adherence' | 'missed_assessment' | 'adherence_assessed'
+  gate_label?: string // missed_assessment / adherence_assessed: the assessment's label, e.g. "Midpoint Assessment"
   // adherence: the threshold that was actually enforced, from the study's
   // adherence_check graph node. These were hardcoded as "at least 10 of 12"
   // until 2026-07-27 — the Liliana studies happen to use 10/12, so the prose
@@ -216,8 +229,16 @@ export function renderTerminationEmail(vars: {
       ? ` (we noted that at least ${vars.min_required} sessions are needed)`
       : ` (we noted that at least ${vars.min_required} of ${vars.of_total} sessions are needed)`
 
+  const rule = vars.min_required == null
+    ? 'a minimum number of the daily sessions'
+    : vars.of_total == null
+      ? `at least ${vars.min_required} of the daily sessions`
+      : `at least ${vars.min_required} of the ${vars.of_total} daily sessions`
+
   const middle = vars.variant === 'missed_assessment'
     ? `Unfortunately, you didn't complete the ${vars.gate_label ?? 'scheduled assessment'} within its scheduled window, ${award}, but your participation in the study is now complete.`
+    : vars.variant === 'adherence_assessed'
+    ? `Thank you for completing the ${vars.gate_label ?? 'check-in'}. As we explained at the end of it, continuing to the next part of the study needed ${rule} in the first part, so your participation in the study is now complete. Your answers are still an important part of the research, and ${award}, including this check-in.`
     : `Unfortunately, you didn't complete the minimum required sessions for this phase of the study${threshold}, ${award}, but your participation in the study is now complete.`
 
   const bodyText = `Hi ${vars.first_name},
@@ -415,11 +436,35 @@ const LAPSED_INTRO = `We noticed you've missed a few check-ins in a row — that
 // session, credited or paid on withdrawal -- get_liliana_credit_report and
 // LilianaPaymentTable), so the copy encourages the rest of the block. It never
 // says "catch up", which would imply the threshold can still be met.
+function assessOnlyIntro(
+  r: { min_required: number; of_total: number; told_out: boolean },
+  compensation: 'credit' | 'pay',
+  finalNoticeHours: number | null,
+  isReminder: boolean,
+): string {
+  const earn = compensation === 'pay' ? 'payment' : 'participation credit'
+  const why = `fewer than ${r.min_required} of the ${r.of_total} daily sessions in the first part were completed`
+  const lead = r.told_out
+    ? `Recently we wrote to let you know that your participation in the study had ended, because ${why}. You won't be continuing to the next part of the study, but we would still love it if you could complete this check-in.`
+    : `Because ${why}, you won't be continuing to the next part of the study, but we would still love it if you could complete this check-in.`
+  const ask = `It's a short set of questionnaires, your answers are an important part of the research, and it counts toward your ${earn}. It's the last thing we will ask of you.`
+  const when = finalNoticeHours != null
+    ? ` This link closes in about ${finalNoticeHours} hour${finalNoticeHours === 1 ? '' : 's'}.`
+    : ''
+  return `${isReminder || finalNoticeHours != null ? 'A quick reminder: ' : ''}${lead} ${ask}${when}`
+}
+
 function outOfReachIntro(
-  r: { min_required: number; of_total: number; ends: string },
+  r: { min_required: number; of_total: number; ends: string; assess_first?: boolean },
   compensation: 'credit' | 'pay',
 ): string {
   const earn = compensation === 'pay' ? 'payment' : 'participation credit'
+  // assess_then_withdraw: the next part is still out of reach, but the
+  // check-in after the block is not -- it is the point of the setting, so the
+  // email asks for it rather than reading as a goodbye.
+  if (r.assess_first) {
+    return `We noticed you've missed several check-ins. You can still earn ${earn} for every session you complete between now and ${r.ends}, when this block of daily sessions ends — today's is below. To continue to the next part of the study, the block needs at least ${r.min_required} of its ${r.of_total} completed, and there are no longer enough sessions left to reach that. When the block ends we will still send you one more check-in, a short set of questionnaires, and we would be grateful if you complete it: your answers are an important part of the study, and it earns ${earn} too. Your participation ends after that check-in. If you'd rather stop now, you can withdraw using the link at the bottom of this email.`
+  }
   return `We noticed you've missed several check-ins. You can still earn ${earn} for every session you complete between now and ${r.ends}, when this block of daily sessions ends — today's is below. To continue to the next part of the study, the block needs at least ${r.min_required} of its ${r.of_total} completed, and there are no longer enough sessions left to reach that, so your participation will end with the block. If you'd rather stop now, you can withdraw using the link at the bottom of this email.`
 }
 

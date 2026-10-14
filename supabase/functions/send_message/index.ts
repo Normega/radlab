@@ -27,6 +27,7 @@
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { Resend } from 'npm:resend'
 import { renderEmail } from '../_shared/emailTemplate.ts'
+import { gatesFork } from '../_shared/criticalSession.ts'
 import { getOrCreateUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 import { issueLink } from '../_shared/issueLink.ts'
 import { resolveParticipantEmail } from '../_shared/participantEmail.ts'
@@ -118,15 +119,17 @@ Deno.serve(async (req) => {
     let expiresHours = 48
     let sessionLabel: string | null = null
     let sessionDayNumber: number | null = null
+    let sessionNodeKey: string | null = null
     if (row.study_session_id) {
       const { data: session } = await db
         .from('study_sessions')
-        .select('link_expires_hours, label, day_number')
+        .select('link_expires_hours, label, day_number, node_key')
         .eq('id', row.study_session_id)
         .single()
       if (session?.link_expires_hours) expiresHours = session.link_expires_hours
       sessionLabel     = session?.label ?? null
       sessionDayNumber = session?.day_number ?? null
+      sessionNodeKey   = session?.node_key ?? null
     }
 
     // ── The participant's own position, NOT the protocol's ───────────────────
@@ -324,6 +327,22 @@ Deno.serve(async (req) => {
       ? await loadPhaseOutOfReach(db, row, study?.design_graph)
       : null
 
+    // The assessment a participant below an 'assess_then_withdraw' check still
+    // sits (Liliana's midpoint, 2026-10-14). Its ordinary copy -- "you're
+    // halfway", and the final notice's "miss this and you're withdrawn" --
+    // would be false for them: they stop after it either way. They are told
+    // that, and asked to complete it anyway; it counts toward compensation.
+    // The same SQL rule the materializer and MidpointStep read. Copy only: a
+    // failed lookup falls back to the ordinary copy and never blocks the send.
+    let assessOnly: { min_required: number; of_total: number } | null = null
+    if (sessionNodeKey && study?.design_graph && gatesFork(study.design_graph, sessionNodeKey)) {
+      const { data: ao, error: aoErr } = await db.rpc('adherence_assess_only', {
+        p_participant: row.participant_id, p_study: row.study_id,
+      })
+      if (aoErr) console.warn('assess-only lookup failed (ordinary copy used):', aoErr.message)
+      else if (ao) assessOnly = { min_required: ao.min_required, of_total: ao.of_total }
+    }
+
     // The withdrawal offer that rides the lapsed (and out-of-reach) email.
     // Reuses the permanent per-participant/study token the unsubscribe link is
     // built from — the route decides the action, and /withdraw requires an
@@ -364,10 +383,16 @@ Deno.serve(async (req) => {
       after_missed:    afterMissed,
       lapsed,
       phase_out_of_reach: outOfReach
-        ? { min_required: outOfReach.minRequired, of_total: outOfReach.ofTotal, ends: formatPhaseEnd(outOfReach.endDate) }
+        ? { min_required: outOfReach.minRequired, of_total: outOfReach.ofTotal, ends: formatPhaseEnd(outOfReach.endDate), assess_first: outOfReach.assessFirst }
         : null,
       withdraw_url:    withdrawUrl,
       final_notice:    final_notice ?? null,
+      // told_out: their row records that they were reinstated after a
+      // termination email (20261014_liliana3_reinstate_for_midpoint), so the
+      // copy may say we told them. Without that fact it never claims we did.
+      assess_only_checkin: assessOnly
+        ? { ...assessOnly, told_out: row.resend_note === 'reinstated_after_termination' }
+        : null,
       compensation:    study?.compensation_kind === 'pay' ? 'pay' : 'credit',
       session_label:   sessionLabel,
       progress,
