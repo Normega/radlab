@@ -1037,6 +1037,7 @@ export default function ExperimentBuilder() {
             label={demoSession.label}
             studyDay={demoSession.studyDay}
             sendTime={demoSession.sendTime}
+            studyId={id}
             onClose={() => setDemoSession(null)}
           />
         )}

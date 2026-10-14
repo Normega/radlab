@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { useSubmitLock } from '../../lib/useSubmitLock'
+import PreferNotToAnswer, { PNA } from '../questionnaire/composable/PreferNotToAnswer'
+import '../questionnaire/composable/composableSurvey.css'
 
 /**
  * Participant-facing VAS scale renderer.
@@ -20,6 +22,11 @@ import { useSubmitLock } from '../../lib/useSubmitLock'
  *   partNumber     — int | null — for "Scale N of M" eyebrow
  *   totalParts     — int | null
  *   supabaseClient — optional; falls back to global client
+ *   allowPna       — bool — offer "Prefer not to answer" under the faces. Set by
+ *                    the study (studies.ratings_allow_pna), never by the scale:
+ *                    the scales are shared across studies. A decline is saved as
+ *                    its own row, declined = true with no value, and reported to
+ *                    onComplete as 'pna', as on questionnaire items.
  */
 export default function VasRenderer({
   scale,
@@ -33,7 +40,9 @@ export default function VasRenderer({
   partNumber = null,
   totalParts = null,
   supabaseClient,
+  allowPna = false,
 }) {
+  // A face's value, PNA, or null (nothing chosen yet).
   const [selected, setSelected] = useState(null)
   const [hovered,  setHovered]  = useState(null)
   const [saveError, setSaveError] = useState(null)
@@ -62,7 +71,9 @@ export default function VasRenderer({
         schedule_id:  scheduleId ?? null,
         step_index:   stepIndex ?? null,
         package_slug: packageSlug ?? null,
-        value:        selected,
+        // Only a decline names `declined`, so every other rating is written
+        // exactly as before 20261013_rating_prefer_not_to_answer.
+        ...(selected === PNA ? { value: null, declined: true } : { value: selected }),
       })
       // Thrown so the lock releases and the participant can retry. This used
       // to log and advance anyway, so a failed insert lost the rating silently.
@@ -84,7 +95,7 @@ export default function VasRenderer({
         <p style={S.eyebrow}>{eyebrow}</p>
         <h2 style={S.question}>{scale.question}</h2>
 
-        <div style={S.grid}>
+        <div style={allowPna ? { ...S.grid, marginBottom: 0 } : S.grid}>
           {anchors.map(anchor => {
             const isSel = selected === anchor.value
             const isHov = hovered  === anchor.value
@@ -115,6 +126,12 @@ export default function VasRenderer({
           })}
         </div>
 
+        {allowPna && (
+          <div style={S.pnaRow}>
+            <PreferNotToAnswer selected={selected === PNA} onChange={setSelected} />
+          </div>
+        )}
+
         {saveError && (
           <p role="alert" style={S.errMsg}>
             Your rating could not be saved ({saveError}). Please check your connection and try again.
@@ -139,6 +156,7 @@ export default function VasRenderer({
 }
 
 const S = {
+  pnaRow: { marginBottom: 24 },
   errMsg: { fontSize: 14, color: 'var(--err-tx)', background: 'var(--err-bg)', border: '1px solid var(--err-bd)', borderRadius: 8, padding: '8px 14px', margin: '0 0 16px' },
   wrap: {
     display: 'flex', justifyContent: 'center',

@@ -62,6 +62,14 @@ export function administrationSuffix({ repeats, stepIndex, ordinal }) {
   return `_xstep${ordinal ?? 1}`
 }
 
+// The export cell for one vas_responses row: its value, or 'pna' for a declined
+// rating (20261013_rating_prefer_not_to_answer), the code every questionnaire
+// item uses. A declined row has no value, so writing r.value would leave a blank
+// that reads as missing: the participant answered, by declining.
+export function vasCellValue(r) {
+  return r?.declined === true ? 'pna' : r?.value
+}
+
 // Does this study repeat the scale behind a vas_responses row within a session?
 // A scale reaches a participant either on its own step (`vas_<slug>`) or inside
 // a package step (`vas_pkg_<slug>`), and either can be the repeated one.
