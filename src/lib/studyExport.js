@@ -24,7 +24,7 @@
 //    by-participant view refuses them (creditOnlyExport.js).
 
 import { supabase } from './supabase'
-import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats } from './responseColumns.js'
+import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats, vasCellValue } from './responseColumns.js'
 import { splitResubmissions, createRepeatNamer, putCell } from './exportIntegrity.js'
 import { instrumentColumns } from './instrumentColumns'
 import { CREDIT_ONLY, partitionCreditOnly, scheduleIdsForEnrollments, dropExcludedRows } from './creditOnlyExport.js'
@@ -839,7 +839,7 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx, tools) {
   const { kept: scheduledRows, omitted } = splitResubmissions(vasRows, {
     subjectOf: r => r.user_id,
     keyOf:     r => `${r.scale_id}|${r.schedule_id ?? ''}|${r.step_index ?? ''}|${r.package_slug ?? ''}`,
-    payloadOf: r => String(r.value),
+    payloadOf: r => String(vasCellValue(r)),
     timeOf:    r => new Date(r.received_at ?? r.responded_at ?? 0).getTime(),
   })
   noteOmitted(tools, 'vas_responses', omitted, r => r.user_id)
@@ -878,7 +878,7 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx, tools) {
     if (!byProfile[pid]) byProfile[pid] = {}
     const base = `vas_${slug}${phase}_d${sched.study_day}${stepSuffix}`
     const col  = tools ? tools.namer.name(pid, base, { table: 'vas_responses', row_id: r.id }) : base
-    cellWriter(tools, 'vas_responses', pid)(byProfile[pid], col, r.value)
+    cellWriter(tools, 'vas_responses', pid)(byProfile[pid], col, vasCellValue(r))
   }
 
   // Legacy rows with no schedule link cannot be placed on a day. They keep
@@ -892,7 +892,7 @@ function vasWideByProfile(vasRows, scaleSlugById, ctx, tools) {
     const key  = `${pid}::${slug}`
     const n    = (occ[key] = (occ[key] ?? 0) + 1)
     if (!byProfile[pid]) byProfile[pid] = {}
-    cellWriter(tools, 'vas_responses', pid)(byProfile[pid], `vas_${slug}_unscheduled_${n}`, r.value)
+    cellWriter(tools, 'vas_responses', pid)(byProfile[pid], `vas_${slug}_unscheduled_${n}`, vasCellValue(r))
   }
   return byProfile
 }

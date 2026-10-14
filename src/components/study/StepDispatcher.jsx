@@ -37,8 +37,10 @@ import DailyFarewellStep       from './DailyFarewellStep'
  *   assignments — { [slotKey]: arm } from draw_assignment, or null
  *   stepOutputs — { slider: {...}, vas: {...}, game: {...} } accumulated from
  *                 earlier steps this session; consumed by display steps
+ *   studyId     — the study a demo runs as (the study builder's), for settings
+ *                 a step reads from its study; real sessions use the enrollment's
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null, studyId = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -195,6 +197,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}
         demoMode={demoMode}
+        studyId={studyId}
       />
     )
   }

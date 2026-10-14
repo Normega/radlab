@@ -30,6 +30,7 @@ export default function VasStepWrapper({
   supabaseClient,
   isSimMode = false,
   demoMode = false,
+  studyId: demoStudyId = null,
 }) {
   const db     = supabaseClient ?? globalSupabase
   const userId = enrollment?.profile_id ?? enrollment?.user_id
@@ -77,6 +78,29 @@ export default function VasStepWrapper({
       return data
     },
   })
+
+  // "Prefer not to answer" under every face and slider rating is a STUDY setting
+  // (studies.ratings_allow_pna, 20261013), not a scale one: the stress and
+  // life-satisfaction faces are shared with studies that never offered it. Read
+  // under the participant's own session, like questionnaire_layout; the study
+  // builder's demo passes its study instead. Unreadable means not offered, which
+  // is what every study had before. Waited for, so the option never appears
+  // after someone has started choosing.
+  const studyId = enrollment?.study_id ?? demoStudyId ?? null
+  const { data: allowPna = false, isLoading: pnaLoading } = useQuery({
+    queryKey: ['study-ratings-allow-pna', studyId],
+    enabled:  !!studyId && !isSimMode,
+    staleTime: Infinity,
+    queryFn:  async () => {
+      const { data, error } = await db.from('studies').select('ratings_allow_pna').eq('id', studyId).maybeSingle()
+      if (error) {
+        console.warn('ratings_allow_pna unreadable, not offering "Prefer not to answer":', error.message)
+        return false
+      }
+      return data?.ratings_allow_pna === true
+    },
+  })
+  const pnaPending = !!studyId && pnaLoading
 
   // Resolve item list — use pkg.items (mixed) or fall back to scale_ids (VAS-only)
   const itemList = pkg?.items ?? (pkg?.scale_ids ?? []).map(id => ({ type: 'vas', id }))
@@ -132,7 +156,7 @@ export default function VasStepWrapper({
   // ── Slider flow ──────────────────────────────────────────────────────────
 
   if (isSlider) {
-    if (loadingSlider) return <div style={S.loading}>Loading slider…</div>
+    if (loadingSlider || pnaPending) return <div style={S.loading}>Loading slider…</div>
     if (errSlider)     return <div style={S.err}>Could not load slider "{slug}": {errSlider.message}</div>
     if (!sliderScale)  return <div style={S.err}>Slider "{slug}" not found.</div>
 
@@ -143,6 +167,7 @@ export default function VasStepWrapper({
         scheduleId={scheduleId}
         stepIndex={stepIndex}
         db={db}
+        allowPna={allowPna}
         onComplete={value => onComplete?.({ slider_slug: slug, value })}
       />
     )
@@ -151,7 +176,7 @@ export default function VasStepWrapper({
   // ── Single VAS scale flow ────────────────────────────────────────────────
 
   if (!isPkg) {
-    if (loadingSingle) return <div style={S.loading}>Loading scale…</div>
+    if (loadingSingle || pnaPending) return <div style={S.loading}>Loading scale…</div>
     if (errSingle)     return <div style={S.err}>Could not load scale "{slug}": {errSingle.message}</div>
     if (!singleScale)  return <div style={S.err}>Scale "{slug}" not found.</div>
 
@@ -167,13 +192,14 @@ export default function VasStepWrapper({
         partNumber={stepIndex != null ? stepIndex + 1 : null}
         totalParts={totalSteps ?? null}
         supabaseClient={db}
+        allowPna={allowPna}
       />
     )
   }
 
   // ── Package flow ─────────────────────────────────────────────────────────
 
-  const loadingPkgItems = loadingPkg
+  const loadingPkgItems = loadingPkg || pnaPending
     || (vasIds.length    > 0 && loadingPkgVas)
     || (sliderIds.length > 0 && loadingPkgSliders)
 
@@ -211,6 +237,7 @@ export default function VasStepWrapper({
         db={db}
         partNumber={pkgIndex + 1}
         totalParts={pkgItems.length}
+        allowPna={allowPna}
         onComplete={handlePkgItemComplete}
       />
     )
@@ -230,6 +257,7 @@ export default function VasStepWrapper({
       partNumber={pkgIndex + 1}
       totalParts={pkgItems.length}
       supabaseClient={db}
+      allowPna={allowPna}
     />
   )
 }
@@ -248,7 +276,7 @@ export default function VasStepWrapper({
 // also checked now: it used to be discarded, advancing the participant past a
 // silently lost response.
 
-function StudySliderBlock({ scale, userId, scheduleId = null, stepIndex = null, db, onComplete, partNumber, totalParts }) {
+function StudySliderBlock({ scale, userId, scheduleId = null, stepIndex = null, db, onComplete, partNumber, totalParts, allowPna = false }) {
   const [value, setValue]         = useState(null)
   const [saveError, setSaveError] = useState(null)
   const { submit, busy } = useSubmitLock(scale.slug)
@@ -301,6 +329,8 @@ function StudySliderBlock({ scale, userId, scheduleId = null, stepIndex = null, 
               { value: min, label: scale.min_label ?? '' },
               { value: max, label: scale.max_label ?? '' },
             ],
+            // A decline is stored as 'pna' in responses.value, as on any item.
+            allow_pna: allowPna,
           }}
           value={value}
           onChange={setValue}

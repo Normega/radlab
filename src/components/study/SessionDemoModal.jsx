@@ -21,7 +21,9 @@ import { useScrollToTopOn } from '../../lib/scrollToTop'
 // (the demoed node's nominal day + send time), letting day-keyed steps (Zerin
 // daily check-ins / wellness tips) render that day's real content. Absent when
 // demoing from the Session Library, where a template has no day context.
-export default function SessionDemoModal({ templateId, label, studyDay = null, sendTime = null, onClose }) {
+// studyId: the builder's study, for steps that follow a study setting (rating
+// steps' "Prefer not to answer"); the Session Library demo shows the default.
+export default function SessionDemoModal({ templateId, label, studyDay = null, sendTime = null, studyId = null, onClose }) {
   const [index, setIndex] = useState(0)
   // Each demoed step starts at the top of the modal (see scrollToTop.js).
   useScrollToTopOn(index)
@@ -101,6 +103,7 @@ export default function SessionDemoModal({ templateId, label, studyDay = null, s
             debriefHtml={null}
             supabaseClient={null}
             demoMode
+            studyId={studyId}
           />
         )}
       </div>
