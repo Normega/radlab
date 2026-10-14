@@ -7,9 +7,74 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="./slides.css">
+<style>
+  /* Midterm arrival + access-code slides (this deck only). */
+  .mt-facts { margin-top:1.6vmin; }
+  .mt-facts p { max-width:none; }
+  .mt-code { margin:0 0 2.4vmin; padding:1.8vmin 3vmin; background:var(--accent); color:#fff; border-radius:10px;
+             display:flex; align-items:baseline; gap:3vmin; flex-wrap:wrap; }
+  .mt-code .lbl { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:2.2vmin; letter-spacing:.18em; text-transform:uppercase; font-weight:600; opacity:.85; }
+  .mt-code .val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:7.5vmin; font-weight:600; letter-spacing:.06em; line-height:1; }
+  .mt-code .val.unset { font-size:3vmin; letter-spacing:0; opacity:.85; }
+  .mt-code .hint { font-size:2.1vmin; opacity:.85; max-width:none; margin:0; }
+  section.mt .cols { grid-template-columns:1.25fr .75fr; }
+</style>
 </head>
 <body>
 <div id="deck">
+
+<section class="mt tight">
+  <p class="kicker">PSY240 · Midterm · Wed 14 Oct</p>
+  <h1>Midterm: sign in now</h1>
+  <div class="cols">
+    <div>
+      <ol>
+        <li><strong>Scan the code</strong>, or go to <strong>radlab.zone/class/psy240</strong>.</li>
+        <li><strong>Sign in</strong> with your radlab account, the one you use for check-ins and quizzes. Forgotten password? Reset it now, not at 9:10.</li>
+        <li><strong>Tap the blue card</strong> at the top of the class page: <em>PSY240 Midterm · Test open now</em>. It appears on its own; no need to refresh.</li>
+        <li><strong>Tick the integrity box, then wait.</strong> The access code goes up at 9:10.</li>
+      </ol>
+      <div class="box mt-facts">
+        <p><strong>90 minutes</strong> from when you press Start. <strong>50 questions.</strong> Answers save as you go, and the test submits itself when time is up. Extra time from Accessibility Services is already added.</p>
+        <p style="margin-bottom:0">Closed book. Plug in or charge your laptop now.</p>
+      </div>
+    </div>
+    <div class="center">
+      <div class="break-qr" style="display:inline-block"><img src="./assets/psy240-qr.png" alt="QR code linking to radlab.zone/class/psy240" style="width:30vmin;height:30vmin"></div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:2.8vmin;color:var(--accent);font-weight:600;margin-top:2vmin">radlab.zone/class/psy240</p>
+      <p class="small">Stuck? Put your hand up.</p>
+    </div>
+  </div>
+  <aside class="notes"><p><strong>Up as people arrive.</strong> The test opens by itself at 8:50 (the card appears within 20 seconds on any open class page), but nobody can start without the access code, which is on the next slide. Go to it at 9:10.</p><p><strong>Common snags.</strong> Can't sign in: password reset from the sign-in page, or put the hand up. "Not a member of this class": they have never joined the PSY240 lounge on that account; note their email. Extra time shows on the start screen ("including your N extra minutes") for anyone with an accommodation on file.</p></aside>
+</section>
+
+<section class="mt tight">
+  <p class="kicker">PSY240 · Midterm · Wed 14 Oct</p>
+  <div class="mt-code">
+    <span class="lbl">Access code</span>
+    <span class="val unset" data-midterm-code>not set: press A to enter it</span>
+    <p class="hint">Capitals don't matter.</p>
+  </div>
+  <div class="cols">
+    <div>
+      <ol>
+        <li><strong>Scan the code</strong>, or go to <strong>radlab.zone/class/psy240</strong>, and sign in.</li>
+        <li><strong>Tap the blue card</strong> at the top of the class page: <em>PSY240 Midterm · Test open now</em>.</li>
+        <li><strong>Tick the integrity box, type the access code, and press Start the test.</strong> Your 90 minutes begin then.</li>
+      </ol>
+      <div class="box mt-facts">
+        <p><strong>50 questions.</strong> Answers save as you go, and the test submits itself when time is up. Extra time from Accessibility Services is already added.</p>
+        <p style="margin-bottom:0">Closed book. One attempt. If your page drops, reopen it: the timer keeps running and your answers are kept.</p>
+      </div>
+    </div>
+    <div class="center">
+      <div class="break-qr" style="display:inline-block"><img src="./assets/psy240-qr.png" alt="QR code linking to radlab.zone/class/psy240" style="width:24vmin;height:24vmin"></div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:2.6vmin;color:var(--accent);font-weight:600;margin-top:2vmin">radlab.zone/class/psy240</p>
+      <p class="small">Stuck? Put your hand up.</p>
+    </div>
+  </div>
+  <aside class="notes"><p><strong>The code is not in this file.</strong> The deck is public, so it is supplied on the presenting laptop: open the deck as <code>L6.html#code=YOURCODE</code>, or press A on this slide and type it. It is remembered on this browser only.</p><p>The start screen accepts the code in any capitals. "That access code is not right" means a typo; "This test is not open" means it was not opened (Test tab in the console).</p></aside>
+</section>
 
 <section data-kind="title">
   <p class="kicker">PSY240H5 F · Lecture 6 · 14 October 2026 · after the midterm</p>
@@ -74,6 +139,38 @@
   <kbd>o</kbd> overview &middot; <kbd>t</kbd> timer &middot; <kbd>?</kbd> this help<br>
   <kbd>ctrl/&#8984; P</kbd> print &mdash; notes print only while they are showing
 </div>
+<script>
+/* The midterm access code is never written into this public file: the
+   presenter supplies it on their own browser, via L6.html#code=XXXX (read
+   here, before slides.js claims the hash for the slide number) or by pressing
+   A on the code slide. Stored in this browser's localStorage only. */
+(function () {
+  const KEY = 'psy240-midterm-code'
+  const m = location.hash.match(/^#code=(.+)$/)
+  if (m) {
+    try { localStorage.setItem(KEY, decodeURIComponent(m[1]).trim()) } catch (e) {}
+    history.replaceState(null, '', '#1')
+  }
+  function paint() {
+    let code = ''
+    try { code = localStorage.getItem(KEY) || '' } catch (e) {}
+    document.querySelectorAll('[data-midterm-code]').forEach((el) => {
+      el.textContent = code || 'not set: press A to enter it'
+      el.classList.toggle('unset', !code)
+    })
+  }
+  paint()
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || (e.key !== 'a' && e.key !== 'A')) return
+    const cur = document.querySelector('section.current [data-midterm-code]')
+    if (!cur) return
+    const v = window.prompt('Midterm access code (blank clears it)')
+    if (v === null) return
+    try { v.trim() ? localStorage.setItem(KEY, v.trim()) : localStorage.removeItem(KEY) } catch (e) {}
+    paint()
+  })
+})()
+</script>
 <script src="./slides.js"></script>
 </body>
 </html>
