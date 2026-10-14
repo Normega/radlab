@@ -102,6 +102,7 @@ export const DEFAULTS = {
   mixedRampShare:   0.5,   // share of changes delivered as ramps
   mixedRampBreaths: 6,     // breaths a ramp takes to reach the new rate
   mixedHoldBreaths: 3,     // window continues this many breaths after a ramp completes
+  mixedRampMagBoost: 1,    // × the step-size distribution for ramps (round 5 tests 2)
 
   // double_blip
   blipSizes:         [1.2, 2.0],         // × m50Hat; one breath carries less evidence than a step
@@ -343,8 +344,19 @@ function runRovingMixed(s, o, rng, endMs) {
   for (;;) {
     const nGap = o.minGapBreaths + rng.geometric(o.extraGapMean)
     const rel = rng.logUniform(o.relMagMin, o.relMagMax)
-    const { dir, mag, newPeriod } = chooseStep(s, o, rng, P, rel * o.m50Hat, true)
+    const step = chooseStep(s, o, rng, P, rel * o.m50Hat, true)
     const isRamp = rng.u() < o.mixedRampShare
+    // Larger ramps (mixedRampMagBoost > 1): a ramp spreads its change over several breaths, so at
+    // the steps' size it is mostly missed. Same direction, bigger change, kept inside the bounds.
+    // Applied after the draws above so boost = 1 reproduces earlier schedules exactly.
+    let { dir, mag, newPeriod } = step
+    if (isRamp && o.mixedRampMagBoost !== 1) {
+      const lo = o.basePeriodMs * o.minRatio, hi = o.basePeriodMs * o.maxRatio
+      mag = step.mag * o.mixedRampMagBoost
+      while (mag > step.mag && (changed(P, dir, mag) < lo || changed(P, dir, mag) > hi)) mag *= 0.95
+      mag = Math.max(mag, step.mag)
+      newPeriod = changed(P, dir, mag)
+    }
     const nWin = isRamp ? o.mixedRampBreaths + o.mixedHoldBreaths : o.rovingWindowBreaths
     const worst = nGap * P + nWin * Math.max(P, newPeriod) + o.probeMs + 3 * newPeriod
     if (s.t + worst > endMs) break

@@ -50,13 +50,18 @@ Guide freezes before the final Dec 8.
   (`page_version` in each item).
 - [ ] Delivery: on students' own devices, 9:00–10:30. Confirm the platform path, accommodations
   (extra time) and a paper fallback.
-- [ ] RCT onboarding 10:30–11:45: randomisation and baseline happen here, and it can't easily be
+- [ ] RCT onboarding 11:00–12:00 (as L5 told students; deck `L6.html`, 2026-10-13): randomisation and baseline happen here, and it can't easily be
   made up. Say "bring the device you'll use for daily practice" in L4 and L5.
 - [ ] A "how the midterm is built" slide in L5 (formats: MC, EMQ sets, stepped vignettes, VSA,
   spot-the-limitation). Use no real pool item as an example.
 - [ ] Late tier: all first-half quizzes hard-close Oct 14 13:00Z. Announce it in L4 and L5.
 
 ## Class RCT: traditional mindfulness vs Sense Foraging (onboarding Oct 14, practice Oct 21–Nov 17)
+
+> **Superseded (2026-10-13).** The trial's plan of record is `PLAN.md` in the private repo
+> Normega/psy240internal2026, mirrored on `/psy240trial`: three arms (Sense Foraging, Nonreactivity,
+> Stress mindset), day 1 Sat Oct 17 to day 28 Fri Nov 13, final survey Nov 14–16, results in class
+> Nov 18. Onboarding deck: `public/psy240/L6.html`. The items below are kept as history.
 
 Decided 2026-09-28: pedagogical, not research. Students experience an RCT and write the reflection;
 minimal data (stress and mood); Norm hears informally which course they preferred. Two arms: Liliana's

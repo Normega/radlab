@@ -493,21 +493,26 @@ export default function InterventionPage({
     <div style={S.bg}>
       <div style={S.page}>
 
-        {/* 5-step session progress bar */}
-        <div style={S.progressBar}>
-          <div style={{ display: 'flex' }}>
-            {SESSION_STEPS.map((step, i) => (
-              <div key={i} style={S.stepCol}>
-                <span style={{ ...S.stepLabel, color: step.state === 'done' ? 'var(--pkd)' : step.state === 'active' ? 'var(--tx)' : 'var(--gy)' }}>
-                  {step.label}
-                </span>
-                <div style={{ ...S.stepTrack, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }}>
-                  <div style={{ ...S.stepDot, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }} />
+        {/* 5-step session progress bar: the steps of Liliana's daily session.
+            A module that names its own day (the class trial's calendar) runs in a
+            session with no welcome or farewell, and its Sense Foraging arm shows
+            no strip, so it shows none. */}
+        {!module.day_label && (
+          <div style={S.progressBar}>
+            <div style={{ display: 'flex' }}>
+              {SESSION_STEPS.map((step, i) => (
+                <div key={i} style={S.stepCol}>
+                  <span style={{ ...S.stepLabel, color: step.state === 'done' ? 'var(--pkd)' : step.state === 'active' ? 'var(--tx)' : 'var(--gy)' }}>
+                    {step.label}
+                  </span>
+                  <div style={{ ...S.stepTrack, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }}>
+                    <div style={{ ...S.stepDot, background: step.state === 'done' ? 'var(--pk)' : step.state === 'active' ? 'var(--tx)' : '#ddd' }} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Header */}
         <div style={S.header}>
