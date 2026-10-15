@@ -55,7 +55,12 @@ function useFamilyData(id) {
           .select('id, participant_id, study_id, node_id, value')
           .in('study_id', ids).eq('node_id', 'midpoint_group')),
       ])
-      return { me, fam, enrollments, schedule, sessions, screens, draws }
+      // Re-screening flags (20261015_rescreen_flags.sql), one call per study in
+      // the family. A failed read fails the page rather than showing nobody flagged.
+      const flagLists = await Promise.all(ids.map((sid) => supabase.rpc('get_rescreen_flags', { p_study: sid })
+        .then(({ data, error: e }) => { if (e) throw e; return data ?? [] })))
+      const rescreen = new Map(flagLists.flat().map((r) => [r.enrollment_id, r]))
+      return { me, fam, enrollments, schedule, sessions, screens, draws, rescreen }
     },
   })
 }
@@ -70,18 +75,22 @@ function buildPeople(d) {
   const today = todayLab()
   return d.enrollments.map((e) => {
     const k = key(e.profile_id, e.study_id)
-    return participantProgress(e, rowsBy.get(k), sessionKey, screensBy.get(k), drawBy.get(k), today)
+    const p = participantProgress(e, rowsBy.get(k), sessionKey, screensBy.get(k), drawBy.get(k), today)
+    const f = d.rescreen.get(e.id)
+    p.rescreen = f ? { level: f.rescreen_flag, fails24: f.prior_fails_24h, fails3: f.prior_fails_3h } : null
+    return p
   })
 }
 
 function downloadCSV(people) {
   const cols = ['external_id', 'route', 'src', 'email', 'stage', 'status', 'screener', 'enrolled_at', 'consent_date',
     'p1_done', 'p1_missed', 'p1_open', 'p1_standing', 'mid_done', 'condition', 'p2_done', 'p2_missed', 'final_done',
-    'next_session', 'next_date', 'last_activity', 'withdrawal_reason']
+    'next_session', 'next_date', 'last_activity', 'withdrawal_reason', 'rescreen_flag', 'rescreen_prior_fails_24h']
   const lines = people.map((p) => [
     p.external_id, routeLabel(p.route), p.src ?? '', p.email ?? '', p.stage, p.status, p.screener, p.enrolled_at, p.consent_date ?? '',
     p.p1.done, p.p1.missed, p.p1.open, p.p1Standing ?? '', p.midDone ? 'yes' : 'no', p.condition ?? '', p.p2.done, p.p2.missed,
     p.finalDone ? 'yes' : 'no', p.next?.label ?? '', p.next?.date ?? '', p.lastActivity ?? '', p.withdrawal_reason ?? '',
+    p.rescreen?.level ?? '', p.rescreen?.fails24 ?? 0,
   ].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
   const blob = new Blob([[cols.join(','), ...lines].join('\r\n')], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -164,6 +173,12 @@ export default function StudyReportsPage() {
           Eligibility rate: {pct(summary.funnel.all.eligible, summary.funnel.all.screened)} of those screened.
           {' '}Consent rate: {pct(summary.funnel.all.consented, summary.funnel.all.eligible)} of those eligible.
         </p>
+        <p style={S.note}>
+          Re-screened after a failed attempt from the same connection (paid route), among consented:{' '}
+          {people.filter((p) => p.consented && p.rescreen?.level === 'likely').length} likely,{' '}
+          {people.filter((p) => p.consented && p.rescreen?.level === 'possible').length} possible.
+          Flagged in the CSV and the data export (<code>rescreen_flag</code>) for analyses with and without them.
+        </p>
       </section>
 
       <div style={S.grid}>
@@ -238,6 +253,7 @@ function ParticipantCard({ p, studyName }) {
         <Fact k="Next" v={p.next ? `${p.next.label}, ${fmtD(p.next.date)}${p.nextOverdue ? ' (overdue)' : ''}` : '—'} />
         <Fact k="Last activity" v={fmtDT(p.lastActivity)} />
         {p.withdrawal_reason && <Fact k="Withdrawal" v={p.withdrawal_reason} />}
+        {p.rescreen && <Fact k="Re-screened" v={`${p.rescreen.level}: ${p.rescreen.fails24} failed attempt${p.rescreen.fails24 === 1 ? '' : 's'} from the same connection in the 24 h before`} />}
       </div>
       {p.timeline.length > 0 && (
         <details style={{ marginTop: 10 }}>

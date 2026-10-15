@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-04",
+  "date": "2026-10-15",
   "note": "Ratchet baseline for npm run audit:design:check — counts may go down, never up. Site scope only (src/ minus the sanctioned content dirs listed in scripts/design-audit.mjs).",
   "counts": {
     "font-size: off-scale 13px": 38,
@@ -7,7 +7,7 @@
     "font-size: other off-scale": 470,
     "radius: off-system": 681,
     "hex: token value hard-coded": 145,
-    "hex: off-palette": 645,
+    "hex: off-palette": 643,
     "spacing: off-scale px": 1719
   }
 }

@@ -112,6 +112,14 @@ export const OPEN_JOIN_CONTENT = {
     lead:        'We are running a study to learn whether brief, daily online exercises can help students manage stress and support well-being.',
     contactName: 'Liliana Wu',
     contact:     'liliana.wu@mail.utoronto.ca',
+    // Same list as the study's screener (studies.screener.resources), shown on
+    // the return-visit screen for anyone screened out.
+    supportResources: [
+      { name: 'UTM Health & Counselling Centre',     contact: 'utm.utoronto.ca/health-counselling' },
+      { name: 'Good2Talk Student Helpline',          contact: '1-866-925-5454 (24/7)' },
+      { name: 'Distress Centres of Greater Toronto', contact: '416-408-4357' },
+      { name: 'Crisis Services Canada',              contact: '1-833-456-4566' },
+    ],
     sections: [
       {
         heading: 'Who can take part',
