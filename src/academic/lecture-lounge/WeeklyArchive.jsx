@@ -14,7 +14,7 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 //
 // The lounge cards each surface ONE item, which is right for a lobby and
 // wrong for a term: the moment week 2 opens, week 1 vanishes from the
-// interface while staying answerable in the database until the midterm. The
+// interface while staying answerable in the database until the hard close. The
 // syllabus promises a grace week and a 75% late tier, and 131 of 212 students
 // had not finished Quiz 1 when this was written — so the policy was real and
 // the interface was about to start contradicting it. This page is where the
@@ -51,7 +51,7 @@ export default function WeeklyArchive({ session, mode }) {
   const blurb = isQuiz && !graded
     ? 'Every practice quiz that has opened. They are not graded — they are there to rehearse for the term test, and each stays open until the test.'
     : isQuiz
-    ? 'Every quiz that has opened. They stay answerable long after their due date — full credit for a further week, then 75% until the midterm — so a week you missed is still worth doing.'
+    ? 'Every quiz that has opened. They stay answerable long after their due date — full credit for a further week, then 75% until the end of term — so a week you missed is still worth doing.'
     : 'Every question the class has been asked. Answer one and you see the whole class’s wall; earlier weeks stay open to read even after they close.'
 
   return (
