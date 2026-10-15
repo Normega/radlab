@@ -24,6 +24,8 @@ import { takeScreenerDraft } from '../lib/screenerDraft'
 import { useScrollToTopOn } from '../lib/scrollToTop'
 import { useNoTranslate } from '../lib/noTranslate'
 import { shuffleStepGroups } from '../lib/stepShuffle'
+import SupportResources from '../components/study/SupportResources'
+import { supportResourcesFor } from '../lib/supportResources'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -37,6 +39,7 @@ function makeParticipantClient() {
 export default function SessionEntry() {
   const { token } = useParams()
   const [state,          setState]          = useState('loading')
+  const [screenoutResources, setScreenoutResources] = useState(null)
   const [sessionData,    setSessionData]    = useState(null)
   const [currentIndex,   setCurrentIndex]   = useState(0)
   // Each gate and each step starts at the top of the page (see scrollToTop.js).
@@ -246,7 +249,7 @@ export default function SessionEntry() {
     // cannot run, the session does not open.
     const { data: blockReason, error: gateErr } = await sb.rpc('session_entry_block', { p_token: token })
     if (gateErr) { setState('gate_error'); return }
-    if (blockReason === 'screened_out') { setState('screener_blocked'); return }
+    if (blockReason === 'screened_out') { setScreenoutResources(supportResourcesFor(study.screener)); setState('screener_blocked'); return }
     if (blockReason) { setGateReason(blockReason); setState('gate_closed'); return }
 
     // Screener gate — runs before consent
@@ -282,6 +285,7 @@ export default function SessionEntry() {
       }
 
       if (previouslyFailed && !retakeGranted) {
+        setScreenoutResources(supportResourcesFor(study.screener))
         setState('screener_blocked')
         return
       }
@@ -676,9 +680,12 @@ export default function SessionEntry() {
   if (state === 'screener_blocked') {
     return (
       <FullScreen>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px' }}>
         <StatusCard>
-          Thank you for your interest. Based on your answers to the eligibility questions, you won’t be able to take part in this study. Please reach out to the research team if you have any questions.
+          Thank you for your interest. This study has a specific set of eligibility criteria, and based on your answers to the eligibility questions, you won’t be able to take part in it. Please reach out to the research team if you have any questions.
         </StatusCard>
+        <SupportResources resources={screenoutResources} />
+        </div>
       </FullScreen>
     )
   }

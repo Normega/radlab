@@ -226,7 +226,7 @@ function required(what, promise) {
 }
 
 export async function resolveStudyContext(studyId) {
-  const [allEnrollments, allGameSessions, allLilParts, vasScales, instrumentDefs, schedule, sessions, studyRow, allStepRows] = await Promise.all([
+  const [allEnrollments, allGameSessions, allLilParts, vasScales, instrumentDefs, schedule, sessions, studyRow, allStepRows, rescreenRows] = await Promise.all([
     // consent_scope and id feed the credit-only exclusion below; no .catch here,
     // deliberately — if consent cannot be read, the export must fail rather than
     // go out unfiltered.
@@ -274,6 +274,12 @@ export async function resolveStudyContext(studyId) {
     required('the step log', pageAll((f, t) => supabase.from('participant_step_timings')
       .select('category, subcategory, step_index, participant_schedule_id, participant_id')
       .eq('study_id', studyId).range(f, t))),
+    // Re-screening flags (20261015_rescreen_flags.sql): an enrollment that
+    // passed the screener after failed attempts from the same connection.
+    // Required: a failed read must not export as "nobody flagged", which is
+    // exactly the comparison these columns exist for.
+    required('the re-screening flags', supabase.rpc('get_rescreen_flags', { p_study: studyId })
+      .then(({ data, error }) => { if (error) throw error; return data ?? [] })),
   ])
 
   // Credit-only consent (20260911_credit_only_consent.sql): participants who
@@ -407,6 +413,7 @@ export async function resolveStudyContext(studyId) {
     scheduleById:     new Map(schedule.map(r => [r.id, r])),
     slugTimepoints,
     vasScaleSlugById: new Map(vasScales.map(s => [s.id, s.slug])),
+    rescreenByEnrollment: new Map((rescreenRows ?? []).map(r => [r.enrollment_id, r])),
     instrumentBySlug: new Map((instrumentDefs ?? []).map(i => [i.slug, i])),
   }
 }
@@ -1049,6 +1056,13 @@ export function buildMasterWithIntegrity(context, resultsByTable) {
       // TRUE may go to the repository; blank means never asked.
       repository_consent: e.repository_consent ?? null,
       status:         e.status,
+      // Passed the screener after failing from the same connection shortly
+      // before (get_rescreen_flags): 'likely' = 2+ failed attempts in the
+      // preceding 3 h, 'possible' = 1+ in 24 h, blank = not flagged. For
+      // sensitivity analyses with and without these participants; never an
+      // exclusion by itself.
+      rescreen_flag:            context.rescreenByEnrollment?.get(e.id)?.rescreen_flag ?? '',
+      rescreen_prior_fails_24h: context.rescreenByEnrollment?.get(e.id)?.prior_fails_24h ?? 0,
     }
     // Every row of a participant-level table: the first under the plain prefix,
     // each further one under `<prefix>_r<n>`.
@@ -1132,7 +1146,7 @@ export function integrityRows(context, integrity) {
 const TIMEPOINT_ORDER = { screener: 0, baseline: 1, midpoint: 2, final: 3 }
 
 function masterColumnRank(col) {
-  const lead = ['participant_external_id', 'profile_id', 'is_test', 'enrolled_at', 'consent_date', 'repository_consent', 'status']
+  const lead = ['participant_external_id', 'profile_id', 'is_test', 'enrolled_at', 'consent_date', 'repository_consent', 'status', 'rescreen_flag', 'rescreen_prior_fails_24h']
   const i = lead.indexOf(col)
   if (i !== -1) return [0, i, '', 0, 0]
   if (col.endsWith('_n'))            return [9, 0, col, 0, 0]
@@ -1217,6 +1231,8 @@ const COLUMN_NOTES = [
   [/^is_test$/,                 'TRUE = account created for testing, not recruitment. Its data is fabricated or exercised by staff. EXCLUDE these rows from analysis — filtering on `status` will not catch them, because real participants withdraw too.'],
   [/^enrolled_at$/,             'Timestamp the participant was enrolled in this study.'],
   [/^consent_date$/,            'Timestamp consent was recorded. Blank = consent not yet given.'],
+  [/^rescreen_flag$/,           'Passed the screener after failed attempts from the same internet connection (paid/open route only). likely = 2+ failed attempts in the 3 h before; possible = 1+ in the 24 h before; blank = not flagged. Shared campus connections make it a flag for sensitivity analysis, not proof.'],
+  [/^rescreen_prior_fails_24h$/, 'Number of failed screener attempts from the same connection in the 24 h before this participant passed (0 = none).'],
   [/^repository_consent$/,      'Separate optional consent to deposit de-identified data in the U of T Dataverse (Borealis). TRUE = agreed; FALSE = declined; blank = not asked. Deposit ONLY rows that are TRUE.'],
   [/^status$/,                  'Enrollment status: enrolled | withdrawn.'],
   [/^dem_/,                     'Demographics item (age, gender, racialized, ses_ladder).'],
