@@ -742,7 +742,16 @@ wording fixes for the doc, are in his My Drive root:
 
 ## 7. Decisions (append with dates)
 
-*(none yet — waiting on §5)*
+- **2026-10-13** (Norm's replies to Nansi on the Google Doc):
+  - **Roving baseline, no returns** to a fixed rate ("Let's call it settled").
+  - **Free-response pre-run** instead of the 3AFC Quest. Its adaptive rule is still to design
+    (Norm floated a Bayesian rule; Nansi was asked to sketch one).
+  - **Watch condition under half the session.**
+- **2026-10-15:**
+  - **Fixed decision boundary.** A soft (probabilistic) boundary is not being modelled.
+  - **Separate pre-run thresholds for speeding and slowing.** `schedule.js` must take one
+    threshold per direction (now one `m50Hat`); step and ramp sizes are scaled by the
+    threshold for their direction.
 
 ---
 
@@ -785,3 +794,7 @@ wording fixes for the doc, are in his My Drive root:
   mechanisms): the first run was discarded after finding the dead-time scoring bug in `loglik2`;
   the rerun recovers asymmetry, inhale restart, urgency and τ_R at group level with no false
   positives; the soft floor is not identifiable. Planning page updated with rounds 5a/5b.
+- **2026-10-15** — Shared Google Doc updated in place (Docs connector now available): rounds 2–5
+  results and a Recommendations section added; Nansi's comment threads untouched. Decisions
+  recorded in §7 (the three from Norm's 13 Oct replies, plus a fixed boundary and separate
+  speeding/slowing pre-run thresholds).
