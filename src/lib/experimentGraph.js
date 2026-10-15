@@ -10,7 +10,7 @@ export const newId = () => Math.random().toString(36).slice(2, 11)
  * Mirrors AdherenceOnFail in _shared/materializeSchedule.ts, which is where
  * it is actually acted on — keep the two lists in step.
  */
-export const ADHERENCE_ON_FAIL = ['withdraw', 'continue']
+export const ADHERENCE_ON_FAIL = ['withdraw', 'continue', 'assess_then_withdraw']
 export const DEFAULT_ADHERENCE_ON_FAIL = 'withdraw'
 
 // ─── Topology ───────────────────────────────────────────────────────────────

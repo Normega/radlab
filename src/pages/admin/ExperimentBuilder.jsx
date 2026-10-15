@@ -481,12 +481,18 @@ function EditPanel({ nodeId, graph, sessionTemplates, isLocked, onChange, onRemo
             >
               <option value="withdraw">Withdraw the participant</option>
               <option value="continue">Continue — record only</option>
+              <option value="assess_then_withdraw">Next assessment, then withdraw</option>
             </select>
           )}
           <div style={{ fontFamily: '"DM Sans",system-ui,sans-serif', fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
             Evaluated once every upstream session in the phase has resolved (completed or missed).
             Counts completed daily training sessions in the selected phase (Liliana-specific metric).
-            {(node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'withdraw' ? (
+            {(node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'assess_then_withdraw' ? (
+              <> A participant below the minimum still receives the <strong>next assessment</strong> (the
+              session before the next randomize fork, e.g. the midpoint), which ends with an explanation
+              and the debrief instead of feedback and a choice. They are then <strong>withdrawn</strong> at
+              the fork, never drawn into an arm, and sent a thank-you email.</>
+            ) : (node.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'withdraw' ? (
               <> A participant below the minimum is <strong>withdrawn</strong> — their enrollment status
               becomes "withdrawn", any active session link is revoked, and they receive a termination
               email.</>
@@ -1037,6 +1043,7 @@ export default function ExperimentBuilder() {
             label={demoSession.label}
             studyDay={demoSession.studyDay}
             sendTime={demoSession.sendTime}
+            studyId={id}
             onClose={() => setDemoSession(null)}
           />
         )}

@@ -7,7 +7,8 @@ export default function AdherenceCheckNode({ data, selected }) {
   const ofTotal = data.of_total ?? 12
   // Undefined is the 'withdraw' default — every check authored before the
   // property existed enforced, so absence must not read as permissive.
-  const enforcing = (data.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL) === 'withdraw'
+  const onFail = data.on_fail ?? DEFAULT_ADHERENCE_ON_FAIL
+  const enforcing = onFail !== 'continue'
 
   return (
     <div style={{ ...S.node, ...(selected ? S.selected : {}) }}>
@@ -22,7 +23,9 @@ export default function AdherenceCheckNode({ data, selected }) {
       <div style={{ ...S.meta, color: data.phase ? 'var(--tx2)' : '#e04' }}>{phaseLabel}</div>
       <div style={S.meta}>Requires ≥ {minRequired} of {ofTotal} sessions completed</div>
       <div style={{ ...S.warn, ...(enforcing ? null : S.note) }}>
-        {enforcing
+        {onFail === 'assess_then_withdraw'
+          ? 'Below minimum → next assessment, then withdrawn at the fork'
+          : enforcing
           ? 'Below minimum → participant withdrawn + termination email'
           : 'Below minimum → recorded only; participant continues (intention-to-treat)'}
       </div>

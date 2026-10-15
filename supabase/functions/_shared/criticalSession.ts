@@ -81,7 +81,7 @@ function entrySessionId(graph: Graph): string | null {
  * materializeSchedule: adherence_check nodes are transparent, anything else
  * ends the walk.
  */
-function gatesFork(graph: Graph, sessionId: string): boolean {
+export function gatesFork(graph: Graph, sessionId: string): boolean {
   const nodeMap = Object.fromEntries(graph.nodes.map((n) => [n.id, n]))
   const walked = new Set<string>()
   let at: string | null = graph.edges.find((e) => e.from === sessionId)?.to ?? null

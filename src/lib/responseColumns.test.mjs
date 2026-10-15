@@ -15,7 +15,7 @@
 // These checks pin that idea down on the export side; the trigger side is
 // pinned by 20260910_dedupe_by_step_index.sql.
 
-import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats } from './responseColumns.js'
+import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats, vasCellValue } from './responseColumns.js'
 
 let pass = 0, fail = 0
 function check(name, cond) {
@@ -143,6 +143,13 @@ check('a scale inside a repeated package step counts as repeated',
 check('the same scale outside that package does not',
   !vasRepeats(pkgSteps, 'calm', null))
 check('vasRepeats tolerates a missing set', !vasRepeats(null, 'calm', 'pre_ratings'))
+
+// ── A declined rating (20261013_rating_prefer_not_to_answer) ─────────────────
+// It has no value, and must export as 'pna' (the questionnaire code), never as
+// a blank cell that reads as a rating never given.
+check('a declined rating exports as pna', vasCellValue({ value: null, declined: true }) === 'pna')
+check('an ordinary rating exports its value', vasCellValue({ value: 4, declined: false }) === 4)
+check('a row from before the declined column exports its value', vasCellValue({ value: 2 }) === 2)
 
 console.log(`# response column naming: ${pass}/${pass + fail} checks passed`)
 if (fail) process.exit(1)

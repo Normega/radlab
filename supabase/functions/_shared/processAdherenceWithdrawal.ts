@@ -33,7 +33,16 @@ export async function processAdherenceWithdrawal(
     ? `Assessment window missed: the ${withdrawal.gateLabel ?? 'gating assessment'} ` +
       `was not completed before its link expired.`
     : `Adherence check failed: completed ${withdrawal.completed}/${withdrawal.ofTotal} ` +
-      `daily sessions in ${withdrawal.phase} (minimum ${withdrawal.minRequired} required).`
+      `daily sessions in ${withdrawal.phase} (minimum ${withdrawal.minRequired} required).` +
+      // Same leading sentence as before, so anything matching on it still does.
+      (withdrawal.afterAssessment
+        ? ` Withdrawn after the ${withdrawal.gateLabel ?? 'next assessment'} ` +
+          `(${withdrawal.assessmentCompleted ? 'completed' : 'not completed'}).`
+        : '')
+
+  const variant = withdrawal.kind === 'adherence' && withdrawal.afterAssessment && withdrawal.assessmentCompleted
+    ? 'adherence_assessed'
+    : withdrawal.kind
 
   const { error: enrollErr } = await db
     .from('study_enrollments')
@@ -86,7 +95,7 @@ export async function processAdherenceWithdrawal(
     first_name: firstName,
     study_name: study?.name ?? 'this study',
     is_test: isTest,
-    variant: withdrawal.kind,
+    variant,
     gate_label: withdrawal.gateLabel,
     min_required: withdrawal.minRequired ?? null,
     of_total: withdrawal.ofTotal ?? null,

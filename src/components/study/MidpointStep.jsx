@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase as globalSupabase } from '../../lib/supabase'
 import { interventionStyles as S, OwlScreen } from './InterventionPage'
 import { useScrollToTopOn } from '../../lib/scrollToTop'
+import DebriefStep from './DebriefStep'
 
 /**
  * Liliana Study 3 midpoint step (WP-L4/L5b) — mounted by StepDispatcher for
@@ -25,6 +26,15 @@ import { useScrollToTopOn } from '../../lib/scrollToTop'
  * All decisions and the snapshot live server-side (get_liliana_midpoint_summary
  * / record_practice_decision, both SECURITY DEFINER + idempotent), so re-entry
  * resumes safely: an already-decided participant sees their assignment screen.
+ *
+ * Below the Phase 1 minimum (on_fail 'assess_then_withdraw', Norm 2026-10-14):
+ * the participant has just answered the midpoint questionnaires for the
+ * low-adherence sensitivity analysis, and does not continue. Asked of the
+ * database first (my_midpoint_adherence, the same count the materializer
+ * enforces) and BEFORE anything is drawn, so no midpoint_group draw is spent on
+ * them and the three arms stay balanced among people who go on to Phase 2.
+ * They see why, then the study's debrief, and the session ends; the
+ * materializer withdraws them at the Phase 2 fork with a thank-you email.
  *
  * demoMode: renders the full experience with locally generated data and zero
  * network calls — an arm picker appears first, decisions are faked locally.
@@ -89,7 +99,7 @@ function generateDemoSnapshot() {
   }
 }
 
-export default function MidpointStep({ enrollment, onComplete, supabaseClient, isSimMode = false, demoMode = false }) {
+export default function MidpointStep({ enrollment, onComplete, supabaseClient, debriefHtml = null, isSimMode = false, demoMode = false }) {
   const db      = supabaseClient ?? globalSupabase
   const studyId = enrollment?.study_id
 
@@ -105,6 +115,8 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
   const [dragOver, setDragOver] = useState(null)
   const [result,   setResult]   = useState(null)
   const [saving,   setSaving]   = useState(false)
+  // Set when the participant is below an assess_then_withdraw check.
+  const [adherence, setAdherence] = useState(null)
   const markedShown = useRef(false)
   const dragKey     = useRef(null)
 
@@ -115,6 +127,16 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
 
     async function load() {
       try {
+        // First, and fail closed: if this cannot be answered nothing is
+        // drawn and the error screen shows.
+        const { data: adh, error: ae } = await db.rpc('my_midpoint_adherence', { p_study_id: studyId })
+        if (ae) throw ae
+        if (adh?.assess_only) {
+          setAdherence(adh)
+          setScreen('assessOnly')
+          return
+        }
+
         const { data: draw, error: de } = await db.rpc('draw_assignment', {
           p_study_id: studyId,
           p_slot_key: 'midpoint_group',
@@ -209,6 +231,14 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
 
   // ── simple full-page states ────────────────────────────────────────────────
 
+  if (screen === 'debrief') {
+    return (
+      <DebriefStep
+        html={debriefHtml}
+        onComplete={(out) => onComplete?.({ ...out, assess_only: true, ...(demoMode ? { demo: true } : {}) })}
+      />
+    )
+  }
   if (screen === 'loading') return <div style={M.msg}>Preparing your midpoint…</div>
   if (screen === 'error')   return <div style={{ ...M.msg, color: 'var(--err-tx)' }}>Midpoint step failed: {error}</div>
   if (screen === 'sim') {
@@ -244,8 +274,14 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
           ['feedback_choice',  'Choice with Feedback', 'Personal results → ranking → choice'],
           ['control_choice',   'Choice',               'Control display → ranking → choice'],
           ['control_assigned', 'No-Choice',            'Control display → ranking → assigned to a non-preferred practice'],
+          ['assess_only',      'Below the Phase 1 minimum', 'Explanation → debrief, no Phase 2'],
         ].map(([key, label, sub]) => (
           <button key={key} style={M.pickCard} onClick={() => {
+            if (key === 'assess_only') {
+              setAdherence({ completed: 7, min_required: 10, of_total: 12, compensation: 'credit' })
+              setScreen('assessOnly')
+              return
+            }
             setGroup(key)
             setScreen(key === 'feedback_choice' ? 'intro' : 'control')
           }}>
@@ -262,6 +298,31 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
         Regenerate random data
       </button>
     )
+  }
+
+  if (screen === 'assessOnly' && adherence) {
+    const earn = adherence.compensation === 'pay' ? 'payment' : 'credit'
+    body = (
+      <OwlScreen
+        owl="owl_still"
+        text={<>
+          <span style={M.bubbleP}>
+            Thank you for completing this check-in. Your answers are an important part of the study.
+          </span>
+          <span style={M.bubbleP}>
+            To continue to the second part of the study, at least {adherence.min_required} of the{' '}
+            {adherence.of_total} daily sessions in the first part needed to be completed, and you
+            completed {adherence.completed}. So this is where your participation ends: there is no
+            second part to start, and nothing else you need to do.
+          </span>
+          <span style={{ ...M.bubbleP, marginBottom: 0 }}>
+            You will still receive {earn} for every session you completed, including this one. Next,
+            we explain what the study is about.
+          </span>
+        </>}
+      />
+    )
+    footer = <button style={S.btnNext} onClick={() => setScreen('debrief')}>Continue</button>
   }
 
   if (screen === 'intro') {
@@ -494,8 +555,10 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
             <div style={S.badgeDot} />
             Midpoint{demoMode ? ' · demo' : ''}
           </div>
-          <div style={S.dayNumber}>Halfway there</div>
-          <div style={S.daySubtitle}>Phase 1 complete — setting your course for Phase 2</div>
+          <div style={S.dayNumber}>{screen === 'assessOnly' ? 'Check-in complete' : 'Halfway there'}</div>
+          <div style={S.daySubtitle}>
+            {screen === 'assessOnly' ? 'Thank you for taking part' : 'Phase 1 complete — setting your course for Phase 2'}
+          </div>
         </div>
         <div style={S.content}>{body}</div>
         <div style={S.footer}>{footer}</div>
@@ -505,6 +568,7 @@ export default function MidpointStep({ enrollment, onComplete, supabaseClient, i
 }
 
 const M = {
+  bubbleP: { display: 'block', margin: '0 0 8px' },
   msg: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     minHeight: 300, padding: 40, textAlign: 'center',

@@ -25,10 +25,10 @@ Guide freezes before the final Dec 8.
   delays feedback on the Oct 7 green contributions; or (b) build it — accepting a claim during a
   freeze window records the decision and holds the page edit until the window ends. The same
   freeze is needed again Dec 8 for the final.
-- [ ] **HIGH — load Quiz 4** (`quiz_4.yaml`, 7 items, flatten the two-tier). Opens Sep 30 15:45Z;
-  its late tier never opens, and it hard-closes with the first half on Oct 14 13:00Z.
-- [ ] **HIGH — load Quiz 5** (`quiz_5.yaml`), opens Oct 7 15:45Z; full credit through Oct 13 and
-  hard-close Oct 14 13:00Z; the quiz card must say the late tier never opens.
+- [x] **HIGH — load Quiz 4** (`quiz_4.yaml`, 7 items, flatten the two-tier). Opens Sep 30 15:45Z.
+  (Loaded, 8 items after flattening; close moved to Dec 8 on 2026-10-15, see Midterm.)
+- [x] **HIGH — load Quiz 5** (`quiz_5.yaml`), opens Oct 7 15:45Z; full credit through Oct 13.
+  (Loaded 2026-10-06; close moved to Dec 8 on 2026-10-15, see Midterm.)
 - [ ] L3 (Sep 23): run of show is ready; afterwards Stop/Done everything and close L2's stale
   `65:planned`. Preview #15 before class.
 - [ ] L4 check-ins: only 1/20/40/99 exist. **Seed Exercise B's quiz check-in** (four somatic
@@ -50,13 +50,27 @@ Guide freezes before the final Dec 8.
   (`page_version` in each item).
 - [ ] Delivery: on students' own devices, 9:00–10:30. Confirm the platform path, accommodations
   (extra time) and a paper fallback.
-- [ ] RCT onboarding 10:30–11:45: randomisation and baseline happen here, and it can't easily be
+- [ ] RCT onboarding 11:00–12:00 (as L5 told students; deck `L6.html`, 2026-10-13): randomisation and baseline happen here, and it can't easily be
   made up. Say "bring the device you'll use for daily practice" in L4 and L5.
 - [ ] A "how the midterm is built" slide in L5 (formats: MC, EMQ sets, stepped vignettes, VSA,
   spot-the-limitation). Use no real pool item as an example.
-- [ ] Late tier: all first-half quizzes hard-close Oct 14 13:00Z. Announce it in L4 and L5.
+- [x] ~~Late tier: all first-half quizzes hard-close Oct 14 13:00Z.~~ **Reversed 2026-10-15** (Norm,
+  after a student found Quizzes 1–5 shut at 9:00 on Oct 14 while Quercus said 11:59 PM): late
+  quizzes stay open with the 75% penalty, so Quizzes 1–5 now close Dec 8
+  11:59 PM ET like every later quiz (`hard_close_at` = `2026-12-09 04:59Z`). The archive's "75%
+  until the midterm" now says "until the end of term". Every quiz from 6 on loads with the same close.
+- [ ] Announce the reopening on Quercus and in L7: Quizzes 1–4 are 75% now; Quiz 5 is full credit
+  through Oct 20 (its grace week), then 75%. Fix the Quercus quiz dates that said Oct 14 11:59 PM.
+- [ ] Accommodation requests for late quizzes: `weekly_quiz_extensions` only moves the close, not
+  the full-credit window, so any full-credit exception Norm grants is applied by hand when the
+  tier export is graded. Keep the list of who and why out of this public repo (Teaching drive).
 
 ## Class RCT: traditional mindfulness vs Sense Foraging (onboarding Oct 14, practice Oct 21–Nov 17)
+
+> **Superseded (2026-10-13).** The trial's plan of record is `PLAN.md` in the private repo
+> Normega/psy240internal2026, mirrored on `/psy240trial`: three arms (Sense Foraging, Nonreactivity,
+> Stress mindset), day 1 Sat Oct 17 to day 28 Fri Nov 13, final survey Nov 14–16, results in class
+> Nov 18. Onboarding deck: `public/psy240/L6.html`. The items below are kept as history.
 
 Decided 2026-09-28: pedagogical, not research. Students experience an RCT and write the reflection;
 minimal data (stress and mood); Norm hears informally which course they preferred. Two arms: Liliana's

@@ -3,9 +3,12 @@
 // paper (Farb, Logie-Hagen & Amir Pour) at the centre, extended by Fouad &
 // Farb ("We See Others as We Feel") into emotion perception and burnout.
 //
-// The room takes part: phones scan the title-slide QR (radlab.zone/poll/socpers),
-// the room breathes through two BCAT trials (RoomTrials) and answers each on
-// the phone (PollPhone), and slide 4 plots the room's noticers vs missers live
+// The room takes part: phones scan the title-slide QR (radlab.zone/poll/socpers)
+// and tap where they are on the mood circle, which slide 2 plots live (RoomMood,
+// talk_poll_mood_results(), supabase/migrations/20261013_talk_poll_moods.sql).
+// Slide 3 frames the breath as both a readout of arousal and a lever on it.
+// Then the room breathes through two BCAT trials (RoomTrials) and answers each
+// on the phone (PollPhone), and slide 6 plots the room's noticers vs missers live
 // (LiveResults) from talk_poll_results() (supabase/migrations/20261012_talk_polls.sql).
 //
 // Shell copied from /iscr-2026: click / → / Space advance, ← back, P opens the
@@ -19,6 +22,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import RoomTrials, { PaceTraces } from './RoomTrials'
 import LiveResults from './LiveResults'
+import RoomMood from './RoomMood'
 import { pollCodeFromUrl, LIVE_POLL } from './talkPoll'
 
 export default function SocPers2026() {
@@ -252,6 +256,17 @@ function Cite({ children }) {
   return <p style={K.cite}>{children}</p>
 }
 
+// A one-line stat for slides where the figure is the main event.
+function MiniStat({ big, label, sub, color = 'var(--tx)' }) {
+  return (
+    <div style={K2.miniStat}>
+      <span style={{ ...K2.miniBig, color }}>{big}</span>
+      <span style={K2.miniLabel}>{label}</span>
+      {sub && <span style={K2.miniSub}>{sub}</span>}
+    </div>
+  )
+}
+
 // Colours match the paper's figure: detected = gold, missed = blue.
 const GOLD = '#D99A00'
 const BLUE = '#0072B2'
@@ -315,7 +330,7 @@ function Stat({ big, label, sub, color = 'var(--tx)' }) {
   )
 }
 
-const DECK_FIGS = ['/socpers-oct-2026/dig.jpg', '/socpers-oct-2026/gert-wheel.png', '/socpers-oct-2026/fig-gating-s5.png', '/socpers-oct-2026/fig-recognition.png', '/socpers-oct-2026/fig-burnout.png', '/socpers-oct-2026/qr-poll.png']
+const DECK_FIGS = ['/socpers-oct-2026/breath-arousal.jpg', '/socpers-oct-2026/dig.jpg', '/socpers-oct-2026/gert-wheel.png', '/socpers-oct-2026/fig-gating-s5.png', '/socpers-oct-2026/fig-recognition.png', '/socpers-oct-2026/fig-burnout.png', '/socpers-oct-2026/qr-poll.png']
 
 // ── Slides ──────────────────────────────────────────────────────────────────
 // `by` = cumulative target time (seconds) at which this slide should be done.
@@ -325,8 +340,8 @@ const SLIDES = [
   // 1 — Title + QR (up while you are introduced)
   {
     label: 'Title + phones out',
-    by: 40,
-    note: 'Up during the introduction. First words: “Before I say anything about the research, please take out your phone and scan this. It’s anonymous: no name, no login. You’ll answer two quick questions in a minute.” Give it ~20 s; watch for people struggling and read the short URL aloud. Then click.',
+    by: 50,
+    note: 'Up during the introduction. First words: “Before I say anything about the research, please take out your phone and scan this. It’s anonymous: no name, no login. The first thing it asks is how you’re feeling right now: just tap where you are on the circle and send.” Give it ~30 s; watch for people struggling and read the short URL aloud. Then click: the dots come in live on the next slide.',
     render: (_d, _b, ctx) => (
       <Frame wide>
         <div style={K2.titleRow}>
@@ -352,12 +367,51 @@ const SLIDES = [
     ),
   },
 
-  // 2 — The room does two trials, answering on phones
+  // 2 — The room's mood, live, and the question the talk is about
+  {
+    label: 'The room’s mood (live)',
+    by: 110,
+    note: 'Let the dots land; late taps keep arriving every 2 s. Read it quickly: “Most of you are on the right, pleasant side; this many up top, this many down below.” Then the question: “How did you know whether to put yourself high or low? What did you check?” Take two or three answers. Expect: heart rate, breathing, energy, tiredness, coffee, the time of day, or “I just guessed.” Land it: “Some of you checked your body, some of you reasoned from the situation, and some of you couldn’t say. That gap, between what the body is doing and what we notice of it, is what this talk is about.” Phones wait on “You’re on the screen”; the Next instruction comes on the following slide. If no phones got through, the slide asks by hands (top half? bottom half?) and the same question.',
+    render: (_d, _b, ctx) => (
+      <Frame wide kicker="You, right now · live">
+        <H2>Where the room is right now</H2>
+        <RoomMood code={ctx.code} active />
+      </Frame>
+    ),
+  },
+
+  // 3 — The breath: a readout of arousal, and a lever on it
+  {
+    label: 'The breath: readout and lever',
+    by: 150,
+    note: '“You just placed yourselves high or low on that circle. One of the clearest places arousal shows is the breath.” Top row: “Running from a bear, riding a roller coaster: both make the breath race. Same breathing, opposite feelings: that’s the left and right of the circle, and we’ll come back to it with Schachter and Singer.” Bottom left: “Asleep, the breath slows by itself.” Bottom right: “But she is slowing hers on purpose. That’s the other direction: the breath isn’t only a readout of arousal, it’s a lever on it. Slow it and you settle; speed it up and you activate.” Bridge: “In a moment I’m going to pull that lever on you. A circle will set your breathing and quietly change it. The question is whether you need to notice the change for it to move you. On your phone, tap Next.”',
+    render: (density) => (
+      <div style={K.twoCol}>
+        <BreathFig />
+        <div style={{ ...K.col, alignItems: 'flex-start', textAlign: 'left' }}>
+          <div style={K.kicker}>The breath and arousal</div>
+          <H2>A readout, and a lever</H2>
+          <div style={K2.rl}>
+            <span style={K2.rlTag}>Readout</span>
+            <span>Arousal shows up in the breath. The chase and the coaster both make it race; sleep slows it. It carries the level, not the feeling: fear and thrill breathe alike.</span>
+          </div>
+          <div style={K2.rl}>
+            <span style={{ ...K2.rlTag, background: 'var(--pk)', color: '#fff', borderColor: 'var(--pk)' }}>Lever</span>
+            <span>Change the breath and arousal follows. Slow it on purpose and you settle; speed it up and you activate.</span>
+          </div>
+          <p style={K2.digTake}>So what happens when something else sets your breathing, and you don’t notice?</p>
+          <Detail density={density}>Slow paced breathing (around 6 breaths a minute) raises heart-rate variability and lowers self-reported arousal and anxiety (Zaccaro et al., 2018, systematic review).</Detail>
+        </div>
+      </div>
+    ),
+  },
+
+  // 4 — The room does two trials, answering on phones
   {
     label: 'Breathing demo',
-    by: 165,
+    by: 265,
     exercise: true,
-    note: '“Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer on your phone.” Phones are on a welcome screen that explains all this. ① Begin; say nothing for ~14 s. ② “On your phone, tap ‘The circle has stopped’, then: did the pace change, and how activated do you feel right now?” Watch the count climb; move on at ~80% of the room. ③ Trial 2 (“once more”), ~14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
+    note: '“Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer on your phone.” Phones are on the screen that explains all this (after they tapped Next on the mood slide). ① Begin; say nothing for ~14 s. ② “On your phone, tap ‘The circle has stopped’, then: did the pace change, and how activated do you feel right now?” Watch the count climb; move on at ~80% of the room. ③ Trial 2 (“once more”), ~14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
     render: (_d, _b, ctx) => (
       <Frame wide>
         <RoomTrials code={ctx.code} />
@@ -365,10 +419,10 @@ const SLIDES = [
     ),
   },
 
-  // 3 — Reveal: same change, different onset
+  // 5 — Reveal: same change, different onset
   {
     label: 'Reveal: same change',
-    by: 190,
+    by: 290,
     note: '“Here’s what the circle did. Both trials sped your breathing up by exactly the same amount, from 15 to about 19½ breaths a minute, 30% faster, and they ended at the same moment. The first crept up across three breaths; the second jumped.” Then: “So your body did the same thing twice. Let’s see what you felt.”',
     render: () => (
       <Frame wide kicker="What the circle did">
@@ -379,10 +433,10 @@ const SLIDES = [
     ),
   },
 
-  // 4 — The room's data, live
+  // 6 — The room's data, live
   {
     label: 'Your results (live)',
-    by: 270,
+    by: 370,
     note: 'Read it in this order. (1) “How many of you noticed trial 1?” read the n. “And trial 2?” Usually more. (2) Compare gold to blue within each panel: people who noticed vs missed the same change. (3) The bottom line: how many felt more activated after trial 2. If it matches: “That’s the paper in one room.” If it doesn’t: “With this many people that’s close to a coin toss. That’s why we ran 787. Let’s see what they did.” Either way, don’t over-read it. Refreshes every 2 s, so late answers still land. If no answers reached the server, this slide shows three hands-up questions instead of empty axes: ask them in order, read the room, then “keep your hands in mind” and move on.',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="You, a minute ago · live">
@@ -392,10 +446,10 @@ const SLIDES = [
     ),
   },
 
-  // 5 — Social psychology's arousal classics
+  // 7 — Social psychology's arousal classics
   {
     label: 'The classics',
-    by: 330,
+    by: 430,
     note: '“This room knows these studies better than I do.” One line each. Schachter and Singer: same adrenaline, and a euphoric or an angry confederate decided what it became. Dutton and Aron: the shaky bridge on the Capilano. Valins: change only the belief about the heart, and the photos look more attractive. “Arousal is the engine of some of the field’s most famous findings. But every one of them varied the body, or the belief about it. None varied whether the bodily change was noticed. That’s the gap.”',
     render: () => (
       <Frame wide kicker="Arousal in social psychology">
@@ -414,10 +468,10 @@ const SLIDES = [
     ),
   },
 
-  // 6 — Three positions (hands bet)
+  // 8 — Three positions (hands bet)
   {
     label: 'Three positions (bet)',
-    by: 380,
+    by: 480,
     note: 'One clause per card. A: missed changes move you just as much, noticing only adds a lift. B: missed changes still move you, noticing amplifies it. C, James and Lange: noticing is the feeling. “Hands up for A… B… C.” Ten seconds, keep moving. “It was never settled, because bigger changes are both easier to notice and more arousing.”',
     render: (d) => (
       <Frame wide kicker="Does a bodily change have to be noticed to be felt?">
@@ -432,10 +486,10 @@ const SLIDES = [
     ),
   },
 
-  // 7 — BCAT
+  // 9 — BCAT
   {
     label: 'The task (BCAT)',
-    by: 420,
+    by: 520,
     note: '“You’ve just done our task, the Breath Change Awareness Task.” Gradual onset hides a change; abrupt onset reveals it. A staircase sets the change at each person’s own threshold, so we get noticed and missed trials at the same size of change, in the same person. Five studies, 787 people; the last preregistered, with a respiration belt.',
     render: (d) => (
       <Frame wide kicker="The Breath Change Awareness Task">
@@ -454,19 +508,19 @@ const SLIDES = [
     ),
   },
 
-  // 8 — Result
+  // 10 — Result
   {
     label: 'Result',
-    by: 490,
+    by: 590,
     note: '“Left is faster breathing. Gold, when people noticed: the bigger the change, the more aroused they felt. Blue, the same changes missed: flat.” Right: “That difference appears in all five studies.” Then: “Missed changes produced no more arousal than no change at all; Bayes factors favour the null 9 to 30 to 1. And the belt shows breathing really did change on missed trials: 89% of them moved the cued way.” “The answer is C.” Callback to the live slide if it matched.',
     render: (d) => (
       <Frame wide kicker="Result">
         <H2>Noticed changes move us. Missed ones don’t.</H2>
-        <img src="/socpers-oct-2026/fig-gating-s5.png" alt="Study 5: felt arousal by breathing-rate change for detected and missed trials, with a forest plot of the Change × Detection interaction across five studies" style={K.fig} />
+        <img src="/socpers-oct-2026/fig-gating-s5.png" alt="Study 5: felt arousal by breathing-rate change for detected and missed trials, with a forest plot of the Change × Detection interaction across five studies" style={d === 'reading' ? { ...K2.figGate, maxHeight: '44vh' } : K2.figGate} />
         <p style={K.figCap}>Left: Study 5, felt arousal by breathing change · Right: all five studies</p>
-        <div style={K.stats}>
-          <Stat big="5 / 5" label="studies replicate the gating" sub="pooled r = −.11 [−.15, −.06]" />
-          <Stat big="9–30 : 1" label="evidence that a missed change = no change" sub="BF₀₁, 4 studies with a no-change baseline" color={BLUE} />
+        <div style={K2.miniStats}>
+          <MiniStat big="5 / 5" label="studies replicate the gating" sub="pooled r = −.11 [−.15, −.06]" />
+          <MiniStat big="9–30 : 1" label="a missed change = no change" sub="BF₀₁, 4 studies" color={BLUE} />
         </div>
         <Detail density={d}>
           Missed-change trials did not differ from no-change trials (BF₀₁ = 8.7, 20.7, 9.6, 29.6). Study 5 belt:
@@ -476,10 +530,10 @@ const SLIDES = [
     ),
   },
 
-  // 9 — The bridge, at threshold (Study 3)
+  // 11 — The bridge, at threshold (Study 3)
   {
     label: 'The bridge, at threshold',
-    by: 545,
+    by: 645,
     note: '“So we went back to the bridge.” Point along the strip: “Breathe with the circle for eight breaths, say whether it changed, rate how activated you feel, then rate four faces for attractiveness. Thirty-two times.” Then the numbers: faster breathing raised arousal, and that arousal carried over to the faces, but only on trials where the change was noticed. On missed trials, the same bodily change carried nothing. “Dutton and Aron’s men noticed the bridge shaking. Ours, half the time, didn’t, and then there was no transfer.” Signs flipped on the slide so that faster = positive.',
     render: (d) => (
       <Frame wide kicker="Study 3 · Dutton & Aron, at threshold">
@@ -499,10 +553,10 @@ const SLIDES = [
     ),
   },
 
-  // 10 — What the MAIA is (hands)
+  // 12 — What the MAIA is (hands)
   {
     label: 'The MAIA',
-    by: 575,
+    by: 675,
     note: '“If you study individual differences in body awareness, the questionnaire you reach for is the MAIA.” It was built to capture the adaptive kind: noticing sensations, staying with them without worrying, trusting your body. “And it behaves like a wellbeing measure. In Aya’s sample, people who scored higher had fewer anxiety and depression symptoms and less burnout.” Then the item: “Here’s one of its items. Hands up if that’s you.” Smile at the count, and hold it for the next slide.',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
@@ -525,10 +579,10 @@ const SLIDES = [
     ),
   },
 
-  // 10a — MAIA predicts confidence, not sensitivity
+  // 13 — MAIA predicts confidence, not sensitivity
   {
     label: 'MAIA: confidence, not sensitivity',
-    by: 610,
+    by: 710,
     note: '“So, all of you with your hands up: across five studies the MAIA predicted how confident people were in their judgements, not how small a change they could detect.” For this audience: “It looks less like a sensory ability and more like a disposition: a habit of attending to and trusting the body. And Aya’s new sample finds the same: MAIA unrelated to thresholds.”',
     render: (d) => (
       <Frame kicker="Self-reported body awareness (MAIA)">
@@ -546,10 +600,10 @@ const SLIDES = [
     ),
   },
 
-  // 10b — Study 1, what we learned (bridge to Study 2)
+  // 14 — Study 1, what we learned (bridge to Study 2)
   {
     label: 'Study 1: what we learned',
-    by: 635,
+    by: 735,
     note: 'Wrap up the first paper in three beats, one per line. “We only feel a bodily change once we detect it: a missed change felt like no change at all. And the detail, how big the change was, only arrives with detection. And who detects isn’t something people can tell you about themselves: the questionnaire tracked confidence, not sensitivity.” Then the picture: “Two people working just as hard. One digs up a barrel of toxic waste, the other digs up treasure. If feeling waits on detection, then what we spend our attention digging for decides what we get to feel.” Bridge: “So does what we feel reach how we see other people?”',
     render: () => (
       <div style={K.twoCol}>
@@ -568,10 +622,10 @@ const SLIDES = [
     ),
   },
 
-  // 11 — Aya: the question and design
+  // 15 — Aya: the question and design
   {
     label: 'Seeing others: design',
-    by: 665,
+    by: 765,
     note: '“If noticing gates what we feel, does it reach how we see other people?” Aya Fouad’s thesis, now submitted. 315 students, preregistered. Walk the storyboard left to right: “Here’s one block. Three breathing trials like yours, the change set at your own threshold. Then five short clips of an actor expressing one of 14 emotions, with face, voice and body, in made-up speech. After each: which emotion, on this wheel, and how intense. Twelve blocks.” (The face is a cartoon: the GERT clips are licensed for research only.) Breathing belt and ECG throughout. “So now we can ask: when the body changes, does perception follow the body, or the feeling?”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered · N = 315">
@@ -587,10 +641,10 @@ const SLIDES = [
     ),
   },
 
-  // 12 — We see others as we feel
+  // 16 — We see others as we feel
   {
     label: 'Felt, not bodily, arousal',
-    by: 740,
+    by: 840,
     note: 'Say first: “This chain is within each person, block to block.” Walk the chain left to right. Bodily change → noticed (strong) → felt arousal (only via noticing) → perceived intensity (dashed: suggestive). The direct line from the body to perception: equivalent to zero. Then the two stats, starting with the contrast: “The arrow says .05, the card says .08, because they ask different questions. The chain is within a person, adjusted for the breathing change and for noticing; the card compares people: those who felt more aroused overall saw others’ emotions as more intense.” people who felt more aroused saw others’ emotions as more intense; heart rate didn’t move with the breathing change, so this isn’t general autonomic arousal. Honest caveat in one breath: “Small, correlational within person, and it varied a lot across people. The next study manipulates the feeling directly.”',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · within person, n = 224 with a working belt">
@@ -610,15 +664,15 @@ const SLIDES = [
     ),
   },
 
-  // 13 — Breath sensitivity and recognition accuracy
+  // 17 — Breath sensitivity and recognition accuracy
   {
     label: 'Sensitivity → accuracy',
-    by: 800,
-    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
+    by: 900,
+    note: '“A second route, and it’s an individual difference.” People who could detect smaller changes in their own breathing recognised other people’s emotions more accurately: r = −.17 (higher threshold = less sensitive), and it replicated almost exactly on 60 clips they had never seen (−.18). “The questionnaire didn’t predict it, and neither did heartbeat counting.” Then the ladder, top to bottom: “It survives response bias, confidence, the questionnaire, mood and burnout. But in the people whose belt worked, once we control how closely their breathing followed the pacer, and false alarms, it drops to −.10 and is no longer significant.” Why: better pacer-followers had lower thresholds (r = −.28), and following the pacer itself predicted recognition (β = .14, p = .057). “So it could be the body, or it could be engagement, and following a breathing pacer may itself take breath awareness. Separating those is the next study.” (Bonus 5 if asked.)',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · preregistered H2B">
         <H2>Sensitive to your own breath, better at reading others</H2>
-        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={K2.figShort} />
+        <img src="/socpers-oct-2026/fig-recognition.png" alt="Breath-change threshold against emotion recognition accuracy, baseline clips (r = −.17) and 60 new clips (r = −.18)" style={d === 'reading' ? { ...K2.figRecog, maxHeight: '34vh' } : K2.figRecog} />
         <RobustLadder />
         <Detail density={d}>
           Higher threshold = less sensitive. Also held for each direction alone, as a rank correlation and without the
@@ -630,10 +684,10 @@ const SLIDES = [
     ),
   },
 
-  // 14 — Burnout: same body, less feeling
+  // 18 — Burnout: same body, less feeling
   {
     label: 'Burnout',
-    by: 855,
+    by: 955,
     note: 'Wellbeing turn. Optional, light: “Anyone had a week this term where everything felt a bit muted?” Then: “What burnout changed was feeling: higher burnout, lower felt arousal, even though their breathing followed the pacer exactly as closely as everyone else’s, and their heart rate didn’t differ. Same body, less feeling.” Then the path: “Does that reach how they see other people? A little, and only through feeling. Lower felt arousal went with seeing others’ emotions as less intense, so burnout has a small indirect effect, −.03, whose interval excludes zero. Burnout on its own didn’t predict intensity at all, because what’s left over runs slightly the other way.” If pressed: exploratory, cross-sectional, and both arousal and intensity are ratings, so a shared rating style could feed the felt → perceived link.',
     render: (d) => (
       <Frame wide kicker="Fouad & Farb · burnout (BAT), exploratory">
@@ -654,10 +708,10 @@ const SLIDES = [
     ),
   },
 
-  // 15 — Wellbeing
+  // 19 — Wellbeing
   {
     label: 'Wellbeing',
-    by: 890,
+    by: 990,
     note: '“Put together, a lot of wellbeing may live in what we notice.” One line per row, then the caveat: “These are hypotheses, not findings, and the nice thing is that each one is testable with these tasks.” The burnout line is the one with data behind it today.',
     render: () => (
       <Frame kicker="For wellbeing">
@@ -675,10 +729,10 @@ const SLIDES = [
     ),
   },
 
-  // 16 — Close
+  // 20 — Close
   {
     label: 'Close',
-    by: 900,
+    by: 1000,
     note: 'Slow down. “Your first trial was a change your body made that your feelings never registered. What you miss won’t move you, and what you feel colours what you see.” Thank Kyle Logie-Hagen, Rose Amir Pour and Aya Fouad; NSERC and SSHRC. “Happy to take questions.” (B opens the bonus slides.)',
     render: () => (
       <Frame>
@@ -715,6 +769,31 @@ const WELLBEING = [
 // confidence and mood ratings around it are left to the Detail line), then four
 // faces rated 0-10. The face is a caricature: Chicago Face Database images are
 // licensed for research, not for showing.
+// Norm's four-panel arousal illustration: top row high arousal (fleeing a bear,
+// a roller coaster), bottom row low (asleep, meditating). Chips name what the
+// breath is doing in each (the scenes name themselves); only the meditator is
+// steering it.
+function BreathFig() {
+  const chips = [
+    ['Breath races', false],
+    ['Breath races', false],
+    ['Breath slows', false],
+    ['Slowed on purpose', true],
+  ]
+  return (
+    <div style={K2.bfWrap}>
+      <img src="/socpers-oct-2026/breath-arousal.jpg" alt="Four panels: a hiker fleeing a bear, a rider screaming on a roller coaster, a person asleep in bed, and a person meditating outdoors" style={K2.bfImg} />
+      <div style={K2.bfGrid}>
+        {chips.map(([t, lever], i) => (
+          <div key={i} style={K2.bfCell}>
+            <span style={{ ...K2.bfChip, ...(lever ? K2.bfChipOn : {}) }}>{t}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function BridgeMethod() {
   const W = 1000, H = 296
   const sw = 210, sh = 148, sy = 44
@@ -819,7 +898,7 @@ function BridgeMethod() {
       {badge(xs[3], '× 4 faces', 118)}
       {caption(xs[3], 'How attractive?', '0–10 · two high, two average')}
 
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="18" fontWeight="700" fill={pkd} fontFamily={mono}>one trial · × 32 trials · N = 103</text>
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize="18" fontWeight="700" fill={pkd} fontFamily={mono}>32 trials · N = 103</text>
     </svg>
   )
 }
@@ -927,8 +1006,8 @@ function GertMethod() {
       <rect x={(xs[1] + xs[3] + sw) / 2 - 62} y={sy - 44} width="124" height="34" rx="17" fill="#fff" stroke={pkd} strokeWidth="2.5" />
       <text x={(xs[1] + xs[3] + sw) / 2} y={sy - 21} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>× 5 clips</text>
 
-      {/* × 12 blocks */}
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>one block · × 12 blocks</text>
+      {/* 12 blocks */}
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="19" fontWeight="700" fill={pkd} fontFamily={mono}>12 blocks</text>
     </svg>
   )
 }
@@ -986,39 +1065,42 @@ function PathDiagram() {
 // The H2B estimate as covariates are added (Aya repo, Results/h2b_robustness/
 // report.md). Standardised, 95% CIs; higher threshold = less sensitive, so
 // negative = sensitive people read emotions better.
+// A byline under the figure, not a second figure: one line per model, n inline,
+// capped in height so the scatter stays the main event.
 function RobustLadder() {
   const rows = [
     { t: 'As preregistered', s: 'n = 305', e: -0.174, lo: -0.281, hi: -0.063, v: 'r = −.17', p: 'p = .002' },
     { t: '+ bias, confidence, MAIA, mood, burnout', s: 'n = 301', e: -0.138, lo: -0.262, hi: -0.015, v: 'β = −.14', p: 'p = .028' },
-    { t: 'Belt followed the pacer', s: 'subsample, n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
-    { t: '+ how closely breathing followed it', s: 'synchrony, entrainment, false alarms · n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
+    { t: 'Usable belt recording only', s: 'n = 240', e: -0.133, lo: -0.260, hi: -0.007, v: 'β = −.13', p: 'p = .039' },
+    { t: '+ pacer synchrony, gain, false alarms', s: 'n = 236', e: -0.095, lo: -0.234, hi: 0.044, v: 'β = −.10', p: 'p = .18', ns: true },
   ]
-  const W = 1000, rh = 54, top = 30, H = top + rows.length * rh + 26
-  const px0 = 520, px1 = 790, lo = -0.35, hi = 0.1
+  const W = 1000, rh = 38, top = 26, H = top + rows.length * rh + 22
+  const px0 = 540, px1 = 780, lo = -0.35, hi = 0.1
   const X = v => px0 + (v - lo) / (hi - lo) * (px1 - px0)
   const sans = "'DM Sans',sans-serif", mono = "'Space Mono',monospace"
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 1000, height: 'auto' }} role="img"
-      aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in the subsample whose belt followed the pacer; −.10, p = .18, not significant, once pacer-following is controlled">
-      <text x={16} y={16} fontSize="16" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ height: 'min(19vh, 210px)', width: 'auto', maxWidth: '100%' }} role="img"
+      aria-label="Breath sensitivity and recognition: r = −.17 as preregistered; −.14 with bias, confidence, MAIA, mood and burnout controlled; −.13 in those with a usable belt recording; −.10, p = .18, not significant, once pacer synchrony, entrainment gain and false alarms are controlled">
+      <text x={16} y={15} fontSize="15" fontWeight="700" fill="#BA417A" letterSpacing="1.5" fontFamily={mono}>CONTROLLING FOR…</text>
       {rows.map((r, k) => {
         const y = top + k * rh + rh / 2
         const c = r.ns ? '#8a8b8f' : '#1c1c1e'
         return (
           <g key={k}>
             {r.ns && <rect x={0} y={y - rh / 2 + 2} width={W} height={rh - 4} rx="12" fill="#FBEAF3" />}
-            <text x={16} y={y - 3} fontSize="19" fontWeight="600" fill={r.ns ? '#3a3a3e' : c} fontFamily={sans}>{r.t}</text>
-            <text x={16} y={y + 18} fontSize="15" fill="#6b6c70" fontFamily={sans}>{r.s}</text>
+            <text x={16} y={y + 6} fontSize="19" fontWeight="600" fill={r.ns ? '#3a3a3e' : c} fontFamily={sans}>
+              {r.t}<tspan fontSize="15" fontWeight="400" fill="#6b6c70">{'  ·  '}{r.s}</tspan>
+            </text>
             <line x1={X(r.lo)} x2={X(r.hi)} y1={y} y2={y} stroke={c} strokeWidth="3" strokeLinecap="round" />
-            <circle cx={X(r.e)} cy={y} r="8" fill={r.ns ? '#fff' : c} stroke={c} strokeWidth="3" />
-            <text x={px1 + 28} y={y + 6} fontSize="20" fontWeight="700" fill={r.ns ? '#BA417A' : c} fontFamily={mono}>{r.v}</text>
-            <text x={px1 + 136} y={y + 6} fontSize="17" fill={r.ns ? '#BA417A' : '#3a3a3e'} fontFamily={mono}>{r.p}</text>
+            <circle cx={X(r.e)} cy={y} r="7" fill={r.ns ? '#fff' : c} stroke={c} strokeWidth="3" />
+            <text x={px1 + 28} y={y + 6} fontSize="19" fontWeight="700" fill={r.ns ? '#BA417A' : c} fontFamily={mono}>{r.v}</text>
+            <text x={px1 + 132} y={y + 6} fontSize="16" fill={r.ns ? '#BA417A' : '#3a3a3e'} fontFamily={mono}>{r.p}</text>
           </g>
         )
       })}
-      <line x1={X(0)} x2={X(0)} y1={top - 6} y2={H - 24} stroke="#6b6c70" strokeWidth="2" strokeDasharray="5 5" />
+      <line x1={X(0)} x2={X(0)} y1={top - 4} y2={H - 20} stroke="#6b6c70" strokeWidth="2" strokeDasharray="5 5" />
       {[[-0.3, '−.30'], [-0.15, '−.15'], [0, '0']].map(([v, t]) => (
-        <text key={t} x={X(v)} y={H - 4} textAnchor="middle" fontSize="15" fill="#6b6c70" fontFamily={mono}>{t}</text>
+        <text key={t} x={X(v)} y={H - 3} textAnchor="middle" fontSize="14" fill="#6b6c70" fontFamily={mono}>{t}</text>
       ))}
     </svg>
   )
@@ -1231,11 +1313,25 @@ const K2 = {
   figWide: { maxWidth: '100%', maxHeight: '44vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   split: { display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
   figSide: { maxWidth: 'min(560px, 90vw)', maxHeight: '46vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
-  figShort: { maxWidth: '100%', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  figGate: { maxWidth: '100%', maxHeight: '58vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
+  miniStats: { display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
+  miniStat: { display: 'flex', alignItems: 'baseline', gap: 12, background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '8px 16px' },
+  miniBig: { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 'clamp(22px, 2.6vw, 30px)', lineHeight: 1, whiteSpace: 'nowrap' },
+  miniLabel: { fontSize: 'clamp(16px, 1.5vw, 18px)', color: 'var(--tx)' },
+  miniSub: { fontFamily: '"Space Mono",monospace', fontSize: 14, color: 'var(--tx2)', whiteSpace: 'nowrap' },
+  figRecog: { maxWidth: '100%', maxHeight: '48vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   figBurn: { maxWidth: 'min(440px, 90vw)', maxHeight: '30vh', objectFit: 'contain', borderRadius: 8, background: '#fff' },
   sideStats: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 300, maxWidth: 420 },
   itemCard: { background: '#fff', border: '2px solid var(--pk)', borderRadius: 24, padding: '16px 32px', maxWidth: 860, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
   itemHands: { fontFamily: '"Space Mono",monospace', fontSize: 16, fontWeight: 700, color: 'var(--pkd)', letterSpacing: '0.05em', textTransform: 'uppercase' },
+  bfWrap: { position: 'relative', width: '100%', maxWidth: 'min(560px, 64vh)', aspectRatio: '1 / 1', justifySelf: 'center', borderRadius: 24, overflow: 'hidden' },
+  bfImg: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  bfGrid: { position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' },
+  bfCell: { display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', padding: 12 },
+  bfChip: { whiteSpace: 'nowrap', background: 'rgba(255,255,255,0.92)', color: 'var(--tx)', borderRadius: 24, padding: '4px 12px', fontSize: 'clamp(12px, 1.3vw, 16px)', fontWeight: 600, boxShadow: '0 1px 4px rgba(0,0,0,0.18)' },
+  bfChipOn: { background: 'var(--pk)', color: '#fff' },
+  rl: { display: 'flex', alignItems: 'baseline', gap: 16, fontSize: 'clamp(17px, 1.9vw, 22px)', lineHeight: 1.4, color: 'var(--tx)' },
+  rlTag: { flex: '0 0 auto', width: 104, textAlign: 'center', fontFamily: '"Space Mono",monospace', fontSize: 14, letterSpacing: '0.08em', textTransform: 'uppercase', border: '2px solid var(--pkd)', color: 'var(--pkd)', borderRadius: 24, padding: '4px 0' },
   digImg: { width: '100%', maxWidth: 520, maxHeight: '70vh', objectFit: 'cover', borderRadius: 24, justifySelf: 'center' },
   digTake: { fontFamily: '"DM Serif Display",Georgia,serif', fontStyle: 'italic', fontSize: 'clamp(20px, 2.4vw, 28px)', color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.3 },
   wellGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 16, width: '100%' },

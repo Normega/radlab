@@ -87,6 +87,57 @@ test('single-miss ack is unchanged and never shows a withdrawal link', () => {
   assert.ok(!html.includes('{{withdraw_html}}'), 'placeholder is cleared, not leaked')
 })
 
+// Out of reach (phaseReach.ts): the enforcing rule can't be met, so "nothing
+// to make up" and "get back on track" would be false.
+const OUT = { min_required: 10, of_total: 12, ends: 'Thursday, October 23' }
+
+test('out of reach replaces the lapsed copy, states the rule and date, keeps the exit', () => {
+  const { html, text } = renderEmail({
+    ...BASE,
+    lapsed: true,
+    phase_out_of_reach: OUT,
+    withdraw_url: WITHDRAW_URL,
+    progress: { completed: 1, total: 12, pct: 8 },
+  })
+  // Leads with what still earns something, then the rule and the date.
+  assert.match(text, /You can still earn participation credit for every session you complete between now and Thursday, October 23/)
+  assert.match(text, /needs at least 10 of its 12 completed/)
+  assert.match(text, /your participation will end with the block/)
+  assert.ok(!/catch up/i.test(text), 'never implies the threshold can still be met')
+  assert.ok(!text.includes('get back on track'))
+  assert.ok(!text.includes('nothing to make up'))
+  // The response-rate line counts check-ins (baseline included); beside a
+  // 10-of-12 rule it would read as a contradiction.
+  assert.ok(!text.includes('responded to'))
+  assert.ok(html.includes(WITHDRAW_URL), 'the withdrawal link the copy points to is there')
+})
+
+test('out of reach on a paid study says payment, not credit', () => {
+  const { text } = renderEmail({ ...BASE, lapsed: true, phase_out_of_reach: OUT, compensation: 'pay' })
+  assert.match(text, /You can still earn payment for every session you complete/)
+  assert.ok(!text.includes('participation credit'))
+})
+
+test('out of reach before an assess_then_withdraw check promises the check-in, not a goodbye', () => {
+  const { text } = renderEmail({ ...BASE, lapsed: true, phase_out_of_reach: { ...OUT, assess_first: true } })
+  assert.match(text, /needs at least 10 of its 12 completed/)
+  assert.match(text, /we will still send you one more check-in/)
+  assert.match(text, /Your participation ends after that check-in/)
+  assert.ok(!text.includes('your participation will end with the block'))
+})
+
+test('out of reach also replaces the single-miss ack', () => {
+  const { text } = renderEmail({ ...BASE, after_missed: true, phase_out_of_reach: OUT, withdraw_url: WITHDRAW_URL })
+  assert.match(text, /no longer enough sessions left/)
+  assert.ok(!text.includes('Missing the occasional session is normal'))
+})
+
+test('a reminder resend is not where the news lands -- reminder copy wins', () => {
+  const { text } = renderEmail({ ...BASE, is_reminder: true, phase_out_of_reach: OUT })
+  assert.match(text, /Just a friendly reminder/)
+  assert.ok(!text.includes('no longer enough sessions left'))
+})
+
 test('reminder lead-in wins over lapsed', () => {
   const { text } = renderEmail({
     ...BASE,
@@ -135,4 +186,40 @@ test('final notice and termination say credit by default and paid for a paid stu
   assert.ok(tCredit.text.includes('we will award credit for the time you spent'))
   assert.ok(tPay.text.includes('we will pay you for the time you spent'))
   assert.ok(!tPay.text.includes('credit'))
+})
+
+test('termination after a completed midpoint (assess_then_withdraw) thanks, states the rule, keeps the award', () => {
+  const { text, subject } = renderTerminationEmail({
+    first_name: 'Ada', study_name: 'S', variant: 'adherence_assessed',
+    gate_label: 'Midpoint Assessment', min_required: 10, of_total: 12, compensation: 'pay',
+  })
+  assert.match(text, /Thank you for completing the Midpoint Assessment/)
+  assert.match(text, /at least 10 of the 12 daily sessions/)
+  assert.match(text, /we will pay you for the time you spent, including this check-in/)
+  assert.ok(!text.includes('Unfortunately'))
+  assert.match(subject, /is now complete/)
+})
+
+// The midpoint for a participant below an assess_then_withdraw check.
+const AO = { min_required: 10, of_total: 12, told_out: false }
+
+test('assess-only check-in: says they will not continue, asks anyway, counts toward compensation', () => {
+  const { text } = renderEmail({ ...BASE, assess_only_checkin: AO, compensation: 'pay', progress: { completed: 5, total: 13, pct: 38 } })
+  assert.match(text, /you won't be continuing to the next part of the study, but we would still love it if you could complete this check-in/)
+  assert.match(text, /counts toward your payment/)
+  assert.ok(!/Recently we wrote/.test(text), 'never claims a message we cannot show was sent')
+  assert.ok(!text.includes('responded to'), 'no response-rate line')
+})
+
+test('assess-only check-in after a termination email acknowledges it', () => {
+  const { text } = renderEmail({ ...BASE, assess_only_checkin: { ...AO, told_out: true } })
+  assert.match(text, /Recently we wrote to let you know that your participation in the study had ended/)
+  assert.match(text, /counts toward your participation credit/)
+})
+
+test('assess-only check-in replaces the gate final notice, which would threaten a withdrawal that happens anyway', () => {
+  const { text, subject } = renderEmail({ ...BASE, assess_only_checkin: AO, final_notice: 'gate', expires_hours: 11 })
+  assert.match(text, /This link closes in about 11 hours/)
+  assert.ok(!/withdrawn/i.test(text))
+  assert.match(subject, /^Last chance:/)
 })
