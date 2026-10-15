@@ -184,6 +184,33 @@ test('roving_bump / roving_ramp_bump: blocks in order, a pause before the bump b
   }
 })
 
+test('separate speeding/slowing thresholds scale each change by its own direction', () => {
+  const thr = { [-1]: 0.1, [1]: 0.3 }
+  const s = buildSchedule('roving', { seed: 13, m50HatFaster: thr[-1], m50HatSlower: thr[1] })
+  let exact = 0
+  for (const e of s.events) {
+    const full = e.relMag * thr[e.dir]
+    assert.ok(e.mag <= full + 1e-9, `${e.dir}: ${e.mag} > ${full}`)   // shrunk only near the bounds
+    if (Math.abs(e.mag - full) < 1e-9) exact++
+  }
+  assert.ok(exact >= 0.9 * s.events.length, `${exact} of ${s.events.length} at full size`)
+  assert.ok(s.events.some(e => e.dir === 1) && s.events.some(e => e.dir === -1))
+
+  const r = buildSchedule('ramp', { seed: 13, m50HatFaster: thr[-1], m50HatSlower: thr[1] })
+  for (const e of r.events.filter(e => e.type === 'ramp')) {
+    assert.ok(Math.abs(e.rate - DEFAULTS.rampRates[e.rateIdx] * thr[e.dir]) < 1e-12)
+  }
+})
+
+test('per-direction thresholds equal to m50Hat give the same schedule as m50Hat alone', () => {
+  const strip = ({ options, ...rest }) => rest
+  for (const d of DESIGNS) {
+    const a = buildSchedule(d, { seed: 5, m50Hat: 0.2 })
+    const b = buildSchedule(d, { seed: 5, m50Hat: 0.2, m50HatFaster: 0.2, m50HatSlower: 0.2 })
+    assert.deepStrictEqual(strip(b), strip(a), d)
+  }
+})
+
 test('roving yields more changes per minute than the brief design', () => {
   const r = scheduleYield(buildSchedule('roving', { seed: 1 }))
   const b = scheduleYield(buildSchedule('brief', { seed: 1 }))

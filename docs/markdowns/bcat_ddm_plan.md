@@ -740,6 +740,103 @@ wording fixes for the doc, are in his My Drive root:
 
 ---
 
+## 6h. The pre-run: separate speeding and slowing thresholds (2026-10-15)
+
+**Why.** Norm decided on separate pre-run thresholds per direction (§7). Two questions: how long
+the pre-run must be, and whether centring each direction on its own threshold changes what the
+main task recovers. Script: `scripts/bcat_ddm_sim/run_prerun.py`; results in `results_prerun/`.
+
+**Schedule change.** `schedule.js` takes `m50HatFaster` / `m50HatSlower` (default `null` = use
+`m50Hat`). Every change (steps, ramps, blips, bumps) is scaled by the threshold for its direction.
+- **Check:** 117 schedules (13 designs × 3 seeds × 3 thresholds) are unchanged in breaths, pauses
+  and events. Only the echoed `options` gained the two keys.
+- **Tests:** 2 new tests, 67 in all.
+
+**Real data used for the people.** Intero2025 Quest thresholds (`I:\Shared drives\Aya\Data\processed\BCAT_baseline_data.csv`):
+- 290 of 314 people have both thresholds inside the Quest's bounds.
+- The faster and slower thresholds correlate .25.
+- log(slower/faster) has a median of +0.13 and an SD of .72.
+- 43% find slowing easier, 57% speeding.
+
+Both the SD and the correlation include the Quest's own error, so the true spread of asymmetry is
+smaller. Three simulated populations bracket it: none, modest (SD .24) and wide (SD .52); κ is
+centred on 0. Note that the 306-person data do not show Study 1's "slowing is easier" on average.
+
+**The simulated pre-run:**
+- a free-response roving stream of steps, using the main task's direction rule, with 1–3 steady
+  breaths before each change and a 5-breath hit window;
+- a QUEST-style Bayesian grid picks each size at the posterior-mean threshold for that direction;
+- the grid models logistic detection in log size (slope 0.39, fitted to these observers), a
+  false-alarm rate estimated from the steady breaths, and a 3% lapse rate;
+- `shared` (one threshold) and `separate` (one per direction) run on the same breaths and noise.
+
+Strict faster/slower alternation was tried first and dropped. With unequal sizes per direction
+the pacer drifted to the slow bound, and one simulated pre-run took 32 minutes.
+
+### Stage-1 results (100 people per population)
+
+Error = log(estimate / true threshold) per direction; 0.25 ≈ 25% off. Practice not included.
+
+| changes (min) | none: shared / separate | modest: shared / separate | wide: shared / separate | wide: asymmetry ranked (ρ) |
+|---|---|---|---|---|
+| 16 (7.6) | .23 / .29 | .27 / .30 | .35 / .31 | .74 |
+| 24 (11.3) | .19 / .27 | .23 / .27 | .34 / **.27** | .82 |
+| 48 (22.5) | .15 / .25 | .23 / .24 | .33 / .26 | .90 |
+
+- **Length: about 24 changes (11 minutes, plus ~2 minutes of practice).** Separate estimates level
+  off at about 0.25–0.27 log units, close to the 25% the main-task simulations assumed. Doubling
+  the length gains little.
+- **Separate thresholds pay off only when people's asymmetries differ a lot.** In the wide
+  population they are more accurate than a shared one (.27 vs .34) and rank each person's own
+  asymmetry at ρ .82. In the modest population they are slightly worse (.27 vs .23); with no
+  asymmetry, clearly worse (.27 vs .19), because each direction gets half the data.
+- **Error floor.** The truth is defined from a settled baseline, but the pre-run measures
+  detection mid-stream, where the running baseline still lags the last change. Some of the floor
+  is that difference, which the main task shares. Stage 2 tests what matters: whether the
+  estimates work in the main task.
+
+### Stage-2 results (480 main-task sessions × m_base and m_asym)
+
+Same 40 people per population in every condition. Tables: `results_prerun/summary_stage2.md`.
+
+| population · condition | step hits faster / slower | per-person gap between directions | directions badly centred (hits < .2 or > .8) | asymmetry κ ranked (ρ) | asymmetry found per person | share s (ρ) |
+|---|---|---|---|---|---|---|
+| wide · shared@24 | .52 / .54 | .23 | 9% | .97 | 85% | .92 |
+| wide · separate@24 | .50 / .59 | **.16** | **4%** | .90 | 70% | .94 |
+| wide · true thresholds | .55 / .51 | .15 | 1% | .96 | 88% | .84 |
+| modest · shared@24 | .53 / .56 | .15 | 4% | .82 | 42% | .82 |
+| modest · separate@24 | .49 / .58 | .17 | 6% | .84 | 45% | .93 |
+| modest · separate@16 | .46 / .54 | .16 | 4% | .70 | 40% | .92 |
+| none · shared@24 | .52 / .56 | .13 | 1% | — | 20% (false) | .83 |
+| none · separate@24 | .54 / .55 | .16 | 10% | — | 20% (false) | .89 |
+
+- **What separate thresholds buy:** a more even task in each direction for people whose
+  asymmetry is large. In the wide population the per-person gap between directions falls from
+  .23 to .16, close to perfect knowledge (.15), and badly centred directions halve (9% → 4%).
+- **What they don't change:** what the model recovers.
+  - The asymmetry κ, each person's breath-to-breath share s, and asymmetry detection are all
+    within noise of the shared pre-run.
+  - Paired tests on the same people: asymmetry chosen 70% vs 85% in the wide population,
+    McNemar p = .11; modest p = 1.0.
+  - The model reads the asymmetry from the change sizes as well as from hit rates, so centring
+    each direction does not hide it.
+  - With no asymmetry, false detection is 20% per person (the AIC rate for one extra parameter),
+    and the group comparison correctly rejects it in every condition.
+- **16 changes is too short.** It recovers modest asymmetries worse (ρ .70 vs .84). Use 24.
+- **A small direction bias in the pre-run.** The faster threshold comes out about 12% low and the
+  slower about 6% high. As a result, main-task step hits average .50 faster vs .59 slower. This is
+  small, but a group-level correction from the pilot data would remove it.
+- **Ramp hit rates are lower for faster ramps** in every condition, including with true
+  thresholds. Long faster ramps reach the 2.2 s bound and stop changing. This is a property of the
+  ramp block, not of the pre-run, and is worth a look when the ramp sizes are set in piloting.
+
+**Conclusion.** The decided design holds: a free-response pre-run of about 24 changes (11 minutes,
+plus ~2 of practice) with separate staircases. It costs nothing measurable in the main task and
+protects people with strong asymmetries from having one direction at floor or ceiling. The real
+data suggest such people are common.
+
+---
+
 ## 7. Decisions (append with dates)
 
 - **2026-10-13** (Norm's replies to Nansi on the Google Doc):
@@ -798,3 +895,7 @@ wording fixes for the doc, are in his My Drive root:
   results and a Recommendations section added; Nansi's comment threads untouched. Decisions
   recorded in §7 (the three from Norm's 13 Oct replies, plus a fixed boundary and separate
   speeding/slowing pre-run thresholds).
+- **2026-10-15** — Pre-run simulation (§6h). `schedule.js` takes separate speeding/slowing
+  thresholds (all existing schedules unchanged). Real Intero2025 thresholds (N = 290) set the
+  asymmetry populations. Result: ~24 changes (11 min) with separate staircases; it evens out
+  detection across directions for strongly asymmetric people at no cost to recovery.

@@ -14,7 +14,9 @@
 // Magnitudes are proportional changes in breath *period* (the paper's
 // convention, delta = TotalChange − 1): slower = P·(1 + m), faster = P·(1 − m).
 // They are passed relative to the participant's 50%-detection magnitude
-// (`m50Hat`, the Quest pre-run's estimate), so one design spec serves everyone.
+// (`m50Hat`, the pre-run's estimate), so one design spec serves everyone. With
+// separate pre-run estimates for speeding and slowing (`m50HatFaster`,
+// `m50HatSlower`), each change is scaled by the threshold for its direction.
 //
 // Designs (docs/markdowns/bcat_ddm_plan.md §6a):
 //   brief       — the handoff as written: steps from a fixed baseline, 4 fixed
@@ -59,6 +61,8 @@ export const DEFAULTS = {
   minutes:          40,      // task time budget, pauses included
   basePeriodMs:     4000,
   m50Hat:           0.20,    // participant's estimated 50%-detection magnitude
+  m50HatFaster:     null,    // per-direction estimates (decided 2026-10-15); null = use m50Hat
+  m50HatSlower:     null,
   seed:             1,
   minRatio:         0.55,    // pacer period bounds, as ratios of basePeriodMs
   maxRatio:         1.8,
@@ -196,11 +200,15 @@ function createBuilder(o) {
 
 const changed = (p, dir, mag) => p * (1 + dir * mag)
 
-// A step from period P, magnitude `mag` (proportional), direction chosen at
+// The threshold that scales a change in direction `dir` (+1 slower, −1 faster): the pre-run's
+// separate speeding/slowing estimate when given, otherwise the single m50Hat.
+const m50For = (o, dir) => (dir > 0 ? o.m50HatSlower : o.m50HatFaster) ?? o.m50Hat
+
+// A step from period P of `rel` × the threshold for its direction, direction chosen at
 // random but steered back toward basePeriodMs when near the bounds. Returns
 // { dir, mag, newPeriod } with the magnitude shrunk if both directions would
 // leave the bounds.
-function chooseStep(s, o, rng, P, mag, meanRevert) {
+function chooseStep(s, o, rng, P, rel, meanRevert) {
   let dir = rng.sign()
   if (meanRevert) {
     // P(slower) falls from 1 → 0 as log(P/base) goes from the low bound to the high one
@@ -209,15 +217,20 @@ function chooseStep(s, o, rng, P, mag, meanRevert) {
     const pSlower = 0.5 - 0.5 * Math.max(-1, Math.min(1, x / span))
     dir = rng.u() < pSlower ? 1 : -1
   }
-  const fits = (d) => {
-    const q = changed(P, d, mag)
+  const fits = (d, m) => {
+    const q = changed(P, d, m)
     return q >= o.basePeriodMs * o.minRatio && q <= o.basePeriodMs * o.maxRatio
   }
-  if (!fits(dir)) dir = -dir
-  if (!fits(dir)) {
+  let mag = rel * m50For(o, dir)
+  if (!fits(dir, mag)) {
+    dir = -dir
+    mag = rel * m50For(o, dir)
+  }
+  if (!fits(dir, mag)) {
     // shrink until it fits on the side with more room
     dir = P < o.basePeriodMs ? 1 : -1
-    while (mag > 0.01 && !fits(dir)) mag *= 0.9
+    mag = rel * m50For(o, dir)
+    while (mag > 0.01 && !fits(dir, mag)) mag *= 0.9
   }
   return { dir, mag, newPeriod: changed(P, dir, mag) }
 }
@@ -237,8 +250,7 @@ function runBrief(s, o, rng, endMs) {
     let gapMs = rng.uniform(o.gapMinS, o.gapMaxS) * 1000
     if (o.gapMode === 'onset') gapMs = Math.max(0, gapMs - (s.t - lastOnsetMs))
     const level = rng.weighted(o.briefLevelWeights)
-    const mag = o.briefLevels[level] * o.m50Hat
-    const { dir, mag: m, newPeriod } = chooseStep(s, o, rng, B, mag, false)
+    const { dir, mag: m, newPeriod } = chooseStep(s, o, rng, B, o.briefLevels[level], false)
     const worst = gapMs + W * Math.max(B, newPeriod) + o.probeMs + 4 * B
     if (s.t + worst > endMs) break
     const nGap = Math.ceil(gapMs / B)
@@ -268,7 +280,7 @@ function runRoving(s, o, rng, endMs) {
   for (;;) {
     const nGap = o.minGapBreaths + rng.geometric(o.extraGapMean)
     const rel = rng.logUniform(o.relMagMin, o.relMagMax)
-    const { dir, mag, newPeriod } = chooseStep(s, o, rng, P, rel * o.m50Hat, true)
+    const { dir, mag, newPeriod } = chooseStep(s, o, rng, P, rel, true)
     const worst = nGap * P + W * newPeriod + o.probeMs + 3 * newPeriod
     if (s.t + worst > endMs) break
     for (let k = 0; k < nGap; k++) s.addBreath(P, 'stable')
@@ -294,7 +306,7 @@ function runTrials(s, o, rng, endMs) {
     const onsetIdx = rng.int(o.trialOnsetMin, o.trialOnsetMax)
     const isNull = rng.u() < o.nullP
     const rel = rng.logUniform(o.relMagMin, o.relMagMax)
-    const { dir, mag, newPeriod } = chooseStep(s, o, rng, B, rel * o.m50Hat, false)
+    const { dir, mag, newPeriod } = chooseStep(s, o, rng, B, rel, false)
     const worst = o.itiMs + n * Math.max(B, newPeriod) + o.probeMs
     if (s.t + worst > endMs) break
     s.addPause(o.itiMs, 'iti')
@@ -317,8 +329,8 @@ function runRamp(s, o, rng, endMs) {
     const onsetIdx = rng.int(o.rampOnsetMin, o.rampOnsetMax)
     const isNull = rng.u() < o.nullP
     const rateIdx = rng.int(0, o.rampRates.length - 1)
-    const rate = o.rampRates[rateIdx] * o.m50Hat
     const dir = rng.sign()
+    const rate = o.rampRates[rateIdx] * m50For(o, dir)
     const nRamp = n - onsetIdx
     const periods = []
     for (let k = 1; k <= nRamp; k++) periods.push(isNull ? B : s.clamp(changed(B, dir, rate * k)))
@@ -344,7 +356,7 @@ function runRovingMixed(s, o, rng, endMs) {
   for (;;) {
     const nGap = o.minGapBreaths + rng.geometric(o.extraGapMean)
     const rel = rng.logUniform(o.relMagMin, o.relMagMax)
-    const step = chooseStep(s, o, rng, P, rel * o.m50Hat, true)
+    const step = chooseStep(s, o, rng, P, rel, true)
     const isRamp = rng.u() < o.mixedRampShare
     // Larger ramps (mixedRampMagBoost > 1): a ramp spreads its change over several breaths, so at
     // the steps' size it is mostly missed. Same direction, bigger change, kept inside the bounds.
@@ -392,8 +404,8 @@ function runDoubleBlip(s, o, rng, endMs) {
     const single = rng.u() < o.blipSingleP
     const gap = single ? null : o.blipGaps[rng.int(0, o.blipGaps.length - 1)]
     const sizeIdx = rng.int(0, o.blipSizes.length - 1)
-    const mag = Math.min(o.blipSizes[sizeIdx] * o.m50Hat, 0.42)
     const dir = rng.sign()
+    const mag = Math.min(o.blipSizes[sizeIdx] * m50For(o, dir), 0.42)
     const blipPeriod = s.clamp(changed(B, dir, mag))
     const nProbe = single ? 1 : gap + 2
     const worst = (nSettle + nProbe + o.blipTailBreaths) * Math.max(B, blipPeriod) + o.probeMs + 3 * B
@@ -430,7 +442,7 @@ function runBlipTrain(s, o, rng, endMs) {
     if (!prevBlip && rng.u() < o.blipTrainP) {
       const rel = rng.logUniform(o.blipTrainRelMin, o.blipTrainRelMax)
       const dir = rng.sign()
-      const p = s.clamp(changed(B, dir, rel * o.m50Hat))
+      const p = s.clamp(changed(B, dir, rel * m50For(o, dir)))
       const onsetBreath = s.breaths.length
       const onsetMs = s.t
       s.addBreath(p, 'tblip')
@@ -473,9 +485,9 @@ function runDoubleBump(s, o, rng, endMs) {
     const single = rng.u() < o.bumpSingleP
     const gap = single ? null : o.bumpGaps[rng.int(0, o.bumpGaps.length - 1)]
     const sizeIdx = rng.int(0, o.bumpSizes.length - 1)
-    const peak = Math.min(o.bumpSizes[sizeIdx] * o.m50Hat, 0.42)
     const width = o.bumpWidths[rng.int(0, o.bumpWidths.length - 1)]
     const dir = rng.sign()
+    const peak = Math.min(o.bumpSizes[sizeIdx] * m50For(o, dir), 0.42)
     const nProbe = single ? width : 2 * width + gap
     const worst = (nSettle + nProbe + o.blipTailBreaths) * B * (1 + peak) + o.probeMs + 3 * B
     if (s.t + worst > endMs) break
@@ -508,9 +520,9 @@ function runBumpTrain(s, o, rng, endMs) {
     if (s.t + 6 * B + o.probeMs > endMs) break
     if (rng.u() < o.bumpTrainP) {
       const rel = rng.logUniform(o.bumpTrainRelMin, o.bumpTrainRelMax)
-      const peak = Math.min(rel * o.m50Hat, 0.42)
       const width = o.bumpWidths[rng.int(0, o.bumpWidths.length - 1)]
       const dir = rng.sign()
+      const peak = Math.min(rel * m50For(o, dir), 0.42)
       const onsetBreath = s.breaths.length
       const onsetMs = s.t
       addBump(s, o, B, dir, peak, width, 'tbump')
