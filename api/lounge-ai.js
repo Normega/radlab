@@ -51,8 +51,8 @@ const SUMMARIZE_TOOL = {
   },
 }
 
-// Structured outputs (which 'propose' uses on Sonnet 5.5 — it rejects forced
-// tool use) accept a narrower JSON Schema than tool input did: every object
+// Structured outputs (which 'summarize' and 'propose' use on Sonnet 5.5 — it
+// rejects forced tool use) accept a narrower JSON Schema than tool input did: every object
 // needs additionalProperties:false, and minItems above 1, maxItems,
 // minLength/maxLength, pattern and numeric bounds are not accepted. Rather than
 // lose those limits, move each into the field's description, where the model
@@ -207,19 +207,41 @@ export default async function handler(req, res) {
       }
 
       const anthropic = new Anthropic()
-      const msg = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        tools: [SUMMARIZE_TOOL],
-        tool_choice: { type: 'tool', name: SUMMARIZE_TOOL.name },
+      const msg = await anthropic.beta.messages.create({
+        // Sonnet 5.5 since 2026-10-15 (Haiku 4.5 could retire from that day).
+        // Like 'propose', the grouping is a structured output, since forced
+        // tool use is refused. Unlike 'propose', a lecture hall is waiting: the
+        // remote gives this call 9 s and the results screen reads the summary
+        // once, so a late one never shows. Extended thinking is therefore off
+        // (between_tools, the lowest setting) at low effort, closest to Haiku.
+        model: 'claude-sonnet-5-5',
+        max_tokens: 4000,
+        thinking: { type: 'between_tools' },
+        output_config: {
+          effort: 'low',
+          format: { type: 'json_schema', schema: toStructuredSchema(SUMMARIZE_TOOL.input_schema) },
+        },
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
         messages: [{
           role: 'user',
           content: `These are anonymous in-lecture responses from university students to the prompt below. Group them into 2-4 themes for a projector slide the whole class will see.\n\nRules: theme labels in plain language; shares are rough percentages summing to ~100; each quote VERBATIM from a response, short, and skipped in favor of another if it contains a name, anything identifying, or anything inappropriate to project. Do not invent content that is not in the responses.\n\nPROMPT: ${ck.config?.prompt_text ?? ''}\n\nRESPONSES (${texts.length}):\n${texts.map((t, i) => `${i + 1}. ${t.slice(0, 300)}`).join('\n')}`,
         }],
       })
-      const call = msg.content.find(b => b.type === 'tool_use')
-      if (!call) throw new Error('model returned no grouping')
-      const summary = { ...call.input, n: texts.length, generated_at: new Date().toISOString() }
+      // A course on psychopathology asks about suicide and self-harm, and the
+      // fallback above retries only cyber/frontier_llm declines. A decline
+      // clears the themes the same way too few answers do: the results still
+      // show, without the panel, and no earlier summary is left on screen.
+      if (msg.stop_reason === 'refusal') {
+        await service.from('checkins').update({ results_summary: null }).eq('id', checkinId)
+        return res.status(200).json({ ok: true, summary: null, reason: `model declined (${msg.stop_details?.category ?? 'no category given'})` })
+      }
+      if (msg.stop_reason === 'max_tokens') throw new Error('The grouping ran past the length limit before it finished')
+      const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('')
+      let grouping = null
+      try { grouping = text ? JSON.parse(text) : null } catch { grouping = null }
+      if (!grouping) throw new Error('model returned no grouping')
+      const summary = { ...grouping, n: texts.length, generated_at: new Date().toISOString() }
       await service.from('checkins').update({ results_summary: summary }).eq('id', checkinId)
       return res.status(200).json({ ok: true, summary })
     }
