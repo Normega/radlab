@@ -22,9 +22,24 @@
   <p class="kicker">Check in</p>
   <h1>Open the Lecture Lounge</h1>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <p class="lead">Two weeks ago you built a fake correlation out of a confound and asked: what do you do about the C you never measured?</p>
-  <p class="big hidden-until">Today's answer.</p>
-  <aside class="notes"><p>Check-in position 1.</p></aside>
+  <p class="lead">Three weeks ago you built a fake correlation out of a confound in R, then made it vanish by controlling for C. That worked because you had measured C.</p>
+  <p class="big hidden-until">Today: what to do about the C you never measured.</p>
+  <aside class="notes"><p>Check-in position 1. The callback is L4's <code>L4_confound.R</code>: r(A,B) of about .40 from pure confounding, and a beta for A of about 0 once C was in the model.</p></aside>
+</section>
+
+<section class="dense">
+  <p class="kicker">Last week, in your words</p>
+  <h1>You asked</h1>
+  <ul>
+    <li>&#8220;Cohen&#8217;s <em>d</em> is still a little confusing. Are the groups we are comparing the experimental and control?&#8221;</li>
+    <li>&#8220;For CI, is it a good rule of thumb that the smaller the CI, the better?&#8221;</li>
+    <li>&#8220;I still need more clarification on how to detect and change power in RStudio.&#8221;</li>
+    <li>&#8220;R is my sleep paralysis demon.&#8221;</li>
+  </ul>
+  <div class="box hidden-until">
+    <p><strong>All four get answered today, in that order.</strong> <em>d</em> is the experiment&#8217;s effect size, so it comes up in the first half hour. Narrower intervals come back under null results. Power for a correlation is one line of R, and the lab block uses it for Practical 4.</p>
+  </div>
+  <aside class="notes"><p>Taken from the Oct 13 break check-ins (positions 5 and 25). The theme of Break 2 was R: about half of the 26 answers named it, including "extremely confused and very overwhelmed". Two more asked whether coding is on the test and whether missing one break check-in costs participation credit. Answer both out loud here. [Norm: add your answers to these two before Tuesday.]</p></aside>
 </section>
 
 <section data-kind="divider">
@@ -35,9 +50,9 @@
 <section>
   <h1>What "A causes B" owes you</h1>
   <ul>
-    <li><strong>Covariance</strong> — A and B travel together. <span class="small">Any correlation can pay this.</span></li>
-    <li><strong>Temporal precedence</strong> — A comes before B. <span class="small">Longitudinal designs can partly pay this.</span></li>
-    <li><strong>Internal validity</strong> — nothing else explains the link. <span class="small">Correlational research can chip away, never retire it — you cannot control for what you didn't measure.</span></li>
+    <li><strong>Covariance</strong>: A and B travel together. <span class="small">Any correlation can pay this.</span></li>
+    <li><strong>Temporal precedence</strong>: A comes before B. <span class="small">Longitudinal designs can partly pay this.</span></li>
+    <li><strong>Internal validity</strong>: nothing else explains the link. <span class="small">Correlational research can chip away at this but never retire it, because you cannot control for what you didn't measure.</span></li>
   </ul>
   <p class="big hidden-until">The experiment pays all three, with two structural moves.</p>
 </section>
@@ -46,20 +61,21 @@
   <p class="kicker">Move one</p>
   <h1>Manipulation</h1>
   <p class="big">You <em>set</em> the causal variable instead of measuring it.</p>
-  <p class="lead">Assign this participant to caffeine, that one to decaf.</p>
+  <p class="lead">This participant writes down three things they&#8217;re grateful for. That one writes down three things that happened today.</p>
   <div class="box hidden-until">
-    <p><strong>This buys temporal precedence outright.</strong> You created A at a known moment, then measured B after it.</p>
-    <p>No cross-lagged inference. No "which came first." You were there — you did it.</p>
+    <p><strong>This buys temporal precedence outright.</strong> You created the gratitude at a known moment, then measured optimism after it.</p>
+    <p>There's no cross-lagged inference and no "which came first." You were there, and you did it.</p>
   </div>
+  <aside class="notes"><p>This is the course's running example from the Practical 3&#8211;5 worked examples (gratitude vs neutral journaling, optimism DV, perceived stress covariate). Keeping one study all lecture lets them map every idea onto their own Study 2.</p></aside>
 </section>
 
 <section class="dense">
   <p class="kicker">Move two · the crown jewel</p>
   <h1>Random assignment</h1>
-  <p>Any pre-existing difference between your groups — age, personality, sleep, wealth, genetics, <em>things nobody has named</em> — is a potential selection effect.</p>
+  <p>Any pre-existing difference between your groups is a potential selection effect: age, personality, sleep, wealth, genetics, <em>things nobody has named</em>.</p>
   <div class="box hidden-until">
     <p class="big" style="font-size:3.2vmin">A coin flip severs <strong>every one of those links at once.</strong></p>
-    <p>Whatever a person brings with them, chance distributes it evenly across conditions — <em>on average</em>. Any single randomization can be unlucky; the <em>procedure</em> has no systematic direction.</p>
+    <p>Whatever a person brings with them, chance spreads it evenly across conditions <em>on average</em>. Any single randomization can be unlucky, but the <em>procedure</em> has no systematic direction.</p>
   </div>
   <div class="svgwrap hidden-until"><svg viewBox="0 0 620 230" role="img" aria-labelledby="ra-t ra-d">
 <title id="ra-t">What random assignment does to pre-existing differences</title>
@@ -87,8 +103,19 @@
 <g><line x1="462" y1="80" x2="478" y2="96" stroke="#0CA678" stroke-width="3"/><line x1="478" y1="80" x2="462" y2="96" stroke="#0CA678" stroke-width="3"/></g><g><line x1="462" y1="118" x2="478" y2="134" stroke="#0CA678" stroke-width="3"/><line x1="478" y1="118" x2="462" y2="134" stroke="#0CA678" stroke-width="3"/></g><g><line x1="462" y1="156" x2="478" y2="172" stroke="#0CA678" stroke-width="3"/><line x1="478" y1="156" x2="462" y2="172" stroke="#0CA678" stroke-width="3"/></g>
 <text x="465" y="196" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#0CA678">every link cut at once &#8212; even the unnamed one</text>
 </svg></div>
-  <p class="hidden-until lead">This is why one experiment can outrank a hundred regressions. Regression evicts the third variables someone thought to measure. <strong>Random assignment evicts them all — including the unimagined ones.</strong></p>
-  <aside class="notes"><p>Say this slowly. Five minutes of talking, not a bullet. Explicitly connect back to the L4 R exercise: you removed a confound because you knew to measure C. This handles the ones you don't know about.</p></aside>
+  <aside class="notes"><p>Say this slowly: five minutes of talking, not a bullet. The next slide puts it side by side with the L4 R exercise, which is the argument the whole course has been building toward.</p></aside>
+</section>
+
+<section>
+  <h1>Two ways to get rid of C</h1>
+  <table>
+    <tr><th></th><th>Statistical control <span class="small">(L4)</span></th><th>Random assignment <span class="small">(today)</span></th></tr>
+    <tr><td class="rowhead">How</td><td>Measure C, put it in the model</td><td>Flip a coin for every participant</td></tr>
+    <tr><td class="rowhead">Removes</td><td>The Cs someone thought to measure, and measured well</td><td><strong>Every C</strong>: measured, unmeasured, unimagined</td></tr>
+    <tr><td class="rowhead">Requires</td><td>Only data</td><td>That you can <em>set</em> A, ethically and practically</td></tr>
+  </table>
+  <p class="hidden-until lead">This is why one experiment can outrank a hundred regressions. <strong>And why we still run regressions:</strong> nobody can randomly assign smoking, poverty, or a childhood.</p>
+  <aside class="notes"><p>The "measured well" in the middle row matters too. A covariate measured with error only partly removes its confound, which connects back to the reliability weeks.</p></aside>
 </section>
 
 <section>
@@ -98,36 +125,85 @@
     <tr><td class="rowhead">Random <strong>sampling</strong></td><td>Who gets <em>in</em></td><td>External validity</td></tr>
     <tr><td class="rowhead">Random <strong>assignment</strong></td><td>Who gets <em>which condition</em></td><td>Internal validity</td></tr>
   </table>
-  <p class="hidden-until">Independent: a study can have both, either, or neither. A convenience sample, randomly assigned, supports a causal claim about <em>somebody</em> while leaving "about whom?" open.</p>
+  <p class="hidden-until">They're independent: a study can have both, either, or neither. A convenience sample that is randomly assigned supports a causal claim about <em>somebody</em>, and leaves "about whom?" open.</p>
+  <p class="small hidden-until">Your Study 2 is exactly that: undergraduates (convenience), randomly assigned (causal). Say so in your Discussion.</p>
 </section>
 
 <section>
   <h1>The comparison group is not optional</h1>
   <p class="big">An experiment without one is personal experience wearing a lab coat.</p>
-  <p>"Everyone improved after the intervention" means nothing without knowing what happened to people who didn't get it.</p>
+  <p>"Everyone got more optimistic after journaling" means nothing until you know what happened to people who didn't journal about gratitude.</p>
   <ul class="hidden-until">
-    <li><strong>No-treatment control</strong></li>
-    <li><strong>Placebo control</strong> — everything except the active ingredient</li>
-    <li><strong>Another active condition</strong> — "compared to the current best method," often the more interesting question</li>
+    <li><strong>No-treatment control</strong>: no journal at all</li>
+    <li><strong>Placebo / active control</strong>: everything except the active ingredient, such as writing about today&#8217;s events</li>
+    <li><strong>Another real treatment</strong>: "compared with the current best method," which is often the more interesting question</li>
   </ul>
-  <p class="hidden-until"><strong>Choosing the comparison is choosing the claim.</strong> Caffeine-vs-decaf and caffeine-vs-nothing answer different questions.</p>
+  <p class="hidden-until"><strong>Choosing the comparison is choosing the claim.</strong> Gratitude-vs-neutral-writing and gratitude-vs-nothing answer different questions.</p>
+  <aside class="notes"><p>Gratitude vs nothing confounds gratitude with writing, with ten minutes of reflection, and with being in a study that asked you to do something. The neutral-journal control holds all of those constant, so only the content differs.</p></aside>
 </section>
 
 <section>
-  <h1>Three job titles</h1>
+  <p class="kicker">The experiment&#8217;s effect size</p>
+  <h1>Cohen&#8217;s <em>d</em>: yes, experimental vs control</h1>
+  <p class="big" style="font-size:3.4vmin">d = (M<sub>gratitude</sub> &#8722; M<sub>neutral</sub>) &#247; SD</p>
+  <p>It answers how far apart the two conditions ended up, in units of how much people vary anyway.</p>
+  <ul>
+    <li class="hidden-until">The worked example: optimism SD &#8776; 10, gratitude +5 points, so <strong>d = 0.5</strong>.</li>
+    <li class="hidden-until"><em>d</em> = 0.5 means the average gratitude writer scores higher than about 69% of neutral writers.</li>
+    <li class="hidden-until">It is Study 2&#8217;s version of Study 1&#8217;s <em>r</em>: both say <em>how much</em>, which <em>p</em> never does.</li>
+  </ul>
+  <aside class="notes"><p>Answers the Oct 13 break question directly. The 69% is U3 = &#934;(0.5) = .69. For conversion between the two: d = 2r &#247; &#8730;(1 &#8722; r&#178;), so r = .24 is about d = 0.5. Practical 5 powers Study 2 from this d.</p></aside>
+</section>
+
+<section class="dense" data-kind="activity">
+  <p class="kicker">Quick fire · on your own phone</p>
+  <h1>Name the part</h1>
+  <p class="lead">One study, five pieces. Answer on your own; no groups, no conferring.</p>
+  <p class="small">Students are randomly assigned to write about <em>three things they&#8217;re grateful for</em> or <em>three things that happened today</em>, for 10 minutes, every evening for a week. Optimism is measured at the end.</p>
+  <ol class="small">
+    <li>&#8220;Type of journaling&#8221; is the&#8230;</li>
+    <li>&#8220;10 minutes, same app, every evening&#8221; is a&#8230;</li>
+    <li>&#8220;Three things that happened today&#8221; is the&#8230;</li>
+    <li>Right after writing: &#8220;How grateful do you feel right now?&#8221; is a&#8230;</li>
+    <li>Perceived stress, measured <em>before</em> random assignment, is a&#8230;</li>
+  </ol>
+  <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
+  <aside class="notes"><p>Check-in position 3: a keyed five-item quiz. Show the distribution first, then the key. Keys: (1) IV; (2) control variable; (3) control (comparison) condition; (4) manipulation check; (5) covariate. Item 2 vs 3 is the one to dwell on: a control variable is held constant and experienced by everyone, while the control condition is a level of the IV. Item 5 sets up the next slide. This replaces the old "three job titles" lecture slide. Several students said last week that this is review from PSY201/202, so test it rather than re-teach it.</p></aside>
+</section>
+
+<section>
+  <h1>The key</h1>
+  <table>
+    <tr><th></th><th>Answer</th><th>The tell</th></tr>
+    <tr class="hidden-until"><td class="rowhead">1</td><td><strong>IV</strong> (two conditions, one IV)</td><td>You set it</td></tr>
+    <tr class="hidden-until"><td class="rowhead">2</td><td><strong>Control variable</strong></td><td>Held constant; everyone gets it</td></tr>
+    <tr class="hidden-until"><td class="rowhead">3</td><td><strong>Control condition</strong></td><td>A level of the IV</td></tr>
+    <tr class="hidden-until"><td class="rowhead">4</td><td><strong>Manipulation check</strong></td><td>Did the IV do what you meant it to?</td></tr>
+    <tr class="hidden-until"><td class="rowhead">5</td><td><strong>Covariate</strong></td><td>Measured, never set</td></tr>
+  </table>
+  <p class="small hidden-until">No manipulation check? Then a null is ambiguous: maybe gratitude doesn&#8217;t work, or maybe nobody felt grateful.</p>
+</section>
+
+<section class="dense">
+  <p class="kicker">Your Study 2</p>
+  <h1>Your covariate changes jobs</h1>
   <div class="cols">
     <div>
-      <p><strong>IV</strong> — what you manipulate. Its levels are the <em>conditions</em>. Caffeine/decaf is one IV with two conditions, not two IVs.</p>
-      <p><strong>DV</strong> — what you measure. Everything from the measurement weeks applies: reliability, validity, scale.</p>
+      <p><strong>Study 1 (correlational)</strong>: stress and optimism are both <em>measured</em>. A third variable could produce the <em>r</em>, so the covariate is a suspect.</p>
     </div>
     <div>
-      <p><strong>Control variables</strong> — what you hold constant. Same room, same time, same script.</p>
-      <div class="box warn hidden-until">
-        <p>A <strong>control variable</strong> (held constant) is not a <strong>control group</strong> (a level of the IV). The group experiences a condition; control variables experience nothing at all.</p>
-      </div>
+      <p><strong>Study 2 (experimental)</strong>: random assignment makes condition independent of stress, on average. Stress <strong>can&#8217;t confound</strong> the effect of journaling.</p>
     </div>
   </div>
-  <p class="small hidden-until"><strong>Manipulation check:</strong> did your "stress condition" actually make anyone stressed? Its absence is a standing weakness to flag.</p>
+  <div class="box hidden-until">
+    <p>So in Study 2 a covariate has two jobs left:</p>
+    <ol>
+      <li><strong>Soak up noise</strong>: account for the optimism differences stress explains, and the effect of journaling gets easier to see.</li>
+      <li><strong>Moderate</strong>: does gratitude help stressed people <em>more</em>? That&#8217;s Tier 2 (low vs high stress) or Tier 3 (stress as a continuous moderator).</li>
+    </ol>
+  </div>
+  <p class="small hidden-until">A covariate <em>adjusts</em> the effect; a moderator <em>changes</em> it. Same variable, different question: the distinction from last week&#8217;s debrief, now inside your own design.</p>
+  <aside class="notes"><p>Several students named covariates and moderators as still unclear on Oct 13, after the Test 1 debrief. This is the payoff: the reason a pre-randomization covariate is safe in an experiment is the reason random assignment works at all. Practical 5's tiers map onto job 2.</p></aside>
 </section>
 
 <section data-kind="break">
@@ -136,11 +212,12 @@
   <p class="url">radlab.zone/class/psy309</p>
   <div class="break-row">
   <div class="qbox">
-    <p><strong>The material:</strong> what's one idea from the first hour that clicked — and one that didn't?</p>
+    <p><strong>The material:</strong> what's one idea from the first hour that clicked, and one that didn't?</p>
     <p><strong>You:</strong> how engaged have you felt so far, and what would help?</p>
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
+  <p class="small"><strong>Before you come back:</strong> open the study you&#8217;re about to break at <strong>radlab.zone/psy309/L7-protocol.html</strong> on your phone or the lab computer.</p>
   <aside class="notes"><p>Check-in position 5.</p></aside>
 </section>
 
@@ -152,9 +229,9 @@
     <div>
       <p>For each problem:</p>
       <ol>
-        <li><strong>Name it precisely</strong> — the technical term</li>
-        <li>Which validity it threatens</li>
-        <li>How you'd fix it</li>
+        <li><strong>Name it precisely</strong> (the technical term)</li>
+        <li>Say which validity it threatens</li>
+        <li>Say how you&#8217;d fix it</li>
       </ol>
     </div>
     <div>
@@ -164,32 +241,32 @@
       </div>
     </div>
   </div>
-  <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 10, 20-minute countdown. The protocol is on Quercus. Announce the scoring up front — it is the cheapest way to move a class from vague critique to the vocabulary the test rewards.</p></aside>
+  <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:2.6vmin;color:var(--accent);font-weight:600">radlab.zone/psy309/L7-protocol.html</p><div class="break-qr"><img src="./assets/L7-protocol-qr.png" alt="QR code linking to the Break This Study protocol"></div></div>
+  <aside class="notes"><p>Check-in position 10: a prompt that collects each person's list. Close it by hand at 20 minutes (no countdown is seeded). Then 5 minutes for the scoreboard and 5 for one repair. The protocol is also on its own page (the QR), so nobody has to squint at the projector. Announce the scoring up front: it is the cheapest way to move a class from vague critique to the vocabulary the test rewards.</p></aside>
 </section>
 
 <section>
   <h2>Does background music improve studying?</h2>
   <p class="small">60 students from a third-year psych course signed up via a shared sheet listing two sessions and chose whichever suited their timetable. The <strong>Tuesday 9am</strong> session became the <em>music</em> group (n = 31); <strong>Thursday 4pm</strong> became <em>silence</em> (n = 29).</p>
-  <p class="small">The music group studied in the department lounge — sofas, natural light — with instrumental music. The silence group used a standard classroom. Same chapter, 30 minutes.</p>
+  <p class="small">The music group studied in the department lounge (sofas, natural light) with instrumental music. The silence group used a standard classroom. Same chapter, 30 minutes.</p>
   <p class="small">After studying, a 10-question quiz written by the researcher. Mean <strong>9.1 / 10</strong>; 22 participants scored a perfect 10.</p>
   <p class="small">The researcher ran both sessions, greeted participants, <strong>explained the hypothesis that "music helps you focus,"</strong> and marked the quizzes.</p>
   <p class="small"><strong>Result:</strong> music 9.4 vs silence 8.8, p = .04. Conclusion: install speakers in study spaces university-wide.</p>
-  <aside class="notes"><p>Leave this on screen for the full 20 minutes. Circulate. Don't confirm finds — say "write it down precisely."</p></aside>
+  <aside class="notes"><p>Leave this on screen for the full 20 minutes. Circulate. Don't confirm finds; say "write it down precisely."</p></aside>
 </section>
 
 <section>
   <h1>The five</h1>
   <ol>
-    <li class="hidden-until"><strong>Selection effect</strong> — participants chose their session. 9am people differ from 4pm people.</li>
-    <li class="hidden-until"><strong>Design confound</strong> — the music group also got the comfortable lounge.</li>
-    <li class="hidden-until"><strong>Ceiling effect</strong> — mean 9.1/10, 22 perfect scores. No room to differ.</li>
-    <li class="hidden-until"><strong>Demand characteristics + no masking</strong> — he told them the hypothesis, then marked the quizzes himself.</li>
-    <li class="hidden-until"><strong>A second design confound</strong> — time of day is perfectly confounded with condition.</li>
+    <li class="hidden-until"><strong>Selection effect</strong>: participants chose their session, and 9am people differ from 4pm people.</li>
+    <li class="hidden-until"><strong>Design confound</strong>: the music group also got the comfortable lounge.</li>
+    <li class="hidden-until"><strong>Ceiling effect</strong>: mean 9.1/10 and 22 perfect scores leave no room to differ.</li>
+    <li class="hidden-until"><strong>Demand characteristics + no masking</strong>: he told them the hypothesis, then marked the quizzes himself.</li>
+    <li class="hidden-until"><strong>A second design confound</strong>: time of day is perfectly confounded with condition.</li>
   </ol>
   <p class="small hidden-until">Bonus credit: over-generalization to the whole university · p = .04 with no effect size or CI · a home-made, unvalidated quiz.</p>
   <p class="hidden-until big" style="font-size:3vmin">Now: <em>if you fix everything, what does the study cost?</em></p>
-  <aside class="notes"><p>That last question is the real content. Same room, same time, random assignment, masked marking, harder test — a much more expensive study answering a narrower question. That trade IS experimental design.</p></aside>
+  <aside class="notes"><p>That last question is the real content. Same room, same time, random assignment, masked marking and a harder test make a much more expensive study that answers a narrower question. That trade IS experimental design.</p></aside>
 </section>
 
 <section data-kind="break">
@@ -199,11 +276,12 @@
   <div class="break-row">
   <div class="qbox">
     <p><strong>The material:</strong> what's one question you still have about today, now that you've worked with it?</p>
-    <p><strong>You:</strong> how has your engagement changed since the first break — and what changed it?</p>
+    <p><strong>You:</strong> how has your engagement changed since the first break, and what changed it?</p>
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
-  <aside class="notes"><p>Check-in position 15.</p></aside>
+  <p class="small"><strong>Before you come back:</strong> log in at <a href="http://r.datatools.utoronto.ca/" style="color:inherit">r.datatools.utoronto.ca</a> and open <code>Practical4_2026.Rmd</code> (Quercus &#8594; Files &#8594; Rcode). The lab block uses it.</p>
+  <aside class="notes"><p>Check-in position 15. [Norm: confirm the Practical 4 worked example is posted in Quercus Rcode before Tuesday; L6 linked a direct download for its script.]</p></aside>
 </section>
 
 <section data-kind="divider">
@@ -211,16 +289,16 @@
   <h1>Everything else that can go wrong</h1>
 </section>
 
-<section>
+<section class="dense">
   <h1>Within or between?</h1>
   <div class="cols">
     <div>
-      <p><strong>Between-groups.</strong> Different people, different conditions. Safe from contamination; mandatory when one condition spoils the other.</p>
+      <p><strong>Between-groups.</strong> Different people take different conditions: safe from contamination, and mandatory when one condition spoils the other.</p>
       <p class="small">The bill: people differ enormously, and all of it lands in your noise term.</p>
     </div>
     <div>
-      <p><strong>Within-groups.</strong> Everyone does everything; each person is their own control.</p>
-      <p class="small">Maria's caffeinated RT is compared to <em>Maria's</em> decaf RT. Her chronic speed subtracts itself out — far less noise, far fewer participants.</p>
+      <p><strong>Within-groups.</strong> Everyone does everything, so each person is their own control.</p>
+      <p class="small">Maria&#8217;s mood after a funny video vs <em>Maria&#8217;s</em> mood after a neutral one: her baseline cheerfulness subtracts itself out.</p>
     </div>
   </div>
   <div class="svgwrap hidden-until"><svg viewBox="0 0 600 210" role="img" aria-labelledby="wb-t wb-d">
@@ -244,34 +322,35 @@
 <text x="450" y="178" text-anchor="middle" font-size="11.5" fill="#0CA678">each person is their own control</text>
 </svg></div>
   <div class="box warn hidden-until">
-    <p><strong>The bill: order effects.</strong> Practice, fatigue, carryover. Same order for everyone = order is confounded with condition.</p>
-    <p><strong>Counterbalance:</strong> half get A→B, half B→A. Order effects still exist but no longer line up with condition — the same move randomization performs on selection effects.</p>
+    <p><strong>The bill: order effects.</strong> Practice, fatigue, carryover. If everyone gets the same order, order is confounded with condition.</p>
+    <p><strong>Counterbalance:</strong> half get A&#8594;B, half B&#8594;A, so order no longer lines up with condition.</p>
+    <p class="small"><strong>Could your Study 2 be within?</strong> Not the gratitude one: you can&#8217;t un-count your blessings. When carryover is permanent, between is mandatory.</p>
   </div>
-  <p class="small hidden-until"><strong>Within if you can, between if you must.</strong></p>
 </section>
 
 <section class="dense">
   <h1>The impostor</h1>
   <p class="big">Measure. Treat. Measure again. Celebrate the improvement.</p>
-  <p class="lead">The design of every testimonial and too many program evaluations.</p>
-  <p class="hidden-until">It <em>looks</em> within-subjects but has <strong>no comparison condition</strong> — so everything else that happened between the two measurements is fully confounded with the treatment.</p>
+  <p class="lead">It's the design of every testimonial and too many program evaluations.</p>
+  <p class="hidden-until">It <em>looks</em> within-subjects but has <strong>no comparison condition</strong>, so everything else that happened between the two measurements is fully confounded with the treatment.</p>
   <div class="svgwrap hidden-until"><svg viewBox="0 0 340 205" role="img" aria-labelledby="rp-t rp-d"><title id="rp-t">The repair: add a control group</title><desc id="rp-d">Both lines rise from pre to post; the treatment line rises more. The gap between the two rises is the effect.</desc><line x1="42" y1="22" x2="42" y2="165" stroke="#DCE2E6"/><line x1="42" y1="165" x2="244" y2="165" stroke="#141B22" stroke-width="1.5"/><polyline points="42,124 244,63" fill="none" stroke="#1F5C8B" stroke-width="3.5"/><circle cx="42" cy="124" r="5" fill="#1F5C8B"/><circle cx="244" cy="63" r="5" fill="#1F5C8B"/><text x="253" y="67" font-size="12.5" font-weight="bold" fill="#1F5C8B">Treatment</text><polyline points="42,124 244,83" fill="none" stroke="#B5540F" stroke-width="3.5"/><circle cx="42" cy="124" r="5" fill="#B5540F"/><circle cx="244" cy="83" r="5" fill="#B5540F"/><text x="253" y="87" font-size="12.5" font-weight="bold" fill="#B5540F">Control</text><text x="42" y="185" text-anchor="middle" font-size="12" fill="#141B22">Pre</text><text x="244" y="185" text-anchor="middle" font-size="12" fill="#141B22">Post</text><text x="12" y="94" font-size="11.5" fill="#5C6773" transform="rotate(-90 12 94)" text-anchor="middle">outcome</text></svg></div>
-  <p class="hidden-until"><strong>The repair is the answer to most problems in this course:</strong> a control group also improves &#8212; maturation, history and regression happen to them too. <em>The difference between the two rises is the treatment.</em></p>
+  <p class="hidden-until"><strong>The repair is the answer to most problems in this course:</strong> a control group improves too, because maturation, history and regression happen to them as well. <em>The difference between the two rises is the treatment.</em></p>
 </section>
 
 <section>
   <h1>The rogues' gallery</h1>
   <ul>
-    <li><strong>Maturation</strong> — they were going to change anyway</li>
-    <li><strong>History</strong> — something else happened to everyone</li>
-    <li><strong>Regression to the mean</strong> — select on extremity and the average drifts to the middle with no intervention at all</li>
-    <li><strong>Attrition</strong> — the leavers take their scores with them</li>
-    <li><strong>Testing &amp; instrumentation</strong> — the measure changed, not the person</li>
+    <li><strong>Maturation</strong>: they were going to change anyway</li>
+    <li><strong>History</strong>: something else happened to everyone</li>
+    <li><strong>Regression to the mean</strong>: select on extremity and the average drifts to the middle with no intervention at all</li>
+    <li><strong>Attrition</strong>: the leavers take their scores with them</li>
+    <li><strong>Testing &amp; instrumentation</strong>: the measure changed, not the person</li>
   </ul>
   <div class="box hidden-until">
-    <p><strong>The master key:</strong> would this threat affect a control group equally? If yes, the comparison design handles it. If no — you've found the interesting weakness.</p>
+    <p><strong>The master key:</strong> would this threat affect a control group equally? If yes, the comparison design handles it. If no, you've found the interesting weakness.</p>
   </div>
   <p class="small hidden-until"><strong>Over-learn regression to the mean.</strong> "We treated the most severe cases and they improved" is the weakest sentence in program evaluation, and it follows you into every domain that selects on extremes.</p>
+  <aside class="notes"><p>Attrition is the one the master key does not always handle: if the stressed people drop out of the gratitude condition (too much homework) but not the neutral one, the groups stop being randomized at the end.</p></aside>
 </section>
 
 <section class="dense">
@@ -279,64 +358,81 @@
   <h1>Name the threats</h1>
   <p class="big">&#8220;A campus program recruits the 20 most-stressed students from a screening. After eight weeks of workshops, their average stress has dropped sharply. The program is declared a success.&#8221;</p>
   <ul>
-    <li class="hidden-until"><strong>Regression to the mean</strong> &#8212; selected <em>because</em> extreme; the luck that selected them doesn&#8217;t repeat.</li>
-    <li class="hidden-until"><strong>Maturation / history</strong> &#8212; eight weeks passed; the term&#8217;s rhythm changed for everyone.</li>
-    <li class="hidden-until"><strong>No comparison group</strong> &#8212; the one-group pretest/posttest, in the wild.</li>
-    <li class="hidden-until"><strong>The fix:</strong> randomize the 20 into workshop-now vs waitlist &#8212; both regress, both mature; the difference is the program.</li>
+    <li class="hidden-until"><strong>Regression to the mean</strong>: selected <em>because</em> extreme; that luck doesn&#8217;t repeat.</li>
+    <li class="hidden-until"><strong>Maturation / history</strong>: eight weeks of term passed for everyone.</li>
+    <li class="hidden-until"><strong>No comparison group</strong>: the one-group pretest/posttest, in the wild.</li>
+    <li class="hidden-until"><strong>The fix:</strong> randomize the 20 to workshop-now vs waitlist. Both regress, both mature; the difference is the program.</li>
   </ul>
-  <aside class="notes"><p>This is the Test 2 short-answer shape exactly. Reveal after the room proposes; precision is the currency — "regression to the mean" scores, "they'd get better anyway" half-scores.</p></aside>
+  <aside class="notes"><p>This is exactly the shape of a Test 2 short answer. Reveal after the room proposes. Precision is the currency: "regression to the mean" scores, "they'd get better anyway" half-scores.</p></aside>
 </section>
 
 <section>
   <h1>Minds that know things</h1>
   <div class="cols">
     <div>
-      <p><strong>Placebo effects</strong> — expecting improvement produces some. Real machinery, not faking.</p>
-      <p><strong>Demand characteristics</strong> — participants read what the study wants and oblige.</p>
-      <p><strong>Experimenter expectancy</strong> — Clever Hans, at full scale.</p>
+      <p><strong>Placebo effects</strong>: expecting improvement produces some. It's real machinery, not faking.</p>
+      <p><strong>Demand characteristics</strong>: participants read what the study wants and oblige.</p>
+      <p><strong>Experimenter expectancy</strong>: Clever Hans, at full scale.</p>
     </div>
     <div>
       <div class="box hidden-until">
-        <p><strong>Blinding.</strong> Single: participants don't know. Double: nor do the people running sessions and scoring outcomes.</p>
-        <p class="small">Same move as random assignment — take the knowledge away from anyone whose behaviour could carry it. In any Method section, "double-blind, placebo-controlled" is two structural safeguards being claimed.</p>
+        <p><strong>Blinding.</strong> Single: participants don't know. Double: neither do the people running sessions and scoring outcomes.</p>
+        <p class="small">It's the same move as random assignment: take the knowledge away from anyone whose behaviour could carry it. In a Method section, "double-blind, placebo-controlled" claims two structural safeguards.</p>
       </div>
     </div>
   </div>
+  <p class="small hidden-until">Your gratitude participants can&#8217;t be blind to what they wrote. You <em>can</em> describe both journals as &#8220;reflective writing&#8221; and keep the hypothesis to yourself, which is the music study&#8217;s fault #4, repaired.</p>
 </section>
 
 <section>
   <h1>When nothing happens</h1>
-  <p class="lead">Three suspects before you conclude "no effect" — check the phone before deciding nobody's calling.</p>
+  <p class="lead">Before you conclude "no effect," check three suspects. Check the phone before deciding nobody's calling.</p>
   <ol>
-    <li><strong>The manipulation was too weak.</strong> $0 vs $1 when it takes $20 to move anyone.</li>
+    <li><strong>The manipulation was too weak.</strong> One gratitude sentence, once, when it takes a week of journaling to move anyone. <span class="small">(Your manipulation check tells you.)</span></li>
     <li><strong>The DV couldn't register it.</strong> Ceiling, floor, or a scale too coarse.</li>
-    <li><strong>Noise buried it.</strong> Too few participants, unreliable measures, a between design where individual differences swamp the signal.</li>
+    <li><strong>Noise buried it.</strong> Too few participants, unreliable measures, or a between design where individual differences swamp the signal.</li>
   </ol>
-  <p class="hidden-until"><strong>Rule those out and a null becomes evidence.</strong> "d = 0.02, 95% CI [−.08, .12]" says: if there's an effect, it's trivial. That's a real scientific claim.</p>
-  <p class="small hidden-until">Never "we proved there is no effect." You saw in October what low power does to null results.</p>
+  <p class="hidden-until"><strong>Rule those out and a null becomes evidence.</strong> "d = 0.02, 95% CI [&#8722;.08, .12]" says: if there's an effect, it's trivial. That's a real scientific claim.</p>
+  <p class="small hidden-until"><strong>So is a narrower CI better?</strong> It&#8217;s more <em>precise</em>, not more <em>right</em>, and precision is exactly what lets a null mean something. Last week at n = 20 your power was 25%: a null from that study says almost nothing.</p>
+  <aside class="notes"><p>Answers the Oct 13 break question about CI width. The 25% is L5_sampling.R at n = 20, true r = .30. Never say "we proved there is no effect."</p></aside>
 </section>
 
 <section data-kind="activity">
-  <p class="kicker">Lab block · 30 minutes</p>
-  <h1>Your own design</h1>
-  <div class="box warn">
-    <p class="big" style="font-size:3vmin">Apply the checklist you just used to <em>your</em> proposed experiment.</p>
-    <p>Name one design confound a skeptic would raise about your procedure — and how you've eliminated it.</p>
+  <p class="kicker">Lab block · Practical 4, Parts 1&#8211;2</p>
+  <h1>Size it, then power it</h1>
+  <div class="cols">
+    <div>
+      <ol>
+        <li><strong>Find your <em>r</em>.</strong> Two empirical papers that report how strongly your covariate and DV go together. No one has? Argue it from theory, and lean small.</li>
+        <li class="hidden-until"><strong>Power it.</strong> One line:
+          <pre>pwr.r.test(r = .31, power = .80)</pre></li>
+        <li class="hidden-until"><strong>Post it:</strong> your <em>r</em>, its source, your <em>n</em>.</li>
+      </ol>
+    </div>
+    <div>
+      <table class="hidden-until">
+        <tr><th><em>r</em></th><th><em>n</em> for 80%</th></tr>
+        <tr><td>.10</td><td>782</td></tr>
+        <tr><td>.20</td><td>194</td></tr>
+        <tr><td>.30</td><td>85</td></tr>
+        <tr><td>.50</td><td>29</td></tr>
+      </table>
+    </div>
   </div>
-  <p class="small">TAs circulating. That paragraph, written now with help available, is the strongest paragraph in most final papers.</p>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 20.</p></aside>
+  <aside class="notes"><p>Check-in position 20. This is the "thinking part" of Practical 4, done with TAs in the room before reading week. Numbers from pwr.r.test (α = .05, two-tailed): the worked example's r = &#8722;.31 gives n = 79, which is the r(77) in the assignment text (pwr takes |r|). Halving r roughly quadruples n, which answers "how do I change power in R": change r or n and rerun. Anyone finished early: write the one design confound a skeptic would raise about your Study 2, and how your procedure removes it. That paragraph goes straight into the final paper.</p></aside>
 </section>
 
 <section>
   <p class="kicker">Reading week</p>
   <h1>Before you go</h1>
   <ul>
-    <li><strong>Practical 4 is due the Friday you get back</strong> (Nov 6) — not the week after.</li>
-    <li><strong>Before the break:</strong> choose your effect size from the literature. That's the thinking part.</li>
-    <li><strong>After the break:</strong> the simulation. That's the typing part.</li>
+    <li><strong>Practical 4 is due the Friday you get back</strong> (Nov 6), not the week after.</li>
+    <li><strong>Before the break:</strong> your <em>r</em>, its two sources, your <em>n</em>. You just did most of it.</li>
+    <li><strong>After the break:</strong> simulate at that <em>n</em> with <code>rnorm_multi()</code>, report the correlation in APA style, make Figure 1.</li>
   </ul>
   <p class="hidden-until lead">The students who lose Practical 4 are the ones who assume the break is free time.</p>
+  <p class="small hidden-until">The Field Guide&#8217;s <em>Practical 4: Correlation Stats and Plots</em> page walks the R side.</p>
 </section>
 
 <section data-kind="break">
@@ -345,8 +441,8 @@
   <p class="url">radlab.zone/class/psy309</p>
   <div class="break-row">
   <div class="qbox">
-    <p>Have a real break — and pick your effect size before you switch off.</p>
-    <p><strong>Question of the week</strong> is in the Lecture Lounge — it stays open through reading week: <em>&#8220;Where have you seen a treatment get credit for what was really regression to the mean &#8212; sports, health, studying, anywhere?&#8221;</em></p>
+    <p>Have a real break, and pick your effect size before you switch off.</p>
+    <p><strong>Question of the week</strong> is in the Lecture Lounge, and it stays open through reading week: <em>&#8220;Where have you seen a treatment get credit for what was really regression to the mean: sports, health, studying, anywhere?&#8221;</em></p>
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
