@@ -3,8 +3,8 @@
 // report (get_liliana_credit_report: 30/20/25 min assessments, 4 min per daily
 // session, rounded up to the half hour, capped at 3 h), turned into dollars at
 // the consented rate. Payment is due within ~5 business days of completion or
-// withdrawal; "Mark paid" records the e-transfer in participant_compensation.
-// Nothing here sends money.
+// withdrawal; "Mark paid" records the e-transfer, with the bank's reference
+// number, in participant_compensation. Nothing here sends money.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 
@@ -16,10 +16,10 @@ function usePayRows(studyId) {
     queryFn: async () => {
       const [enr, comp] = await Promise.all([
         supabase.from('study_enrollments')
-          .select('id, external_id, contact_email, status, withdrawn_at, consent_date')
+          .select('id, external_id, contact_email, status, withdrawn_at, consent_date, is_test')
           .eq('study_id', studyId),
         supabase.from('participant_compensation')
-          .select('enrollment_id, amount_cad, paid_at')
+          .select('enrollment_id, amount_cad, paid_at, payment_reference')
           .eq('study_id', studyId)
           .eq('compensation_type', 'pay')
           .not('paid_at', 'is', null),
@@ -34,14 +34,16 @@ function usePayRows(studyId) {
 export default function LilianaPaymentTable({ studyId, rows }) {
   const qc = useQueryClient()
   const { data, error } = usePayRows(studyId)
-  const enrByExt = new Map((data?.enrollments ?? []).map((e) => [e.external_id, e]))
+  const enrById = new Map((data?.enrollments ?? []).map((e) => [e.id, e]))
   const paidByEnr = new Map()
+  const refsByEnr = new Map()
   for (const p of data?.payments ?? []) {
     paidByEnr.set(p.enrollment_id, (paidByEnr.get(p.enrollment_id) ?? 0) + Number(p.amount_cad ?? 0))
+    if (p.payment_reference) refsByEnr.set(p.enrollment_id, [...(refsByEnr.get(p.enrollment_id) ?? []), p.payment_reference])
   }
 
   const markPaid = useMutation({
-    mutationFn: async ({ enrollment, amount }) => {
+    mutationFn: async ({ enrollment, amount, reference }) => {
       const { error } = await supabase.from('participant_compensation').insert({
         enrollment_id:     enrollment.id,
         participant_id:    enrollment.external_id,
@@ -50,6 +52,7 @@ export default function LilianaPaymentTable({ studyId, rows }) {
         email:             enrollment.contact_email,
         amount_cad:        amount,
         paid_at:           new Date().toISOString(),
+        payment_reference: reference,
       })
       if (error) throw error
     },
@@ -58,12 +61,13 @@ export default function LilianaPaymentTable({ studyId, rows }) {
 
   const lines = rows
     .map((r) => {
-      const e = enrByExt.get(r.sona_identifier)
-      if (!e || !e.consent_date) return null
+      const e = enrById.get(r.enrollment_id)
+      if (!e || !e.consent_date || e.is_test) return null
       const owed = Number(r.credit_hours) * HOURLY_RATE_CAD
       const paid = paidByEnr.get(e.id) ?? 0
+      const refs = refsByEnr.get(e.id) ?? []
       const due = e.status === 'completed' || e.status === 'withdrawn'
-      return { r, e, owed, paid, due }
+      return { r, e, owed, paid, refs, due }
     })
     .filter(Boolean)
 
@@ -75,11 +79,11 @@ export default function LilianaPaymentTable({ studyId, rows }) {
         <table style={S.table}>
           <thead>
             <tr>
-              {['ID', 'U of T email', 'Status', 'Hours', 'Earned', 'Paid', ''].map((h) => <th key={h} style={S.th}>{h}</th>)}
+              {['ID', 'U of T email', 'Status', 'Hours', 'Earned', 'Paid', 'Reference', ''].map((h) => <th key={h} style={S.th}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
-            {lines.map(({ r, e, owed, paid, due }) => {
+            {lines.map(({ r, e, owed, paid, refs, due }) => {
               const outstanding = Math.max(0, owed - paid)
               return (
                 <tr key={e.id} style={S.tr}>
@@ -89,15 +93,17 @@ export default function LilianaPaymentTable({ studyId, rows }) {
                   <td style={S.td}><span style={S.mono}>{r.credit_hours}</span></td>
                   <td style={S.td}><span style={S.mono}>${owed.toFixed(2)}</span></td>
                   <td style={S.td}><span style={S.mono}>${paid.toFixed(2)}</span></td>
+                  <td style={S.td}><span style={S.mono}>{refs.length ? refs.join(', ') : '—'}</span></td>
                   <td style={S.td}>
                     {due && outstanding > 0 && (
                       <button
                         style={S.btn}
                         disabled={markPaid.isPending}
                         onClick={() => {
-                          if (window.confirm(`Record an e-transfer of $${outstanding.toFixed(2)} to ${e.contact_email}?`)) {
-                            markPaid.mutate({ enrollment: e, amount: outstanding })
-                          }
+                          const reference = window.prompt(
+                            `Record an e-transfer of $${outstanding.toFixed(2)} to ${e.contact_email}.\n\nBank reference number:`,
+                          )?.trim()
+                          if (reference) markPaid.mutate({ enrollment: e, amount: outstanding, reference })
                         }}
                       >
                         Mark ${outstanding.toFixed(2)} paid
