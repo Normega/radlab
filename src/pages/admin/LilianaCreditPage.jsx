@@ -116,7 +116,7 @@ export default function LilianaCreditPage() {
             </thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.participant_id} style={S.tr}>
+                <tr key={r.profile_id} style={S.tr}>
                   <td style={S.td}>{r.display_name ?? '—'}</td>
                   <td style={S.td}>
                     <span style={S.mono}>{r.sona_identifier ?? '—'}</span>
