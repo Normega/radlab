@@ -7,10 +7,10 @@ import { DESIGNS, DEFAULTS, buildSchedule, scheduleYield, pacerAt, bumpProfile }
 
 // The /prototypes/bcat-ddm.html page imports a published copy (static files can't reach src/).
 // It must stay byte-identical, or the prototype runs a different design from the one simulated.
-test('public/prototypes/bcat-ddm-schedule.js is an exact copy of this module', () => {
+test('public/prototypes/bcat-ddm/schedule.js is an exact copy of this module', () => {
   const src = readFileSync(new URL('./schedule.js', import.meta.url), 'utf8')
-  const pub = readFileSync(new URL('../../../public/prototypes/bcat-ddm-schedule.js', import.meta.url), 'utf8')
-  assert.equal(pub, src, 'run: cp src/games/BcatDdm/schedule.js public/prototypes/bcat-ddm-schedule.js')
+  const pub = readFileSync(new URL('../../../public/prototypes/bcat-ddm/schedule.js', import.meta.url), 'utf8')
+  assert.equal(pub, src, 'run: cp src/games/BcatDdm/schedule.js public/prototypes/bcat-ddm/schedule.js')
 })
 
 const lo = DEFAULTS.basePeriodMs * DEFAULTS.minRatio

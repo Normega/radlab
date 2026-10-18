@@ -835,6 +835,74 @@ plus ~2 of practice) with separate staircases. It costs nothing measurable in th
 protects people with strong asymmetries from having one direction at floor or ceiling. The real
 data suggest such people are common.
 
+### In the prototype (2026-10-18)
+
+- **`src/games/BcatDdm/prerun.js`** runs this procedure live, with a byte-identical copy at
+  `public/prototypes/bcat-ddm/prerun.js`.
+  - It appends breaths as the stream clock reaches them, so the pacer runs the same `pacerAt()`.
+  - Directions come from `schedule.js` `chooseStep`, now exported.
+  - Its grid matches `run_prerun.Quest` to six decimals on a test sequence: both directions,
+    shared and separate, and the false-alarm rate.
+- **Two differences from the simulation:**
+  - A press up to 1 s after a window closes still counts, as the prototype scores the main task.
+    The 50%-point conversion therefore uses a 21 s window.
+  - Maybe and Sure presses both count.
+- **Prototype options:** pre-run then stream (the default), pre-run only, or stream only. The
+  pre-run length is 24 changes, or 12 for a quick look.
+- **After the pre-run, a researcher view shows:**
+  - each change's size and outcome;
+  - the running estimates;
+  - both thresholds, with posterior SDs;
+  - the shared estimate, for comparison.
+- **The stream that follows** is scaled to the two thresholds, and its results table splits hits
+  by direction. `?fast=&slow=` sets thresholds without a pre-run.
+- **The published copies moved to `public/prototypes/bcat-ddm/`** (`schedule.js`, `prerun.js`),
+  so the pre-run's `./schedule.js` import resolves in both places.
+- **Tests:** `prerun.test.mjs` adds 7, for 74 BcatDdm tests in all. One checks that a participant
+  who obeys the model is measured with an RMSE under 0.3 log units after 40 changes (0.22 as
+  run). A headless playtest ran
+  pre-run → stream → results with no page errors.
+
+### Compared with the BCAT's Quest (ideal observers, 2026-10-18)
+
+**Question (Norm).** Will the pre-run be more reliable or more efficient than the BCAT for
+measuring thresholds? Scripts: `ideal_bcat_vs_prerun.py`, plus `ideal_gamma_variant.py`.
+
+**Set-up.**
+- Both procedures measure the same detection function. The BCAT Quest's Weibull slope is within
+  15% of the pre-run's.
+- Each simulated person obeys their procedure's own model, so this compares the procedures'
+  efficiency only, without model mismatch.
+- 2,000 people; thresholds SD .5 per direction; false alarms 0.1–1 per minute.
+- The Intero2025 BCAT as run: 10 trials per direction (8 changes, 2 no-change), 7.4 min per
+  person including ratings, so about 22 s per trial.
+
+| procedure | error at 7.4 min | error at 11.3 min | minutes to .30 | retest r at 11.3 min (faster / slower) |
+|---|---|---|---|---|
+| BCAT as run (guess 1/3, 22 s per trial) | .37 | .32 | 13.4 | .64 / .61 |
+| BCAT without ratings (16 s per trial) | .34 | .28 | 9.7 | .72 / .70 |
+| Pre-run (28 s per change) | .33 | .28 | 9.5 | .72 / .70 |
+
+Error is the RMSE of each direction's log threshold.
+
+- **The guess rate matters.** On no-change trials, the real BCAT people answer "same" 72% of the
+  time, so when they miss a change they mostly say "same" too. The effective guess rate on change
+  trials is then about .14, not 1/3. At .14, the BCAT reaches .30 in 8.9 min (6.5 without ratings),
+  and its retest r at 11.3 min is .73 (.81 without ratings).
+- **Not more efficient or more reliable per minute.** The pre-run's lower guess rate is cancelled
+  by its longer trials and its false alarms; at about 1 false alarm a minute its per-trial
+  advantage is gone. The real Quest's 1/3 assumption overstates thresholds by about 14%, but
+  consistently, so its reliability is unaffected.
+- **The case for the pre-run is that it measures the main task's own quantity:** free response,
+  mid-stream, a roving baseline, the same window and the same caution. The BCAT measures a
+  criterion-free sensitivity from a settled baseline. Using it to centre the main task would need
+  a translation, which would itself have to be estimated.
+- **The Intero2025 thresholds came from 8 change trials per direction.** In these terms that is a
+  retest r of about .5–.65 per direction, which caps how well faster and slower thresholds can
+  correlate (observed .25).
+- **The pilot can settle this with real data:** run both procedures on the same people, which
+  gives the BCAT-to-stream translation and each procedure's split-half reliability.
+
 ---
 
 ## 7. Decisions (append with dates)
@@ -899,3 +967,8 @@ data suggest such people are common.
   thresholds (all existing schedules unchanged). Real Intero2025 thresholds (N = 290) set the
   asymmetry populations. Result: ~24 changes (11 min) with separate staircases; it evens out
   detection across directions for strongly asymmetric people at no cost to recovery.
+- **2026-10-18** — Pre-run built into the prototype (§6h): `prerun.js` (+7 tests), published copies
+  moved to `public/prototypes/bcat-ddm/`, and setup offers pre-run → stream, pre-run only, or
+  stream only. An ideal-observer comparison with the BCAT's 3AFC Quest found it neither more
+  efficient nor more reliable per minute. Its case is that it measures the main task's own
+  threshold.

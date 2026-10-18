@@ -207,8 +207,8 @@ const m50For = (o, dir) => (dir > 0 ? o.m50HatSlower : o.m50HatFaster) ?? o.m50H
 // A step from period P of `rel` × the threshold for its direction, direction chosen at
 // random but steered back toward basePeriodMs when near the bounds. Returns
 // { dir, mag, newPeriod } with the magnitude shrunk if both directions would
-// leave the bounds.
-function chooseStep(s, o, rng, P, rel, meanRevert) {
+// leave the bounds. Exported for the pre-run (prerun.js), which uses the same rule.
+export function chooseStep(s, o, rng, P, rel, meanRevert) {
   let dir = rng.sign()
   if (meanRevert) {
     // P(slower) falls from 1 → 0 as log(P/base) goes from the low bound to the high one
