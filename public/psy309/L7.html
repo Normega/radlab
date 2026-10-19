@@ -28,30 +28,29 @@
 </section>
 
 <section>
-  <p class="kicker">Lecture 4 · remember C?</p>
+  <p class="kicker">Lecture 4 · remember the water?</p>
   <h1>The correlation you faked</h1>
   <div class="cols">
     <div>
-      <p>You wrote a world where <strong>C causes A</strong> and <strong>C causes B</strong>, and nothing else connects them:</p>
-      <pre>C &lt;- rnorm(n)
-A &lt;- 0.65 * C + noise
-B &lt;- 0.65 * C + noise
-# B never mentions A</pre>
-      <p class="small">C could be anything: family income, conscientiousness, summer.</p>
+      <p>You wrote a world where <strong>radioactivity in the water</strong> raises both hair salience and intelligence, and nothing else connects them:</p>
+      <pre>RadioActivityInWater &lt;- rnorm(n)
+HairSalience &lt;- 0.65 * RadioActivityInWater + noise
+Intelligence &lt;- 0.65 * RadioActivityInWater + noise
+# Intelligence never mentions HairSalience</pre>
     </div>
     <div>
       <table>
-        <tr><th></th><th>A and B</th></tr>
-        <tr class="hidden-until"><td class="rowhead">C not measured</td><td><em>r</em> = .38, <em>p</em> &lt; .001</td></tr>
-        <tr class="hidden-until"><td class="rowhead">C in the model</td><td>A&#8217;s estimate = &#8722;.05, <em>p</em> = .41</td></tr>
+        <tr><th></th><th>Hair salience and intelligence</th></tr>
+        <tr class="hidden-until"><td class="rowhead">Water not measured</td><td><em>r</em> = .39, <em>p</em> &lt; .001</td></tr>
+        <tr class="hidden-until"><td class="rowhead">Water in the model</td><td>estimate = &#8722;.01, <em>p</em> = .92</td></tr>
       </table>
-      <p class="hidden-until small">A strong, significant, publishable correlation, and all of it was C. Control for C and it disappears.</p>
+      <p class="hidden-until small">A strong, significant, publishable &#8220;big hair, big brain&#8221; finding, and all of it was the water. Control for the water and it disappears.</p>
     </div>
   </div>
   <div class="box warn hidden-until">
-    <p><strong>The question L4 left you with:</strong> what could you do <em>before any data exist</em> that handles every C at once, including the ones nobody thought to measure? <strong>Today&#8217;s answer.</strong></p>
+    <p><strong>The question L4 left you with:</strong> what could you do <em>before any data exist</em> that handles every third variable at once, the water and all the Cs nobody thought to measure? <strong>Today&#8217;s answer.</strong></p>
   </div>
-  <aside class="notes"><p>Numbers are what L4_confound.R prints (set.seed(309), n = 300): cor.test(A, B) gives r = .38, t(298) = 7.06, p &lt; .001; lm(B ~ A + C) gives A = &#8722;0.05, p = .41, while C = 0.60. Ask the room what they called C in L4 before revealing the table. The answer to the box is random assignment, which the "Two ways to get rid of C" slide sets beside statistical control.</p></aside>
+  <aside class="notes"><p>The class version of L4_confound.R (set.seed(909090), n = 300): cor.test(HairSalience, Intelligence) gives r = .387, t(298) = 7.24, p = 3.9e-12, the ".386, 3.8e-12" written in the class script; lm(HairSalience ~ Intelligence + RadioActivityInWater) gives Intelligence = &#8722;0.006, p = .92, with the water at 0.60. Those match running the script without the a/b demo lines (they draw random numbers too, and run first they move r to .44). Ask what the headline would have been before revealing the table. The answer to the box is random assignment, set beside statistical control on the "Two ways to get rid of C" slide.</p></aside>
 </section>
 
 <section class="dense">
