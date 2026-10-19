@@ -64,7 +64,7 @@
   <p class="kicker">Move one</p>
   <h1>Manipulation</h1>
   <p class="big">You <em>set</em> the causal variable instead of measuring it.</p>
-  <p class="lead">This participant writes down three things they&#8217;re grateful for. That one writes down three things that happened today.</p>
+  <p class="lead">This participant lists up to five things they&#8217;re grateful for. That one lists five things they did today.</p>
   <div class="box hidden-until">
     <p><strong>This buys temporal precedence outright.</strong> You created the gratitude at a known moment, then measured optimism after it.</p>
     <p>There's no cross-lagged inference and no "which came first." You were there, and you did it.</p>
@@ -162,11 +162,11 @@
   <p class="kicker">Quick fire · on your own phone</p>
   <h1>Name the part</h1>
   <p class="lead">One study, five pieces. Answer on your own; no groups, no conferring.</p>
-  <p class="small">Students are randomly assigned to write about <em>three things they&#8217;re grateful for</em> or <em>three things that happened today</em>, for 10 minutes, every evening for a week. Optimism is measured at the end.</p>
+  <p class="small">Students are randomly assigned to list <em>up to five things they&#8217;re grateful for</em> or <em>five things they did that day</em>, for 10 minutes, every evening for two weeks. Optimism is measured at the end.</p>
   <ol class="small">
     <li>&#8220;Type of journaling&#8221; is the&#8230;</li>
     <li>&#8220;10 minutes, same app, every evening&#8221; is a&#8230;</li>
-    <li>&#8220;Three things that happened today&#8221; is the&#8230;</li>
+    <li>&#8220;Five things they did that day&#8221; is the&#8230;</li>
     <li>Right after writing: &#8220;How grateful do you feel right now?&#8221; is a&#8230;</li>
     <li>Perceived stress, measured <em>before</em> random assignment, is a&#8230;</li>
   </ol>
@@ -288,7 +288,7 @@
 </section>
 
 <section data-kind="divider">
-  <p class="kicker">Part three</p>
+  <p class="kicker">Part two</p>
   <h1>Everything else that can go wrong</h1>
 </section>
 
@@ -391,7 +391,7 @@
   <h1>When nothing happens</h1>
   <p class="lead">Before you conclude "no effect," check three suspects. Check the phone before deciding nobody's calling.</p>
   <ol>
-    <li><strong>The manipulation was too weak.</strong> One gratitude sentence, once, when it takes a week of journaling to move anyone. <span class="small">(Your manipulation check tells you.)</span></li>
+    <li><strong>The manipulation was too weak.</strong> One gratitude sentence, once, instead of two weeks of nightly lists. <span class="small">(Your manipulation check tells you.)</span></li>
     <li><strong>The DV couldn't register it.</strong> Ceiling, floor, or a scale too coarse.</li>
     <li><strong>Noise buried it.</strong> Too few participants, unreliable measures, or a between design where individual differences swamp the signal.</li>
   </ol>
@@ -408,7 +408,8 @@
       <ol>
         <li><strong>Find your <em>r</em>.</strong> Two empirical papers that report how strongly your covariate and DV go together. No one has? Argue it from theory, and lean small.</li>
         <li class="hidden-until"><strong>Power it.</strong> One line:
-          <pre>pwr.r.test(r = .31, power = .80)</pre></li>
+          <pre>pwr::pwr.r.test(r = .31, power = .80)</pre>
+          <span class="small">&#8220;No package called pwr&#8221;? Run <code>install.packages(&quot;pwr&quot;)</code> once, then the line again.</span></li>
         <li class="hidden-until"><strong>Post it:</strong> your <em>r</em>, its source, your <em>n</em>.</li>
       </ol>
     </div>
@@ -423,7 +424,7 @@
     </div>
   </div>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 20. This is the "thinking part" of Practical 4, done with TAs in the room before reading week. Numbers from pwr.r.test (α = .05, two-tailed): the worked example's r = &#8722;.31 gives n = 79, which is the r(77) in the assignment text (pwr takes |r|). Halving r roughly quadruples n, which answers "how do I change power in R": change r or n and rerun. Anyone finished early: write the one design confound a skeptic would raise about your Study 2, and how your procedure removes it. That paragraph goes straight into the final paper.</p></aside>
+  <aside class="notes"><p>Check-in position 20. This is the "thinking part" of Practical 4, done with TAs in the room before reading week. The <code>pwr::</code> prefix runs the function without <code>library(pwr)</code>, which nobody has loaded today (the Field Guide&#8217;s Practical 4 page writes it the same way). Numbers from pwr.r.test (α = .05, two-tailed): the worked example's r = &#8722;.31 gives n = 79, which is the r(77) in the assignment text (pwr takes |r|). Halving r roughly quadruples n, which answers "how do I change power in R": change r or n and rerun. Anyone finished early: write the one design confound a skeptic would raise about your Study 2, and how your procedure removes it. That paragraph goes straight into the final paper.</p></aside>
 </section>
 
 <section>

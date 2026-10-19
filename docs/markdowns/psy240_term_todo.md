@@ -61,9 +61,19 @@ Guide freezes before the final Dec 8.
   until the midterm" now says "until the end of term". Every quiz from 6 on loads with the same close.
 - [ ] Announce the reopening on Quercus and in L7: Quizzes 1–4 are 75% now; Quiz 5 is full credit
   through Oct 20 (its grace week), then 75%. Fix the Quercus quiz dates that said Oct 14 11:59 PM.
+  (L7 slide 2 now carries the in-class half, 2026-10-19; Quercus is still Norm's.)
 - [ ] Accommodation requests for late quizzes: `weekly_quiz_extensions` only moves the close, not
   the full-credit window, so any full-credit exception Norm grants is applied by hand when the
   tier export is graded. Keep the list of who and why out of this public repo (Teaching drive).
+- [ ] **Midterm makeups (set up 2026-10-19):** four invigilated sittings, all online on the same
+  `midterm` test: Tue Oct 20 5:00 pm, Wed Oct 21 4:00 pm, Fri Oct 23 2:00 pm and 3:30 pm (ET).
+  One-off pg_cron jobs `psy240-makeup-*` open the test 15 min before each sitting with that sitting's
+  own access code and close it 30 min after the start; closing only blocks new starts, so anyone
+  writing keeps going to their own deadline, and AccessAbility extra time applies automatically.
+  Dry run in a rolled-back transaction: wrong code refused, right code starts a 90-minute attempt,
+  saves continue after the close, a late start is refused. The codes went to the test centre and
+  are not in this repo; who writes when stays out of it too. After each sitting, check the Test tab
+  that only scheduled students started. Release results only after Fri Oct 23.
 
 ## Class RCT: traditional mindfulness vs Sense Foraging (onboarding Oct 14, practice Oct 21–Nov 17)
 
@@ -259,9 +269,15 @@ now has a slide.
 Content pass 2026-09-22: 25 → 35 sections (branch `psy240/l6-content-pass`).
 - [ ] Check-ins exist 1/20/40/99. No exercise needs a quiz check-in (one activity only, because the
   RCT segment takes the last 45 minutes).
-- [ ] Closer: `TODO(QotW)`. Draft or confirm week 7's question.
-- [ ] Slide 30 says RCT practice runs "through November 17"; the syllabus says data collection ends
-  ~Nov 18. Reconcile.
+- [x] Closer: the week-7 QotW row exists and matches; the TODO is gone (2026-10-19).
+- [x] The trial segment was still the pre-launch one (first session tonight, two practices, through
+  Nov 17, results Dec 2, a pre-registration and a day-2 credibility rating that don't exist). Now
+  ~15 minutes on day 5 of 28: status, why randomize, why blind, do today's now; closer and slide 2
+  match the plan (day 28 Nov 13, post Nov 14–16, results Nov 18). On dev for review (2026-10-19).
+- [x] Fact-checked slides 4–27 against the Guide (2026-10-19). Fixed: the antidepressant slide (the
+  3.9–72.7% range is across agents, not asked-vs-not; the subsection's flags are in the notes), the
+  consent-sort routes (the victim-intrinsic group qualifies by acting OR distress), "meta-analysis"
+  for a systematic review, plus small wording on slides 6, 8, 14, 18, 20, 25, 26.
 - [ ] Guide `exhibitionistic-disorder`: Course says onset before 18 while Etiology quotes Karpman's
   early-to-mid twenties; "much less common in women" sits beside a 2:1 survey ratio.
 - [ ] Guide `ejaculation-and-orgasmic-disorders`: the antidepressant headline "30% to 73%" conflicts
