@@ -14,7 +14,7 @@
 // Day 3's second scenario, and Graduation's four follow-ups after "Yes" (see
 // LESSONS and DROP). Repeat days are described at "Repeats that stay fresh".
 
-import { aboutMinutes, lightStep, pad } from './shared'
+import { SESSION_LENGTH, lightStep, pad } from './shared'
 import { forTrial } from './trial'
 
 const OWL_OUT  = 'owl_love'
@@ -1372,7 +1372,7 @@ const build = (day, srcId) => {
     lesson: day,
     phase: 'phase1',
     day_label: `Day ${day}`,
-    lead_in: { ...src.lead_in, text: `${reword(src.lead_in.text).trim()} ${aboutMinutes(steps)}.` },
+    lead_in: { ...src.lead_in, text: `${reword(src.lead_in.text).trim()} ${SESSION_LENGTH}.` },
     steps,
     lead_out: { ...src.lead_out, owl: OWL_OUT, text: LEAD_OUT },
   }
@@ -1452,7 +1452,7 @@ const repeatBase = (day, title, subtitle, steps, lead, label = `Day ${day} · ag
     day_label: label,
     title,
     subtitle,
-    lead_in: { ...src.lead_in, text: `${lead} ${aboutMinutes(steps)}. Press Next when you’re ready.` },
+    lead_in: { ...src.lead_in, text: `${lead} ${SESSION_LENGTH}. Press Next when you’re ready.` },
     steps,
   }
 }

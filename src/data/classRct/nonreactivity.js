@@ -23,10 +23,9 @@
 // three. Everything ships cap()'d to about three minutes of slideshow so the
 // whole check-in stays near five.
 //
-// Lead-in lengths ("about N minutes") are computed from the content, never typed,
-// so editing a script cannot leave a stale estimate behind.
+// Every lead-in states the same measured length, SESSION_LENGTH (shared.js).
 
-import { aboutMinutes, fitLines, lighten, pad } from './shared'
+import { SESSION_LENGTH, fitLines, lighten, pad } from './shared'
 import { forTrial } from './trial'
 
 const OWL_IN  = 'owl_nonreactivity'
@@ -34,7 +33,7 @@ const OWL_OUT = 'owl_love'
 const LEAD_OUT = 'You’ve finished today’s practice. Press Next for your closing check-in.'
 
 
-// `lead` replaces the default lead-in sentence; "about N minutes" is always added.
+// `lead` replaces the default lead-in sentence; the session length is always added.
 const base = (day, title, subtitle, steps, { lead, ...extra } = {}) => {
   return {
     module_id: `classrct-nr-d${pad(day)}`,
@@ -46,7 +45,7 @@ const base = (day, title, subtitle, steps, { lead, ...extra } = {}) => {
     subtitle,
     lead_in: {
       owl: OWL_IN,
-      text: `${lead ?? 'Find a spot where you can sit comfortably.'} ${aboutMinutes(steps)}. Press Next when you’re ready.`,
+      text: `${lead ?? 'Find a spot where you can sit comfortably.'} ${SESSION_LENGTH}. Press Next when you’re ready.`,
     },
     steps,
     lead_out: { owl: OWL_OUT, text: LEAD_OUT },
@@ -730,7 +729,7 @@ const cap = (m, settleAt = null, seconds = CAP_S) => {
     wps: NR_WPS,
     lines: fitLines(settleAt ? settle(st.lines, settleAt) : st.lines, seconds, NR_WPS),
   })
-  return { ...m, steps, lead_in: { ...m.lead_in, text: m.lead_in.text.replace(/About \d+ minutes?/, aboutMinutes(steps)) } }
+  return { ...m, steps }
 }
 
 // ── Repeats that stay fresh ───────────────────────────────────────────────────
