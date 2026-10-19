@@ -22,9 +22,36 @@
   <p class="kicker">Check in</p>
   <h1>Open the Lecture Lounge</h1>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <p class="lead">Three weeks ago you built a fake correlation out of a confound in R, then made it vanish by controlling for C. That worked because you had measured C.</p>
+  <p class="lead">Three weeks ago, in Lecture 4, you built a fake correlation in R and then made it vanish. That only worked because you had measured the culprit.</p>
   <p class="big hidden-until">Today: what to do about the C you never measured.</p>
   <aside class="notes"><p>Check-in position 1. The callback is L4's <code>L4_confound.R</code>: r(A,B) of about .40 from pure confounding, and a beta for A of about 0 once C was in the model.</p></aside>
+</section>
+
+<section>
+  <p class="kicker">Lecture 4 · remember C?</p>
+  <h1>The correlation you faked</h1>
+  <div class="cols">
+    <div>
+      <p>You wrote a world where <strong>C causes A</strong> and <strong>C causes B</strong>, and nothing else connects them:</p>
+      <pre>C &lt;- rnorm(n)
+A &lt;- 0.65 * C + noise
+B &lt;- 0.65 * C + noise
+# B never mentions A</pre>
+      <p class="small">C could be anything: family income, conscientiousness, summer.</p>
+    </div>
+    <div>
+      <table>
+        <tr><th></th><th>A and B</th></tr>
+        <tr class="hidden-until"><td class="rowhead">C not measured</td><td><em>r</em> = .38, <em>p</em> &lt; .001</td></tr>
+        <tr class="hidden-until"><td class="rowhead">C in the model</td><td>A&#8217;s estimate = &#8722;.05, <em>p</em> = .41</td></tr>
+      </table>
+      <p class="hidden-until small">A strong, significant, publishable correlation, and all of it was C. Control for C and it disappears.</p>
+    </div>
+  </div>
+  <div class="box warn hidden-until">
+    <p><strong>The question L4 left you with:</strong> what could you do <em>before any data exist</em> that handles every C at once, including the ones nobody thought to measure? <strong>Today&#8217;s answer.</strong></p>
+  </div>
+  <aside class="notes"><p>Numbers are what L4_confound.R prints (set.seed(309), n = 300): cor.test(A, B) gives r = .38, t(298) = 7.06, p &lt; .001; lm(B ~ A + C) gives A = &#8722;0.05, p = .41, while C = 0.60. Ask the room what they called C in L4 before revealing the table. The answer to the box is random assignment, which the "Two ways to get rid of C" slide sets beside statistical control.</p></aside>
 </section>
 
 <section class="dense">
