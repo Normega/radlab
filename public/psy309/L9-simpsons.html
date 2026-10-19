@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L9 · Build Simpson's Paradox</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root { --ink:#141B22; --muted:#5C6773; --accent:#1F5C8B; --ground:#FCFBF8; --line:#DCE2E6; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.55; }
+  main { max-width:760px; margin:0 auto; padding:40px 16px 80px; }
+  .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
+            text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:30px; margin:0 0 14px; }
+  h2 { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:14px; letter-spacing:1px;
+       text-transform:uppercase; color:var(--accent); margin:26px 0 8px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-top:26px; background:#fff; }
+  .lane { border-left:4px solid var(--accent); padding:4px 0 4px 14px; margin:12px 0; }
+  pre { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto;
+        font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; line-height:1.5; margin:8px 0 0; }
+  code { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; background:#EEF2F4; padding:1px 6px; border-radius:4px; }
+  table { border-collapse:collapse; margin:8px 0; font-size:15px; }
+  td, th { border:1px solid var(--line); padding:4px 10px; text-align:left; vertical-align:top; }
+  th { background:#EEF2F4; }
+  button { font:inherit; font-size:14px; font-weight:600; border:1px solid var(--accent); color:var(--accent);
+           background:#fff; border-radius:24px; padding:6px 16px; margin-top:8px; cursor:pointer; }
+  .submit { display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .submit p { flex:1; min-width:240px; margin:0; }
+  .submit img { width:110px; height:110px; border-radius:6px; flex:none; }
+  .small { font-size:14px; color:var(--muted); }
+  ol li, ul li { margin:0 0 6px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">PSY309 · Lecture 8 · Exercise A</p>
+  <h1>Build Simpson&#8217;s Paradox</h1>
+  <p>You will build a dataset where studying <strong>more</strong> goes with <strong>worse</strong> grades, while inside every department studying more goes with <strong>better</strong> grades. Both statements are true of the same data.</p>
+
+  <h2>1 · Copy, paste into RStudio, run one section at a time</h2>
+  <p class="small">Log in at <a href="http://r.datatools.utoronto.ca/">r.datatools.utoronto.ca</a>, open a new R script (File &#8594; New File &#8594; R Script), paste, and run each numbered section with Ctrl+Enter. Nothing to install.</p>
+  <pre id="code"># =====================================================================
+# PSY309 · Lecture 8 · Build Simpson's Paradox
+#
+# You will build a dataset in which studying MORE is associated with
+# WORSE grades -- while, inside every single department, studying more
+# is associated with BETTER grades.
+#
+# Both statements will be true of the same data.
+# =====================================================================
+
+set.seed(309)
+n_per_dept &lt;- 40
+
+# ---- 1. Three departments -------------------------------------------
+# The departments differ in two ways at once, and that is the whole
+# trick:
+#   - students in some departments study more hours on average
+#   - those same departments grade harder
+#
+# Within each department, studying more helps. Always. We are about to
+# write that in as a positive slope.
+
+make_dept &lt;- function(mean_hours, mean_grade, id) {
+  hours  &lt;- rnorm(n_per_dept, mean_hours, 1.6)
+  grades &lt;- mean_grade + 1.8 * (hours - mean_hours) + rnorm(n_per_dept, 0, 3)
+  #                      ^^^ POSITIVE: more hours -&gt; better grades
+  data.frame(hours, grades, dept = factor(id))
+}
+
+d &lt;- rbind(
+  make_dept(12, 62, "A"),   # heavy workload, harsh grading
+  make_dept( 8, 71, "B"),
+  make_dept( 4, 83, "C")    # light workload, generous grading
+)
+
+# ---- 2. Look at the pooled data (the mistake) -----------------------
+plot(d$hours, d$grades, pch = 19, col = rgb(0, 0, 0, .4),
+     main = "All students pooled", xlab = "hours studied", ylab = "grade")
+abline(lm(grades ~ hours, data = d), lwd = 3)
+
+cor(d$hours, d$grades)
+
+# TODO: write down the pooled correlation. Is it positive or negative?
+# If you saw this in a news story, what would the headline say?
+
+
+# ---- 3. Now colour by department ------------------------------------
+plot(d$hours, d$grades, pch = 19, col = c("firebrick", "steelblue", "darkgreen")[d$dept],
+     main = "The same data, by department", xlab = "hours studied", ylab = "grade")
+for (dp in levels(d$dept)) {
+  sub &lt;- d[d$dept == dp, ]
+  abline(lm(grades ~ hours, data = sub), lwd = 2,
+         col = c("firebrick", "steelblue", "darkgreen")[which(levels(d$dept) == dp)])
+}
+
+# The within-department correlations:
+sapply(split(d, d$dept), function(s) cor(s$hours, s$grades))
+
+# TODO: three positive numbers, one negative number, one dataset.
+# Which one is "the" answer?
+
+
+# ---- 4. Model the grouping ------------------------------------------
+# Ignoring department:
+coef(lm(grades ~ hours, data = d))["hours"]
+
+# Letting each department have its own intercept -- the fixed-effects
+# version of what (1|dept) does in a mixed model:
+coef(lm(grades ~ hours + dept, data = d))["hours"]
+
+# TODO: the sign of the hours coefficient just changed. Explain, in one
+# sentence, what the second model is asking that the first one is not.
+
+
+# ---- 5. The question that matters -----------------------------------
+# TODO (no code -- two or three sentences):
+#
+# A student asks you: "should I study more?"
+# A dean asks you: "if students across the university studied more,
+#                   would average grades rise?"
+#
+# These are different questions. Which analysis answers which -- and
+# what makes the pooled correlation the wrong answer to the student's
+# question?
+#
+# Your answer:
+#
+#
+#
+# ---- 6. Optional -----------------------------------------------------
+# Make the paradox disappear. Change the department baselines so the
+# heavy-study department is ALSO the generous grader, and re-run.
+#
+# TODO: what has to be true about the grouping variable for Simpson's
+# paradox to be possible at all?</pre>
+  <button type="button" id="copy">Copy the code</button>
+
+  <h2>2 · What you should see</h2>
+  <ul>
+    <li>Section 2: one pooled correlation, and it&#8217;s <strong>negative</strong>.</li>
+    <li>Section 3: three within-department correlations, all <strong>positive</strong>.</li>
+    <li>Section 4: the sign of the hours coefficient flips when department goes into the model.</li>
+  </ul>
+  <p class="small">Everyone runs the same seed, so everyone gets the same numbers. If yours differ from your neighbour&#8217;s, one of you skipped a line.</p>
+
+  <div class="box">
+    <h2 style="margin-top:0">Post it</h2>
+    <div class="submit">
+      <p>In the Lecture Lounge check-in that&#8217;s open now: your pooled <em>r</em>, the three within-department <em>r</em>s, and one sentence on what the second model asks that the first doesn&#8217;t.<br>
+         <code>radlab.zone/class/psy309</code></p>
+      <img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309">
+    </div>
+  </div>
+</main>
+<script>
+  document.getElementById('copy').addEventListener('click', function () {
+    var b = this, t = document.getElementById('code').textContent;
+    try {
+      navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copied'; },
+        function () { b.textContent = 'Select the code and copy it'; });
+    } catch (e) { b.textContent = 'Select the code and copy it'; }
+  });
+</script>
+</body>
+</html>
