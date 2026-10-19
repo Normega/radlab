@@ -1,56 +1,15 @@
 // Helpers shared by the class RCT's arms.
 
-import { practiceSeconds, lineSeconds } from '../../components/study/guidedText'
+import { lineSeconds } from '../../components/study/guidedText'
 
-// Rough time for a step, in seconds. Guided text is exact (its own pacing);
-// the rest are generous estimates of reading and typing time.
-const stepSeconds = st => {
-  switch (st.type) {
-    case 'guided_text':     return practiceSeconds(st)
-    case 'breath_practice': return 8 + 3 * 10 + (st.natural_seconds ?? 60) + 12 + 15
-    case 'prompt_response': return st.required === false ? 20 : st.size === 'single_line' ? 25 : 50
-    case 'multi_response':  return 10 * (st.count ?? 1)
-    case 'quality_explorer': return 60
-    case 'trigger_map':     return 90
-    case 'body_diagram':    return 120
-    case 'word_select':     return 20
-    case 'thought_rating':  return 30
-    case 'thought_choice':  return 15
-    case 'training_response_multi': return 30
-    case 'slider':          return 15
-    case 'show_back':       return 15
-    case 'timer':           return (st.duration_seconds ?? 30) + 10
-    case 'text':            return 20
-    case 'closing':         return 15
-    default:                return 10
-  }
-}
-
-// Steps behind a `show_if … equals` are alternatives: only one branch per key is
-// ever seen (a choice day's three practices; Graduation's Yes follow-ups). A
-// module's length is its unconditional steps plus its longest branch per key.
-export const moduleSeconds = steps => {
-  const branches = {}   // key → { value → seconds }
-  let base = 0
-  for (const st of steps) {
-    const c = st.show_if
-    if (c && c.equals !== undefined) {
-      const byVal = (branches[c.key] ??= {})
-      byVal[c.equals] = (byVal[c.equals] ?? 0) + stepSeconds(st)
-    } else {
-      base += stepSeconds(st)
-    }
-  }
-  return base + Object.values(branches).reduce((a, byVal) => a + Math.max(...Object.values(byVal)), 0)
-}
-
-export const moduleMinutes = steps => Math.max(1, Math.round(moduleSeconds(steps) / 60))
-
-// "About 5 minutes" / "About 1 minute" — the one phrasing every lead-in uses.
-export const aboutMinutes = steps => {
-  const n = moduleMinutes(steps)
-  return `About ${n} minute${n === 1 ? '' : 's'}`
-}
+// The one length every lead-in states (Norm, 2026-10-18). Lead-ins used to
+// compute "About N minutes" from their own steps, but that counted 25 s for a
+// written answer (students take about 50) and nothing for the screens around
+// the practice, so they said 1 to 4 minutes for check-ins that ran longer: on
+// the trial's first two days the whole check-in took a median of 4 to 5 minutes
+// in all three arms, and the stress-mindset days that said "About 3 minutes"
+// took about 5. Every day now states the measured range, not a per-day guess.
+export const SESSION_LENGTH = 'About 4 to 5 minutes'
 
 export const pad = d => String(d).padStart(2, '0')
 
@@ -64,11 +23,8 @@ export const lightStep = st =>
     ? { ...st, size: 'single_line', placeholder: LIGHT_HINT }
     : st
 
-// Apply the light rule to a whole module and restate its length in the lead-in.
-export const lighten = m => {
-  const steps = m.steps.map(lightStep)
-  return { ...m, steps, lead_in: { ...m.lead_in, text: m.lead_in.text.replace(/About \d+ minutes?/, aboutMinutes(steps)) } }
-}
+// Apply the light rule to a whole module.
+export const lighten = m => ({ ...m, steps: m.steps.map(lightStep) })
 
 // Fit a script to a time cap by trimming its quiet stretches, never its words.
 // Keeps the few longest quiet stretches (fewer, longer silences rather than
