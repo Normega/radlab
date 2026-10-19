@@ -23,7 +23,8 @@
   <h1>Open the Lecture Lounge</h1>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
   <p class="lead">Test 2 is marked — brief debrief. Then six days that contain everything you have left.</p>
-  <aside class="notes"><p>Check-in position 1. Keep the debrief to ten minutes; the deadlines matter more today.</p></aside>
+  <p class="small"><strong>While you&#8217;re here:</strong> log in at <a href="http://r.datatools.utoronto.ca/" style="color:inherit">r.datatools.utoronto.ca</a> and upload <code>L9_phack.R</code> and <code>L9_phack_data.csv</code> from <a href="https://q.utoronto.ca/courses/464046/files/folder/Rcode" style="color:inherit">Quercus &#8594; Files &#8594; Rcode</a>. The exercise runs on them.</p>
+  <aside class="notes"><p>Check-in position 1. Keep the debrief to ten minutes; the deadlines matter more today. [Norm: Test 2 debrief: once it's marked, add the class average and the two most-missed ideas here, as the L6 deck did for Test 1. Also confirm L9_phack.R and L9_phack_data.csv are posted in Quercus Rcode.]</p></aside>
 </section>
 
 <section data-kind="divider">
@@ -133,7 +134,7 @@
       </div>
     </div>
   </div>
-  <p class="small">Open <code>L9_phack.R</code>. Go.</p>
+  <p class="small">Open <code>L9_phack.R</code> with <code>L9_phack_data.csv</code> beside it (<a href="https://q.utoronto.ca/courses/464046/files/folder/Rcode" style="color:inherit">Quercus &#8594; Files &#8594; Rcode</a>). Go.</p>
   <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
   <aside class="notes"><p>Check-in position 5. Do NOT hint. Let the room get loud — that's the exercise working. Circulate and listen for "try dropping the outliers" and "what if it only works for juniors?" — you'll quote those back.</p></aside>
 </section>
@@ -144,31 +145,33 @@
   <ul>
     <li>Outcome variable · subgroup · exclusions · your p-value</li>
     <li><strong>And the sentence you'd put in your abstract.</strong> Make it sound good.</li>
+    <li>Then one tap in the poll: <strong>did you find p &lt; .05?</strong></li>
   </ul>
   <p class="small hidden-until">You're allowed to be proud of it.</p>
-  <aside class="notes"><p>Ask for the abstract sentence sincerely. The pride is the point — it makes the next slide land.</p></aside>
+  <aside class="notes"><p>Check-in position 5 (the written finding) and position 6 (a one-item poll, no answer key: below .01 / .01 to .05 / not yet). Open both together. Ask for the abstract sentence sincerely. The pride is the point — it makes the next slide land.</p></aside>
 </section>
 
 <section>
   <h1>How many of you found something?</h1>
-  <p class="big hidden-until">Most of the room.</p>
+  <p class="lead">The poll, on screen now.</p>
   <div class="box warn hidden-until">
     <p class="big" style="font-size:3.6vmin">There is no treatment effect.</p>
     <p class="big" style="font-size:3.6vmin">There was never a treatment effect.</p>
     <p class="big" style="font-size:3.6vmin">Every number in that file is noise.</p>
   </div>
-  <p class="hidden-until lead">The honest analysis — first outcome, everyone, no exclusions — comes back null. Whatever you found, you found in nothing.</p>
-  <p class="small hidden-until">And the most impressive result in that dataset (p = .003) requires <em>both</em> a subgroup <em>and</em> outlier exclusion. Whoever hunted hardest got the best "finding."</p>
-  <aside class="notes"><p>Deliver the three lines flatly, one at a time. Do not soften them and do not rush to the reassurance — the discomfort is the mechanism.</p></aside>
+  <p class="hidden-until lead">The honest analysis — first outcome, everyone, no exclusions — gives <strong>p = .52</strong>. Whatever you found, you found in nothing.</p>
+  <p class="small hidden-until">The legal moves open 60 analyses. Five reach p &lt; .05, about what chance predicts, and you only needed one. The best (p = .003) takes <em>both</em> a subgroup <em>and</em> outlier exclusion. Whoever hunted hardest got the best "finding."</p>
+  <aside class="notes"><p>Before the reveal, switch to the console and show position 6's distribution, then come back. Deliver the three lines flatly, one at a time. Do not soften them and do not rush to the reassurance — the discomfort is the mechanism. The 60: 3 outcomes &#215; 5 samples (everyone, juniors, seniors, gender A, gender B) &#215; outliers kept or dropped (1.5 SD) &#215; baseline in or out. The five significant ones: sleep quality, seniors, outliers dropped (p = .003; .002 with baseline); sleep quality, everyone, outliers dropped (p = .015, .014); focus, juniors (p = .0496).</p></aside>
 </section>
 
 <section>
   <h1>Let's count the damage</h1>
   <table>
     <tr><th>Analysis strategy</th><th>False positive rate</th></tr>
-    <tr><td class="rowhead">Honest: one outcome, everyone, no exclusions</td><td class="hidden-until"><strong>~5%</strong> — the alpha we all agreed on</td></tr>
-    <tr><td class="rowhead">After hunting</td><td class="hidden-until"><strong style="color:var(--do)">well over 30%</strong></td></tr>
+    <tr><td class="rowhead">Honest: one outcome, everyone, no exclusions</td><td class="hidden-until"><strong>5%</strong> — the alpha we all agreed on</td></tr>
+    <tr><td class="rowhead">After hunting</td><td class="hidden-until"><strong style="color:var(--do)">48%</strong></td></tr>
   </table>
+  <p class="small hidden-until">Section 5 of your script: 2,000 fresh null worlds, each analysed both ways.</p>
   <div class="svgwrap hidden-until"><svg viewBox="0 0 620 230" role="img" aria-labelledby="fp-t fp-d">
 <title id="fp-t">The garden of forking paths</title>
 <desc id="fp-d">One dataset branches into three outcome choices, then subgroup choices, then exclusion choices, producing dozens of analyses of which at least one will reach significance by chance.</desc>
@@ -193,6 +196,7 @@
 <text x="310" y="216" text-anchor="middle" font-size="12.5" fill="#141B22">Every branch is defensible. The paper reports <tspan font-weight="bold">one path</tspan> as if it were the only road contemplated.</text>
 </svg></div>
   <p class="hidden-until big" style="font-size:3.2vmin">So what did <em>your</em> p &lt; .05 actually mean?</p>
+  <aside class="notes"><p>Run section 5 on the projector; with set.seed(1) it prints 5% and 48% (about 15 seconds). Its comment says 10,000 datasets, but the code runs 2,000.</p></aside>
 </section>
 
 <section>
@@ -202,7 +206,7 @@
     <li class="hidden-until"><strong>The problem is the bookkeeping, not the morals.</strong> Choices made <em>after seeing the data</em> detach the p-value from what it claims to mean.</li>
     <li class="hidden-until"><strong>You now know the feeling from the inside</strong> — the small pull toward the analysis that worked.</li>
   </ol>
-  <p class="hidden-until big">That feeling is what a preregistration protects you from. And you're about to write one.</p>
+  <p class="hidden-until big">That feeling is what a preregistration protects you from. And you've been writing one all term.</p>
 </section>
 
 <section>
@@ -276,11 +280,38 @@
   <p class="hidden-until small">"Only 40 undergraduates in a lab!" is devastating for a prevalence estimate and often beside the point for a mechanism test.</p>
 </section>
 
+<section class="dense">
+  <p class="kicker">On your own · on your phone</p>
+  <h1>Which mode?</h1>
+  <ol class="small">
+    <li>A provincial survey estimates what percentage of Ontario university students meet criteria for insomnia.</li>
+    <li>Forty undergraduates do a lab task testing whether depleting attention slows a later Stroop task.</li>
+    <li>Your Study 2: undergraduates randomly assigned to gratitude or neutral journaling, to test why gratitude should raise optimism.</li>
+    <li>A polling firm forecasts each party&#8217;s share of the vote in the next federal election.</li>
+    <li>A city decides whether to fund a program from the average benefit seen in a sample of its residents.</li>
+  </ol>
+  <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
+  <aside class="notes"><p>Check-in position 13: a keyed five-item quiz, options theory-testing or generalization. Show the distribution, then the key.</p></aside>
+</section>
+
+<section>
+  <h1>The key</h1>
+  <table>
+    <tr><th></th><th>Mode</th><th>So the sample needs to be&#8230;</th></tr>
+    <tr class="hidden-until"><td class="rowhead">1</td><td><strong>Generalization</strong></td><td>Representative: the claim is a frequency</td></tr>
+    <tr class="hidden-until"><td class="rowhead">2</td><td><strong>Theory-testing</strong></td><td>A fair arena for the mechanism</td></tr>
+    <tr class="hidden-until"><td class="rowhead">3</td><td><strong>Theory-testing</strong></td><td>A fair arena, with generality named as the next question</td></tr>
+    <tr class="hidden-until"><td class="rowhead">4</td><td><strong>Generalization</strong></td><td>Representative of voters</td></tr>
+    <tr class="hidden-until"><td class="rowhead">5</td><td><strong>Generalization</strong></td><td>Representative of the city: it feeds policy</td></tr>
+  </table>
+  <p class="small hidden-until">Item 3 is your own paper. It&#8217;s theory-testing, so your undergraduate sample is fine, and your Discussion says who it might not hold for.</p>
+</section>
+
 <section>
   <h1>The fine print on theory-testing mode</h1>
   <p>It licenses testing the theory on a narrow sample. It does <strong>not</strong> license quietly universalizing the result.</p>
   <p class="hidden-until">And if the theory itself claims universality, then whether the mechanism appears elsewhere becomes a <em>theory-relevant prediction</em> — so cross-population checks stop being courtesy and become the next test.</p>
-  <p class="hidden-until lead">Modern journals increasingly ask for a <strong>constraints on generality</strong> statement: who, where, when this should hold. Your final paper's discussion is exactly that.</p>
+  <p class="hidden-until lead">Modern journals increasingly ask for a <strong>constraints on generality</strong> statement: who, where, when this should hold. Your final paper's Discussion asks for exactly that: who were your imaginary participants, and who weren't they?</p>
 </section>
 
 <section data-kind="break">
@@ -299,31 +330,35 @@
 
 <section data-kind="activity">
   <p class="kicker">Lab block · 30 minutes</p>
-  <h1>Write your preregistration</h1>
-  <p class="big">Practical 5, started here, while you're still slightly rattled. Which is the correct state.</p>
-  <ul>
-    <li>Your hypotheses — stated, in advance</li>
-    <li>The <strong>single primary DV</strong></li>
-    <li>Exclusion rules, fixed now</li>
-    <li>Subgroup analyses declared as <strong>exploratory</strong></li>
-    <li>The analysis plan</li>
-  </ul>
-  <div class="qr-row">
-  <div class="box warn" style="flex:1;margin:0">
-    <p><strong>Name the three decisions</strong> you're fixing in advance so nobody — including you — can do to your study what you just did to that dataset.</p>
-    <p class="small" style="margin:0">Submit in the Lounge · radlab.zone/class/psy309</p>
+  <h1>Write down what you fixed in advance</h1>
+  <p class="lead">Your hypotheses (Practical 3) and your <em>n</em> (Practicals 4 and 5) were fixed before any data existed. That&#8217;s a preregistration. Now write it down.</p>
+  <div class="cols">
+    <div>
+      <div class="box">
+        <p><strong>Practical 5 not finished?</strong> It&#8217;s due Friday. Sit with a TA. That&#8217;s your lab block.</p>
+      </div>
+    </div>
+    <div>
+      <ol>
+        <li>Draft your final paper&#8217;s <strong>Data simulation and analysis plan</strong>: values, model, seed.</li>
+        <li class="hidden-until">Name the <strong>one primary DV</strong> and the <strong>one primary analysis</strong> per study.</li>
+        <li class="hidden-until">Label everything else <strong>exploratory</strong>, and post.</li>
+      </ol>
+    </div>
   </div>
-  <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 20. TAs circulating. This is the strongest half-hour of Practical 5 they will get.</p></aside>
+  <p class="small" style="margin-bottom:0">The worked example&#8217;s version, and the order to write yours in:</p>
+  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600;margin-top:0">radlab.zone/psy309/L11-prereg.html</p>
+  <aside class="notes"><p>Check-in position 20. TAs circulating. The runsheet called this "write your preregistration for Practical 5", but Practical 5 has no preregistration section and is due in three days. The final paper's Method does ask for a "Data simulation and analysis plan" (values, model, seed, each analysis), which is a preregistration in all but name, and the Field Guide's p-hacking page already tells students they've been preregistering all term. So that paragraph is the payoff, written while still slightly rattled. Anyone with Practical 5 unfinished goes to a TA first.</p></aside>
 </section>
 
 <section>
-  <h1>Six days, three deadlines</h1>
+  <h1>What&#8217;s left</h1>
   <table>
     <tr><th>When</th><th>What</th></tr>
     <tr><td class="rowhead">Friday 27 Nov, 11:59pm</td><td>Practical 5</td></tr>
     <tr><td class="rowhead">Monday 30 Nov, <strong>noon</strong></td><td>Poster + narration (.pptx with recordings)</td></tr>
-    <tr><td class="rowhead">Tuesday 1 Dec, in class</td><td>Peer review — bring nothing, we do it here</td></tr>
+    <tr><td class="rowhead">Tuesday 1 Dec, in class</td><td>Poster peer review opens: five reviews, due Friday 4 Dec</td></tr>
+    <tr><td class="rowhead">Tuesday 8 Dec, 11:59pm</td><td>Final paper</td></tr>
   </table>
   <div class="box warn hidden-until">
     <p><strong>Test-record one slide tonight.</strong> The classic failure isn't the poster — it's audio that didn't attach, discovered at 11:50 on Monday morning.</p>
