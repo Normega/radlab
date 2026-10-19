@@ -86,7 +86,8 @@ engine: enrolment, randomisation, ratings, export). Compassion and reappraisal a
   Graduation copied from Study 3 as written, eleven "again" days. All 28 walk through on the dev site.
   Lead-in "about N minutes" is computed from content. 2026-09-28.
 - [x] Lead-ins in both text arms say "About 4 to 5 minutes" (Norm, 2026-10-18): the per-day estimate
-  said 1–4 minutes, but Days 1–2 ran a 4–5 minute median check-in in every arm.
+  said 1–4 minutes, but Days 1–2 ran a 4–5 minute median check-in in every arm. Stress-mindset
+  Graduation's lead-in no longer ends on the dropped "stood out most" question.
 - [ ] Norm reviews days 8–28 on the dev site.
 - [x] **Stress-mindset (reappraisal) arm converted too** (Norm, 2026-09-28): Liliana's 16 modules copied
   verbatim under `classrct-ra-*`, her 11 videos rewritten as guided-text lessons at reading pace (3 words/s).

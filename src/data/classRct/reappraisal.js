@@ -1355,10 +1355,19 @@ const DROP = {
   'reappraisal-phase2-day12#more': [0, 4],
 }
 
+// Lead-in text of hers cut along with a dropped step, by source id.
+const LEAD_CUT = {
+  // Graduation's lead-in ended on "stood out most", the question dropped above,
+  // so it asked something the session never does, and the session length came
+  // after the question mark (2026-10-18). The questions follow on their own screens.
+  'reappraisal-phase2-day12': '\n\nPlease answer the following short questions:\n\n1. Which cognitive reappraisal skills or strategies stood out most to you during these exercises?',
+}
+
 // A day built from one of her modules: the video becomes its lesson, every
 // other step is hers, reworded only where it named the video.
 const build = (day, srcId) => {
   const src = SOURCE[srcId]
+  const lead = reword(src.lead_in.text).replace(LEAD_CUT[srcId] ?? '', '').trim()
   const drop = new Set([...(DROP[srcId] ?? []), ...(DROP[`${srcId}#more`] ?? [])])
   const steps = src.steps
     .filter((_, i) => !drop.has(i))
@@ -1372,7 +1381,7 @@ const build = (day, srcId) => {
     lesson: day,
     phase: 'phase1',
     day_label: `Day ${day}`,
-    lead_in: { ...src.lead_in, text: `${reword(src.lead_in.text).trim()} ${SESSION_LENGTH}.` },
+    lead_in: { ...src.lead_in, text: `${lead} ${SESSION_LENGTH}.` },
     steps,
     lead_out: { ...src.lead_out, owl: OWL_OUT, text: LEAD_OUT },
   }
