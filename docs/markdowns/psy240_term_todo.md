@@ -61,6 +61,11 @@ Guide freezes before the final Dec 8.
   until the midterm" now says "until the end of term". Every quiz from 6 on loads with the same close.
 - [ ] Announce the reopening on Quercus and in L7: Quizzes 1–4 are 75% now; Quiz 5 is full credit
   through Oct 20 (its grace week), then 75%. Fix the Quercus quiz dates that said Oct 14 11:59 PM.
+  (L7 half done 2026-10-20: slide 2 says "Quizzes 1–5 are open again until Dec 8, at 75% credit". Quercus still owed.)
+- [x] Quiz 6 loaded 2026-10-20 (`quiz_6.yaml`, week_no 7, 9 served items): opens Oct 21 15:45Z, due Nov 5 04:59Z
+  (Nov 4, 11:59 PM ET), closes Dec 9 04:59Z. L7 trial slides corrected the same day to the live trial
+  (three arms, day 1 Oct 17, day 28 Nov 13, results Nov 18; no credibility items; not pre-registered:
+  teaching trial, data not used for research).
 - [ ] Accommodation requests for late quizzes: `weekly_quiz_extensions` only moves the close, not
   the full-credit window, so any full-credit exception Norm grants is applied by hand when the
   tier export is graded. Keep the list of who and why out of this public repo (Teaching drive).
