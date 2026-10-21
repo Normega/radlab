@@ -3942,6 +3942,11 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
     slide 2 repeats it with the access code in a banner. The code is never in the file (the deck is
     public): the presenter opens `L6.html#code=…` (read before slides.js takes the hash, then reset to
     `#1`) or presses A on slide 2; it lives in that browser's localStorage only, per origin.
+  - **L7 (Oct 21) opens with the join deadline and a midterm summary**, `public/psy240/L7.html`: after the
+    title, join by Fri Oct 23 (QR for /join/classtrial) or the credit moves to the alternative written
+    assignment (motivators and barriers for digital mental health interventions, due Nov 16); then the
+    midterm (213 sat it, MC average 90%, grades by end of week, four patterns where marks went). The join
+    link does not close by itself: closing it after Oct 23 is still to do.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
