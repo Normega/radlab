@@ -50,14 +50,28 @@ export default function AboutPage() {
       <section className="lab-section">
         <h2 className="lab-section__heading">What we study</h2>
         <p style={S.bodyText}>
-          Emotions are not static events — they rise, shift, and resolve in patterns that shape
-          mental health across a lifetime. The RAD Lab was established in 2014 to investigate
-          the complex interplay between emotion and cognition that determines subjective wellbeing
-          and stress resilience. We evaluate how individuals employ regulatory strategies under
-          stress, with particular focus on the theoretical foundations of contemplative practices
-          like mindfulness meditation and yoga. Our work spans the brain imaging scanner to the
-          smartphone screen: we identify neural markers of depression vulnerability and translate
-          those findings into accessible, evidence-based interventions for university students.
+          Since 2014 we have studied how people regulate emotion under stress, from neural markers
+          of depression vulnerability to online tools for students.{' '}
+          <Link to="/lab/research" style={S.inlineLink}>See our research →</Link>
+        </p>
+      </section>
+
+      {/* ── The question behind the work ── */}
+      <section className="lab-section">
+        <h2 className="lab-section__heading">The question behind the work</h2>
+        <p style={S.bodyText}>
+          Attending to what is happening now is how we respond well to it, yet modern life keeps
+          pulling attention elsewhere. Planning ahead is useful; the trouble starts when that habit
+          crowds out the present, especially under stress. Much of our work asks how attention can
+          be retrained so people take better care of themselves.
+        </p>
+        <p style={{ ...S.bodyText, marginTop: 16 }}>
+          Mindfulness training offers one answer: it uses the body&apos;s moment-to-moment sensations
+          as an anchor for attention. Studying what that training changes in the brain and in
+          behaviour has led us toward a model of embodiment, which is how we come to know ourselves
+          and the world through the body. This matters most where negative thinking keeps a problem
+          going. In depression, rumination deepens low mood, and turning attention to the body is a
+          way out of the cycle of self-criticism.
         </p>
       </section>
 
@@ -151,6 +165,12 @@ const S = {
     color: '#444',
     maxWidth: 700,
     margin: 0,
+  },
+  inlineLink: {
+    color: 'var(--pk)',
+    fontWeight: 600,
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
   },
   pillarGrid: {
     display: 'grid',

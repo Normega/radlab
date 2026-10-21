@@ -171,7 +171,7 @@ radlab/
       ProfilePage.jsx         ← user profile: avatar, points, unlock progress
       Games.jsx               ← public games listing (/games/list) — Pond Watch + Ebb & Flow cards
       lab/
-        AboutPage.jsx         ← stub (content TBD)
+        AboutPage.jsx         ← hero, one-line summary linking /lab/research, "The question behind the work", three pillars, PI card
         PeoplePage.jsx        ← reads people.js; PI featured card, grads grid, collapsible alumni section
         ResearchPage.jsx      ← reads research.js; lab description intro + research area cards
         PublicationsPage.jsx  ← reads publications.json; reverse chrono grouped by year; bold lab member names
@@ -412,10 +412,10 @@ Reader participation on the **Interoception wiki** (`interoception.radlab.zone`)
 | `/games/farm-joy` | `FarmJoy` | Protected |
 | `/games/breath-belt` | `BreathBelt` | Protected — lab-only guard internal to component |
 | `/games/delve` | `Delve` | Protected — sense-foraging attention practice (§21b) |
-| `/lab` | redirect → `/lab/people` | Public |
-| `/lab/about` | `AboutPage` | Public — stub |
+| `/lab` | redirect → `/lab/about` | Public |
+| `/lab/about` | `AboutPage` | Public — lab overview; links to `/lab/research` |
 | `/lab/people` | `PeoplePage` | Public — reads from `src/data/people.js` |
-| `/lab/research` | `ResearchPage` | Public — stub |
+| `/lab/research` | `ResearchPage` | Public — reads from `src/data/research.js` |
 | `/lab/publications` | `PublicationsPage` | Public — reads from `src/data/publications.js` |
 | `/lab/contact` | `ContactPage` | Public |
 | `/study` | — | Participant tier (future) |
@@ -854,9 +854,9 @@ so a link added there appears in both places — do not add it twice.
 
 | Page | File | Status |
 |---|---|---|
-| About | `src/pages/lab/AboutPage.jsx` | Stub — content TBD |
+| About | `src/pages/lab/AboutPage.jsx` | Built — hero, one-line summary linking Research, "The question behind the work" (rationale carried over from the retired lab site), pillars, PI card |
 | People | `src/pages/lab/PeoplePage.jsx` | Built — reads `people.js`; PI featured, grads grid, alumni collapsible |
-| Research | `src/pages/lab/ResearchPage.jsx` | Stub — content TBD |
+| Research | `src/pages/lab/ResearchPage.jsx` | Built — reads `research.js`; lab description intro + research area cards |
 | Publications | `src/pages/lab/PublicationsPage.jsx` | Template built — reads `publications.js`; bold lab authors via `labMemberNames` |
 | Contact | `src/pages/lab/ContactPage.jsx` | Built: What We Look For, Pitch Us Something form, address (2026-10-03) |
 
