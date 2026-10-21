@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L8 · Your Study 2 as a 2 × 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root { --ink:#141B22; --muted:#5C6773; --accent:#1F5C8B; --ground:#FCFBF8; --line:#DCE2E6; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.55; }
+  main { max-width:760px; margin:0 auto; padding:40px 16px 80px; }
+  .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
+            text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:30px; margin:0 0 14px; }
+  h2 { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:14px; letter-spacing:1px;
+       text-transform:uppercase; color:var(--accent); margin:26px 0 8px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-top:26px; background:#fff; }
+  .lane { border-left:4px solid var(--accent); padding:4px 0 4px 14px; margin:12px 0; }
+  pre { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto;
+        font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; line-height:1.5; margin:8px 0 0; }
+  code { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; background:#EEF2F4; padding:1px 6px; border-radius:4px; }
+  table { border-collapse:collapse; margin:8px 0; font-size:15px; }
+  td, th { border:1px solid var(--line); padding:4px 10px; text-align:left; vertical-align:top; }
+  th { background:#EEF2F4; }
+  button { font:inherit; font-size:14px; font-weight:600; border:1px solid var(--accent); color:var(--accent);
+           background:#fff; border-radius:24px; padding:6px 16px; margin-top:8px; cursor:pointer; }
+  .submit { display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .submit p { flex:1; min-width:240px; margin:0; }
+  .submit img { width:110px; height:110px; border-radius:6px; flex:none; }
+  .small { font-size:14px; color:var(--muted); }
+  ol li, ul li { margin:0 0 6px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">PSY309 · Lecture 7 · Lab block</p>
+  <h1>Your Study 2 as a 2 × 2</h1>
+
+  <div class="lane">
+    <p><strong>Practical 4 not finished?</strong> It&#8217;s due this Friday, Nov 6. Today&#8217;s lab block is for that: sit with a TA. Come back to this page during reading for Practical 5.</p>
+  </div>
+  <div class="lane">
+    <p><strong>Practical 4 done or nearly?</strong> Then this is the Practical 5 dry run. You will write your hypothesis as six numbers, simulate the experiment, and see the 2 × 2 it predicts.</p>
+  </div>
+
+  <h2>1 · Your six numbers</h2>
+  <table>
+    <tr><th>Number</th><th>Where it comes from</th></tr>
+    <tr><td><code>n_per</code></td><td>Your Tier 1 <em>n</em> per condition, times 4. An interaction is a difference between differences and needs about four times the sample.</td></tr>
+    <tr><td><code>cov_m</code>, <code>cov_sd</code></td><td>Your covariate&#8217;s mean and SD, from your Practical 4 measure.</td></tr>
+    <tr><td><code>slope</code></td><td>Your Practical 4 <em>r</em> &#215; SD(DV) &#247; SD(covariate). The worked example: &#8722;.31 &#215; 10 &#247; 4 = &#8722;0.78.</td></tr>
+    <tr><td><code>effect</code></td><td>What the manipulation adds at an average covariate score, in DV points. From your Practical 5 papers.</td></tr>
+    <tr><td><code>moder</code></td><td>How much that effect grows (+) or shrinks (&#8722;) per covariate point. Your theory picks the sign; 0 means no moderation.</td></tr>
+  </table>
+  <p class="small">The DV is simulated on a 0&#8211;100 scale with mean 50 and SD 10. If yours isn&#8217;t, convert <code>effect</code> to that scale, or change the 50 and the 10 in part 2.</p>
+
+  <h2>2 · Copy, paste into RStudio, run</h2>
+  <pre id="code">library(tidyverse)
+
+# 1. Your numbers. Change these six lines, nothing else.
+n_per  &lt;- 256    # per condition: your Tier 1 n, times 4
+cov_m  &lt;- 20     # your covariate's mean ...
+cov_sd &lt;- 4      # ... and SD (from your Practical 4 measure)
+slope  &lt;- -0.78  # covariate -&gt; DV: your r x SD(DV) / SD(covariate)
+effect &lt;- 5      # what the manipulation adds, at average covariate
+moder  &lt;- 0.60   # how much that effect changes per covariate point
+
+# 2. Simulate the experiment from that hypothesis
+set.seed(309)
+d &lt;- tibble(
+  Condition = factor(rep(c("Control", "Treatment"), each = n_per),
+                     levels = c("Control", "Treatment")),
+  Cov = rnorm(2 * n_per, cov_m, cov_sd)
+) %&gt;%
+  mutate(Tx = as.numeric(Condition == "Treatment"),
+         DV = 50 + slope * (Cov - cov_m) + effect * Tx +
+              moder * (Cov - cov_m) * Tx + rnorm(n(), 0, 10))
+
+# 3. Median split, then the 2 x 2
+d$Cov_Cat &lt;- cut(d$Cov, breaks = c(-Inf, median(d$Cov), Inf),
+                 labels = c("Lower", "Higher"))
+summary(aov(DV ~ Condition * Cov_Cat, data = d))
+
+# 4. The four cell means, and the picture
+cells &lt;- d %&gt;% group_by(Cov_Cat, Condition) %&gt;%
+  summarise(M = mean(DV), SE = sd(DV) / sqrt(n()), .groups = "drop")
+cells
+ggplot(cells, aes(Condition, M, fill = Condition)) +
+  geom_col(alpha = .6, width = .6) +
+  geom_errorbar(aes(ymin = M - SE, ymax = M + SE), width = .2) +
+  facet_wrap(~ Cov_Cat) + theme_classic() + theme(legend.position = "none")</pre>
+  <button type="button" id="copy">Copy the code</button>
+  <p class="small">With the numbers as given (the gratitude worked example), the treatment adds under 1 point in the lower half and about 6 in the higher half, and the interaction is significant.</p>
+
+  <h2>3 · Read it like a grid</h2>
+  <ol>
+    <li>From <code>cells</code>: the treatment&#8217;s effect in the <strong>Lower</strong> half, then in the <strong>Higher</strong> half. Subtract.</li>
+    <li>Different? That&#8217;s your interaction. Say it in simple effects: &#8220;In the higher-___ half, ___ raised ___ by __ points; in the lower half, by only __.&#8221;</li>
+    <li>Now set <code>moder &lt;- 0</code> and run again. That is what &#8220;no moderation&#8221; looks like with your numbers.</li>
+  </ol>
+
+  <div class="box">
+    <h2 style="margin-top:0">Post it</h2>
+    <div class="submit">
+      <p>In the Lecture Lounge check-in that&#8217;s open now: your six numbers and where <code>effect</code> and <code>moder</code> came from, then your interaction sentence. Still on Practical 4? Post your <em>r</em> and your <em>n</em> instead.<br>
+         <code>radlab.zone/class/psy309</code></p>
+      <img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309">
+    </div>
+  </div>
+</main>
+<script>
+  document.getElementById('copy').addEventListener('click', function () {
+    var b = this, t = document.getElementById('code').textContent;
+    try {
+      navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copied'; },
+        function () { b.textContent = 'Select the code and copy it'; });
+    } catch (e) { b.textContent = 'Select the code and copy it'; }
+  });
+</script>
+</body>
+</html>

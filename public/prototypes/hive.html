@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f7f7f9">
+<title>Hive</title>
+<link rel="icon" type="image/svg+xml" href="/RADlab_Logo.svg">
+<!-- Static page outside the bundle: senseforaging.com's two families
+     (Bricolage Grotesque, Literata) from Google Fonts, and its tokens
+     copied from the Handbook's src/styles/tokens.css (no monospace there). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+  /*
+    HIVE: the round trip, beside ordinary doing (prototype, 2026-10-18).
+    Keep it open while you work. Tap Out when you notice you have been doing
+    for a while; the hive offers one sense; put the phone down. Tap Home, bring
+    back a word or nothing, and go back to what you were doing. Each trip
+    becomes a cell in the comb, in its sense's hue, filled by how long it was.
+    Central-place foraging (Orians & Pearson 1979): doing is the hive, not the
+    enemy. No reminders, no counts, no streaks. Stored in this browser only
+    (localStorage); ?demo shows a sample month without saving; ?dev or t opens
+    the record a study would keep. window.__hive drives it headlessly.
+  */
+  :root{
+    color-scheme:light;
+    --bg:#f7f7f9; --surface:#ffffff; --paper:#f0e6d8;
+    --ink:#252a38; --body:#565d72; --muted:#9aa0b3; --line:#e3e4ea;
+    --action:#d1265e; --action-em:#a41e54;
+    --display:'Bricolage Grotesque',system-ui,sans-serif;
+    --serif:'Literata',Georgia,serif;
+    --s-soft:#96c8ca; --s-bright:#4fc2c9; --s-deep:#2c6367;
+  }
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font:16px/1.6 var(--serif);-webkit-tap-highlight-color:transparent;}
+  body{overflow:hidden;}
+  button{font:inherit;color:inherit;cursor:pointer;}
+  .screen{position:fixed;inset:0;display:none;justify-content:center;}
+  .screen.on{display:flex;animation:fadein .35s ease both;}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .col{width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;
+    padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));}
+  .grow{flex:1;min-height:0;}
+  .scroll{overflow-y:auto;}
+  .label{font:600 12px/1.3 var(--display);letter-spacing:.1em;text-transform:uppercase;
+    margin:0 0 8px;color:var(--s-deep);}
+  .label.accent{color:var(--action);}
+  h1{font:600 40px/1.15 var(--display);letter-spacing:-.015em;margin:0 0 24px;}
+  h2{font:600 24px/1.25 var(--display);letter-spacing:-.01em;margin:0 0 16px;text-wrap:balance;}
+  p{margin:0 0 16px;color:var(--body);text-wrap:pretty;}
+  p b{color:var(--ink);font-weight:600;}
+  .lead{font-size:18px;color:var(--ink);}
+  .fine{font-size:14px;color:var(--body);}
+  .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;
+    border-radius:24px;border:1.5px solid transparent;padding:0 24px;
+    font:600 16px/1.2 var(--display);text-decoration:none;}
+  .btn.primary{background:var(--action);color:#fff;}
+  .btn.primary:active{background:var(--action-em);}
+  .btn.primary:disabled{background:var(--muted);cursor:default;}
+  .btn.secondary{background:transparent;border-color:var(--ink);color:var(--ink);}
+  .btn.auto{width:auto;flex:none;}
+  .btn:focus-visible,.chip:focus-visible,.link:focus-visible,.own input:focus-visible{
+    outline:2px solid var(--action);outline-offset:2px;}
+  .actions{display:flex;flex-direction:column;gap:8px;padding-top:16px;}
+  .link{background:none;border:0;padding:8px;color:var(--body);
+    font:600 14px/1.2 var(--display);text-decoration:underline;text-underline-offset:3px;}
+  .link.tiny{font-size:12px;color:var(--muted);align-self:center;}
+
+  /* the hive */
+  .bar{display:flex;align-items:center;justify-content:space-between;min-height:40px;}
+  .brand{font:600 20px/1 var(--display);}
+  .demo{font-size:14px;color:var(--body);background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;padding:8px 16px;margin:8px 0 0;}
+  .demo a{color:var(--action);font-weight:600;}
+  .stage{position:relative;flex:1;min-height:0;margin:8px -16px 0;}
+  #svg{position:absolute;inset:0;display:block;touch-action:manipulation;}
+  .status{min-height:52px;margin:8px 0 0;text-align:center;}
+  .detail{position:absolute;left:16px;right:16px;bottom:8px;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;padding:16px 24px;
+    box-shadow:0 0 20px rgba(0,0,0,.08);}
+  .detail .p{font:600 18px/1.3 var(--display);color:var(--ink);margin:0 0 8px;text-wrap:balance;}
+  .detail .m{font-size:14px;margin:0;}
+  .cell{cursor:pointer;}
+  .trail{fill:none;stroke-width:2;stroke-linecap:round;opacity:.6;}
+  .trail.fade{transition:opacity 1.6s ease;opacity:0;}
+  #bee .wing{transform-box:fill-box;transform-origin:50% 100%;}
+  #bee.flying .wing{animation:flap .08s linear infinite alternate;}
+  @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.3)}}
+  #beeInner{animation:bob 3.2s ease-in-out infinite;}
+  #bee.flying #beeInner{animation:none;}
+  @keyframes bob{50%{transform:translateY(-1.5px)}}
+
+  /* out: the screen goes to the sense, then rests */
+  #out{background:var(--s-soft);transition:background .3s ease;}
+  #out .center{display:flex;flex-direction:column;justify-content:center;transition:opacity 1.2s ease;}
+  #out .prompt{font:600 30px/1.2 var(--display);letter-spacing:-.01em;color:var(--s-deep);
+    margin:0 0 24px;text-wrap:balance;}
+  #out .hint{color:var(--s-deep);transition:opacity .8s ease;}
+  #out.rest .center{opacity:.3;}
+  #out.rest .hint{opacity:0;}
+  #out .btn.quiet{background:transparent;border-color:var(--s-deep);color:var(--s-deep);}
+
+  /* home: bring back a word */
+  .was{font:italic 400 16px/1.5 var(--serif);color:var(--body);margin:0 0 32px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px;}
+  .chip{min-height:40px;padding:0 16px;border-radius:20px;border:1.5px solid var(--s-soft);
+    background:var(--surface);color:var(--s-deep);font:600 16px/1 var(--display);}
+  .chip:active{background:var(--s-soft);}
+  .own{display:flex;gap:8px;margin:0;}
+  .own input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);
+    padding:0 16px;font:16px var(--serif);color:var(--ink);background:var(--surface);}
+
+  /* the record (prototype only) */
+  #record{overflow-y:auto;background:var(--bg);}
+  #record .col{height:auto;min-height:100%;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 24px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;}
+  .stat b{display:block;font:600 22px/1.2 var(--display);color:var(--ink);}
+  .stat span{font-size:14px;line-height:1.4;color:var(--body);display:block;}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 24px;}
+  th,td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
+  th{font:600 12px/1.3 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;}
+</style>
+</head>
+<body>
+
+<!-- About -->
+<section class="screen" id="intro">
+  <div class="col">
+    <div class="grow scroll">
+      <p class="label accent">Sense Foraging · prototype</p>
+      <h1>Hive</h1>
+      <p class="lead">Keep this open beside whatever you’re doing.</p>
+      <p>When you notice you’ve been doing for a while, tap <b>Out</b>. The hive offers one sense. Put the phone down and stay with it for as long as you like.</p>
+      <p>Then tap <b>Home</b>, bring back a word if one comes, and go back to what you were doing. Each trip becomes a cell in the comb.</p>
+      <p class="fine">There are no reminders: every trip starts with you noticing. Nothing leaves this phone.</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="startBtn">Start</button>
+      <a class="link tiny" href="/prototypes/">All prototypes</a>
+    </div>
+  </div>
+</section>
+
+<!-- The hive -->
+<section class="screen" id="hive">
+  <div class="col">
+    <header class="bar"><span class="brand">Hive</span><button class="link" id="aboutBtn">About</button></header>
+    <p class="demo" id="demoBar" hidden>A sample month. Nothing here is saved. <a href="hive.html">Leave it</a></p>
+    <div class="stage" id="stage">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" aria-label="The comb"></svg>
+      <div class="detail" id="detail" hidden></div>
+    </div>
+    <p class="status" id="status"></p>
+    <div class="actions">
+      <button class="btn primary" id="outBtn">Out</button>
+      <button class="link tiny" id="recordBtn">The record (prototype only)</button>
+    </div>
+  </div>
+</section>
+
+<!-- Out -->
+<section class="screen" id="out">
+  <div class="col">
+    <div class="grow center">
+      <p class="label" id="oLabel"></p>
+      <h2 class="prompt" id="oPrompt"></h2>
+      <p class="hint">Put the phone down. Come home when you’re ready.</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="homeBtn">Home</button>
+      <button class="btn quiet" id="rerollBtn">A different sense</button>
+    </div>
+  </div>
+</section>
+
+<!-- Home: bring back a word -->
+<section class="screen" id="back">
+  <div class="col">
+    <div class="grow scroll">
+      <p class="label" id="bLabel"></p>
+      <p class="was" id="bPrompt"></p>
+      <h2>Bring back a word?</h2>
+      <div class="chips" id="chips"></div>
+      <form class="own" id="ownForm" autocomplete="off">
+        <input id="own" maxlength="24" placeholder="Or your own word" aria-label="Your own word" enterkeyhint="done">
+        <button class="btn primary auto" id="ownBtn" disabled>Bring it home</button>
+      </form>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="noneBtn">Nothing this time</button>
+    </div>
+  </div>
+</section>
+
+<!-- The record: what a study would keep. Never shown to a learner. -->
+<section class="screen" id="record">
+  <div class="col">
+    <header class="bar"><span class="brand">The record</span><button class="link" id="recordClose">Close</button></header>
+    <p class="fine">What a study would keep from this phone. A learner would never see this screen.</p>
+    <div id="recordBody"></div>
+    <p class="fine">A trip is self-reported: a tap says someone went out, not that they did. “Phone put away” counts only the time this page was hidden (the screen locked or another app open).</p>
+    <div class="row">
+      <button class="btn secondary auto" id="dlBtn">Download JSON</button>
+      <a class="btn secondary auto" id="demoLink" href="hive.html?demo">See a sample month</a>
+      <button class="btn secondary auto" id="clearBtn">Clear this phone’s hive</button>
+    </div>
+  </div>
+</section>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const SQ3 = Math.sqrt(3);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// The course's seven senses and their hues (senseforaging tokens: hearing teal,
+// sight ochre, touch rose, smell lavender, taste sage; body and breath share
+// denim). Words are practices.js SENSES.echo. Prompts are invitations, never
+// outcomes, and none asks for a held or forced breath.
+const SENSES = {
+  hearing: { soft: '#96c8ca', bright: '#4fc2c9', deep: '#2c6367',
+    words: ['low', 'high', 'near', 'far', 'steady', 'sudden'],
+    prompts: ['The farthest sound you can hear.', 'The quietest sound near you.', 'A sound that keeps changing.',
+      'Something you’ve been hearing without listening.', 'Where each sound is: left, right, above, behind.'] },
+  sight: { soft: '#e6cb96', bright: '#f2b555', deep: '#7c611f',
+    words: ['edge', 'colour', 'texture', 'light', 'shape', 'grain'],
+    prompts: ['Something you’ve looked at a hundred times.', 'One colour, everywhere it shows up.', 'The darkest spot you can see.',
+      'Something moving, however slightly.', 'Where the light is coming from.'] },
+  touch: { soft: '#e8a8bc', bright: '#f06f96', deep: '#95405c',
+    words: ['cool', 'warm', 'rough', 'smooth', 'heavy', 'edge'],
+    prompts: ['Where your skin meets the air.', 'The temperature of whatever you’re holding.', 'Something within reach. Find its texture with your fingers.',
+      'Your clothes, wherever you can feel them.', 'Your hands, resting.'] },
+  body: { soft: '#8cb2dd', bright: '#5b9fe9', deep: '#245282',
+    words: ['pressure', 'warmth', 'tingling', 'weight', 'tight', 'loose'],
+    prompts: ['Your feet, wherever they are.', 'Where your body meets the chair or the floor.', 'Your shoulders, as they are.', 'The weight of your head.'] },
+  breath: { soft: '#8cb2dd', bright: '#5b9fe9', deep: '#245282',
+    words: ['cool', 'slow', 'catch', 'rise', 'pause', 'soft'],
+    prompts: ['Three breaths, as they are.', 'Where the breath is easiest to feel.', 'The pause after a breath out.'] },
+  smell: { soft: '#c1b3e2', bright: '#a68ce0', deep: '#584a86',
+    words: ['sharp', 'sweet', 'faint', 'warm', 'green', 'fading'],
+    prompts: ['Whatever is in the air right now.', 'Your sleeve, or your wrist.', 'The room, on a slow breath in.', 'The nearest thing with a smell.'] },
+  taste: { soft: '#b3cf9c', bright: '#8cc46e', deep: '#4a6a30',
+    words: ['salt', 'sweet', 'bitter', 'texture', 'warm', 'changing'],
+    prompts: ['Whatever is in your mouth right now.', 'A sip of something, slowly.', 'Your tongue, resting.'] },
+};
+const ORDER = ['hearing', 'sight', 'touch', 'body', 'breath', 'smell', 'taste'];
+
+// ─── State ──────────────────────────────────────────────────────────────────
+const KEY = 'radlab.hive.v1';
+const Q = new URLSearchParams(location.search);
+const DEMO = Q.has('demo');
+let offset = 0;                                  // debug clock shift (ms)
+const now = () => Math.round(Date.now() + offset);
+let store = { trips: [], current: null, seenIntro: false };
+let busy = false;
+
+function load() {
+  if (DEMO) { store = { trips: sampleMonth(), current: null, seenIntro: true }; return; }
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.trips)) store = { trips: s.trips, current: s.current || null, seenIntro: !!s.seenIntro };
+  } catch { /* storage blocked: the hive lives in memory for this visit */ }
+}
+function save() {
+  if (DEMO) return;
+  try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { /* memory only */ }
+}
+
+const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+// The hive offers the senses you have visited least lately (foraging is
+// variety as well as depth), and never the same prompt twice running.
+function pickSense(exclude, rnd = Math.random, trips = store.trips) {
+  const recent = trips.slice(-8).map((t) => t.sense);
+  const pool = ORDER.filter((s) => s !== exclude);
+  const w = pool.map((s) => 1 / (1 + 1.5 * recent.filter((x) => x === s).length));
+  let r = rnd() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) return pool[i]; }
+  return pool[pool.length - 1];
+}
+function pickPrompt(sense, rnd = Math.random, trips = store.trips) {
+  const last = [...trips].reverse().find((t) => t.sense === sense);
+  const opts = SENSES[sense].prompts.filter((p) => !last || p !== last.prompt);
+  return opts[Math.floor(rnd() * opts.length)];
+}
+
+// ─── Screens ────────────────────────────────────────────────────────────────
+let screen = 'hive';
+function show(id) {
+  screen = id;
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
+  const c = store.current && SENSES[store.current.sense];
+  document.querySelector('meta[name=theme-color]').content = id === 'out' && c ? c.soft : '#f7f7f9';
+}
+function senseVars(el, s) {
+  el.style.setProperty('--s-soft', s.soft); el.style.setProperty('--s-bright', s.bright); el.style.setProperty('--s-deep', s.deep);
+}
+
+// ─── The round trip ─────────────────────────────────────────────────────────
+function goOut(sense, instant) {
+  if (busy || store.current) return;
+  const s = SENSES[sense] ? sense : pickSense();
+  store.current = { start: now(), sense: s, prompt: pickPrompt(s), changes: 0, hiddenMs: 0, hiddenAt: null, end: null };
+  save();
+  closeDetail();
+  if (instant || document.hidden) { showOut(); return; }
+  busy = true;
+  flyOut(SENSES[s].bright, () => { busy = false; if (store.current && !store.current.end) showOut(); });
+}
+
+function reroll() {
+  const c = store.current; if (!c || c.end) return;
+  c.sense = pickSense(c.sense); c.prompt = pickPrompt(c.sense); c.changes++;
+  save(); paintOut(); wake();
+}
+
+function comeHome() {
+  const c = store.current; if (!c || c.end) return;
+  if (c.hiddenAt != null) { c.hiddenMs += now() - c.hiddenAt; c.hiddenAt = null; }
+  c.end = now();
+  save();
+  if (navigator.vibrate) navigator.vibrate(10);
+  showBack();
+}
+
+function bring(word, kind, instant) {
+  const c = store.current; if (!c || !c.end) return;
+  const prev = store.trips[store.trips.length - 1];
+  const w = word ? String(word).trim().slice(0, 24) : '';
+  const trip = {
+    start: c.start, end: c.end, sense: c.sense, prompt: c.prompt,
+    keptOffer: c.changes === 0, changes: c.changes, hiddenMs: Math.round(c.hiddenMs),
+    word: w || null, wordKind: w ? kind : null,
+    // time back in doing since the last trip came home, same day only
+    gapMs: prev && dayKey(prev.end) === dayKey(c.start) ? c.start - prev.end : null,
+  };
+  store.trips.push(trip); store.current = null; save();
+  showHive(instant ? null : trip);
+}
+
+// ─── Out ────────────────────────────────────────────────────────────────────
+let restTimer = null;
+function paintOut() {
+  const c = store.current, s = SENSES[c.sense];
+  senseVars($('out'), s);
+  $('oLabel').textContent = c.sense;
+  $('oPrompt').textContent = c.prompt;
+  document.querySelector('meta[name=theme-color]').content = s.soft;
+}
+function showOut() { paintOut(); show('out'); wake(); }
+function wake() {
+  $('out').classList.remove('rest');
+  clearTimeout(restTimer);
+  restTimer = setTimeout(() => $('out').classList.add('rest'), 7000);
+}
+
+// ─── Home ───────────────────────────────────────────────────────────────────
+function showBack() {
+  const c = store.current, s = SENSES[c.sense];
+  senseVars($('back'), s);
+  $('bLabel').textContent = c.sense;
+  $('bPrompt').textContent = c.prompt;
+  $('chips').innerHTML = s.words.map((w) => `<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join('');
+  $('own').value = ''; $('ownBtn').disabled = true;
+  show('back');
+}
+
+// ─── The comb ───────────────────────────────────────────────────────────────
+// Pointy-top hexes hanging from a branch. The order grows down and out from
+// one top cell, nearest first (vertical distance counted at 0.6, so the comb
+// hangs longer than it is wide). There is never an empty cell to fill.
+const SLOTS = (() => {
+  const a = [];
+  for (let r = 0; r <= 40; r++) for (let q = -40; q <= 40; q++) {
+    const x = SQ3 * (q + r / 2), y = 1.5 * r;
+    if (Math.abs(x) > 30) continue;
+    a.push({ q, r, x, y, k: Math.hypot(x, 0.6 * y) });
+  }
+  return a.sort((m, n) => m.k - n.k || m.x - n.x);
+})();
+
+function hexPts(rho) {
+  const p = [];
+  for (let i = 0; i < 6; i++) { const a = Math.PI / 180 * (60 * i - 90); p.push(`${(rho * Math.cos(a)).toFixed(2)},${(rho * Math.sin(a)).toFixed(2)}`); }
+  return p.join(' ');
+}
+// honey level: a few seconds is a third full, three minutes or more is full
+const fillOf = (ms) => 0.3 + 0.7 * Math.max(0, Math.min(1, Math.log(Math.max(ms, 1) / 8000) / Math.log(180000 / 8000)));
+
+let geo = null;            // last layout: { W, H, R, cells:[{x,y}], rest:{x,y} }
+let selected = -1;
+
+function layout() {
+  const st = $('stage');
+  const W = st.clientWidth, H = st.clientHeight, n = store.trips.length;
+  const b = 40;                                                     // branch height
+  const branchY = (x) => { const t = (x + 10) / (W + 20); return b + 6 - 24 * t * (1 - t); };
+  let R = 30, ox = W / 2, cells = [], combBox = null;
+  if (n) {
+    const sl = SLOTS.slice(0, n);
+    const minX = Math.min(...sl.map((s) => s.x)), maxX = Math.max(...sl.map((s) => s.x)), maxY = Math.max(...sl.map((s) => s.y));
+    R = Math.min(30, (W - 88) / (maxX - minX + SQ3), (H - b - 24) / (maxY + 2));
+    ox = W / 2 - R * (minX + maxX) / 2;
+    cells = sl.map((s) => ({ x: ox + R * s.x, y: b + R + R * s.y }));
+    combBox = { x0: ox + R * (minX - SQ3 / 2), x1: ox + R * (maxX + SQ3 / 2), y0: b, y1: b + R * (maxY + 2) };
+  }
+  const topRight = n ? Math.max(...SLOTS.slice(0, n).filter((s) => s.r === 0).map((s) => s.x)) : 0;
+  const rx = n ? Math.min(W - 20, ox + R * topRight + R * SQ3 / 2 + 16) : W / 2;
+  return { W, H, b, R, cells, combBox, branchY, rest: { x: rx, y: branchY(rx) - 7 } };
+}
+
+function renderHive(hideLast) {
+  const g = geo = layout();
+  const { W, H, R, cells, combBox, branchY } = g;
+  const svg = $('svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  const P = hexPts(R - 1.2);
+  const glow = combBox
+    ? `<ellipse cx="${(combBox.x0 + combBox.x1) / 2}" cy="${(combBox.y0 + combBox.y1) / 2}" rx="${(combBox.x1 - combBox.x0) / 2 + 48}" ry="${(combBox.y1 - combBox.y0) / 2 + 40}" fill="#f0e6d8" opacity=".55"/>`
+    : `<ellipse cx="${W / 2}" cy="${branchY(W / 2) + 24}" rx="96" ry="64" fill="#f0e6d8" opacity=".55"/>`;
+  const leaf = (x, a) => `<ellipse cx="${x}" cy="${branchY(x) - 6}" rx="11" ry="4.5" transform="rotate(${a} ${x} ${branchY(x)})" fill="#b3cf9c" stroke="#4a6a30" stroke-opacity=".35"/>`;
+  const fs = Math.max(9, Math.min(12, R * 0.36));
+  const cellSvg = store.trips.map((t, i) => {
+    const s = SENSES[t.sense] || SENSES.hearing, c = cells[i], f = fillOf(t.end - t.start);
+    const word = t.word && R >= 22 && t.word.length * fs * 0.56 < 1.6 * R
+      ? `<text y="${fs * 0.35}" text-anchor="middle" font-family="Bricolage Grotesque,system-ui,sans-serif" font-weight="600" font-size="${fs}" fill="${s.deep}">${esc(t.word)}</text>` : '';
+    return `<g class="cell" data-i="${i}" transform="translate(${c.x.toFixed(1)},${c.y.toFixed(1)})"><g class="pop" transform="scale(${hideLast && i === store.trips.length - 1 ? 0 : 1})">`
+      + `<polygon points="${P}" fill="${s.soft}" fill-opacity=".28"/>`
+      + `<rect clip-path="url(#hc)" x="${-R}" y="${(R - 2 * R * f).toFixed(1)}" width="${2 * R}" height="${(2 * R * f).toFixed(1)}" fill="${s.soft}"/>`
+      + `<polygon points="${P}" fill="none" stroke="${i === selected ? '#252a38' : s.deep}" stroke-opacity="${i === selected ? 1 : 0.35}" stroke-width="${i === selected ? 2 : 1}"/>`
+      + word + `</g></g>`;
+  }).join('');
+  svg.innerHTML = `<defs><clipPath id="hc"><polygon points="${P}"/></clipPath><clipPath id="bb"><ellipse rx="8" ry="5.5"/></clipPath></defs>`
+    + glow
+    + `<path d="M -10 ${branchY(-10)} Q ${W / 2} ${40 - 6} ${W + 10} ${branchY(W + 10)}" fill="none" stroke="#7c611f" stroke-opacity=".75" stroke-width="6" stroke-linecap="round"/>`
+    + leaf(W * 0.1, -28) + leaf(W * 0.1 + 14, 24) + leaf(W * 0.9, 28) + leaf(W * 0.9 - 14, -24)
+    + `<g id="cells">${cellSvg}</g><g id="trails"></g>`
+    + `<g id="bee" transform="translate(${g.rest.x},${g.rest.y}) scale(1.15)"><g id="beeInner">`
+    + `<ellipse class="wing" cx="-2" cy="-7" rx="4.5" ry="7" fill="#fff" fill-opacity=".85" stroke="#9aa0b3" stroke-width=".7"/>`
+    + `<ellipse class="wing" cx="3" cy="-6.5" rx="3.8" ry="6" fill="#fff" fill-opacity=".85" stroke="#9aa0b3" stroke-width=".7"/>`
+    + `<ellipse rx="8" ry="5.5" fill="#f2b555"/>`
+    + `<g clip-path="url(#bb)" fill="#252a38"><rect x="-4.5" y="-6" width="2.4" height="12"/><rect x="0.4" y="-6" width="2.4" height="12"/></g>`
+    + `<circle cx="8.2" cy="0" r="3.4" fill="#252a38"/><path d="M-8 0 h-2.6" stroke="#252a38" stroke-width="1.4" stroke-linecap="round"/>`
+    + `</g></g>`;
+}
+
+function setBee(x, y, a = 0) {
+  const flip = Math.abs(a) > 90 ? -1 : 1;
+  $('bee').setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${a.toFixed(1)}) scale(1.15,${1.15 * flip})`);
+}
+
+function fly(d, color, ms, done) {
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', d); path.setAttribute('class', 'trail'); path.setAttribute('stroke', color);
+  $('trails').appendChild(path);
+  const L = path.getTotalLength();
+  path.style.strokeDasharray = L; path.style.strokeDashoffset = L;
+  $('bee').classList.add('flying');
+  const t0 = performance.now();
+  // performance.now(), not the frame's timestamp: that can predate t0, and a
+  // negative u would flip the bee (and scale a popping cell through zero)
+  const step = () => {
+    const u = Math.max(0, Math.min(1, (performance.now() - t0) / ms)), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+    const p = path.getPointAtLength(e * L), q = path.getPointAtLength(Math.min(L, e * L + 1));
+    setBee(p.x, p.y, Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI);
+    path.style.strokeDashoffset = L * (1 - e);
+    if (u < 1) { requestAnimationFrame(step); return; }
+    $('bee').classList.remove('flying');
+    path.classList.add('fade'); setTimeout(() => path.remove(), 1700);
+    if (done) done();
+  };
+  requestAnimationFrame(step);
+}
+
+function flyOut(color, done) {
+  const { W, H, rest: r } = geo;
+  fly(`M ${r.x} ${r.y} C ${r.x + 40} ${r.y + H * 0.5}, ${W * 0.05} ${H * 0.75}, ${W * 0.3} ${H * 0.45} S ${W * 0.85} ${-H * 0.05}, ${W + 60} ${H * 0.08}`, color, 1000, done);
+}
+function flyIn(trip) {
+  const { W, H, rest: r, cells } = geo, c = cells[cells.length - 1];
+  setBee(-60, H * 0.1);
+  busy = true;
+  fly(`M -60 ${H * 0.12} C ${W * 0.2} ${H * 0.9}, ${c.x + 70} ${c.y + 80}, ${c.x} ${c.y} S ${r.x + 30} ${r.y - 40}, ${r.x} ${r.y}`, SENSES[trip.sense].bright, 1300, () => {
+    setBee(r.x, r.y, 0); busy = false;
+  });
+  // the cell fills in as the bee passes it
+  setTimeout(() => popCell(cells.length - 1), 700);
+}
+function popCell(i) {
+  const g = $('svg').querySelector(`.cell[data-i="${i}"] .pop`); if (!g) return;
+  const t0 = performance.now();
+  const step = () => {
+    const u = Math.max(0, Math.min(1, (performance.now() - t0) / 420));
+    const k = u < 0.7 ? 1.08 * (u / 0.7) : 1.08 - 0.08 * ((u - 0.7) / 0.3);
+    g.setAttribute('transform', `scale(${k.toFixed(3)})`);
+    if (u < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ─── The hive screen ────────────────────────────────────────────────────────
+let statusTimer = null;
+const idleLine = () => store.trips.length
+  ? 'When you notice you’ve been doing for a while, go out.'
+  : 'The comb starts with your first trip out.';
+function setStatus(text, revertMs) {
+  $('status').textContent = text;
+  clearTimeout(statusTimer);
+  if (revertMs) statusTimer = setTimeout(() => { $('status').textContent = idleLine(); }, revertMs);
+}
+function showHive(arriving) {
+  show('hive');
+  $('demoBar').hidden = !DEMO;
+  renderHive(!!arriving);
+  if (arriving && !document.hidden) { flyIn(arriving); setStatus('Back to what you were doing.', 12000); }
+  else if (arriving) { popCell(store.trips.length - 1); setStatus('Back to what you were doing.', 12000); }
+  else setStatus(idleLine());
+}
+
+function lengthWords(ms) {
+  const s = ms / 1000;
+  if (s < 20) return 'a few seconds';
+  if (s < 60) return 'under a minute';
+  if (s < 120) return 'about a minute';
+  if (s < 300) return 'a few minutes';
+  return 'a long while';
+}
+function openDetail(i) {
+  const t = store.trips[i]; if (!t) return;
+  selected = i; renderHive(false);
+  const s = SENSES[t.sense], el = $('detail');
+  senseVars(el, s);
+  const when = new Date(t.start).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  el.innerHTML = `<p class="label">${esc(t.sense)}</p><p class="p">${esc(t.prompt)}</p>`
+    + `<p class="m">${t.word ? `Brought back: <b>${esc(t.word)}</b>` : 'Nothing brought back.'}</p>`
+    + `<p class="m">${esc(when)} · ${lengthWords(t.end - t.start)}</p>`;
+  el.hidden = false;
+}
+function closeDetail() {
+  if (selected < 0 && $('detail').hidden) return;
+  selected = -1; $('detail').hidden = true;
+  if (screen === 'hive') renderHive(false);
+}
+
+// ─── The record ─────────────────────────────────────────────────────────────
+const median = (a) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+function fmtDur(ms) {
+  if (ms == null) return '–';
+  const s = Math.round(ms / 1000);
+  if (s < 90) return `${s} s`;
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+function summarize(trips) {
+  const n = trips.length;
+  const counts = Object.fromEntries(ORDER.map((s) => [s, 0]));
+  trips.forEach((t) => { counts[t.sense] = (counts[t.sense] || 0) + 1; });
+  const entropy = n ? -ORDER.reduce((a, s) => { const p = counts[s] / n; return p ? a + p * Math.log(p) : a; }, 0) / Math.log(ORDER.length) : null;
+  return {
+    trips: n,
+    days: new Set(trips.map((t) => dayKey(t.start))).size,
+    medianTripMs: median(trips.map((t) => t.end - t.start)),
+    medianGapMs: median(trips.map((t) => t.gapMs).filter((g) => g != null)),
+    sensesVisited: ORDER.filter((s) => counts[s]).length,
+    variety: entropy,
+    medianAway: median(trips.map((t) => t.hiddenMs / Math.max(1, t.end - t.start))),
+    keptOffer: n ? trips.filter((t) => t.keptOffer).length / n : null,
+    broughtWord: n ? trips.filter((t) => t.word).length / n : null,
+    bySense: counts,
+  };
+}
+const pct = (x) => x == null ? '–' : `${Math.round(x * 100)}%`;
+function showRecord() {
+  const t = store.trips, m = summarize(t);
+  const stat = (v, k) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`;
+  const rows = [...t].reverse().map((x) => {
+    const d = new Date(x.start);
+    return `<tr><td>${esc(d.toLocaleDateString([], { month: 'short', day: 'numeric' }))} ${esc(d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td>`
+      + `<td><span class="dot" style="background:${SENSES[x.sense].bright}"></span>${esc(x.sense)}</td>`
+      + `<td>${fmtDur(x.end - x.start)}</td><td>${pct(x.hiddenMs / Math.max(1, x.end - x.start))}</td><td>${x.word ? esc(x.word) : ''}</td></tr>`;
+  }).join('');
+  $('recordBody').innerHTML = (DEMO ? '<p class="demo">A sample month, generated. Nothing here is saved.</p>' : '')
+    + `<div class="grid">`
+    + stat(m.trips, 'trips out') + stat(m.days, 'days with a trip')
+    + stat(fmtDur(m.medianTripMs), 'typical trip (median)') + stat(fmtDur(m.medianGapMs), 'typical time in doing between trips, same day')
+    + stat(`${m.sensesVisited} of 7`, 'senses visited') + stat(m.variety == null ? '–' : m.variety.toFixed(2), 'variety across senses (0 to 1)')
+    + stat(pct(m.medianAway), 'of a trip with the phone put away (median)') + stat(pct(m.keptOffer), 'kept the first sense offered')
+    + stat(pct(m.broughtWord), 'brought back a word') + stat(pct(t.filter((x) => x.changes > 0).length / Math.max(1, t.length)), 'asked for a different sense')
+    + `</div>`
+    + `<p class="fine">By sense: ${ORDER.map((s) => `<span class="dot" style="background:${SENSES[s].bright}"></span>${s} ${m.bySense[s]}`).join(' &nbsp; ')}</p>`
+    + (t.length ? `<table><thead><tr><th>When</th><th>Sense</th><th>Length</th><th>Put away</th><th>Word</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No trips yet.</p>');
+  $('demoLink').hidden = DEMO;
+  $('clearBtn').hidden = DEMO;
+  show('record');
+}
+function closeRecord() {
+  if (store.current) { store.current.end ? showBack() : showOut(); } else showHive(null);
+}
+
+// A sample month for seeing a fuller comb: seeded, dated back from today.
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function sampleMonth() {
+  const rnd = mulberry32(17), out = [];
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  const own = ['hum', 'fridge', 'cold mug', 'rain', 'dust', 'toast', 'traffic', 'wool', 'mint', 'radiator', 'pencil', 'birds'];
+  const day0 = new Date(); day0.setHours(0, 0, 0, 0);
+  for (let d = 27; d >= 0; d--) {
+    const base = day0.getTime() - d * 86400000;
+    const k = rnd() < 0.12 ? 0 : 1 + Math.floor(rnd() * 5);
+    const times = Array.from({ length: k }, () => (8 + rnd() * 14) * 3600000).sort((a, b) => a - b);
+    let prevEnd = null;
+    for (const tm of times) {
+      const start = Math.round(base + tm);
+      if (d === 0 && start > Date.now()) continue;
+      if (prevEnd && start < prevEnd + 10 * 60000) continue;
+      const sense = pickSense(null, rnd, out), dur = Math.round(Math.min(420, Math.max(6, Math.exp(Math.log(50) + 0.8 * gauss()))) * 1000);
+      const kept = rnd() < 0.7, wr = rnd();
+      const word = wr < 0.55 ? SENSES[sense].words[Math.floor(rnd() * 6)] : wr < 0.7 ? own[Math.floor(rnd() * own.length)] : null;
+      out.push({ start, end: start + dur, sense, prompt: pickPrompt(sense, rnd, out), keptOffer: kept, changes: kept ? 0 : 1 + Math.floor(rnd() * 2),
+        hiddenMs: Math.round(dur * (rnd() < 0.3 ? rnd() * 0.2 : 0.4 + rnd() * 0.6)), word, wordKind: word ? (wr < 0.55 ? 'chip' : 'own') : null,
+        gapMs: prevEnd ? start - prevEnd : null });
+      prevEnd = start + dur;
+    }
+  }
+  return out;
+}
+
+// ─── Wiring ─────────────────────────────────────────────────────────────────
+$('startBtn').addEventListener('click', () => { store.seenIntro = true; save(); showHive(null); });
+$('aboutBtn').addEventListener('click', () => { $('startBtn').textContent = 'Back to the hive'; show('intro'); });
+$('outBtn').addEventListener('click', () => goOut());
+$('homeBtn').addEventListener('click', comeHome);
+$('rerollBtn').addEventListener('click', reroll);
+$('out').addEventListener('pointerdown', (e) => { if (!e.target.closest('button')) wake(); });
+$('chips').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) bring(b.dataset.w, 'chip'); });
+$('own').addEventListener('input', () => { $('ownBtn').disabled = !$('own').value.trim(); });
+$('ownForm').addEventListener('submit', (e) => { e.preventDefault(); if ($('own').value.trim()) bring($('own').value, 'own'); });
+$('noneBtn').addEventListener('click', () => bring(null, null));
+$('recordBtn').addEventListener('click', showRecord);
+$('recordClose').addEventListener('click', closeRecord);
+$('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear every trip in this browser’s hive?')) return;
+  store = { trips: [], current: null, seenIntro: true }; save(); showHive(null);
+});
+$('dlBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ exported: new Date(now()).toISOString(), sample: DEMO, summary: summarize(store.trips), trips: store.trips }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `hive-record-${dayKey(now())}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('svg').addEventListener('click', (e) => {
+  const c = e.target.closest('.cell');
+  if (c) openDetail(+c.dataset.i); else closeDetail();
+});
+$('detail').addEventListener('click', closeDetail);
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 't') screen === 'record' ? closeRecord() : showRecord();
+  if (e.key === 'Escape' && screen === 'record') closeRecord();
+});
+// how much of a trip the phone spent put away (locked, or another app open)
+document.addEventListener('visibilitychange', () => {
+  const c = store.current; if (!c || c.end) return;
+  if (document.hidden) c.hiddenAt = now();
+  else if (c.hiddenAt != null) { c.hiddenMs += now() - c.hiddenAt; c.hiddenAt = null; }
+  save();
+});
+let resizeT = null;
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (screen === 'hive') renderHive(false); }, 120); });
+
+// Headless driving (agent playtests): instant variants skip the flights.
+window.__hive = {
+  get state() { return JSON.parse(JSON.stringify(store)); },
+  get screen() { return screen; },
+  get geo() { return geo; },
+  out: (sense) => { goOut(sense, true); return store.current; },
+  reroll, home: comeHome,
+  bring: (word) => bring(word || null, word ? 'own' : null, true),
+  advance: (ms) => { offset += ms; },
+  seed: () => { store.trips = sampleMonth(); save(); showHive(null); },
+  clear: () => { store = { trips: [], current: null, seenIntro: true }; save(); showHive(null); },
+  summary: () => summarize(store.trips),
+  detail: openDetail,
+};
+
+// ─── Start ──────────────────────────────────────────────────────────────────
+load();
+if (store.current) {
+  const c = store.current;
+  if (!c.end && c.hiddenAt != null) { c.hiddenMs += now() - c.hiddenAt; c.hiddenAt = null; save(); }
+  c.end ? showBack() : showOut();
+} else if (!store.seenIntro) show('intro');
+else showHive(null);
+if (Q.has('dev')) showRecord();
+</script>
+</body>
+</html>

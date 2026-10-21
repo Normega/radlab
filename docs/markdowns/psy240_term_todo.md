@@ -25,10 +25,10 @@ Guide freezes before the final Dec 8.
   delays feedback on the Oct 7 green contributions; or (b) build it — accepting a claim during a
   freeze window records the decision and holds the page edit until the window ends. The same
   freeze is needed again Dec 8 for the final.
-- [ ] **HIGH — load Quiz 4** (`quiz_4.yaml`, 7 items, flatten the two-tier). Opens Sep 30 15:45Z;
-  its late tier never opens, and it hard-closes with the first half on Oct 14 13:00Z.
-- [ ] **HIGH — load Quiz 5** (`quiz_5.yaml`), opens Oct 7 15:45Z; full credit through Oct 13 and
-  hard-close Oct 14 13:00Z; the quiz card must say the late tier never opens.
+- [x] **HIGH — load Quiz 4** (`quiz_4.yaml`, 7 items, flatten the two-tier). Opens Sep 30 15:45Z.
+  (Loaded, 8 items after flattening; close moved to Dec 8 on 2026-10-15, see Midterm.)
+- [x] **HIGH — load Quiz 5** (`quiz_5.yaml`), opens Oct 7 15:45Z; full credit through Oct 13.
+  (Loaded 2026-10-06; close moved to Dec 8 on 2026-10-15, see Midterm.)
 - [ ] L3 (Sep 23): run of show is ready; afterwards Stop/Done everything and close L2's stale
   `65:planned`. Preview #15 before class.
 - [ ] L4 check-ins: only 1/20/40/99 exist. **Seed Exercise B's quiz check-in** (four somatic
@@ -54,7 +54,26 @@ Guide freezes before the final Dec 8.
   made up. Say "bring the device you'll use for daily practice" in L4 and L5.
 - [ ] A "how the midterm is built" slide in L5 (formats: MC, EMQ sets, stepped vignettes, VSA,
   spot-the-limitation). Use no real pool item as an example.
-- [ ] Late tier: all first-half quizzes hard-close Oct 14 13:00Z. Announce it in L4 and L5.
+- [x] ~~Late tier: all first-half quizzes hard-close Oct 14 13:00Z.~~ **Reversed 2026-10-15** (Norm,
+  after a student found Quizzes 1–5 shut at 9:00 on Oct 14 while Quercus said 11:59 PM): late
+  quizzes stay open with the 75% penalty, so Quizzes 1–5 now close Dec 8
+  11:59 PM ET like every later quiz (`hard_close_at` = `2026-12-09 04:59Z`). The archive's "75%
+  until the midterm" now says "until the end of term". Every quiz from 6 on loads with the same close.
+- [ ] Announce the reopening on Quercus and in L7: Quizzes 1–4 are 75% now; Quiz 5 is full credit
+  through Oct 20 (its grace week), then 75%. Fix the Quercus quiz dates that said Oct 14 11:59 PM.
+  (L7 slide 2 now carries the in-class half, 2026-10-19; Quercus is still Norm's.)
+- [ ] Accommodation requests for late quizzes: `weekly_quiz_extensions` only moves the close, not
+  the full-credit window, so any full-credit exception Norm grants is applied by hand when the
+  tier export is graded. Keep the list of who and why out of this public repo (Teaching drive).
+- [ ] **Midterm makeups (set up 2026-10-19):** four invigilated sittings, all online on the same
+  `midterm` test: Tue Oct 20 5:00 pm, Wed Oct 21 4:00 pm, Fri Oct 23 2:00 pm and 3:30 pm (ET).
+  One-off pg_cron jobs `psy240-makeup-*` open the test 15 min before each sitting with that sitting's
+  own access code and close it 30 min after the start; closing only blocks new starts, so anyone
+  writing keeps going to their own deadline, and AccessAbility extra time applies automatically.
+  Dry run in a rolled-back transaction: wrong code refused, right code starts a 90-minute attempt,
+  saves continue after the close, a late start is refused. The codes went to the test centre and
+  are not in this repo; who writes when stays out of it too. After each sitting, check the Test tab
+  that only scheduled students started. Release results only after Fri Oct 23.
 
 ## Class RCT: traditional mindfulness vs Sense Foraging (onboarding Oct 14, practice Oct 21–Nov 17)
 
@@ -76,6 +95,9 @@ engine: enrolment, randomisation, ratings, export). Compassion and reappraisal a
 - [x] Days 8–28 built: eight more scripts as guided text, Sensory Scientist / Pause Before Reacting /
   Graduation copied from Study 3 as written, eleven "again" days. All 28 walk through on the dev site.
   Lead-in "about N minutes" is computed from content. 2026-09-28.
+- [x] Lead-ins in both text arms say "About 4 to 5 minutes" (Norm, 2026-10-18): the per-day estimate
+  said 1–4 minutes, but Days 1–2 ran a 4–5 minute median check-in in every arm. Stress-mindset
+  Graduation's lead-in no longer ends on the dropped "stood out most" question.
 - [ ] Norm reviews days 8–28 on the dev site.
 - [x] **Stress-mindset (reappraisal) arm converted too** (Norm, 2026-09-28): Liliana's 16 modules copied
   verbatim under `classrct-ra-*`, her 11 videos rewritten as guided-text lessons at reading pace (3 words/s).
@@ -183,7 +205,7 @@ clear the exclusion in the YAML header.
 
 ## Platform
 
-- [ ] **Haiku 4.5 may retire from Oct 15.** Anthropic lists `claude-haiku-4-5` as retiring "not sooner than October 15, 2026". It runs `api/lounge-ai.js` `summarize`, the "Show class" theme grouping used in every lecture. No newer Haiku exists (2026-09-28). Before Oct 15, move it to `claude-sonnet-5-5` on the same structured-output pattern as `propose`, or confirm the date has moved.
+- [ ] (2026-10-15 — on `dev`: `summarize` runs `claude-sonnet-5-5`, structured output, thinking off at low effort. **Before L7 (Oct 21):** press "Show class" on a prompt check-in on dev.radlab.zone, then promote. If themes don't appear within the remote's 9 s, say so — the fix is effort/latency, not the model.) **Haiku 4.5 may retire from Oct 15.** Anthropic lists `claude-haiku-4-5` as retiring "not sooner than October 15, 2026". It runs `api/lounge-ai.js` `summarize`, the "Show class" theme grouping used in every lecture. No newer Haiku exists (2026-09-28). Before Oct 15, move it to `claude-sonnet-5-5` on the same structured-output pattern as `propose`, or confirm the date has moved.
 - [x] (2026-09-28 — verified live on dev by Norm and promoted) Sonnet 5.5 migration of `integrate-claim` and lounge-ai `propose` is on dev (2026-09-28, `402887c`). Before promoting, run "Compare with source" on one submission and one run-of-show proposal on dev.radlab.zone (the Anthropic key is Vercel-only, so neither has made a real call yet).
 - [x] (2026-09-26 — now 1 per 120 s and 10 per rolling 24 h on all three send paths, `20260926_signin_send_window.sql`; the refusal says when it lifts. Still open: why she needed 50.) **The sign-in email cap is lifetime, and it's already being hit.** `api/roster-join.js`
   refuses a roster row after `LIFETIME_SEND_CAP = 50` sends ("Send limit reached for this address
@@ -247,9 +269,15 @@ now has a slide.
 Content pass 2026-09-22: 25 → 35 sections (branch `psy240/l6-content-pass`).
 - [ ] Check-ins exist 1/20/40/99. No exercise needs a quiz check-in (one activity only, because the
   RCT segment takes the last 45 minutes).
-- [ ] Closer: `TODO(QotW)`. Draft or confirm week 7's question.
-- [ ] Slide 30 says RCT practice runs "through November 17"; the syllabus says data collection ends
-  ~Nov 18. Reconcile.
+- [x] Closer: the week-7 QotW row exists and matches; the TODO is gone (2026-10-19).
+- [x] The trial segment was still the pre-launch one (first session tonight, two practices, through
+  Nov 17, results Dec 2, a pre-registration and a day-2 credibility rating that don't exist). Now
+  ~15 minutes on day 5 of 28: status, why randomize, why blind, do today's now; closer and slide 2
+  match the plan (day 28 Nov 13, post Nov 14–16, results Nov 18). On dev for review (2026-10-19).
+- [x] Fact-checked slides 4–27 against the Guide (2026-10-19). Fixed: the antidepressant slide (the
+  3.9–72.7% range is across agents, not asked-vs-not; the subsection's flags are in the notes), the
+  consent-sort routes (the victim-intrinsic group qualifies by acting OR distress), "meta-analysis"
+  for a systematic review, plus small wording on slides 6, 8, 14, 18, 20, 25, 26.
 - [ ] Guide `exhibitionistic-disorder`: Course says onset before 18 while Etiology quotes Karpman's
   early-to-mid twenties; "much less common in women" sits beside a 2:1 survey ratio.
 - [ ] Guide `ejaculation-and-orgasmic-disorders`: the antidepressant headline "30% to 73%" conflicts

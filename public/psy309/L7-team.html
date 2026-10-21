@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L7 · Flip for your team</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root { --ink:#141B22; --muted:#5C6773; --accent:#1F5C8B; --ground:#FCFBF8; --line:#DCE2E6;
+          --red:#E03131; --blue:#1971C2; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--ground); color:var(--ink); transition:background .4s;
+         font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.55; }
+  body.red { background:var(--red); color:#fff; }
+  body.blue { background:var(--blue); color:#fff; }
+  main { max-width:560px; margin:0 auto; padding:40px 20px 60px; min-height:100%;
+         display:flex; flex-direction:column; justify-content:center; text-align:center; }
+  .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
+            text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  body.red .kicker, body.blue .kicker { color:rgba(255,255,255,.8); }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:32px; margin:0 0 12px; }
+  p { margin:0 0 14px; }
+  .small { font-size:14px; color:var(--muted); }
+  body.red .small, body.blue .small { color:rgba(255,255,255,.85); }
+  .coin { width:160px; height:160px; margin:28px auto; border-radius:50%; position:relative;
+          transform-style:preserve-3d; }
+  .coin .face { position:absolute; inset:0; border-radius:50%; backface-visibility:hidden;
+                display:flex; align-items:center; justify-content:center;
+                font-family:"JetBrains Mono",ui-monospace,monospace; font-weight:600; font-size:20px;
+                letter-spacing:2px; color:#fff; border:6px solid rgba(255,255,255,.55);
+                box-shadow:0 6px 18px rgba(0,0,0,.18); }
+  .coin .front { background:linear-gradient(135deg, var(--red) 50%, var(--blue) 50%); font-size:44px; }
+  .coin .back { transform:rotateY(180deg); }
+  .coin .red { background:var(--red); font-size:20px; }
+  .coin .blue { background:var(--blue); font-size:20px; }
+  .coin.spin { animation:spin 1.6s cubic-bezier(.2,.7,.3,1) forwards; }
+  @keyframes spin { from { transform:rotateY(0); } to { transform:rotateY(1800deg); } }
+  button, .go { font:inherit; font-weight:700; font-size:18px; border-radius:24px; padding:14px 28px;
+                cursor:pointer; text-decoration:none; display:inline-block; }
+  button { background:var(--accent); color:#fff; border:none; }
+  button:disabled { opacity:.5; cursor:default; }
+  .go { background:#fff; color:var(--ink); border:2px solid #fff; margin-top:8px; }
+  .team { font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:56px; line-height:1.1; margin:4px 0 16px; }
+  .steps { text-align:left; background:rgba(255,255,255,.14); border-radius:12px; padding:14px 18px; margin:18px 0 8px; }
+  .steps ol { margin:0; padding-left:20px; }
+  .steps li { margin:0 0 8px; }
+  .steps li:last-child { margin:0; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">PSY309 · Lecture 6 · Random assignment</p>
+
+  <section id="before">
+    <h1>Flip for your team</h1>
+    <p>Tap once. The coin decides, not you, and it only flips once.</p>
+    <div class="coin" id="coin"><div class="face front" id="front">?</div><div class="face back" id="back">?</div></div>
+    <button id="flip">Flip the coin</button>
+  </section>
+
+  <section id="after" hidden>
+    <p class="small" id="again" hidden>You already flipped. The coin said:</p>
+    <p class="team" id="team"></p>
+    <p>Hold your phone up so the room can see.</p>
+    <div class="steps">
+      <ol>
+        <li>Open the Lecture Lounge check-in.</li>
+        <li>Answer every question with <strong>your team&#8217;s</strong> options: <strong id="opts"></strong>.</li>
+        <li>Answer honestly. The point is what the coin did, not what you did.</li>
+      </ol>
+    </div>
+    <a class="go" href="https://radlab.zone/class/psy309">Open the Lounge &#8594;</a>
+  </section>
+</main>
+<script>
+(function () {
+  var KEY = 'psy309-L7-team';
+  var before = document.getElementById('before');
+  var after = document.getElementById('after');
+  var coin = document.getElementById('coin');
+  var flip = document.getElementById('flip');
+
+  function read() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function save(t) { try { localStorage.setItem(KEY, t); } catch (e) { /* private window: the result just won't survive a reload */ } }
+
+  function show(team, earlier) {
+    var name = team === 'red' ? 'Red' : 'Blue';
+    document.body.className = team;
+    document.getElementById('team').textContent = name.toUpperCase() + ' TEAM';
+    document.getElementById('opts').textContent = name + ' · yes or ' + name + ' · no';
+    document.getElementById('again').hidden = !earlier;
+    before.hidden = true;
+    after.hidden = false;
+  }
+
+  // A fair coin from the browser's cryptographic generator, not Math.random.
+  function toss() {
+    var b = new Uint8Array(1);
+    if (window.crypto && crypto.getRandomValues) { crypto.getRandomValues(b); return (b[0] & 1) ? 'red' : 'blue'; }
+    return Math.random() < 0.5 ? 'red' : 'blue';
+  }
+
+  var stored = read();
+  if (stored === 'red' || stored === 'blue') { show(stored, true); return; }
+
+  flip.addEventListener('click', function () {
+    flip.disabled = true;
+    var team = toss();
+    save(team);
+    // Both faces become the result, so the spin lands on it from either side.
+    ['front', 'back'].forEach(function (id) {
+      var f = document.getElementById(id);
+      f.className = 'face ' + id + ' ' + team;
+      f.textContent = team.toUpperCase();
+    });
+    coin.className = 'coin spin';
+    setTimeout(function () { show(team, false); }, 1800);
+  });
+})();
+</script>
+</body>
+</html>

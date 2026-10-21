@@ -20,6 +20,8 @@ the plan doc for the context. This file covers how to run the simulation and wha
 | `results_round4/` | Round 4 (2026-10-06): smooth 3–4-breath bumps (double, train, roving + bump block, roving + bump + ramp), same people as round 3; `roving_ramp` reference rows copied from round 3 |
 | `results_round5a/` | Round 5a (2026-10-12, Nansi's review): `roving_mixed_big` (interleaved, ramps 2× step size) and `roving_ramp40` (60/40), same people as round 3; `roving_ramp` reference rows from round 3 |
 | `results_round5b/` | Round 5b (2026-10-12): mechanism recovery, `run_round5b.py`. Six populations (none, direction asymmetry, free τ_R, restart at next inhale, urgency, Shiryaev–Roberts floor) × six fits |
+| `results_prerun/` | Pre-run (2026-10-15), `run_prerun.py`: separate speeding/slowing thresholds. Stage 1 = adaptive pre-run length (`summary_stage1.md`); stage 2 = the main task with each direction centred on its estimate (`summary_stage2.md`) |
+| (printed only) | Pre-run vs the BCAT's 3AFC Quest (2026-10-18), `ideal_bcat_vs_prerun.py` + `ideal_gamma_variant.py`: ideal observers, procedure efficiency and retest r by minutes (plan §6h) |
 
 ### Round 3: memory span and blips
 
@@ -54,6 +56,9 @@ python scripts/bcat_ddm_sim/run_power.py --n 2 --quick --designs roving_mixed --
 python scripts/bcat_ddm_sim/run_power.py --n 30 --resume --out scripts/bcat_ddm_sim/results_round2   # ~2.5 h on 22 cores
 python scripts/bcat_ddm_sim/run_power.py --n 30 --sigma-meas 0 --designs <best two> --out scripts/bcat_ddm_sim/results_round2_nomeas
 python scripts/bcat_ddm_sim/run_round5b.py --n 30 --workers 10 --resume   # round 5b, ~2 h on 10 workers
+python scripts/bcat_ddm_sim/run_prerun.py --stage 1 --n 100 --workers 14   # pre-run, ~5 min
+python scripts/bcat_ddm_sim/run_prerun.py --stage 2 --n2 40 --workers 14 --resume --main shared@24,separate@16,separate@24,true   # ~1 h
+cd scripts/bcat_ddm_sim && python ideal_bcat_vs_prerun.py && python ideal_gamma_variant.py   # pre-run vs BCAT, ideal observers
 ```
 
 Design names accept the variants in `DESIGN_VARIANTS` (e.g. `roving_ramp50` = roving_ramp with half

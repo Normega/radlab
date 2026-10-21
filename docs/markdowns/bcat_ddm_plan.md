@@ -740,9 +740,183 @@ wording fixes for the doc, are in his My Drive root:
 
 ---
 
+## 6h. The pre-run: separate speeding and slowing thresholds (2026-10-15)
+
+**Why.** Norm decided on separate pre-run thresholds per direction (§7). Two questions: how long
+the pre-run must be, and whether centring each direction on its own threshold changes what the
+main task recovers. Script: `scripts/bcat_ddm_sim/run_prerun.py`; results in `results_prerun/`.
+
+**Schedule change.** `schedule.js` takes `m50HatFaster` / `m50HatSlower` (default `null` = use
+`m50Hat`). Every change (steps, ramps, blips, bumps) is scaled by the threshold for its direction.
+- **Check:** 117 schedules (13 designs × 3 seeds × 3 thresholds) are unchanged in breaths, pauses
+  and events. Only the echoed `options` gained the two keys.
+- **Tests:** 2 new tests, 67 in all.
+
+**Real data used for the people.** Intero2025 Quest thresholds (`I:\Shared drives\Aya\Data\processed\BCAT_baseline_data.csv`):
+- 290 of 314 people have both thresholds inside the Quest's bounds.
+- The faster and slower thresholds correlate .25.
+- log(slower/faster) has a median of +0.13 and an SD of .72.
+- 43% find slowing easier, 57% speeding.
+
+Both the SD and the correlation include the Quest's own error, so the true spread of asymmetry is
+smaller. Three simulated populations bracket it: none, modest (SD .24) and wide (SD .52); κ is
+centred on 0. Note that the 306-person data do not show Study 1's "slowing is easier" on average.
+
+**The simulated pre-run:**
+- a free-response roving stream of steps, using the main task's direction rule, with 1–3 steady
+  breaths before each change and a 5-breath hit window;
+- a QUEST-style Bayesian grid picks each size at the posterior-mean threshold for that direction;
+- the grid models logistic detection in log size (slope 0.39, fitted to these observers), a
+  false-alarm rate estimated from the steady breaths, and a 3% lapse rate;
+- `shared` (one threshold) and `separate` (one per direction) run on the same breaths and noise.
+
+Strict faster/slower alternation was tried first and dropped. With unequal sizes per direction
+the pacer drifted to the slow bound, and one simulated pre-run took 32 minutes.
+
+### Stage-1 results (100 people per population)
+
+Error = log(estimate / true threshold) per direction; 0.25 ≈ 25% off. Practice not included.
+
+| changes (min) | none: shared / separate | modest: shared / separate | wide: shared / separate | wide: asymmetry ranked (ρ) |
+|---|---|---|---|---|
+| 16 (7.6) | .23 / .29 | .27 / .30 | .35 / .31 | .74 |
+| 24 (11.3) | .19 / .27 | .23 / .27 | .34 / **.27** | .82 |
+| 48 (22.5) | .15 / .25 | .23 / .24 | .33 / .26 | .90 |
+
+- **Length: about 24 changes (11 minutes, plus ~2 minutes of practice).** Separate estimates level
+  off at about 0.25–0.27 log units, close to the 25% the main-task simulations assumed. Doubling
+  the length gains little.
+- **Separate thresholds pay off only when people's asymmetries differ a lot.** In the wide
+  population they are more accurate than a shared one (.27 vs .34) and rank each person's own
+  asymmetry at ρ .82. In the modest population they are slightly worse (.27 vs .23); with no
+  asymmetry, clearly worse (.27 vs .19), because each direction gets half the data.
+- **Error floor.** The truth is defined from a settled baseline, but the pre-run measures
+  detection mid-stream, where the running baseline still lags the last change. Some of the floor
+  is that difference, which the main task shares. Stage 2 tests what matters: whether the
+  estimates work in the main task.
+
+### Stage-2 results (480 main-task sessions × m_base and m_asym)
+
+Same 40 people per population in every condition. Tables: `results_prerun/summary_stage2.md`.
+
+| population · condition | step hits faster / slower | per-person gap between directions | directions badly centred (hits < .2 or > .8) | asymmetry κ ranked (ρ) | asymmetry found per person | share s (ρ) |
+|---|---|---|---|---|---|---|
+| wide · shared@24 | .52 / .54 | .23 | 9% | .97 | 85% | .92 |
+| wide · separate@24 | .50 / .59 | **.16** | **4%** | .90 | 70% | .94 |
+| wide · true thresholds | .55 / .51 | .15 | 1% | .96 | 88% | .84 |
+| modest · shared@24 | .53 / .56 | .15 | 4% | .82 | 42% | .82 |
+| modest · separate@24 | .49 / .58 | .17 | 6% | .84 | 45% | .93 |
+| modest · separate@16 | .46 / .54 | .16 | 4% | .70 | 40% | .92 |
+| none · shared@24 | .52 / .56 | .13 | 1% | — | 20% (false) | .83 |
+| none · separate@24 | .54 / .55 | .16 | 10% | — | 20% (false) | .89 |
+
+- **What separate thresholds buy:** a more even task in each direction for people whose
+  asymmetry is large. In the wide population the per-person gap between directions falls from
+  .23 to .16, close to perfect knowledge (.15), and badly centred directions halve (9% → 4%).
+- **What they don't change:** what the model recovers.
+  - The asymmetry κ, each person's breath-to-breath share s, and asymmetry detection are all
+    within noise of the shared pre-run.
+  - Paired tests on the same people: asymmetry chosen 70% vs 85% in the wide population,
+    McNemar p = .11; modest p = 1.0.
+  - The model reads the asymmetry from the change sizes as well as from hit rates, so centring
+    each direction does not hide it.
+  - With no asymmetry, false detection is 20% per person (the AIC rate for one extra parameter),
+    and the group comparison correctly rejects it in every condition.
+- **16 changes is too short.** It recovers modest asymmetries worse (ρ .70 vs .84). Use 24.
+- **A small direction bias in the pre-run.** The faster threshold comes out about 12% low and the
+  slower about 6% high. As a result, main-task step hits average .50 faster vs .59 slower. This is
+  small, but a group-level correction from the pilot data would remove it.
+- **Ramp hit rates are lower for faster ramps** in every condition, including with true
+  thresholds. Long faster ramps reach the 2.2 s bound and stop changing. This is a property of the
+  ramp block, not of the pre-run, and is worth a look when the ramp sizes are set in piloting.
+
+**Conclusion.** The decided design holds: a free-response pre-run of about 24 changes (11 minutes,
+plus ~2 of practice) with separate staircases. It costs nothing measurable in the main task and
+protects people with strong asymmetries from having one direction at floor or ceiling. The real
+data suggest such people are common.
+
+### In the prototype (2026-10-18)
+
+- **`src/games/BcatDdm/prerun.js`** runs this procedure live, with a byte-identical copy at
+  `public/prototypes/bcat-ddm/prerun.js`.
+  - It appends breaths as the stream clock reaches them, so the pacer runs the same `pacerAt()`.
+  - Directions come from `schedule.js` `chooseStep`, now exported.
+  - Its grid matches `run_prerun.Quest` to six decimals on a test sequence: both directions,
+    shared and separate, and the false-alarm rate.
+- **Two differences from the simulation:**
+  - A press up to 1 s after a window closes still counts, as the prototype scores the main task.
+    The 50%-point conversion therefore uses a 21 s window.
+  - Maybe and Sure presses both count.
+- **Prototype options:** pre-run then stream (the default), pre-run only, or stream only. The
+  pre-run length is 24 changes, or 12 for a quick look.
+- **After the pre-run, a researcher view shows:**
+  - each change's size and outcome;
+  - the running estimates;
+  - both thresholds, with posterior SDs;
+  - the shared estimate, for comparison.
+- **The stream that follows** is scaled to the two thresholds, and its results table splits hits
+  by direction. `?fast=&slow=` sets thresholds without a pre-run.
+- **The published copies moved to `public/prototypes/bcat-ddm/`** (`schedule.js`, `prerun.js`),
+  so the pre-run's `./schedule.js` import resolves in both places.
+- **Tests:** `prerun.test.mjs` adds 7, for 74 BcatDdm tests in all. One checks that a participant
+  who obeys the model is measured with an RMSE under 0.3 log units after 40 changes (0.22 as
+  run). A headless playtest ran
+  pre-run → stream → results with no page errors.
+
+### Compared with the BCAT's Quest (ideal observers, 2026-10-18)
+
+**Question (Norm).** Will the pre-run be more reliable or more efficient than the BCAT for
+measuring thresholds? Scripts: `ideal_bcat_vs_prerun.py`, plus `ideal_gamma_variant.py`.
+
+**Set-up.**
+- Both procedures measure the same detection function. The BCAT Quest's Weibull slope is within
+  15% of the pre-run's.
+- Each simulated person obeys their procedure's own model, so this compares the procedures'
+  efficiency only, without model mismatch.
+- 2,000 people; thresholds SD .5 per direction; false alarms 0.1–1 per minute.
+- The Intero2025 BCAT as run: 10 trials per direction (8 changes, 2 no-change), 7.4 min per
+  person including ratings, so about 22 s per trial.
+
+| procedure | error at 7.4 min | error at 11.3 min | minutes to .30 | retest r at 11.3 min (faster / slower) |
+|---|---|---|---|---|
+| BCAT as run (guess 1/3, 22 s per trial) | .37 | .32 | 13.4 | .64 / .61 |
+| BCAT without ratings (16 s per trial) | .34 | .28 | 9.7 | .72 / .70 |
+| Pre-run (28 s per change) | .33 | .28 | 9.5 | .72 / .70 |
+
+Error is the RMSE of each direction's log threshold.
+
+- **The guess rate matters.** On no-change trials, the real BCAT people answer "same" 72% of the
+  time, so when they miss a change they mostly say "same" too. The effective guess rate on change
+  trials is then about .14, not 1/3. At .14, the BCAT reaches .30 in 8.9 min (6.5 without ratings),
+  and its retest r at 11.3 min is .73 (.81 without ratings).
+- **Not more efficient or more reliable per minute.** The pre-run's lower guess rate is cancelled
+  by its longer trials and its false alarms; at about 1 false alarm a minute its per-trial
+  advantage is gone. The real Quest's 1/3 assumption overstates thresholds by about 14%, but
+  consistently, so its reliability is unaffected.
+- **The case for the pre-run is that it measures the main task's own quantity:** free response,
+  mid-stream, a roving baseline, the same window and the same caution. The BCAT measures a
+  criterion-free sensitivity from a settled baseline. Using it to centre the main task would need
+  a translation, which would itself have to be estimated.
+- **The Intero2025 thresholds came from 8 change trials per direction.** In these terms that is a
+  retest r of about .5–.65 per direction, which caps how well faster and slower thresholds can
+  correlate (observed .25).
+- **The pilot can settle this with real data:** run both procedures on the same people, which
+  gives the BCAT-to-stream translation and each procedure's split-half reliability.
+
+---
+
 ## 7. Decisions (append with dates)
 
-*(none yet — waiting on §5)*
+- **2026-10-13** (Norm's replies to Nansi on the Google Doc):
+  - **Roving baseline, no returns** to a fixed rate ("Let's call it settled").
+  - **Free-response pre-run** instead of the 3AFC Quest. Its adaptive rule is still to design
+    (Norm floated a Bayesian rule; Nansi was asked to sketch one).
+  - **Watch condition under half the session.**
+- **2026-10-15:**
+  - **Fixed decision boundary.** A soft (probabilistic) boundary is not being modelled.
+  - **Separate pre-run thresholds for speeding and slowing.** `schedule.js` must take one
+    threshold per direction (now one `m50Hat`); step and ramp sizes are scaled by the
+    threshold for their direction.
 
 ---
 
@@ -785,3 +959,16 @@ wording fixes for the doc, are in his My Drive root:
   mechanisms): the first run was discarded after finding the dead-time scoring bug in `loglik2`;
   the rerun recovers asymmetry, inhale restart, urgency and τ_R at group level with no false
   positives; the soft floor is not identifiable. Planning page updated with rounds 5a/5b.
+- **2026-10-15** — Shared Google Doc updated in place (Docs connector now available): rounds 2–5
+  results and a Recommendations section added; Nansi's comment threads untouched. Decisions
+  recorded in §7 (the three from Norm's 13 Oct replies, plus a fixed boundary and separate
+  speeding/slowing pre-run thresholds).
+- **2026-10-15** — Pre-run simulation (§6h). `schedule.js` takes separate speeding/slowing
+  thresholds (all existing schedules unchanged). Real Intero2025 thresholds (N = 290) set the
+  asymmetry populations. Result: ~24 changes (11 min) with separate staircases; it evens out
+  detection across directions for strongly asymmetric people at no cost to recovery.
+- **2026-10-18** — Pre-run built into the prototype (§6h): `prerun.js` (+7 tests), published copies
+  moved to `public/prototypes/bcat-ddm/`, and setup offers pre-run → stream, pre-run only, or
+  stream only. An ideal-observer comparison with the BCAT's 3AFC Quest found it neither more
+  efficient nor more reliable per minute. Its case is that it measures the main task's own
+  threshold.

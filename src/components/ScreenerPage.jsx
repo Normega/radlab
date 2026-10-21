@@ -4,6 +4,7 @@ import QuestionnaireRenderer from './questionnaire/QuestionnaireRenderer'
 import SaveRetryBanner from './study/SaveRetryBanner'
 import { writeScreenerDraft } from '../lib/screenerDraft'
 import { useScrollToTopOn } from '../lib/scrollToTop'
+import { DEFAULT_SUPPORT_RESOURCES } from '../lib/supportResources'
 
 // ── ScreenerPage ───────────────────────────────────────────────────────────────
 //
@@ -21,9 +22,9 @@ import { useScrollToTopOn } from '../lib/scrollToTop'
 //   previewMode     — bool — skips DB writes and sessionStorage when true
 //
 // There is deliberately no onFail: a screen-out is terminal *inside* this
-// component, which renders its own per-outcome card (fail_low / fail_high
-// heading, body and resources, all configurable via screener.outcomes) with
-// showContinue false. The parent is not notified because there is nothing
+// component, which renders one not-eligible card for every failed outcome
+// (screener.phase1.fail_message plus the support resources; see
+// getOutcomeContent) with showContinue false. The parent is not notified because there is nothing
 // further for it to show.
 
 const GREEN  = 'var(--pk)'
@@ -218,15 +219,24 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
 
   function getOutcomeContent() {
     const resources = screener?.resources ?? []
-    if (outcome === 'fail_phase1') {
+    // Every not-eligible outcome -- failed criteria, scored below the band,
+    // scored above it -- shows the SAME card: the study's phase1.fail_message
+    // and its support resources. The phase-2 cards used to differ ("you may be
+    // going through a particularly difficult time" vs "you appear to be coping
+    // well"), which told people which way to change their answers; on the paid
+    // route they retried in fresh windows until they passed (2026-10-15).
+    // Support resources are offered on every one, falling back to a default
+    // list if a study has none configured.
+    if (outcome === 'fail_phase1' || outcome === 'fail_low' || outcome === 'fail_high') {
       const fm = screener?.phase1?.fail_message ?? {}
       return {
         cardStyle: { background: '#faf6ed', border: '1.5px solid #e8d5a3' },
-        icon: '⚠️',
-        heading: fm.heading ?? 'Thank you for your interest — this study may not be the right fit for you at this time.',
+        icon: '💙',
+        heading: fm.heading ?? 'Thank you for your interest in this study.',
         notice:  NOT_ELIGIBLE,
-        body:    fm.body    ?? 'Based on your responses, you do not meet the eligibility criteria for this study.',
-        showResources: true, showContinue: false, resources,
+        body:    fm.body    ?? 'This study has a specific set of eligibility criteria, and based on your answers it isn’t the right fit for you at this time. If you’d like to talk to someone, the services below are free and confidential.',
+        showResources: true, showContinue: false,
+        resources: resources.length ? resources : DEFAULT_SUPPORT_RESOURCES,
       }
     }
     const outcomes = screener?.phase2?.outcomes ?? {}
@@ -245,28 +255,6 @@ export default function ScreenerPage({ study, participant, supabaseClient, onPas
           ? 'Based on your responses, you seem to be experiencing a level of emotional distress that this study is designed to support. Press Next to continue to the consent form and baseline survey.'
           : 'Press Next to continue to the consent form and begin the session.'),
         showResources: false, showContinue: true, resources: [],
-      }
-    }
-    if (outcome === 'fail_low') {
-      const o = outcomes.fail_low ?? {}
-      return {
-        cardStyle: { background: '#faf6ed', border: '1.5px solid #e8d5a3' },
-        icon: '🌿',
-        heading: o.heading ?? 'You appear to be coping well with everyday demands.',
-        notice:  NOT_ELIGIBLE,
-        body:    o.body    ?? 'This study is designed for people experiencing a moderate level of emotional distress, and your responses suggest that may not apply to you right now.',
-        showResources: true, showContinue: false, resources,
-      }
-    }
-    if (outcome === 'fail_high') {
-      const o = outcomes.fail_high ?? {}
-      return {
-        cardStyle: { background: RED_BG, border: '1.5px solid var(--err-bd)' },
-        icon: '💙',
-        heading: o.heading ?? 'It sounds like you may be going through a particularly difficult time.',
-        notice:  NOT_ELIGIBLE,
-        body:    o.body    ?? 'We want to make sure you have the right level of support. Because this study is not a substitute for professional mental health care, we are not able to enroll participants who are currently experiencing high levels of distress.',
-        showResources: true, showContinue: false, resources,
       }
     }
     return { cardStyle: {}, icon: '', heading: '', body: '', showResources: false, showContinue: false, resources: [] }

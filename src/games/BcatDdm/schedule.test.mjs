@@ -7,10 +7,10 @@ import { DESIGNS, DEFAULTS, buildSchedule, scheduleYield, pacerAt, bumpProfile }
 
 // The /prototypes/bcat-ddm.html page imports a published copy (static files can't reach src/).
 // It must stay byte-identical, or the prototype runs a different design from the one simulated.
-test('public/prototypes/bcat-ddm-schedule.js is an exact copy of this module', () => {
+test('public/prototypes/bcat-ddm/schedule.js is an exact copy of this module', () => {
   const src = readFileSync(new URL('./schedule.js', import.meta.url), 'utf8')
-  const pub = readFileSync(new URL('../../../public/prototypes/bcat-ddm-schedule.js', import.meta.url), 'utf8')
-  assert.equal(pub, src, 'run: cp src/games/BcatDdm/schedule.js public/prototypes/bcat-ddm-schedule.js')
+  const pub = readFileSync(new URL('../../../public/prototypes/bcat-ddm/schedule.js', import.meta.url), 'utf8')
+  assert.equal(pub, src, 'run: cp src/games/BcatDdm/schedule.js public/prototypes/bcat-ddm/schedule.js')
 })
 
 const lo = DEFAULTS.basePeriodMs * DEFAULTS.minRatio
@@ -181,6 +181,33 @@ test('roving_bump / roving_ramp_bump: blocks in order, a pause before the bump b
     }
     const bumpOnset = s.events[firstBump].onsetBreath
     assert.ok(s.pauses.some(p => p.beforeBreath <= bumpOnset && p.beforeBreath > s.events[firstBump - 1].onsetBreath), `${d}: pause before bumps`)
+  }
+})
+
+test('separate speeding/slowing thresholds scale each change by its own direction', () => {
+  const thr = { [-1]: 0.1, [1]: 0.3 }
+  const s = buildSchedule('roving', { seed: 13, m50HatFaster: thr[-1], m50HatSlower: thr[1] })
+  let exact = 0
+  for (const e of s.events) {
+    const full = e.relMag * thr[e.dir]
+    assert.ok(e.mag <= full + 1e-9, `${e.dir}: ${e.mag} > ${full}`)   // shrunk only near the bounds
+    if (Math.abs(e.mag - full) < 1e-9) exact++
+  }
+  assert.ok(exact >= 0.9 * s.events.length, `${exact} of ${s.events.length} at full size`)
+  assert.ok(s.events.some(e => e.dir === 1) && s.events.some(e => e.dir === -1))
+
+  const r = buildSchedule('ramp', { seed: 13, m50HatFaster: thr[-1], m50HatSlower: thr[1] })
+  for (const e of r.events.filter(e => e.type === 'ramp')) {
+    assert.ok(Math.abs(e.rate - DEFAULTS.rampRates[e.rateIdx] * thr[e.dir]) < 1e-12)
+  }
+})
+
+test('per-direction thresholds equal to m50Hat give the same schedule as m50Hat alone', () => {
+  const strip = ({ options, ...rest }) => rest
+  for (const d of DESIGNS) {
+    const a = buildSchedule(d, { seed: 5, m50Hat: 0.2 })
+    const b = buildSchedule(d, { seed: 5, m50Hat: 0.2, m50HatFaster: 0.2, m50HatSlower: 0.2 })
+    assert.deepStrictEqual(strip(b), strip(a), d)
   }
 })
 

@@ -16,8 +16,12 @@
     ramps, or one-breath "blips", depending on the design); the participant
     presses as soon as they notice a change. Arousal probes pause the stream.
     The pacer is driven by the SAME schedule generator the design simulations
-    use (bcat-ddm-schedule.js, a byte-identical copy of
+    use (bcat-ddm/schedule.js, a byte-identical copy of
     src/games/BcatDdm/schedule.js; a test fails if they drift).
+    An optional pre-run comes first (bcat-ddm/prerun.js, a copy of
+    src/games/BcatDdm/prerun.js): a shorter stream of steps whose sizes adapt
+    to the responses, measuring separate speeding and slowing thresholds that
+    the stream after it is scaled to.
     No login, no network calls, nothing stored: the log lives in this tab and
     can be downloaded at the end. Plan: docs/markdowns/bcat_ddm_plan.md.
     Headless API: window.__bcat (add ?test to drive the clock by hand).
@@ -26,6 +30,7 @@
     --bg:#FCF0F5; --bgc:#ffffff; --pk:#f068a4; --pkd:#ba417a; --pkdd:#a3396b; --pkl:#fde8f2;
     --tx:#1c1c1e; --tx2:#6b6c70; --tx3:#abadb0; --bd:rgba(180,100,140,0.13); --bds:rgba(180,100,140,0.25);
     --step:#4A90D9; --ramp:#8a6fd1; --blip:#e0973a; --null:#9aa0a6;
+    --fast:#4A90D9; --slow:#e0973a;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--tx);
@@ -44,6 +49,7 @@
   .opts button{border:1.5px solid var(--bds);background:var(--bgc);border-radius:24px;padding:8px 16px;font:inherit;font-size:14px;color:var(--tx2);cursor:pointer;}
   .opts button.sel{border-color:var(--pkd);color:#fff;background:var(--pkd);}
   .hint{font-size:12px;color:var(--tx2);margin:8px 0 0;line-height:1.5;}
+  .hidden{display:none;}
   .go{display:block;width:100%;border:none;border-radius:24px;padding:16px;font:inherit;font-size:16px;font-weight:600;background:var(--pkd);color:#fff;margin-top:24px;cursor:pointer;}
   .go:hover{background:var(--pkdd);}
   .go:disabled{background:var(--tx3);cursor:default;}
@@ -80,9 +86,12 @@
   .ends{display:flex;justify-content:space-between;font-size:14px;color:var(--tx2);}
 
   /* results */
-  #tl{width:100%;height:200px;background:var(--bgc);border:1px solid var(--bd);border-radius:12px;display:block;}
+  .plot{width:100%;height:200px;background:var(--bgc);border:1px solid var(--bd);border-radius:12px;display:block;}
+  #stair{height:240px;}
   .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--tx2);margin:8px 0 16px;}
   .legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:4px;vertical-align:-1px;}
+  .legend i.ring{background:none;border:2px solid var(--tx2);border-radius:12px;}
+  .legend i.dot{background:var(--tx2);border-radius:12px;}
   .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
   .stat{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;}
   .stat b{display:block;font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:28px;}
@@ -104,25 +113,43 @@
     <p>A circle breathes in and out. Now and then its pace changes. Press as soon as you notice a change. That is the whole task.</p>
     <p>This page is a prototype of the BCAT-DDM task: one continuous pacing stream, built for modelling how evidence that the breath has changed builds up into noticing. The options below are the designs from the simulations.</p>
 
-    <div class="label">Design</div>
-    <div class="opts" id="oDesign">
-      <button data-v="roving_ramp" class="sel">Roving + ramp block</button>
-      <button data-v="roving_mixed">Steps and ramps mixed</button>
-      <button data-v="double_blip">Double blips</button>
-      <button data-v="blip_train">Blip train</button>
-      <button data-v="blip_combo">Blips, both kinds</button>
-      <button data-v="double_bump">Smooth bumps</button>
-      <button data-v="roving_ramp_bump">Roving + bumps + ramps</button>
-      <button data-v="brief">Original draft</button>
+    <div class="label">What to run</div>
+    <div class="opts" id="oRun">
+      <button data-v="both" class="sel">Pre-run, then the stream</button>
+      <button data-v="prerun">Pre-run only</button>
+      <button data-v="stream">Stream only</button>
     </div>
-    <p class="hint" id="designHint"></p>
 
-    <div class="label">Length</div>
-    <div class="opts" id="oMin">
-      <button data-v="3">3 min</button>
-      <button data-v="6" class="sel">6 min</button>
-      <button data-v="12">12 min</button>
-      <button data-v="40">40 min</button>
+    <div id="grpPre">
+      <div class="label">Pre-run length</div>
+      <div class="opts" id="oPre">
+        <button data-v="12">12 changes, about 6 min</button>
+        <button data-v="24" class="sel">24 changes, about 11 min</button>
+      </div>
+      <p class="hint">The pre-run measures the person's thresholds: a shorter stream of sudden changes whose sizes adapt to the responses so far, separately for speeding and slowing. The stream after it is scaled to the two thresholds it finds. The simulations favour 24 changes; 12 is for a quick look.</p>
+    </div>
+
+    <div id="grpStream">
+      <div class="label">Design</div>
+      <div class="opts" id="oDesign">
+        <button data-v="roving_ramp" class="sel">Roving + ramp block</button>
+        <button data-v="roving_mixed">Steps and ramps mixed</button>
+        <button data-v="double_blip">Double blips</button>
+        <button data-v="blip_train">Blip train</button>
+        <button data-v="blip_combo">Blips, both kinds</button>
+        <button data-v="double_bump">Smooth bumps</button>
+        <button data-v="roving_ramp_bump">Roving + bumps + ramps</button>
+        <button data-v="brief">Original draft</button>
+      </div>
+      <p class="hint" id="designHint"></p>
+
+      <div class="label">Length</div>
+      <div class="opts" id="oMin">
+        <button data-v="3">3 min</button>
+        <button data-v="6" class="sel">6 min</button>
+        <button data-v="12">12 min</button>
+        <button data-v="40">40 min</button>
+      </div>
     </div>
 
     <div class="label">Condition</div>
@@ -131,13 +158,15 @@
       <button data-v="watch">Watch: breathe freely</button>
     </div>
 
-    <div class="label">Size of changes</div>
-    <div class="opts" id="oM50">
-      <button data-v="0.12">Subtle</button>
-      <button data-v="0.2" class="sel">Medium</button>
-      <button data-v="0.3">Obvious</button>
+    <div id="grpSize">
+      <div class="label">Size of changes</div>
+      <div class="opts" id="oM50">
+        <button data-v="0.12">Subtle</button>
+        <button data-v="0.2" class="sel">Medium</button>
+        <button data-v="0.3">Obvious</button>
+      </div>
+      <p class="hint">Stands in for the person's own 50% detection point, which the pre-run measures. Changes are drawn around it.</p>
     </div>
-    <p class="hint">Stands in for the person's own 50% detection point, which the Quest pre-run would measure. Changes are drawn around it.</p>
 
     <div class="label">Response</div>
     <div class="opts" id="oResp">
@@ -153,11 +182,11 @@
 <!-- 2. Instructions -->
 <section class="screen" id="instr">
   <div class="pad">
-    <div class="kicker">Before you start</div>
+    <div class="kicker" id="instrKicker">Before you start</div>
     <h2 id="instrHead">Breathe with the circle.</h2>
     <p id="instrBody"></p>
     <p id="instrResp"></p>
-    <p>Sometimes the circle will stop and ask how you feel. Answer, and it will pick up again.</p>
+    <p id="instrProbe">Sometimes the circle will stop and ask how you feel. Answer, and it will pick up again.</p>
     <button class="go" id="toStart">I'm ready</button>
   </div>
 </section>
@@ -179,13 +208,44 @@
   <div class="resp" id="resp"></div>
 </section>
 
-<!-- 4. Results -->
+<!-- 4. Pre-run results -->
+<section class="screen" id="preRes">
+  <div class="pad">
+    <div class="kicker">Pre-run record · researcher view</div>
+    <h2 id="preHead">Your thresholds.</h2>
+    <p>A participant would not see this. Each dot is one change: its size, and whether you noticed it (filled) or not (open). The dashed lines are the running estimates of each threshold, the size of change you would notice in half of the 5-breath windows.</p>
+    <canvas id="stair" class="plot"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--fast)"></i>speeding</span><span><i style="background:var(--slow)"></i>slowing</span>
+      <span><i class="dot"></i>noticed</span><span><i class="ring"></i>missed</span>
+    </div>
+    <div class="stats" id="preStats"></div>
+    <p class="small" id="preNote"></p>
+    <h3>The stream</h3>
+    <canvas id="preTl" class="plot"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--step)"></i>change window</span>
+      <span><i style="background:var(--pk)"></i>press: sure</span><span><i style="background:#f6b6d2"></i>press: maybe</span>
+    </div>
+    <h3>Data</h3>
+    <p>The full log (every pacer breath, change, press and estimate update) and a one-row-per-change table.</p>
+    <div class="dl">
+      <button class="go ghost" id="preJson">Download log (JSON)</button>
+      <button class="go ghost" id="preCsv">Download changes (CSV)</button>
+    </div>
+    <button class="go" id="preNext">Continue to the stream</button>
+    <button class="go ghost" id="preAgain">Back to the start</button>
+  </div>
+</section>
+
+<!-- 5. Results -->
 <section class="screen" id="res">
   <div class="pad">
     <div class="kicker">Session record · researcher view</div>
     <h2 id="resHead">Here is the stream you just did.</h2>
     <p>A participant would not see this. It shows the pacer's breath period over the session, where the changes were, and where you pressed.</p>
-    <canvas id="tl"></canvas>
+    <p class="small" id="resTh"></p>
+    <canvas id="tl" class="plot"></canvas>
     <div class="legend">
       <span><i style="background:var(--step)"></i>step</span><span><i style="background:var(--ramp)"></i>ramp</span>
       <span><i style="background:var(--blip)"></i>blip</span><span><i style="background:#3aa58c"></i>bump</span><span><i style="background:var(--null)"></i>no change (null)</span>
@@ -197,7 +257,7 @@
     <h3>How you felt</h3>
     <table id="probes"></table>
     <h3>Data</h3>
-    <p>The full log (every pacer breath, change, press and probe, in milliseconds of stream time and wall time) and a one-row-per-change table ready for model fitting.</p>
+    <p>The full log (every pacer breath, change, press and probe, in milliseconds of stream time and wall time) and a one-row-per-change table ready for model fitting. After a pre-run, the log includes it.</p>
     <div class="dl">
       <button class="go ghost" id="dlJson">Download log (JSON)</button>
       <button class="go ghost" id="dlCsv">Download changes (CSV)</button>
@@ -207,7 +267,8 @@
 </section>
 
 <script type="module">
-import { buildSchedule, pacerAt, DEFAULTS } from './bcat-ddm-schedule.js';
+import { buildSchedule, pacerAt, DEFAULTS } from './bcat-ddm/schedule.js';
+import { createPrerun } from './bcat-ddm/prerun.js';
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
@@ -226,11 +287,16 @@ const DESIGN_HINTS = {
 };
 
 // ── setup ───────────────────────────────────────────────────────────────────
+const num = (k) => (params.has(k) ? +params.get(k) : null);
 const cfg = {
+  run: params.get('run') || 'both',         // both | prerun | stream
+  pre: +(params.get('pre') || 24),          // pre-run changes
   design: params.get('design') || 'roving_ramp',
   minutes: +(params.get('min') || 6),
   cond: params.get('cond') || 'follow',
   m50: +(params.get('m50') || 0.2),
+  m50Fast: num('fast'),                     // ?fast=&slow= set per-direction thresholds without a pre-run
+  m50Slow: num('slow'),
   resp: params.get('resp') || 'two',
   seed: +(params.get('seed') || (Date.now() % 1e9)),
 };
@@ -242,47 +308,89 @@ function pick(groupId, key, cast = (v) => v){
     g.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b));
     cfg[key] = cast(b.dataset.v);
     if (key === 'design') $('designHint').textContent = DESIGN_HINTS[cfg.design];
+    if (key === 'run') showGroups();
   });
 }
+pick('oRun', 'run'); pick('oPre', 'pre', Number);
 pick('oDesign', 'design'); pick('oMin', 'minutes', Number); pick('oCond', 'cond');
 pick('oM50', 'm50', Number); pick('oResp', 'resp');
 $('designHint').textContent = DESIGN_HINTS[cfg.design];
+function showGroups(){
+  $('grpPre').classList.toggle('hidden', cfg.run === 'stream');
+  $('grpStream').classList.toggle('hidden', cfg.run === 'prerun');
+  $('grpSize').classList.toggle('hidden', cfg.run !== 'stream');
+}
+showGroups();
 
-$('toInstr').addEventListener('click', () => {
+const RESP_TEXT = () => (cfg.resp === 'two'
+  ? 'When you notice a change, press "Maybe" if you think something changed, or "Sure" if you are certain (keys J and K, or the buttons). Press as soon as you notice. There is no need to wait until you are sure.'
+  : 'When you notice a change, press the button (or the space bar) straight away.');
+let startNext = null;
+function instructions(part){
   const follow = cfg.cond === 'follow';
+  const pre = part === 'prerun';
+  const breathe = follow
+    ? 'Breathe in as it grows and out as it shrinks, gently, in time with it.'
+    : 'Breathe however is comfortable for you; you do not need to follow it.';
+  $('instrKicker').textContent = pre ? 'Part 1 · before you start' : (PRE ? 'Part 2 · before you start' : 'Before you start');
   $('instrHead').textContent = follow ? 'Breathe with the circle.' : 'Watch the circle.';
-  $('instrBody').textContent = follow
-    ? 'Breathe in as it grows and out as it shrinks, gently, in time with it. Its pace will change now and then, sometimes all at once, sometimes gradually, sometimes for a single breath.'
-    : 'Breathe however is comfortable for you; you do not need to follow it. Its pace will change now and then, sometimes all at once, sometimes gradually, sometimes for a single breath.';
-  $('instrResp').textContent = cfg.resp === 'two'
-    ? 'When you notice a change, press "Maybe" if you think something changed, or "Sure" if you are certain (keys J and K, or the buttons). Press as soon as you notice. There is no need to wait until you are sure.'
-    : 'When you notice a change, press the button (or the space bar) straight away.';
+  $('instrBody').textContent = pre
+    ? `${breathe} Now and then its pace will change, all at once. Some changes are easy to notice and some are very hard; missing some is expected. This part takes about ${cfg.pre > 12 ? 11 : 6} minutes.`
+    : `${breathe} Its pace will change now and then, sometimes all at once, sometimes gradually, sometimes for a single breath.`;
+  $('instrResp').textContent = RESP_TEXT();
+  $('instrProbe').classList.toggle('hidden', pre);
+  startNext = pre ? startPrerun : start;
   show('instr');
-});
-$('toStart').addEventListener('click', () => start());
+}
+$('toInstr').addEventListener('click', () => { PRE = null; instructions(cfg.run === 'stream' ? 'stream' : 'prerun'); });
+$('toStart').addEventListener('click', () => startNext());
 
 // ── session state ───────────────────────────────────────────────────────────
 let S = null;           // live session
+let PRE = null;         // the finished pre-run, whose thresholds scale the stream after it
 const ALERT_EVERY_MS = 4 * 60_000;
 
-function start(){
-  const opts = { minutes: cfg.minutes, m50Hat: cfg.m50, seed: cfg.seed,
-                 blipSizes: [0.5, 0.8], blipTrainRelMin: 0.4, blipTrainRelMax: 0.9 };
-  const schedule = buildSchedule(cfg.design, opts);
-  S = {
-    cfg: { ...cfg }, schedule, startedISO: new Date().toISOString(),
+function newSession(extra){
+  return {
+    cfg: { ...cfg }, startedISO: new Date().toISOString(),
     streamMs: 0, wall0: performance.now(), state: 'stream',
-    pauseIdx: 0, eventIdx: 0, lastBreath: -1, lastPressWall: -1e9, lastAlertStream: 0,
-    log: [], presses: [], probes: [], flash: 0, pendingProbe: null,
+    pauseIdx: 0, eventIdx: 0, histIdx: 0, lastBreath: -1, lastPressWall: -1e9, lastAlertStream: 0,
+    log: [], presses: [], probes: [], flash: 0, pendingProbe: null, ...extra,
   };
-  log('start', { design: cfg.design, minutes: cfg.minutes, condition: cfg.cond, m50Hat: cfg.m50,
-                 response_mode: cfg.resp, seed: cfg.seed, durationMs: schedule.durationMs });
+}
+function enterStream(tag){
   buildResponseButtons();
-  $('condTag').textContent = cfg.cond === 'follow' ? 'follow' : 'watch';
+  $('condTag').textContent = tag;
   show('run');
   sizeCanvas();
+  runClock();
+}
+
+function thresholds(){
+  if (PRE) return { fast: PRE.result.m50Faster, slow: PRE.result.m50Slower, from: 'prerun' };
+  if (cfg.m50Fast != null || cfg.m50Slow != null) return { fast: cfg.m50Fast ?? cfg.m50, slow: cfg.m50Slow ?? cfg.m50, from: 'url' };
+  return { fast: null, slow: null, from: 'fixed' };
+}
+
+function start(){
+  const th = thresholds();
+  const opts = { minutes: cfg.minutes, m50Hat: cfg.m50, m50HatFaster: th.fast, m50HatSlower: th.slow, seed: cfg.seed,
+                 blipSizes: [0.5, 0.8], blipTrainRelMin: 0.4, blipTrainRelMax: 0.9 };
+  const schedule = buildSchedule(cfg.design, opts);
+  S = newSession({ part: 'stream', schedule, thresholds: th });
+  log('start', { part: 'stream', design: cfg.design, minutes: cfg.minutes, condition: cfg.cond, m50Hat: cfg.m50,
+                 m50_faster: th.fast, m50_slower: th.slow, thresholds_from: th.from,
+                 response_mode: cfg.resp, seed: cfg.seed, durationMs: schedule.durationMs });
+  enterStream(cfg.cond === 'follow' ? 'follow' : 'watch');
   openProbe(['alertness'], 'start');      // alertness before the stream begins
-  if (!TEST) requestAnimationFrame(frame);
+}
+
+function startPrerun(){
+  const pr = createPrerun({ nChanges: cfg.pre, seed: cfg.seed });
+  S = newSession({ part: 'prerun', pr, schedule: pr.schedule });
+  log('start', { part: 'prerun', n_changes: cfg.pre, condition: cfg.cond, response_mode: cfg.resp, seed: cfg.seed,
+                 options: pr.options });
+  enterStream(`pre-run · ${cfg.cond}`);
 }
 
 const wallNow = () => performance.now() - S.wall0;
@@ -292,18 +400,33 @@ function log(type, extra = {}){
 
 // ── clock ───────────────────────────────────────────────────────────────────
 let lastT = null;
-function frame(t){
-  if (!S || S.state === 'done') return;
-  if (lastT == null) lastT = t;
-  const dt = Math.min(t - lastT, 100);    // a dropped frame never jumps the pacer
-  lastT = t;
-  advance(dt);
-  draw();
+let loop = 0;           // one animation loop at a time, even when one session follows another
+function runClock(){
+  lastT = null;
+  if (TEST) return;
+  const id = ++loop;
+  const frame = (t) => {
+    if (id !== loop || !S || S.state === 'done') return;
+    if (lastT == null) lastT = t;
+    const dt = Math.min(t - lastT, 100);    // a dropped frame never jumps the pacer
+    lastT = t;
+    advance(dt);
+    if (S.state !== 'done') draw();
+    requestAnimationFrame(frame);
+  };
   requestAnimationFrame(frame);
 }
 
 function advance(dt){
   if (S.state !== 'stream') return;
+  if (S.pr){
+    // the pre-run appends breaths as the clock reaches them, sizing each change from the responses so far
+    S.streamMs += dt;
+    S.pr.advanceTo(S.streamMs);
+    tickStream();
+    if (S.pr.done) endPrerun();
+    return;
+  }
   const sch = S.schedule;
   let next = S.streamMs + dt;
   // stop at the next pause: the stream clock waits while a probe is open
@@ -323,6 +446,7 @@ function advance(dt){
   if (S.streamMs >= sch.durationMs) endStream();
 }
 
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 function tickStream(){
   const sch = S.schedule;
   const pa = pacerAt(sch, S.streamMs);
@@ -336,8 +460,14 @@ function tickStream(){
     log('change_onset', { event_id: e.id, kind: e.type, scheduled_ms: e.onsetMs, mag: e.mag, dir: e.dir,
                           gap: e.gap ?? null, from_ms: e.fromPeriodMs, to_ms: e.toPeriodMs });
   }
-  const left = Math.max(0, sch.durationMs - S.streamMs) / 1000;
-  $('clock').textContent = `${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+  if (S.pr){
+    while (S.histIdx < S.pr.history.length) log('estimate', S.pr.history[S.histIdx++]);
+    // elapsed, not time left: the pre-run's length depends on the sizes it picks
+    $('clock').textContent = mmss(S.streamMs / 1000);
+    $('prog').style.width = Math.min(99, 100 * S.streamMs / S.pr.expectedMs) + '%';
+    return;
+  }
+  $('clock').textContent = mmss(Math.max(0, sch.durationMs - S.streamMs) / 1000);
   $('prog').style.width = (100 * S.streamMs / sch.durationMs) + '%';
 }
 
@@ -363,6 +493,7 @@ function press(confidence){
   const rec = { stream_ms: Math.round(S.streamMs), wall_ms: Math.round(w), confidence,
                 breath: pa ? pa.breath : S.lastBreath, phase: pa ? +pa.phase.toFixed(3) : null };
   S.presses.push(rec);
+  if (S.pr) S.pr.press(rec.stream_ms);              // in the pre-run, maybe and sure both count
   log('press', rec);
   S.flash = 1;
   if (navigator.vibrate) navigator.vibrate(10);
@@ -428,7 +559,11 @@ function endStream(){
   S.ending = true;
   openProbe(['alertness', 'arousal'], 'end');
 }
-$('done').addEventListener('click', () => { if (S && S.state === 'stream'){ log('stopped_early'); endStream(); } });
+$('done').addEventListener('click', () => {
+  if (!S || S.state !== 'stream') return;
+  log('stopped_early');
+  if (S.pr) endPrerun(); else endStream();
+});
 document.addEventListener('visibilitychange', () => {
   if (!S || S.state === 'done') return;
   log(document.hidden ? 'hidden' : 'visible');
@@ -468,11 +603,92 @@ function draw(){
   $('cue').textContent = !pa ? '' : (pa.phase < 0.5 ? 'in' : 'out');
 }
 
+// ── pre-run results ─────────────────────────────────────────────────────────
+const pct = (m) => `${Math.round(m * 100)}%`;
+const B_S = DEFAULTS.basePeriodMs / 1000;
+function endPrerun(){
+  if (!S.pr.done){ S.pr.stop(S.streamMs); log('stopped_early_prerun'); }
+  while (S.histIdx < S.pr.history.length) log('estimate', S.pr.history[S.histIdx++]);
+  S.state = 'done';
+  S.result = S.pr.result();
+  log('end', { result: S.result });
+  PRE = S;
+  const r = S.result;
+  $('preHead').textContent = r.nChanges
+    ? `Speeding ${pct(r.m50Faster)}, slowing ${pct(r.m50Slower)}.`
+    : 'Stopped before any change could be scored.';
+  const pm = (sd) => `±${Math.round((Math.exp(sd) - 1) * 100)}%`;
+  $('preStats').innerHTML = [
+    [pct(r.m50Faster), `speeding threshold: a ${B_S.toFixed(1)} s breath becomes ${(B_S * (1 - r.m50Faster)).toFixed(1)} s (${pm(r.sdFaster)})`],
+    [pct(r.m50Slower), `slowing threshold: a ${B_S.toFixed(1)} s breath becomes ${(B_S * (1 + r.m50Slower)).toFixed(1)} s (${pm(r.sdSlower)})`],
+    [`${r.hitsFaster} of ${r.nFaster}`, 'speeding changes noticed'],
+    [`${r.hitsSlower} of ${r.nSlower}`, 'slowing changes noticed'],
+    [`${r.otherPresses}`, `presses outside a change window (estimated ${r.faPerMin.toFixed(1)} false alarms/min)`],
+    [mmss(S.streamMs / 1000), `time taken for ${r.nChanges} changes`],
+  ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('preNote').textContent = `One shared threshold for both directions would have been ${pct(r.m50Shared)}. `
+    + 'The ± is the posterior SD. In the simulations, this procedure set speeding thresholds about 12% too low and '
+    + 'slowing thresholds about 6% too high; no correction is applied here. Maybe and sure presses both count.';
+  $('preNext').classList.toggle('hidden', S.cfg.run !== 'both' || !r.nChanges);
+  show('preRes');
+  requestAnimationFrame(() => { drawStair($('stair'), S); drawTimeline($('preTl'), S); });
+}
+
+function canvas2d(c){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const w = c.clientWidth, h = c.clientHeight;
+  c.width = w * dpr; c.height = h * dpr;
+  const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { x, w, h };
+}
+
+function drawStair(c, sess){
+  const { x, w, h } = canvas2d(c);
+  const ev = sess.schedule.events.filter(e => e.hit != null);
+  const hist = sess.pr.history;
+  const n = Math.max(ev.length, 1);
+  const lo = Math.log(0.03), hi = Math.log(0.9);
+  const X = (i) => 48 + (w - 64) * (i + 0.5) / n;
+  const Y = (m) => 12 + (h - 36) * (1 - (Math.log(Math.min(0.9, Math.max(0.03, m))) - lo) / (hi - lo));
+  const style = getComputedStyle(document.documentElement);
+  const col = { '-1': style.getPropertyValue('--fast').trim(), '1': style.getPropertyValue('--slow').trim() };
+  x.font = '11px Space Mono, monospace'; x.fillStyle = '#6b6c70'; x.strokeStyle = 'rgba(28,28,30,0.08)'; x.lineWidth = 1;
+  for (const m of [0.05, 0.1, 0.2, 0.4, 0.8]){
+    x.beginPath(); x.moveTo(44, Y(m)); x.lineTo(w - 8, Y(m)); x.stroke();
+    x.fillText(pct(m), 8, Y(m) + 4);
+  }
+  x.fillText('change', w - 56, h - 6);
+  for (const [key, d] of [['m50Faster', -1], ['m50Slower', 1]]){
+    x.strokeStyle = col[d]; x.lineWidth = 1.5; x.setLineDash([4, 3]); x.beginPath();
+    hist.forEach((hh, i) => (i ? x.lineTo(X(i), Y(hh[key])) : x.moveTo(X(i), Y(hh[key]))));
+    x.stroke(); x.setLineDash([]);
+  }
+  ev.forEach((e, i) => {
+    x.beginPath(); x.arc(X(i), Y(e.mag), 4.5, 0, Math.PI * 2);
+    if (e.hit){ x.fillStyle = col[e.dir]; x.fill(); }
+    else { x.strokeStyle = col[e.dir]; x.lineWidth = 2; x.stroke(); }
+  });
+}
+
+function prerunRows(sess){
+  const ev = sess.schedule.events.filter(e => e.hit != null);
+  return ev.map((e, i) => {
+    const pa = e.pressMs != null ? pacerAt(sess.schedule, e.pressMs) : null;
+    const h = sess.pr.history[i];
+    return { event_id: e.id, dir: e.dir, onset_s: +(e.onsetMs / 1000).toFixed(3), window_end_s: +(e.windowEndMs / 1000).toFixed(3),
+             mag: +e.mag.toFixed(4), asked: +e.asked.toFixed(4), from_period_ms: e.fromPeriodMs, to_period_ms: e.toPeriodMs,
+             responded: e.hit ? 1 : 0, rt_s: e.hit ? +((e.pressMs - e.onsetMs) / 1000).toFixed(3) : '',
+             rt_breaths: pa ? +(pa.breath - e.onsetBreath + pa.phase).toFixed(2) : '',
+             m50_faster_after: +h.m50Faster.toFixed(4), m50_slower_after: +h.m50Slower.toFixed(4) };
+  });
+}
+const prerunRecord = (sess) => ({ config: sess.cfg, startedISO: sess.startedISO, options: sess.pr.options, result: sess.result,
+                                  schedule: sess.schedule, log: sess.log, presses: sess.presses, changes: prerunRows(sess) });
+
 // ── results ─────────────────────────────────────────────────────────────────
 const GRACE_MS = 1000;   // presses up to 1 s after a window closes still count for it (motor time)
 function analyse(){
   const sch = S.schedule;
-  const breaths = sch.breaths;
   const scored = sch.events.filter(e => e.type !== 'return');
   const used = new Set();
   const rows = scored.map(e => {
@@ -500,7 +716,11 @@ function finish(){
   const rts = hits.map(r => r.rt_breaths).filter(v => v !== '').sort((a, b) => a - b);
   const med = rts.length ? rts[Math.floor(rts.length / 2)] : null;
   const streamMin = S.streamMs / 60000;
+  const th = S.thresholds;
   $('resHead').textContent = `${hits.length} of ${changes.length} changes noticed.`;
+  $('resTh').textContent = th.from === 'fixed'
+    ? `Changes were drawn around one fixed size, ${pct(S.cfg.m50)}, in both directions.`
+    : `Changes were drawn around ${th.from === 'prerun' ? 'the pre-run\'s' : 'the given'} thresholds: speeding ${pct(th.fast)}, slowing ${pct(th.slow)}.`;
   $('stats').innerHTML = [
     [changes.length, 'changes in the stream'],
     [hits.length, 'noticed (pressed in time)'],
@@ -508,26 +728,27 @@ function finish(){
     [`${other.length}`, `other presses (${(other.length / Math.max(streamMin, 0.01)).toFixed(1)}/min)`],
   ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
 
-  const kinds = [...new Set(rows.map(r => r.kind))];
+  // by kind and direction: with a threshold per direction, each should sit near half noticed
   const label = { step: 'Step', ramp: 'Ramp', blip_single: 'Single blip', blip_pair: 'Blip pair', blip: 'Train blip',
                   bump_single: 'Single bump', bump_pair: 'Bump pair', bump: 'Train bump', null: 'No change' };
-  $('byType').innerHTML = '<tr><th>Kind</th><th>Shown</th><th>Pressed</th><th>Median breaths</th></tr>' + kinds.map(k => {
-    const rr = rows.filter(r => r.kind === k), hh = rr.filter(r => r.responded);
+  const dirName = { '-1': ', speeding', '1': ', slowing' };
+  const key = (r) => `${r.kind}|${r.kind === 'null' ? '' : r.dir}`;
+  const keys = [...new Set(rows.map(key))];
+  $('byType').innerHTML = '<tr><th>Kind</th><th>Shown</th><th>Pressed</th><th>Median breaths</th></tr>' + keys.map(k => {
+    const rr = rows.filter(r => key(r) === k), hh = rr.filter(r => r.responded);
     const b = hh.map(r => r.rt_breaths).filter(v => v !== '').sort((a, c) => a - c);
-    return `<tr><td>${label[k] || k}</td><td>${rr.length}</td><td>${hh.length}</td><td>${b.length ? b[Math.floor(b.length / 2)] : '–'}</td></tr>`;
+    const [kind, dir] = k.split('|');
+    return `<tr><td>${label[kind] || kind}${dirName[dir] || ''}</td><td>${rr.length}</td><td>${hh.length}</td><td>${b.length ? b[Math.floor(b.length / 2)] : '–'}</td></tr>`;
   }).join('');
   $('probes').innerHTML = '<tr><th>When</th><th>Scale</th><th>Value (0–100)</th></tr>' + S.probes.map(p =>
     `<tr><td>${p.reason === 'probe' ? (p.stream_ms / 60000).toFixed(1) + ' min' : p.reason}</td><td>${p.scale}</td><td>${p.value}</td></tr>`).join('');
   show('res');
-  requestAnimationFrame(drawTimeline);
+  requestAnimationFrame(() => drawTimeline($('tl'), S));
 }
 
-function drawTimeline(){
-  const c = $('tl'); const dpr = Math.min(devicePixelRatio || 1, 2);
-  const w = c.clientWidth, h = c.clientHeight;
-  c.width = w * dpr; c.height = h * dpr;
-  const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sch = S.schedule, T = Math.max(S.streamMs, 1);
+function drawTimeline(c, sess){
+  const { x, w, h } = canvas2d(c);
+  const sch = sess.schedule, T = Math.max(sess.streamMs, 1);
   const B = DEFAULTS.basePeriodMs, lo = B * 0.5, hi = B * 1.9;
   const X = (ms) => 8 + (w - 16) * ms / T;
   const Y = (p) => 24 + (h - 40) * (1 - (p - lo) / (hi - lo));
@@ -544,7 +765,7 @@ function drawTimeline(){
     x.moveTo(X(b.startMs), Y(b.periodMs)); x.lineTo(X(Math.min(b.startMs + b.periodMs, T)), Y(b.periodMs));
   }
   x.stroke();
-  for (const p of S.presses){
+  for (const p of sess.presses){
     x.fillStyle = p.confidence === 'sure' ? '#f068a4' : '#f6b6d2';
     x.fillRect(X(p.stream_ms) - 1.5, 4, 3, 12);
   }
@@ -559,25 +780,33 @@ function download(name, text, type){
   a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-const stamp = () => S.startedISO.replace(/[:.]/g, '-');
-$('dlJson').addEventListener('click', () => download(`bcat-ddm_${S.cfg.design}_${stamp()}.json`,
-  JSON.stringify({ app: 'bcat-ddm-prototype', version: 1, config: S.cfg, startedISO: S.startedISO,
-                   schedule: S.schedule, log: S.log, presses: S.presses, probes: S.probes,
-                   changes: S.analysis.rows }, null, 1), 'application/json'));
-$('dlCsv').addEventListener('click', () => {
-  const rows = S.analysis.rows;
+const toCsv = (rows) => {
   const cols = Object.keys(rows[0] || { event_id: 0 });
-  const csv = [cols.join(','), ...rows.map(r => cols.map(c => r[c]).join(','))].join('\n');
-  download(`bcat-ddm_changes_${S.cfg.design}_${stamp()}.csv`, csv, 'text/csv');
-});
-$('again').addEventListener('click', () => { S = null; lastT = null; show('setup'); });
+  return [cols.join(','), ...rows.map(r => cols.map(c => r[c]).join(','))].join('\n');
+};
+const stamp = (sess) => sess.startedISO.replace(/[:.]/g, '-');
+$('dlJson').addEventListener('click', () => download(`bcat-ddm_${S.cfg.design}_${stamp(S)}.json`,
+  JSON.stringify({ app: 'bcat-ddm-prototype', version: 2, config: S.cfg, startedISO: S.startedISO, thresholds: S.thresholds,
+                   schedule: S.schedule, log: S.log, presses: S.presses, probes: S.probes,
+                   changes: S.analysis.rows, prerun: PRE ? prerunRecord(PRE) : null }, null, 1), 'application/json'));
+$('dlCsv').addEventListener('click', () => download(`bcat-ddm_changes_${S.cfg.design}_${stamp(S)}.csv`, toCsv(S.analysis.rows), 'text/csv'));
+$('preJson').addEventListener('click', () => download(`bcat-ddm_prerun_${stamp(PRE)}.json`,
+  JSON.stringify({ app: 'bcat-ddm-prototype', version: 2, part: 'prerun', ...prerunRecord(PRE) }, null, 1), 'application/json'));
+$('preCsv').addEventListener('click', () => download(`bcat-ddm_prerun_changes_${stamp(PRE)}.csv`, toCsv(prerunRows(PRE)), 'text/csv'));
+$('preNext').addEventListener('click', () => instructions('stream'));
+const toSetup = () => { S = null; PRE = null; lastT = null; show('setup'); };
+$('preAgain').addEventListener('click', toSetup);
+$('again').addEventListener('click', toSetup);
 
 // ── headless API (agent playtests): ?test disables the animation clock ──────
 window.__bcat = {
   get state(){ return S && S.state; },
   get session(){ return S; },
-  configure(o){ Object.assign(cfg, o); },
-  start(){ start(); },
+  get prerun(){ return PRE; },
+  configure(o){ Object.assign(cfg, o); showGroups(); },
+  start(){ PRE = null; start(); },
+  startPrerun(){ PRE = null; startPrerun(); },
+  continueToStream(){ start(); },
   step(ms, dt = 16){ for (let t = 0; t < ms && S && S.state === 'stream'; t += dt) advance(dt); if (S && S.state !== 'done') draw(); },
   press(conf = 'sure'){ S.lastPressWall = -1e9; press(conf); },
   answer(value = 50){
@@ -585,7 +814,7 @@ window.__bcat = {
     for (const k of S.pendingProbe.kinds) S.pendingProbe.values[k] = value;
     closeProbe(); return true;
   },
-  finish(){ if (S.state === 'stream') endStream(); },
+  finish(){ if (S.state !== 'stream') return; if (S.pr) endPrerun(); else endStream(); },
   analysis(){ return S && S.analysis; },
 };
 </script>

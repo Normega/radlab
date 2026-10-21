@@ -24,6 +24,8 @@ import { takeScreenerDraft } from '../lib/screenerDraft'
 import { useScrollToTopOn } from '../lib/scrollToTop'
 import { useNoTranslate } from '../lib/noTranslate'
 import { shuffleStepGroups } from '../lib/stepShuffle'
+import SupportResources from '../components/study/SupportResources'
+import { supportResourcesFor } from '../lib/supportResources'
 
 // Dedicated client for participant sessions — never touches the shared lab/public client.
 function makeParticipantClient() {
@@ -37,6 +39,7 @@ function makeParticipantClient() {
 export default function SessionEntry() {
   const { token } = useParams()
   const [state,          setState]          = useState('loading')
+  const [screenoutResources, setScreenoutResources] = useState(null)
   const [sessionData,    setSessionData]    = useState(null)
   const [currentIndex,   setCurrentIndex]   = useState(0)
   // Each gate and each step starts at the top of the page (see scrollToTop.js).
@@ -61,6 +64,10 @@ export default function SessionEntry() {
   // (status 'awaiting_date' — a calendar-date timepoint left to be determined).
   // Only then can the finish screens say anything concrete about "what next".
   const [awaitingDate,   setAwaitingDate]   = useState(false)
+  // True when an expired link's session is a baseline (a hold session) that
+  // check_schedule re-sends every day until it is done. Only then does the
+  // expired screen say the survey is still open.
+  const [resendsDaily,   setResendsDaily]   = useState(false)
   // { url, source } | null — set when the study has a completion redirect URL;
   // source is 'sona' | 'prolific' | null and only names the platform in copy.
   const [redirectInfo,   setRedirectInfo]   = useState(null)
@@ -162,6 +169,18 @@ export default function SessionEntry() {
       .then(({ error: e }) => { if (e) console.warn('crash diagnostic failed:', e.message) })
   }
 
+  // link_resends_daily (20261017_expired_link_baseline_still_open.sql) answers
+  // without a session, which the expired path never has. It only picks the
+  // copy, so it fails soft: on any error the ordinary expired screen shows.
+  async function checkResendsDaily() {
+    try {
+      const { data, error } = await sb.rpc('link_resends_daily', { p_token: token })
+      setResendsDaily(!error && data === true)
+    } catch {
+      setResendsDaily(false)
+    }
+  }
+
   async function resolveToken() {
     // 1. Exchange link token for a participant Supabase session
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -186,6 +205,7 @@ export default function SessionEntry() {
     if (authResult.error === 'expired' || authResult.error === 'completed') {
       setNextSession(authResult.next_session ?? null)
       setAwaitingDate(!!authResult.awaiting_date)
+      if (authResult.error === 'expired') await checkResendsDaily()
       setState(authResult.error)
       return
     }
@@ -215,6 +235,7 @@ export default function SessionEntry() {
           .from('participant_links').select('study_id').eq('token', token).maybeSingle()
         setAwaitingDate(await hasAwaitingDate(sb, own?.study_id))
       }
+      if (data.error === 'expired') await checkResendsDaily()
       setState(data.error)
       return
     }
@@ -232,7 +253,11 @@ export default function SessionEntry() {
       setState('completed')
       return
     }
-    if (link.status === 'expired')              { setState('expired');   return }
+    if (link.status === 'expired') {
+      await checkResendsDaily()
+      setState('expired')
+      return
+    }
 
     if (schedule.scheduled_date && new Date(schedule.scheduled_date) > new Date()) {
       setState('too_early')
@@ -246,7 +271,7 @@ export default function SessionEntry() {
     // cannot run, the session does not open.
     const { data: blockReason, error: gateErr } = await sb.rpc('session_entry_block', { p_token: token })
     if (gateErr) { setState('gate_error'); return }
-    if (blockReason === 'screened_out') { setState('screener_blocked'); return }
+    if (blockReason === 'screened_out') { setScreenoutResources(supportResourcesFor(study.screener)); setState('screener_blocked'); return }
     if (blockReason) { setGateReason(blockReason); setState('gate_closed'); return }
 
     // Screener gate — runs before consent
@@ -282,6 +307,7 @@ export default function SessionEntry() {
       }
 
       if (previouslyFailed && !retakeGranted) {
+        setScreenoutResources(supportResourcesFor(study.screener))
         setState('screener_blocked')
         return
       }
@@ -640,7 +666,7 @@ export default function SessionEntry() {
   }
 
   if (state === 'expired') {
-    return <FullScreen><StatusCard>{expiredMessage(nextSession, awaitingDate)}</StatusCard></FullScreen>
+    return <FullScreen><StatusCard>{expiredMessage(nextSession, awaitingDate, resendsDaily)}</StatusCard></FullScreen>
   }
 
   if (state === 'too_early') {
@@ -676,9 +702,12 @@ export default function SessionEntry() {
   if (state === 'screener_blocked') {
     return (
       <FullScreen>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px' }}>
         <StatusCard>
-          Thank you for your interest. Based on your answers to the eligibility questions, you won’t be able to take part in this study. Please reach out to the research team if you have any questions.
+          Thank you for your interest. This study has a specific set of eligibility criteria, and based on your answers to the eligibility questions, you won’t be able to take part in it. Please reach out to the research team if you have any questions.
         </StatusCard>
+        <SupportResources resources={screenoutResources} />
+        </div>
       </FullScreen>
     )
   }
@@ -954,7 +983,16 @@ function completionMessage(info, awaitingDate = false) {
 // deciding whether to keep going should not be told otherwise. Same constraint
 // as MISSED_INTRO in supabase/functions/_shared/emailTemplate.ts; keep the two
 // in step.
-function expiredMessage(next, awaitingDate = false) {
+//
+// Except a baseline that is still open (resendsDaily). A hold session is never
+// missed: it is re-sent every day with a fresh link until it is done, so
+// "window has closed ... nothing to make up" is false for it. A class-trial
+// student who opened an older email read it that way and wrote in believing
+// the baseline had closed (2026-10-16).
+function expiredMessage(next, awaitingDate = false, resendsDaily = false) {
+  if (resendsDaily) {
+    return "This link has expired, but the survey is still open. We email you a new link every day until it's done, so open the most recent email from us."
+  }
   return `This session's window has closed — that's completely okay. Missing the occasional session is normal, and there's nothing to make up. Just do your best to catch the ones you can. ${nextSessionSentence(next, awaitingDate)}`
 }
 

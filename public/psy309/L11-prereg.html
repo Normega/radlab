@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L11 · Write down what you fixed</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root { --ink:#141B22; --muted:#5C6773; --accent:#1F5C8B; --ground:#FCFBF8; --line:#DCE2E6; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.55; }
+  main { max-width:760px; margin:0 auto; padding:40px 16px 80px; }
+  .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
+            text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:30px; margin:0 0 14px; }
+  h2 { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:14px; letter-spacing:1px;
+       text-transform:uppercase; color:var(--accent); margin:26px 0 8px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-top:16px; background:#fff; }
+  .lane { border-left:4px solid var(--accent); padding:4px 0 4px 14px; margin:12px 0; }
+  .model { border-left:4px solid var(--line); padding:4px 0 4px 14px; margin:12px 0; font-size:15px; }
+  code { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; background:#EEF2F4; padding:1px 6px; border-radius:4px; }
+  table { border-collapse:collapse; margin:8px 0; font-size:15px; width:100%; }
+  td, th { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:#EEF2F4; }
+  .submit { display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .submit p { flex:1; min-width:240px; margin:0; }
+  .submit img { width:110px; height:110px; border-radius:6px; flex:none; }
+  .small { font-size:14px; color:var(--muted); }
+  ol li, ul li { margin:0 0 6px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">PSY309 · Lecture 9 · Lab block</p>
+  <h1>Write down what you fixed in advance</h1>
+
+  <div class="lane">
+    <p><strong>Practical 5 not finished?</strong> It&#8217;s due this Friday, Nov 27. Today&#8217;s lab block is for that: sit with a TA.</p>
+  </div>
+  <div class="lane">
+    <p><strong>Practical 5 done or nearly?</strong> You have been preregistering all term. Your hypotheses were fixed in Practical 3, and your sample sizes in Practicals 4 and 5, before any data existed. Today you write that down as your final paper&#8217;s <strong>Data simulation and analysis plan</strong>.</p>
+  </div>
+
+  <h2>1 · What it has to fix</h2>
+  <table>
+    <tr><th>Decision</th><th>The move it blocks</th></tr>
+    <tr><td><strong>One primary DV</strong> per study</td><td>&#8220;Try another outcome&#8221;</td></tr>
+    <tr><td><strong>Who is in the analysis</strong>, and any exclusion rule</td><td>&#8220;Drop the outliers&#8221;</td></tr>
+    <tr><td><strong>The one primary analysis</strong>: for Study 2, your tier</td><td>&#8220;Maybe it only works for juniors&#8221;, &#8220;control for baseline&#8221;</td></tr>
+    <tr><td><strong>The <em>n</em></strong>, and where it came from</td><td>Stopping when the result looks good</td></tr>
+  </table>
+  <p>Everything else you run is <strong>exploratory</strong>, and you say so in the paper. Exploring is fine. Reporting an exploration as if it had been the plan is the problem.</p>
+
+  <h2>2 · The worked example&#8217;s version</h2>
+  <div class="model">
+    <p>Both studies&#8217; data were simulated in R. In Study 2, 256 participants per condition were randomly assigned to gratitude or neutral journaling; this <em>n</em> is four times the 64 per condition needed to detect <em>d</em> = 0.5 with 80% power, because the primary question is an interaction. Stress was drawn from a normal distribution (<em>M</em> = 20, <em>SD</em> = 4), and optimism was generated as 50 &#8722; 0.78 &#215; (Stress &#8722; 20) + 5 &#215; Gratitude + 0.60 &#215; (Stress &#8722; 20) &#215; Gratitude + noise (<em>SD</em> = 9.5), with seed 4026. The primary outcome is optimism. No participants were excluded. The primary analysis is a 2 (condition) &#215; 2 (stress: median split) ANOVA, with the condition effect within each stress group as Bonferroni-corrected simple effects. Any other analysis is reported as exploratory.</p>
+  </div>
+  <p class="small">From the Practical 5 worked example (Tier 2). Your version uses your own values, model, seed and tier.</p>
+
+  <h2>3 · Yours, in this order</h2>
+  <ol>
+    <li>Say plainly that the data were simulated in R.</li>
+    <li>For each study: the <em>n</em> and the power analysis behind it.</li>
+    <li>The values and model you simulated from, and the seed.</li>
+    <li>The primary DV, and who is in the analysis.</li>
+    <li>The one primary analysis per study. Then one sentence: everything else is exploratory.</li>
+  </ol>
+
+  <div class="box">
+    <h2 style="margin-top:0">For a real study, add two more</h2>
+    <ul>
+      <li><strong>An exclusion rule written before data collection</strong>: for the gratitude study, &#8220;anyone who completes fewer than five of the seven journaling evenings is excluded&#8221;.</li>
+      <li><strong>A stopping rule</strong>: data collection ends at the planned <em>n</em>, whatever the results look like on the way.</li>
+    </ul>
+    <p class="small">Your simulated data can&#8217;t miss an evening, so your paper doesn&#8217;t need these. Your Discussion can still say what you&#8217;d preregister if you ran it for real.</p>
+  </div>
+
+  <div class="box">
+    <h2 style="margin-top:0">Post it</h2>
+    <div class="submit">
+      <p>In the Lecture Lounge check-in that&#8217;s open now: your primary DV, your one primary analysis, and one analysis you&#8217;re labelling exploratory.<br>
+         <code>radlab.zone/class/psy309</code></p>
+      <img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309">
+    </div>
+  </div>
+</main>
+</body>
+</html>

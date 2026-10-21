@@ -457,3 +457,67 @@ def loglik2(step_breath, drive, cross, bstarts, delta, a, lam, omega, nu, lo, re
                 for i in range(ngrid):
                     p[i] = tmp[i] / tot
     return ll
+
+
+# ── Pre-run (2026-10-15): thresholds for speeding and slowing separately ─────
+@njit(cache=True)
+def mc_step_dir(vL, vT, kappa, delta, a, lam, mag, d, n_trials, n_pre, n_post, base_s, tau_r, seed):
+    """mc_step for ONE direction (d = +1 slower, -1 faster) with direction asymmetry kappa.
+    Steps from a settled baseline; returns the hit rate within n_post breaths."""
+    np.random.seed(seed)
+    steps_per_breath = int(round(base_s / DT))
+    steps_changed = int(round(base_s * (1.0 + d * mag) / DT))
+    base_log = math.log(base_s)
+    new_log = math.log(base_s * (1.0 + d * mag))
+    n_b = n_pre + n_post
+    L = np.empty(n_b)
+    pb = np.zeros(n_b, np.bool_)
+    hits = 0
+    sq = math.sqrt(DT)
+    x0 = 0.5 * a / NGRID
+    for t in range(n_trials):
+        for k in range(n_b):
+            L[k] = (base_log if k < n_pre else new_log) + SIGMA_BREATH * np.random.randn()
+        sL, sT = signed_channels(L, pb, base_log, tau_r)
+        x = x0
+        off_until = -1
+        hit = False
+        s = 0
+        for k in range(n_b):
+            nst = steps_per_breath if k < n_pre else steps_changed
+            drv = (vL * abs(sL[k]) * (1.0 + kappa * np.sign(sL[k]))
+                   + vT * abs(sT[k]) * (1.0 + kappa * np.sign(sT[k])))
+            for _ in range(nst):
+                if s >= off_until:
+                    x += (drv - delta - lam * x) * DT + sq * np.random.randn()
+                    if x < 0.0:
+                        x = -x
+                    if x >= a:
+                        if k >= n_pre:
+                            hit = True
+                        x = x0
+                        off_until = s + 1 + TER_STEPS + REF_STEPS
+                s += 1
+            if hit:
+                break
+        if hit:
+            hits += 1
+    return hits / n_trials
+
+
+def find_m50_dir(vL, vT, kappa, delta, a, lam, d, base_s=4.0, n_post=5, n_trials=600,
+                 tau_r=TAU_R, seed=1):
+    """Step magnitude in direction d giving 50% hits within n_post breaths (bisection in log m).
+    Same definition as find_m50, so it is what a schedule's m50Hat stands for."""
+    lo, hi = math.log(0.01), math.log(0.8)
+    if mc_step_dir(vL, vT, kappa, delta, a, lam, 0.8, d, n_trials, 4, n_post, base_s, tau_r, seed) < 0.5:
+        return 0.8
+    for _ in range(14):
+        mid = 0.5 * (lo + hi)
+        p = mc_step_dir(vL, vT, kappa, delta, a, lam, math.exp(mid), d, n_trials, 4, n_post, base_s,
+                        tau_r, seed)
+        if p < 0.5:
+            lo = mid
+        else:
+            hi = mid
+    return math.exp(0.5 * (lo + hi))

@@ -14,8 +14,11 @@ export const OPEN_JOIN_CONTENT = {
   // which is the intended behaviour, not a bug.
   utmaps: {
     eyebrow:     'RAD Lab \u00b7 University of Toronto Mississauga',
-    title:       'How are UTM students really doing?',
-    lead:        'We have asked this every year since 2023. Last year most students told us things were getting worse. We want to know whether they are right.',
+    // No findings from earlier waves before the questionnaire: the belief that
+    // things are getting worse, and how students see their peers, are what it
+    // measures. Same wording as the flyer and table sign (ethics Attachment 6).
+    title:       'How are UTM students doing this year?',
+    lead:        'We have asked this every year since 2023, the same way each time, so we can see how things change.',
     // No screener on this study, so the button must not imply one. The
     // sections above promise there is nothing to screen for.
     cta:         'Start the survey',
@@ -112,6 +115,14 @@ export const OPEN_JOIN_CONTENT = {
     lead:        'We are running a study to learn whether brief, daily online exercises can help students manage stress and support well-being.',
     contactName: 'Liliana Wu',
     contact:     'liliana.wu@mail.utoronto.ca',
+    // Same list as the study's screener (studies.screener.resources), shown on
+    // the return-visit screen for anyone screened out.
+    supportResources: [
+      { name: 'UTM Health & Counselling Centre',     contact: 'utm.utoronto.ca/health-counselling' },
+      { name: 'Good2Talk Student Helpline',          contact: '1-866-925-5454 (24/7)' },
+      { name: 'Distress Centres of Greater Toronto', contact: '416-408-4357' },
+      { name: 'Crisis Services Canada',              contact: '1-833-456-4566' },
+    ],
     sections: [
       {
         heading: 'Who can take part',
