@@ -3947,6 +3947,11 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
     assignment (motivators and barriers for digital mental health interventions, due Nov 16); then the
     midterm (213 sat it, MC average 90%, grades by end of week, four patterns where marks went). The join
     link does not close by itself: closing it after Oct 23 is still to do.
+    Slide 24 profiles Skorska, Folkierska-Żukowska et al. & VanderLaan (2026), ingested the same day by
+    direct parse (one `ingest_jobs` row, two accepted proposals) as the Field Guide pages
+    `skorska-2026-cortical-structure-thai-transfeminine` (study) and `biology-of-gender-identity`
+    (concept, 5 Needs-research gaps). `gender-dysphoria` was left unedited because a student
+    contribution to it is pending review; it reaches both pages through backlinks.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
