@@ -42,12 +42,20 @@ export function renderBuddyEmail(v: BuddyEmailVars): { subject: string; html: st
     text.push('Test send. The link below is not live and opens a "link not found" page.')
   }
 
+  // Celebration: a big checkmark and each milestone crossed off (Norm,
+  // 2026-10-21). U+2713, not U+2714, which Apple Mail turns into an emoji.
   if (v.completed.length > 0) {
     const titles = v.completed.map(m => m.title)
     const label = titles.length > 1 ? 'Milestones complete' : 'Milestone complete'
     const next = v.current ? `Next up: ${v.current.title}.` : 'That was the last one.'
-    html.push(`<p style="${P}">${label}: ${titles.map(t => `<strong>${esc(t)}</strong>`).join(', ')}. ${esc(next)}</p>`)
-    text.push(`${label}: ${titles.join(', ')}. ${next}`)
+    html.push(`<p style="margin:0 0 8px 0;font-size:56px;line-height:1;color:#f068a4;font-weight:700;">&#10003;</p>`)
+    html.push(`<p style="margin:0 0 8px 0;font-size:18px;color:#1c1c1e;font-weight:700;">${label}</p>`)
+    for (const t of titles) {
+      html.push(`<p style="margin:0 0 4px 0;font-size:15px;color:#6b6c70;line-height:1.6;">`
+        + `<span style="color:#f068a4;font-weight:700;">&#10003;</span> <s style="text-decoration:line-through;">${esc(t)}</s></p>`)
+    }
+    html.push(`<p style="margin:12px 0 24px 0;font-size:15px;color:#1c1c1e;line-height:1.6;">${esc(next)}</p>`)
+    text.push([`✓ ${label}`, ...titles.map(t => `✓ ${t} (done)`), next].join('\n'))
   }
 
   html.push(`<p style="${P}">Morning, ${esc(v.firstName)},</p>`)

@@ -117,7 +117,11 @@ test('email: celebration, no meeting, test prefix, escaping', () => {
   const e = renderBuddyEmail({ ...base, completed: [ms[1]], meetingAt: null, isTest: true,
     current: { ...ms[0], title: 'Read <everything> & more' } })
   assert.match(e.subject, /^\[TEST\] Today's check-in: Read <everything>/)
-  assert.match(e.html, /Milestone complete: <strong>A<\/strong>\. Next up: Read &lt;everything&gt; &amp; more\./)
+  assert.match(e.html, /font-size:56px[^>]*>&#10003;<\/p>/, 'big checkmark')
+  assert.match(e.html, />Milestone complete<\/p>/)
+  assert.match(e.html, /&#10003;<\/span> <s style="text-decoration:line-through;">A<\/s>/, 'milestone crossed off')
+  assert.match(e.html, />Next up: Read &lt;everything&gt; &amp; more\.<\/p>/)
+  assert.match(e.text, /✓ Milestone complete\n✓ A \(done\)\nNext up: Read <everything> & more\./)
   assert.doesNotMatch(e.html, /Next meeting/)
   assert.ok(e.html.indexOf('Milestone complete') < e.html.indexOf('Morning, John'), 'celebration opens the email')
 })
