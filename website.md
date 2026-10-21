@@ -3952,6 +3952,14 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
     `skorska-2026-cortical-structure-thai-transfeminine` (study) and `biology-of-gender-identity`
     (concept, 5 Needs-research gaps). `gender-dysphoria` was left unedited because a student
     contribution to it is pending review; it reaches both pages through backlinks.
+    Later the same morning, from a review of last year's L7: a four-dimension table (sex, gender identity,
+    gender role/expression, sexual orientation), biopsychosocial causes of dysfunction, cross-dressing vs
+    transvestic disorder vs transgender, a guess-first Herbenick et al. (2010) table and a Joyal (2015) poll,
+    and four keyed Lounge quizzes (check-ins 15, 25, 32, 35; keys on the slides, not in the Lounge).
+    Guide study pages ingested the same way: `herbenick-2010-sexual-behavior-national-probability-sample`
+    (not openly licensed: figures summarised) and `joyal-2015-normophilic-paraphilic-fantasies`. A third
+    file, Jorgensen (2022, Canon Law Society of America Proceedings), was not ingested: a religious-legal
+    seminar paper, held for Norm's decision.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
