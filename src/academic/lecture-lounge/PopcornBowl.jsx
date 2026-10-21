@@ -152,7 +152,7 @@ export default function PopcornBowl({ answered: answeredOrNull, total, width = 2
 const S = {
   wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
   svg: { maxWidth: '100%', height: 'auto', overflow: 'visible' },
-  pct: { fontFamily: SERIF, fontSize: 32, color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.1 },
+  pct: { fontFamily: SERIF, fontSize: 36, color: 'var(--pkd)', margin: '8px 0 0', lineHeight: 1.1 },
   caption: { fontFamily: MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--tx2)', margin: '4px 0 0' },
 }
 
