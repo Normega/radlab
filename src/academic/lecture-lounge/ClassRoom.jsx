@@ -10,7 +10,10 @@ import AvatarMenu from '../fieldguide/AvatarMenu'
 import CheckinRunner from './CheckinRunner'
 import ResultsView from './ResultsView'
 import AvatarWall from './AvatarWall'
+import PopcornBowl from './PopcornBowl'
+import { roomProgress } from './roomProgress'
 import { useClassPresence } from './useClassPresence'
+import { useCheckinProgress } from './useCheckinProgress'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -59,7 +62,10 @@ export default function ClassRoom({ session }) {
 
   // { id, status, config } | null (no live checkin) | undefined (loading)
   const [liveCheckin, setLiveCheckin] = useState(undefined)
-  const [alreadyResponded, setAlreadyResponded] = useState(false)
+  // The id of the check-in this student has answered, not a boolean: a
+  // boolean stayed true from the last check-in until the next one's lookup
+  // returned, which would show the popcorn bowl for a check-in not yet answered.
+  const [respondedCheckinId, setRespondedCheckinId] = useState(null)
   const channelRef = useRef(null)
 
   // Presence: only actual members register themselves in the room (per
@@ -72,7 +78,9 @@ export default function ClassRoom({ session }) {
   // wall wearing BaseAvatar's own defaults, same as they'd see elsewhere.
   const { data: avatarConfig, isLoading: avatarLoading } = useAvatarConfig(userId)
   const selfPresence = membership && !avatarLoading ? { user_id: userId, ...(avatarConfig ?? {}) } : null
+  const answeredCheckin = liveCheckin?.status === 'open' && respondedCheckinId === liveCheckin.id ? liveCheckin.id : null
   const presentAvatars = useClassPresence(classInfo?.id, selfPresence)
+  const answeredCount = useCheckinProgress(answeredCheckin, !!answeredCheckin)
 
   // classInfo and utoronto verification don't depend on each other at all —
   // fire both the moment we have a slug/userId instead of one waiting on
@@ -364,15 +372,18 @@ export default function ClassRoom({ session }) {
   }, [liveCheckin])
 
   // If the checkin is open, check whether this student already responded
-  // (refresh mid-checkin shouldn't re-ask everything). Not resetting to
-  // false when status leaves 'open' is deliberate — alreadyResponded is
-  // only ever read while status === 'open', so a stale value elsewhere is
-  // inert; the next 'open' checkin's id changing re-triggers this query.
+  // (refresh mid-checkin shouldn't re-ask everything). Not clearing it when
+  // status leaves 'open' is deliberate — it is only ever read through
+  // answeredCheckin, which requires status === 'open' and a matching id, so a
+  // stale value elsewhere is inert; the next checkin's id re-triggers this.
   useEffect(() => {
     if (liveCheckin?.status !== 'open' || !userId) return
+    const id = liveCheckin.id
     let cancelled = false
     supabase.from('checkin_responses').select('id').eq('checkin_id', liveCheckin.id).eq('profile_id', userId).maybeSingle()
-      .then(({ data }) => { if (!cancelled) setAlreadyResponded(!!data) })
+      // No row leaves a just-submitted answer alone: this lookup can resolve
+      // after the student's own submit.
+      .then(({ data }) => { if (!cancelled) setRespondedCheckinId((prev) => (data ? id : prev === id ? prev : null)) })
     return () => { cancelled = true }
   }, [liveCheckin?.id, liveCheckin?.status, userId])
 
@@ -455,13 +466,13 @@ export default function ClassRoom({ session }) {
 
   function renderCheckinArea() {
     if (liveCheckin === undefined) return null
-    if (liveCheckin?.status === 'open' && !alreadyResponded) {
+    if (liveCheckin?.status === 'open' && !answeredCheckin) {
       if (liveCheckin.config === undefined) return null // still fetching config
       return (
         <div style={S.card}>
           <CheckinRunner
             checkinId={liveCheckin.id} config={liveCheckin.config} session={session}
-            onComplete={() => setAlreadyResponded(true)}
+            onComplete={() => setRespondedCheckinId(liveCheckin.id)}
           />
         </div>
       )
@@ -483,7 +494,11 @@ export default function ClassRoom({ session }) {
             ? 'Your instructor is about to open a check-in…'
             : 'Waiting for your instructor to open the next check-in…'}
         </p>
-        <div style={S.wallWrap}><AvatarWall avatars={presentAvatars} /></div>
+        <div style={S.wallWrap}>
+          {answeredCheckin
+            ? <PopcornBowl {...roomProgress(presentAvatars, userId, answeredCount)} />
+            : <AvatarWall avatars={presentAvatars} />}
+        </div>
       </div>
     )
   }

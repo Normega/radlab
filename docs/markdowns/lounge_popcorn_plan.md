@@ -1,6 +1,8 @@
 # Lecture Lounge: popcorn bowl while waiting (plan)
 
-Status: **planned, not built** (2026-10-21). Don't ship during a lecture: land on `dev`, test, then promote between classes.
+Status: **built 2026-10-21, on `dev` for review** (PR from `claude/lounge-popcorn`). Backend live on `main`: `get_checkin_progress(uuid)`, `20261021_checkin_progress.sql`.
+
+> **Changed while building: the count is polled, not presence.** Realtime counts every message *delivered* (Pro: 500/s, 2,500/s with no spend cap; over the limit, connections are dropped). A per-answer presence re-track fans out to every phone, so ~10 answers/s in a 250-seat room is ~2,500 messages/s, enough to knock the room offline mid-quiz. Instead each answered phone polls `get_checkin_progress` (a bare count; members, class admins and super admins only), from a random offset, every 4 s while it changes and easing to 15 s, skipped while hidden: about 50 cheap requests/s at most for 250 phones, and no new Realtime traffic. The room is still the existing presence list. The section "Where the numbers come from" below is the original design, kept for the record.
 
 ## What it is
 
