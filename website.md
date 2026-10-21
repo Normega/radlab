@@ -3959,7 +3959,10 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
     Guide study pages ingested the same way: `herbenick-2010-sexual-behavior-national-probability-sample`
     (not openly licensed: figures summarised) and `joyal-2015-normophilic-paraphilic-fantasies`. A third
     file, Jorgensen (2022, Canon Law Society of America Proceedings), was not ingested: a religious-legal
-    seminar paper, held for Norm's decision.
+    seminar paper; on Norm's decision its history came in via its source instead: Drescher (2015) as
+    `drescher-2015-queer-diagnoses-revisited` and the "From deviation to dysphoria" timeline slide. Joyal,
+    Cossette & Lapierre (2015) followed as `joyal-cossette-lapierre-2015-unusual-sexual-fantasy`, with a
+    rare/unusual/common/typical quiz (check-in 33) and its key.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
