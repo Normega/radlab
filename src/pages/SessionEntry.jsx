@@ -384,10 +384,10 @@ export default function SessionEntry() {
     if (resumed) {
       setCurrentIndex(resumed.index)
       setStepOutputs(resumed.outputs)
-      // Resumed on the farewell: the advance that would have recorded the
+      // Resumed on a closing step: the advance that would have recorded the
       // completion may not have finished before the reload, so record it now.
       const nodes = data.nodes ?? []
-      if (resumed.index === nodes.length - 1 && isClosingStep(nodes[resumed.index])) recordCompletion()
+      if (onlyClosingStepsFrom(nodes, resumed.index)) recordCompletion()
     }
     setSessionData(data)
     setState('running')
@@ -574,8 +574,13 @@ export default function SessionEntry() {
       // the button below a list of support resources, and participants closed
       // the tab there. Three Liliana 3 sessions with every rating saved were
       // marked missed that way (2026-09-22/23), one participant down to 2/4.
+      // The same held for a debrief followed by a completion token: UTMAP
+      // students showed the token to the table, took a prize and left without
+      // tapping Done, so 23 of the first 44 who answered everything were never
+      // marked complete (2026-10-20/21). So the session is complete as soon as
+      // only closing steps remain, not only when the last one is reached.
       const nextIndex = currentIndex + 1
-      if (nextIndex === nodes.length - 1 && isClosingStep(nodes[nextIndex])) {
+      if (onlyClosingStepsFrom(nodes, nextIndex)) {
         recordCompletion()
       }
     } else {
@@ -1032,9 +1037,19 @@ function nextSessionSentence(next, awaitingDate = false) {
 
 // A step that only closes the session -- it collects nothing, so reaching it
 // means everything has been answered. See the early recordCompletion() call.
+// The debrief reports only debriefed_at, which nothing stores; the completion
+// token is derived from the date and stores nothing.
+const CLOSING_SUBCATEGORIES = new Set(['debrief', 'completion_token'])
+
 function isClosingStep(node) {
   const activity = node?.activity ?? node?.activities ?? {}
-  return activity.category === 'daily_farewell'
+  return activity.category === 'daily_farewell' || CLOSING_SUBCATEGORIES.has(activity.subcategory)
+}
+
+// True when the step at `index` and every step after it are closing steps. A
+// debrief with a questionnaire after it is not the end, so it does not count.
+function onlyClosingStepsFrom(nodes, index) {
+  return index >= 0 && index < nodes.length && nodes.slice(index).every(isClosingStep)
 }
 
 // ── Resume after refresh ────────────────────────────────────────────────────
