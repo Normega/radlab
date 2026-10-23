@@ -23,7 +23,7 @@ Guide freezes before the final Dec 8.
   added as `planned`, keyed), fact-checked against the Guide (no accepted page edits since Sept;
   flagged bulimia 1.0% row dropped, apnea "looks like depression" and FBT "no-blame" lines cut as
   unsupported). **Still owed:** fill the reading-week completion `[NN]` on slide 2 the morning of
-  (whole-class only); load Quiz 7 (`quiz_7.yaml`, week_no 9, opens Nov 4 15:45Z, due Nov 12 04:59Z).
+  (whole-class only); load Quiz 7 (`quiz_7.yaml`, week_no 9, opens Nov 4 16:45Z, 11:45 EST after the Nov 1 clock change, due Nov 12 04:59Z).
 - [ ] **HIGH — the Sept 30 Guide freeze has no mechanism.** The syllabus and L4 ("The Guide
   freezes tonight", "locked until Oct 15") promise it. Nothing in either database or website.md
   implements a lock. The syllabus also promises "accepted contributions during a freeze are
