@@ -2,6 +2,8 @@
 
 **DRAFT, revised 2026-10-12 after an independent review; not filed.**
 
+> **Status, 2026-10-23: this draft becomes Study 2b's.** Study 2 is now two studies ([senseforaging.com/research/study2a](https://senseforaging.com/research/study2a)). Study 2a (about 500 adults: the current 20 statements, 35 test statements, six plain-wording twins and IUS-12) settles each factor's statements, whether Forage is a fifth factor, whether Letting be survives a wording factor, and whether the scale keeps the course's wording. This draft is then revised for 2b: the final 20 to 30 statements, 1,000 new adults, with no statement selection in split halves (step 7 and its N rationale go). The validity tests, H5a/H5b, H6 and the retest with the past-week items carry over. The analysis code (b1006fb) will need the same revision.
+
 - OSF Preregistration (standard template).
 - University of Toronto REB Protocol #00051180; the Study 2 amendment is not yet submitted.
 - Decisions still marked **[Norm]** must be settled before filing.
