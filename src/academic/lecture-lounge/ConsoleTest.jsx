@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import ClassTest from './ClassTest'
 import Md from './Md'
 import GradeOMatic from './GradeOMatic'
+import TestReview from './TestReview'
 
 const MONO  = '"Space Mono", "Courier New", monospace'
 const SERIF = '"DM Serif Display", Georgia, serif'
@@ -13,14 +14,15 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // deadline, submitted, answered, last seen. Staff open/close the test with an
 // access code, set extra time (it extends a live attempt immediately), extend,
 // reopen or force-submit an attempt, preview the whole test, grade the short
-// answers in the Grade-o-matic (GradeOMatic.jsx), review the auto-marked short typed answers, and export one CSV
-// for Quercus.
+// answers in the Grade-o-matic (GradeOMatic.jsx), review the auto-marked short typed answers, open any
+// submitted student's test review as they will see it (TestReview.jsx), and export one CSV for Quercus.
 export default function ConsoleTest({ classInfo }) {
   const [tests, setTests] = useState(undefined)
   const [testId, setTestId] = useState(null)
   const [dash, setDash] = useState(null)
   const [error, setError] = useState(null)
-  const [view, setView] = useState('roster')      // roster | preview | grading | typed
+  const [view, setView] = useState('roster')      // roster | preview | grading | typed | review
+  const [reviewRow, setReviewRow] = useState(null)
   const [codeDraft, setCodeDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [offsetMs, setOffsetMs] = useState(0)
@@ -85,6 +87,11 @@ export default function ConsoleTest({ classInfo }) {
   }
   if (view === 'typed') {
     return <TypedReview testId={t.id} onExit={() => { setView('roster'); refresh() }} />
+  }
+  if (view === 'review' && reviewRow) {
+    return <TestReview testId={t.id} attemptId={reviewRow.attempt_id}
+                       studentLabel={reviewRow.first_name ? `${reviewRow.first_name} ${reviewRow.last_name}` : reviewRow.email}
+                       onExit={() => { setView('roster'); setReviewRow(null) }} />
   }
 
   return (
@@ -178,6 +185,9 @@ export default function ConsoleTest({ classInfo }) {
                           run(() => supabase.rpc('adjust_class_test_attempt', { p_attempt_id: r.attempt_id, p_action: 'submit', p_minutes: null }))
                         }}>End</button>
                       </>
+                    )}
+                    {r.attempt_id && r.submitted_at && (
+                      <button style={S.mini} onClick={() => { setReviewRow(r); setView('review') }}>Review</button>
                     )}
                     {r.attempt_id && r.submitted_at && (
                       <button style={S.mini} disabled={busy} onClick={() => {

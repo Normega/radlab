@@ -225,7 +225,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
           <strong>{fmtTime(test.attempt.submitted_at)}</strong>. Every answer you gave was saved as you went.
           You can close this page.
         </p>
-        {!preview && <Results testId={test.id} />}
+        {!preview && <Results testId={test.id} reviewTo={`${loungePath(slug)}/test/${test.id}/review`} />}
         {!preview && <Link to={loungePath(slug)} style={S.link}>Back to the class →</Link>}
       </div>,
     )
@@ -397,8 +397,9 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
 
 // Released results (get_class_test_results, 20261006_grade_o_matic.sql): the total,
 // then each short answer with what the student wrote, the mark and the feedback per
-// part. Shown only after staff release; MC items and keys are never sent back.
-function Results({ testId }) {
+// part. Shown only after staff release. The full walk-through, with the MC items,
+// keys and rationales, is TestReview.jsx (20261026_class_test_review.sql).
+function Results({ testId, reviewTo }) {
   const [r, setR] = useState(null)
   useEffect(() => {
     supabase.rpc('get_class_test_results', { p_test_id: testId }).then(({ data }) => setR(data ?? { released: false }))
@@ -415,6 +416,7 @@ function Results({ testId }) {
       <h2 style={{ ...S.title, fontSize: 28 }}>{fmt(total)} / {outOf}</h2>
       <p style={S.sub}>Multiple choice {r.mc_correct}/{r.mc_count}{r.vsa_count ? ` · short typed ${r.vsa_correct}/${r.vsa_count}` : ''}
         {saOf ? ` · short answer ${fmt(saMarks.reduce((a, b) => a + b, 0))}/${saOf}` : ''}</p>
+      <p><Link to={reviewTo} style={S.link}>Review your test, question by question →</Link></p>
       {r.sa.map((q, n) => (
         <div key={q.item_id} style={S.part}>
           <p style={S.qNo}>Short answer {n + 1}</p>
