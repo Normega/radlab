@@ -1158,7 +1158,7 @@ function update(dt){
     if (S.phase === 'walk' && !S.pendingChoice && S.s >= S.cur.len - T.stop - 0.02){ S.v = 0; S.phase = 'fork'; showFork(); }
     if (S.phase === 'final' && S.s >= T.lastWalk) toPlace();
     // footsteps
-    if (S.v > 0.5){ S.stepPh = (S.stepPh || 0) + S.v * dt * 2.4; S.stepAcc = (S.stepAcc || 0) + S.v * dt; if (S.stepAcc > 1.35){ S.stepAcc = 0; step(); } }
+    if (S.v > 0.5){ S.stepPh = (S.stepPh || 0) + S.v * dt * 2.4; S.stepAcc = (S.stepAcc || 0) + S.v * dt; if (S.stepAcc > 2.7){ S.stepAcc = 0; step(); } }
   }
   if (S.phase === 'fork'){
     if (!S.ready && S.t - S.forkT0 >= T.pause){ S.ready = true; for (const k in CARD) CARD[k].classList.add('ready'); S.record.forks[S.record.forks.length - 1].tReady = +S.t.toFixed(2); }
