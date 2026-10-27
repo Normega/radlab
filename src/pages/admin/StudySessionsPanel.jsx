@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { startSimulation } from '../../components/study/EnrollmentPanel'
+import { usePaged } from '../../components/admin/Pager'
 
 function useStudySessions(studyId) {
   return useQuery({
@@ -54,6 +55,7 @@ export default function StudySessionsPanel({ study, qc }) {
   const [formErr,    setFormErr]    = useState(null)
   const [simRunning, setSimRunning] = useState(false)
   const [simError,   setSimError]   = useState(null)
+  const { rows: pageRows, pager } = usePaged(sessions)
 
   async function handleSimulate() {
     setSimRunning(true)
@@ -219,7 +221,7 @@ export default function StudySessionsPanel({ study, qc }) {
               </tr>
             </thead>
             <tbody>
-              {sessions.map(s => (
+              {pageRows.map(s => (
                 <tr key={s.id} style={S.tr}>
                   {isLongitudinal && <td style={S.td}><span style={S.mono}>Day {s.day_number}</span></td>}
                   <td style={S.td}><span style={S.mono}>{s.label || '—'}</span></td>
@@ -241,6 +243,7 @@ export default function StudySessionsPanel({ study, qc }) {
           </table>
         </div>
       )}
+      {pager}
     </div>
   )
 }
