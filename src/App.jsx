@@ -118,6 +118,7 @@ const ClassRoom        = lazy(() => import('./academic/lecture-lounge/ClassRoom'
 const WeeklyWall       = lazy(() => import('./academic/lecture-lounge/WeeklyWall'))
 const WeeklyQuiz       = lazy(() => import('./academic/lecture-lounge/WeeklyQuiz'))
 const ClassTest        = lazy(() => import('./academic/lecture-lounge/ClassTest'))
+const TestReview       = lazy(() => import('./academic/lecture-lounge/TestReview'))
 const WeeklyArchive    = lazy(() => import('./academic/lecture-lounge/WeeklyArchive'))
 const ClassVerifyEmail = lazy(() => import('./academic/lecture-lounge/ClassVerifyEmail'))
 const ClassConfirmSignup = lazy(() => import('./academic/lecture-lounge/ClassConfirmSignup'))
@@ -839,6 +840,13 @@ export default function App() {
             <Route path="/academic/:courseCode/lounge/test/:testId" element={
               <AuthRoute session={session}>
                 <ClassTest session={session} />
+              </AuthRoute>
+            } />
+            {/* A student's own test, walked back through once results are released
+                (20261026_class_test_review.sql gates it server-side). */}
+            <Route path="/academic/:courseCode/lounge/test/:testId/review" element={
+              <AuthRoute session={session}>
+                <TestReview session={session} />
               </AuthRoute>
             } />
             {/* The archives. Both lounge cards show one current item; these

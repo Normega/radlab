@@ -283,6 +283,20 @@ export default function ClassRoom({ session }) {
     return () => { cancelled = true; clearInterval(t) }
   }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // After a test closes, the way back to it: one card per test whose results
+  // staff have released and that this student submitted (the same two
+  // conditions the review page checks, so a card never leads to "not
+  // available"). Empty until a release, so nothing shows before then.
+  const [reviewCards, setReviewCards] = useState([])
+  useEffect(() => {
+    if (!classInfo || !membership) return
+    let cancelled = false
+    supabase.rpc('get_lounge_review_cards', { p_class_id: classInfo.id }).then(({ data }) => {
+      if (!cancelled) setReviewCards(Array.isArray(data) ? data : [])
+    })
+    return () => { cancelled = true }
+  }, [classInfo?.id, membership]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Discussion boards summary for the lobby card. Board presence is the
   // feature switch: a class with no class_boards rows shows no card.
   const [boardsInfo, setBoardsInfo] = useState(null)
@@ -618,6 +632,13 @@ export default function ClassRoom({ session }) {
                 <p style={S.testMeta}>{testCard.submitted ? 'Your answers are in. Nothing more to do.' : testCard.started ? 'Tap to return to your test →' : 'Tap to begin →'}</p>
               </Link>
             )}
+            {reviewCards.map((r) => (
+              <Link key={r.id} to={`${loungePath(slug)}/test/${r.id}/review`} style={S.weeklyCard}>
+                <p style={S.weeklyEyebrow}>Test results</p>
+                <p style={S.weeklyPrompt}>{r.title}</p>
+                <p style={S.weeklyMeta}>Review your test, question by question →</p>
+              </Link>
+            ))}
             {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
 
             {/* One row per board rather than a card that hides them behind a

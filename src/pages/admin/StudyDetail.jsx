@@ -11,6 +11,8 @@ import AnonymousLinkPanel from './AnonymousLinkPanel'
 import CalendarDatesPanel from './CalendarDatesPanel'
 import { fetchAllRows } from '../../lib/fetchAllRows'
 import { dbWrite } from '../../lib/dbWrite'
+import { usePaged } from '../../components/admin/Pager'
+import ScreenerPage from '../../components/ScreenerPage'
 
 // ─── Data hooks ───────────────────────────────────────────────────────────────
 
@@ -27,7 +29,7 @@ function useStudy(id) {
           email_subject, email_body,
           allow_external_enrollment, external_enrollment_source, completion_redirect_url,
           allow_self_enrollment, allow_credit_only_consent, offer_repository_consent, require_student_number,
-          separate_external_identity, questionnaire_layout, screener_id
+          separate_external_identity, questionnaire_layout, screener_id, screener
         `)
         .eq('id', id)
         .single()
@@ -248,6 +250,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
   const [addError,    setAddError]    = useState(null)
   const [addSuccess,  setAddSuccess]  = useState(null)
   const [selectedPid, setSelectedPid] = useState(null)
+  const { rows: pageRows, pager } = usePaged(participants)
 
   const addParticipant = useMutation({
     mutationFn: async (emailVal) => {
@@ -388,7 +391,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
               </tr>
             </thead>
             <tbody>
-              {participants.map(p => (
+              {pageRows.map(p => (
                 <tr key={p.profileId} style={S.tr}>
                   <td style={S.td}><span style={S.pName}>{p.displayName}</span></td>
                   <td style={S.td}><span style={S.mono}>{p.studentNumber ?? '—'}</span></td>
@@ -428,6 +431,7 @@ function LongitudinalParticipantsPanel({ study, qc }) {
           </table>
         </div>
       )}
+      {pager}
     </div>
   )
 }
@@ -647,9 +651,25 @@ function ScreenerSection({ study, qc }) {
   const [selectedId, setSelectedId] = useState(null)
   const [saving,     setSaving]     = useState(false)
   const [err,        setErr]        = useState(null)
+  const [previewing, setPreviewing] = useState(false)
 
   const attached  = screeners.find(s => s.id === study?.screener_id)
   const available = screeners.filter(s => s.id !== study?.screener_id)
+
+  // Participants see the study's own copy (studies.screener, taken when the
+  // screener was attached), not the library row, and the two can drift: Liliana
+  // Study 3's not-eligible message was rewritten on the study copies only. So
+  // Preview shows the copy, and the card says when it differs from the library.
+  const { data: libraryDef } = useQuery({
+    queryKey: ['screener-definition', study?.screener_id],
+    enabled: !!study?.screener_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('screeners').select('definition').eq('id', study.screener_id).single()
+      if (error) throw error
+      return data.definition
+    },
+  })
+  const differsFromLibrary = !!(libraryDef && study?.screener && JSON.stringify(libraryDef) !== JSON.stringify(study.screener))
 
   async function attach() {
     if (!selectedId) return
@@ -702,14 +722,24 @@ function ScreenerSection({ study, qc }) {
               <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Active screener</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif' }}>{attached.name}</div>
               <div style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--pkd)', marginTop: 2 }}>{attached.slug}</div>
+              {differsFromLibrary && (
+                <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4, fontFamily: '"DM Sans",system-ui,sans-serif' }}>
+                  This study’s copy differs from the library version. Preview shows what participants see.
+                </div>
+              )}
             </div>
-            <button
-              style={{ ...S.actionBtn, color: '#c0392b', opacity: saving ? 0.5 : 1 }}
-              onClick={remove}
-              disabled={saving}
-            >
-              {saving ? 'Removing…' : 'Remove'}
-            </button>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <button style={S.actionBtn} onClick={() => setPreviewing(true)} disabled={!study?.screener}>
+                Preview
+              </button>
+              <button
+                style={{ ...S.actionBtn, color: '#c0392b', opacity: saving ? 0.5 : 1 }}
+                onClick={remove}
+                disabled={saving}
+              >
+                {saving ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
           </div>
         ) : (
           <p style={{ fontSize: 14, color: 'var(--tx2)', margin: 0, fontFamily: '"DM Sans",system-ui,sans-serif' }}>
@@ -741,6 +771,27 @@ function ScreenerSection({ study, qc }) {
 
         {err && <p style={{ ...S.errMsg, marginTop: 10 }}>{err}</p>}
       </div>
+
+      {/* previewMode: nothing is written — no screener_results row, no draft. */}
+      {previewing && study?.screener && (
+        <div style={S.screenerPreview}>
+          <div style={S.screenerPreviewBar}>
+            <span style={{ fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' }}>
+              Preview: {attached?.name ?? 'screener'}, as participants see it. Nothing is saved.
+            </span>
+            <button style={S.actionBtn} onClick={() => setPreviewing(false)}>Close ✕</button>
+          </div>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', background: 'var(--bg)' }}>
+            <ScreenerPage
+              study={{ id: 'preview', screener: study.screener }}
+              participant={{ id: 'preview' }}
+              supabaseClient={supabase}
+              previewMode={true}
+              onPass={() => setPreviewing(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1383,6 +1434,8 @@ const S = {
   actionBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--tx2)', padding: 0, fontFamily: '"DM Sans",system-ui,sans-serif' },
   btnPrimary:    { display: 'inline-block', background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   overlay:       { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  screenerPreview:    { position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', overflowY: 'auto', background: 'var(--bg)' },
+  screenerPreviewBar: { background: '#fff', borderBottom: '1px solid var(--bd)', padding: '8px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexShrink: 0, position: 'sticky', top: 0, zIndex: 201 },
   dialog:        { background: '#fff', borderRadius: 14, padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' },
   dialogTitle:   { fontFamily: '"DM Serif Display",Georgia,serif', fontSize: 28, fontWeight: 400, color: 'var(--tx)', margin: '0 0 10px' },
   formCard:      { background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 10, padding: '16px 20px' },
