@@ -70,7 +70,9 @@ distinct marker.
 Different testing rigs use different equipment, so the session-setup screen has a
 **Trigger device** dropdown (`TRIGGER_DEVICES` in `constants.js`):
 
-- `AD_BBT` (default) — AD Instruments PowerLab + BBTK. **Implemented.**
+- `AD_BBT` — AD Instruments PowerLab + BBTK. **Implemented; disabled in the
+  dropdown since 2026-10-27** (it was the default, and Biopac sessions ran with
+  it left selected). There is no default device now; the RA must pick one.
 - `Biopac_Left` — Biopac via parallel-port card, left rig. **Stub only.**
 - `Biopac_Right` — Biopac via parallel-port card, right rig. **Stub only.**
 

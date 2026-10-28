@@ -53,12 +53,20 @@ export const QUEST_PRIOR_SD        = 0.25;
 //                  port 0xD030; event codes sent as-is (code * 1).
 // `address`/`shift` are present only on the Biopac entries; their presence is
 // what marks a device as parallel-port (vs. AD_BBT's Web Serial path).
+//
+// `disabled` keeps an entry's protocol on record but makes it unselectable.
+// AD_BBT was disabled 2026-10-27: it was the default, and 12 fall sessions on
+// the Biopac rigs ran with it still selected, so their .acq recordings carry no
+// event codes at all. Re-enable it (drop the flag) if a PowerLab rig returns.
+//
+// There is no default device: the RA must choose this computer's rig every
+// time, since a page reload would otherwise put a stale default back.
 export const TRIGGER_DEVICES = [
-  { value: 'AD_BBT',       label: 'AD Instruments + Black Box ToolKit (AD_BBT)' },
+  { value: 'AD_BBT',       label: 'AD Instruments + Black Box ToolKit (AD_BBT)', disabled: true },
   { value: 'Biopac_Left',  label: 'Biopac — Left rig',  address: 0xDFF8, shift: 16 },
   { value: 'Biopac_Right', label: 'Biopac — Right rig', address: 0xD030, shift: 1  },
 ];
-export const DEFAULT_TRIGGER_DEVICE = 'AD_BBT';
+export const DEFAULT_TRIGGER_DEVICE = '';
 
 // Biopac parallel-port triggers cannot be driven from the browser; they are
 // relayed through a local helper (scripts/parallel_server.py) that exposes

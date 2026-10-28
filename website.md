@@ -2242,11 +2242,13 @@ Codes 10/11/12 are reused across Phase 2 and Phase 3. The preceding phase code (
 
 ### Trigger devices & transports
 
-Each testing rig uses different physio equipment, so the RA picks a **trigger device** on the connect screen (`COM_CONNECT`) — *before* connecting, since the device determines the transport. `TRIGGER_DEVICES` (in `constants.js`); default `AD_BBT`. The choice is persisted to `belt_sessions.trigger_device`.
+Each testing rig uses different physio equipment, so the RA picks a **trigger device** on the connect screen (`COM_CONNECT`) — *before* connecting, since the device determines the transport. `TRIGGER_DEVICES` (in `constants.js`). **There is no default (since 2026-10-27)**: the dropdown starts on *Choose a rig…* and the connect button stays disabled until an enabled device is picked. The choice is persisted to `belt_sessions.trigger_device`.
+
+**`AD_BBT` is disabled, not deleted (2026-10-27).** An entry with `disabled: true` keeps its protocol on record but cannot be selected. AD_BBT had been the default, and 12 fall sessions on the Biopac rigs ran with it still selected (Tuesday afternoons, Oct 6/13/20), so their `.acq` recordings carry no event codes, not even the setup cascade, and cannot be time-locked. Drop the flag if a PowerLab rig returns.
 
 | Device | Transport | Encoding |
 |---|---|---|
-| `AD_BBT` (default) | Web Serial COM box (Black Box ToolKit USB TTL Module) | 2-char uppercase hex per code, `"RR"` init on connect, `"00"` clear |
+| `AD_BBT` (**disabled**) | Web Serial COM box (Black Box ToolKit USB TTL Module) | 2-char uppercase hex per code, `"RR"` init on connect, `"00"` clear |
 | `Biopac_Right` | Parallel-port card via local helper, port `0xD030` | code sent as-is (`shift: 1`) |
 | `Biopac_Left` | Parallel-port card via local helper, port `0xDFF8` | code on the high nibble (`shift: 16`, i.e. `code × 16`) |
 
@@ -2457,7 +2459,7 @@ All migrations use `ADD COLUMN IF NOT EXISTS` — safe to run on existing data.
 
 Integrated. All source files updated at `src/games/BreathBelt/`. Route registered at `/games/breath-belt`. Run migrations in order: `belt_schema.sql`, `belt_correspondence_migration.sql`, `belt_mlr_migration.sql`, `belt_sync_metrics_migration.sql` — all require manual execution in the Supabase SQL editor before running in the lab. Requires Chrome or Edge with Web Bluetooth enabled.
 
-All three trigger devices are implemented: AD_BBT (Web Serial) is production-verified; Biopac_Left and Biopac_Right (parallel-port via `scripts/parallel_server.py`) have been verified on the parallel port. The Biopac rigs must run `parallel_server.py` (with its inpout DLL) and be opened from the local dev server (`http://localhost:5173`) to avoid the https mixed-content block.
+All three trigger devices are implemented: AD_BBT (Web Serial) is production-verified, and disabled in the dropdown since 2026-10-27 (see *Trigger devices & transports*); Biopac_Left and Biopac_Right (parallel-port via `scripts/parallel_server.py`) have been verified on the parallel port. The Biopac rigs must run `parallel_server.py` (with its inpout DLL) and be opened from the local dev server (`http://localhost:5173`) to avoid the https mixed-content block.
 
 ---
 
