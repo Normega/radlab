@@ -139,7 +139,7 @@ export default function PhysioSetupStep({ enrollment, onComplete, isSimMode = fa
 
   // ── COM_CONNECT ─────────────────────────────────────────────────────────────
   if (phase === P.COM_CONNECT) {
-    const dev      = TRIGGER_DEVICES.find(d => d.value === localTriggerDevice)
+    const dev      = TRIGGER_DEVICES.find(d => d.value === localTriggerDevice && !d.disabled)
     const isBiopac = !!dev && dev.address != null
 
     if (belt.comState === 'CONNECTED') {
@@ -169,7 +169,9 @@ export default function PhysioSetupStep({ enrollment, onComplete, isSimMode = fa
       <Layout title={isBiopac ? 'Check parallel server' : 'Connect COM port'}>
         <Screen>
           <p className="text-center" style={{ color: 'var(--tx2)', fontSize: 'var(--fs-body)', maxWidth: 400 }}>
-            {isBiopac
+            {!dev
+              ? 'Choose the rig this computer records on.'
+              : isBiopac
               ? 'Confirm the local parallel-port server is running before starting triggers.'
               : 'Connect to the physio equipment COM port to enable trial triggers.'}
           </p>
@@ -189,8 +191,11 @@ export default function PhysioSetupStep({ enrollment, onComplete, isSimMode = fa
                 padding: '10px 14px', width: '100%',
               }}
             >
+              <option value="" disabled>Choose a rig…</option>
               {TRIGGER_DEVICES.map(d => (
-                <option key={d.value} value={d.value}>{d.label}</option>
+                <option key={d.value} value={d.value} disabled={d.disabled}>
+                  {d.disabled ? `${d.label} — disabled` : d.label}
+                </option>
               ))}
             </select>
             <p style={{ fontFamily: 'DM Sans', fontSize: 'var(--fs-body-sm)', color: 'var(--tx3)', margin: 0 }}>
@@ -206,7 +211,7 @@ export default function PhysioSetupStep({ enrollment, onComplete, isSimMode = fa
               belt.setTriggerDevice(localTriggerDevice)
               if (isBiopac) belt.connectBiopac(); else belt.connectCOM()
             }}
-            disabled={belt.comState === 'CONNECTING'}
+            disabled={belt.comState === 'CONNECTING' || !dev}
           >
             {belt.comState === 'CONNECTING'
               ? (isBiopac ? 'Checking…' : 'Connecting…')
