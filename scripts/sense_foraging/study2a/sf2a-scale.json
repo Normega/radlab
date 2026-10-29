@@ -2437,8 +2437,7 @@
       "id": "sf2a_16",
       "source": "sfc_2",
       "factor": "Understanding",
-      "reverse_keyed": true,
-      "study1_item": "sfc_2"
+      "reverse_keyed": true
     },
     {
       "id": "sf2a_17",
@@ -2640,57 +2639,49 @@
       "id": "sf2a_49",
       "source": "sfc_10",
       "factor": "Letting be",
-      "reverse_keyed": false,
-      "study1_item": "sfc_10"
+      "reverse_keyed": false
     },
     {
       "id": "sf2a_50",
       "source": "sfc_12",
       "factor": "Letting be",
-      "reverse_keyed": true,
-      "study1_item": "sfc_12"
+      "reverse_keyed": true
     },
     {
       "id": "sf2a_51",
       "source": "sfc_14",
       "factor": "Letting be",
-      "reverse_keyed": true,
-      "study1_item": "sfc_14"
+      "reverse_keyed": true
     },
     {
       "id": "sf2a_52",
       "source": "sfc_26",
       "factor": "Letting be",
-      "reverse_keyed": false,
-      "study1_item": "sfc_26"
+      "reverse_keyed": false
     },
     {
       "id": "sf2a_53",
       "source": "sfc_28",
       "factor": "Letting be",
-      "reverse_keyed": false,
-      "study1_item": "sfc_28"
+      "reverse_keyed": false
     },
     {
       "id": "sf2a_54",
       "source": "sfc_29",
       "factor": "Letting be",
-      "reverse_keyed": false,
-      "study1_item": "sfc_29"
+      "reverse_keyed": false
     },
     {
       "id": "sf2a_55",
       "source": "sfc_30",
       "factor": "Letting be",
-      "reverse_keyed": true,
-      "study1_item": "sfc_30"
+      "reverse_keyed": true
     },
     {
       "id": "sf2a_56",
       "source": "sfc_31",
       "factor": "Letting be",
-      "reverse_keyed": true,
-      "study1_item": "sfc_31"
+      "reverse_keyed": true
     },
     {
       "id": "sf2a_57",

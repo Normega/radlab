@@ -19,7 +19,7 @@ Session:
 
 Ids. Exports name a questionnaire's columns by the id's trailing number, and an id names one
 wording, so the 58 statements are sf2a_01 to sf2a_58 (their item-review id is `source`; the
-16 still in Study 1 wording also carry `study1_item`). The end items keep their sf6_ ids:
+7 still in Study 1 wording also carry `study1_item`). The end items keep their sf6_ ids:
 they are Study 1's wording. Vignettes are vig_1 to vig_9 (V1 to V9) and vig_self.
 
 Usage:  python scripts/sense_foraging/build_study2a.py
@@ -132,6 +132,9 @@ def build_scale():
     d['interleave'] = spec
     d['items'] = [{'id': it['pid'], 'source': it['id'], 'factor': it['factor'], 'reverse_keyed': it['r'],
                    **({'study1_item': it['id']} if it.get('study1') else {})} for it in ITEMS]
+    # Only Study 1's own ids (sf6_) can be in its wording; an sfc_ statement unchanged since the
+    # candidate list never ran in Study 1.
+    assert all(i['study1_item'].startswith('sf6_') for i in d['items'] if 'study1_item' in i)
     d['attention_checks'] = {cid: v for cid, v in CHECKS.values()}
     d['factors'] = {f['name']: {'definition': f['def'], 'item_ids': [PID[it['id']] for it in f['items']]} for f in DATA['factors']}
     return d
