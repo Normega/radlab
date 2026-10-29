@@ -5064,7 +5064,7 @@ a "pending REB approval of the amendment" banner**: nothing recruits until the a
   6. debrief.
 - **Ids.** Exports name a questionnaire's columns by an id's trailing number, and an id names one wording. So the scale's
   statements are `sf2a_01`–`sf2a_58`; the definition's `items` gives each one's item-review id (`source`), factor, keying,
-  and `study1_item` for the 16 still in Study 1 wording. `sf2a-end` keeps `sf6_` ids, because its wording is Study 1's.
+  and `study1_item` for the 7 still in Study 1 wording (all `sf6_`). `sf2a-end` keeps `sf6_` ids, because its wording is Study 1's.
   Vignettes are `vig_1`–`vig_9` (= V1–V9; `vignettes` gives kind and side).
 - **Source of the wording**: senseforaging.com/research/itemset round 6, snapshotted in `study2a/items.json` from the
   Handbook's `src/pages/research/itemSetData.json` (also behind /research/study2a/list and /take). Rebuild from a fresh copy

@@ -234,8 +234,7 @@
      "text": "My attention works the same way whether I am stressed or relaxed",
      "r": true,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "U1",
@@ -494,64 +493,56 @@
      "text": "When something feels unpleasant, I first notice it without trying to change it",
      "r": false,
      "sense": "in",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_12",
      "text": "When I notice something, I start explaining it to myself straight away",
      "r": true,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_14",
      "text": "When I notice something, I have trouble just letting it be",
      "r": true,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_26",
      "text": "When I notice a sensation, I take it in for a moment before deciding what to do about it",
      "r": false,
      "sense": "in",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_28",
      "text": "When something unexpected happens, I pause and take in what is happening before I react",
      "r": false,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_29",
      "text": "When I notice a problem, I let it be for a moment before trying to fix it",
      "r": false,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_30",
      "text": "As soon as I notice something, I feel I have to do something about it",
      "r": true,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "sfc_31",
      "text": "I react to things before I have really taken them in",
      "r": true,
      "sense": "",
-     "src": "Study 1 pool",
-     "study1": true
+     "src": "Study 1 pool"
     },
     {
      "id": "L15",
