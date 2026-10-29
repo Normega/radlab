@@ -1,6 +1,5 @@
 BEGIN;
-WITH c AS (INSERT INTO study_consent_forms (study_id, html_content) VALUES ('33d012fb-e5c3-5e46-a147-e565c04666e6', '<p style="border:2px solid #c00000;border-radius:12px;padding:8px 16px;color:#c00000"><strong>Study 2a draft, pending REB approval of the amendment.</strong> Not recruiting.</p>
-<p>UNIVERSITY OF TORONTO</p>
+WITH c AS (INSERT INTO study_consent_forms (study_id, html_content) VALUES ('33d012fb-e5c3-5e46-a147-e565c04666e6', '<p>UNIVERSITY OF TORONTO</p>
 <p>Department of Psychology</p>
 <p>Consent to Participate in Research</p>
 <p>Development and Validation of the Sense Foraging Scale</p>
@@ -46,8 +45,7 @@ WITH c AS (INSERT INTO study_consent_forms (study_id, html_content) VALUES ('33d
 </ul>
 <h3>Repository / Future Use Consent (optional)</h3>
 <p>This is a separate, optional decision and does not affect your participation above.</p>') RETURNING id),
-     d AS (INSERT INTO study_debrief_forms (study_id, html_content) VALUES ('33d012fb-e5c3-5e46-a147-e565c04666e6', '<p style="border:2px solid #c00000;border-radius:12px;padding:8px 16px;color:#c00000"><strong>Study 2a draft, pending REB approval of the amendment.</strong> Not recruiting.</p>
-<p>UNIVERSITY OF TORONTO</p>
+     d AS (INSERT INTO study_debrief_forms (study_id, html_content) VALUES ('33d012fb-e5c3-5e46-a147-e565c04666e6', '<p>UNIVERSITY OF TORONTO</p>
 <p>Department of Psychology</p>
 <p>Debriefing Statement</p>
 <p>Development and Validation of the Sense Foraging Scale</p>

@@ -1,7 +1,7 @@
 """Study 2a consent and debrief: Study 1's approved forms (Rev3 amendment, approved
 2026-10-11) with the edits Study 2a needs: the vignettes and self-rating, 64 statements
-with three checks, IUS-12, about 15 minutes. Drafts: they carry a banner until the
-amendment covering 2a is approved.
+with three checks, IUS-12, about 15 minutes. The amendment covering 2a was approved
+2026-10-29 (Norm), so the forms carry no banner.
 
 As in build_study1_forms.py, each edit replaces one whole approved paragraph and the
 build fails unless that paragraph is found verbatim; the changes are written to
@@ -21,8 +21,9 @@ from build_study1_forms import CONSENT as S1_CONSENT, DEBRIEF as S1_DEBRIEF  # n
 HERE = Path(__file__).parent
 OUT = HERE / 'study2a'
 STUDY = json.loads((OUT / 'ids.json').read_text(encoding='utf-8'))['study']
-BANNER = ('<p style="border:2px solid #c00000;border-radius:12px;padding:8px 16px;color:#c00000">'
-          '<strong>Study 2a draft, pending REB approval of the amendment.</strong> Not recruiting.</p>')
+# Until the amendment was approved (2026-10-29, Norm) the forms opened with "Study 2a draft,
+# pending REB approval of the amendment. Not recruiting."
+BANNER = ''
 S1 = {w: n for w, _, n in S1_CONSENT + S1_DEBRIEF}   # Study 1's approved paragraphs, keyed by heading
 
 CONSENT = [
@@ -87,7 +88,7 @@ def apply(doc, edits):
     for where, old, new in edits:
         assert doc.count(para(old)) == 1, f'approved paragraph not found verbatim: {where}'
         doc = doc.replace(para(old), para(new))
-    return BANNER + '\n' + doc
+    return (BANNER + '\n' if BANNER else '') + doc
 
 
 def main():
