@@ -1,0 +1,492 @@
+{
+  "slug": "sf2a-vignettes",
+  "name": "Two ways of noticing",
+  "questionnaire_type": "composable",
+  "instructions": "People notice things in different ways. Our brains can toggle between two modes: a doing mode, which is goal-directed and uses knowledge we already have, and a sensing mode, which explores our sensory world to discover new things.\n\nIn the doing mode, we look or listen to find something, like our keys, or to check that all is well, like a body ache or a strange sound outside. In the sensing mode, we look, listen, smell, taste or feel just out of curiosity, taking in whatever is there. Everyone does both at times, and neither is better. There are no right or wrong answers.",
+  "pages": [
+    {
+      "id": "vig_p1",
+      "components": [
+        {
+          "id": "vig_stem_1",
+          "type": "information",
+          "title": "How much is this person in the doing or sensing mode?",
+          "body": "Rate each one from 1 Doing mode to 6 Sensing mode.",
+          "image_url": "",
+          "image_alt": ""
+        },
+        {
+          "id": "vig_1",
+          "type": "likert",
+          "question": "Priya walks along the shelves in the drug store, reading labels until finding the brand on her list.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "vig_2",
+          "type": "likert",
+          "question": "Walking home late, Riley keeps listening for footsteps and watching the shadows on the empty street.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "vig_3",
+          "type": "likert",
+          "question": "Waiting for a bus, Sam watches the light move on the wet road and listens to the cars go by.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "vig_p2",
+      "components": [
+        {
+          "id": "vig_stem_2",
+          "type": "information",
+          "title": "How much is this person in the doing or sensing mode?",
+          "body": "Rate each one from 1 Doing mode to 6 Sensing mode.",
+          "image_url": "",
+          "image_alt": ""
+        },
+        {
+          "id": "vig_4",
+          "type": "likert",
+          "question": "Lee is photographing the light on a building, then stops trying for the perfect shot and just takes in the view.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "vig_5",
+          "type": "likert",
+          "question": "In line at the ATM, Alex barely sees the street, busy working out a budget for next summer’s holiday.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "vig_6",
+          "type": "likert",
+          "question": "Walking down the hallway, Maya notices how each breath feels, then the warmth spreading through both hands.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "vig_p3",
+      "components": [
+        {
+          "id": "vig_stem_3",
+          "type": "information",
+          "title": "How much is this person in the doing or sensing mode?",
+          "body": "Rate each one from 1 Doing mode to 6 Sensing mode.",
+          "image_url": "",
+          "image_alt": ""
+        },
+        {
+          "id": "vig_7",
+          "type": "likert",
+          "question": "Jamie feels a racing heart and keeps checking it, to make sure nothing is wrong.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "vig_8",
+          "type": "likert",
+          "question": "Drinking a morning coffee, Kai notices its bitterness and warmth, and that it tastes different from usual.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "vig_9",
+          "type": "likert",
+          "question": "In a noisy room, Noor strains to catch a phone number in a voicemail.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "vig_p4",
+      "components": [
+        {
+          "id": "vig_self_head",
+          "type": "information",
+          "title": "Now, about you",
+          "body": "",
+          "image_url": "",
+          "image_alt": ""
+        },
+        {
+          "id": "vig_self",
+          "type": "likert",
+          "question": "The last time you had a few minutes with nothing to do, how much were you in the doing or sensing mode?",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Doing mode"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6 Sensing mode"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "interleave": {
+    "items": [
+      "vig_1",
+      "vig_2",
+      "vig_3",
+      "vig_4",
+      "vig_5",
+      "vig_6",
+      "vig_7",
+      "vig_8",
+      "vig_9"
+    ],
+    "page_sizes": [
+      3,
+      3,
+      3
+    ],
+    "groups": [
+      {
+        "items": [
+          "vig_3",
+          "vig_4",
+          "vig_6",
+          "vig_8"
+        ],
+        "min_gap": 1,
+        "max_per_page": 2,
+        "min_per_page": 1
+      },
+      {
+        "items": [
+          "vig_1",
+          "vig_2",
+          "vig_5",
+          "vig_7",
+          "vig_9"
+        ],
+        "min_gap": 1,
+        "max_per_page": 2,
+        "min_per_page": 1
+      }
+    ]
+  },
+  "vignettes": [
+    {
+      "id": "vig_1",
+      "source": "V1",
+      "kind": "Doing: finding something",
+      "sensing": false
+    },
+    {
+      "id": "vig_2",
+      "source": "V2",
+      "kind": "Doing: keeping watch",
+      "sensing": false
+    },
+    {
+      "id": "vig_3",
+      "source": "V3",
+      "kind": "Sensing: around me",
+      "sensing": true
+    },
+    {
+      "id": "vig_4",
+      "source": "V4",
+      "kind": "Sensing: letting go of a goal",
+      "sensing": true
+    },
+    {
+      "id": "vig_5",
+      "source": "V5",
+      "kind": "Doing: planning",
+      "sensing": false
+    },
+    {
+      "id": "vig_6",
+      "source": "V6",
+      "kind": "Sensing: in the body",
+      "sensing": true
+    },
+    {
+      "id": "vig_7",
+      "source": "V7",
+      "kind": "Doing: checking the body",
+      "sensing": false
+    },
+    {
+      "id": "vig_8",
+      "source": "V8",
+      "kind": "Sensing: taste",
+      "sensing": true
+    },
+    {
+      "id": "vig_9",
+      "source": "V9",
+      "kind": "Doing: finding something",
+      "sensing": false
+    }
+  ],
+  "scoring": {
+    "note": "Not a scale. Separation = mean(sensing vignettes) - mean(doing vignettes), 1 = Doing mode, 6 = Sensing mode. vig_self is the self-rating on the same anchors."
+  }
+}

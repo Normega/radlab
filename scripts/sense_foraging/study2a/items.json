@@ -1,0 +1,588 @@
+{
+ "asOf": "28 October 2026",
+ "intro": [
+  "People notice things in different ways. Our brains can toggle between two modes: a doing mode, which is goal-directed and uses knowledge we already have, and a sensing mode, which explores our sensory world to discover new things.",
+  "In the doing mode, we look or listen to find something, like our keys, or to check that all is well, like a body ache or a strange sound outside. In the sensing mode, we look, listen, smell, taste or feel just out of curiosity, taking in whatever is there. Everyone does both at times, and neither is better. There are no right or wrong answers."
+ ],
+ "vignettes": [
+  {
+   "id": "V1",
+   "kind": "Doing: finding something",
+   "text": "Priya walks along the shelves in the drug store, reading labels until finding the brand on her list.",
+   "sensing": false
+  },
+  {
+   "id": "V2",
+   "kind": "Doing: keeping watch",
+   "text": "Walking home late, Riley keeps listening for footsteps and watching the shadows on the empty street.",
+   "sensing": false
+  },
+  {
+   "id": "V3",
+   "kind": "Sensing: around me",
+   "text": "Waiting for a bus, Sam watches the light move on the wet road and listens to the cars go by.",
+   "sensing": true
+  },
+  {
+   "id": "V4",
+   "kind": "Sensing: letting go of a goal",
+   "text": "Lee is photographing the light on a building, then stops trying for the perfect shot and just takes in the view.",
+   "sensing": true
+  },
+  {
+   "id": "V5",
+   "kind": "Doing: planning",
+   "text": "In line at the ATM, Alex barely sees the street, busy working out a budget for next summer’s holiday.",
+   "sensing": false
+  },
+  {
+   "id": "V6",
+   "kind": "Sensing: in the body",
+   "text": "Walking down the hallway, Maya notices how each breath feels, then the warmth spreading through both hands.",
+   "sensing": true
+  },
+  {
+   "id": "V7",
+   "kind": "Doing: checking the body",
+   "text": "Jamie feels a racing heart and keeps checking it, to make sure nothing is wrong.",
+   "sensing": false
+  },
+  {
+   "id": "V8",
+   "kind": "Sensing: taste",
+   "text": "Drinking a morning coffee, Kai notices its bitterness and warmth, and that it tastes different from usual.",
+   "sensing": true
+  },
+  {
+   "id": "V9",
+   "kind": "Doing: finding something",
+   "text": "In a noisy room, Noor strains to catch a phone number in a voicemail.",
+   "sensing": false
+  }
+ ],
+ "stem": "How much is this person in the doing or sensing mode?",
+ "anchors": [
+  "Doing mode",
+  "Sensing mode"
+ ],
+ "selfRating": "The last time you had a few minutes with nothing to do, how much were you in the doing or sensing mode?",
+ "checks": [
+  {
+   "id": "AC1",
+   "text": "To show that you are reading each statement, please select “Disagree” for this one."
+  },
+  {
+   "id": "AC2",
+   "text": "To show that you are reading each statement, please select “Agree” for this one."
+  },
+  {
+   "id": "AC3",
+   "text": "To show that you are reading each statement, please select “Strongly disagree” for this one."
+  }
+ ],
+ "end": [
+  {
+   "id": "sf6_7",
+   "text": "Once I notice I have slipped into the doing mode without meaning to, I can shift back to sensing"
+  },
+  {
+   "id": "sf6_8",
+   "text": "I can move into the sensing mode in new or unfamiliar places"
+  },
+  {
+   "id": "sf6_12",
+   "text": "Returning to the sensing mode feels worth prioritizing, even when I am busy"
+  },
+  {
+   "id": "sf6_18",
+   "text": "When stress narrows my focus, returning to the sensing mode matters even more to me"
+  },
+  {
+   "id": "sf6_27",
+   "text": "I enjoy exploring the world through my senses"
+  },
+  {
+   "id": "sf6_11",
+   "text": "I value time spent in the sensing mode, rather than always focusing on getting things done"
+  }
+ ],
+ "factors": [
+  {
+   "key": "access",
+   "name": "Access",
+   "role": "Primary score, with Valuing",
+   "def": "Knowing that curious noticing is open to you, around you and in your body, and being able to turn to it.",
+   "items": [
+    {
+     "id": "sf6_9",
+     "text": "Moving into the sensing mode comes easily to me",
+     "r": false,
+     "sense": "",
+     "src": "Short form",
+     "study1": true
+    },
+    {
+     "id": "sf6_36",
+     "text": "Moving into the sensing mode is a struggle for me",
+     "r": true,
+     "sense": "",
+     "src": "Short form",
+     "study1": true
+    },
+    {
+     "id": "sf6_35",
+     "text": "I question my ability to move into the sensing mode",
+     "r": true,
+     "sense": "",
+     "src": "Short form",
+     "study1": true
+    },
+    {
+     "id": "sf6_7",
+     "text": "When I notice I am caught up in a task, I can switch to the sights and sounds around me",
+     "r": false,
+     "sense": "out",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_8",
+     "text": "In a new place, I can take in what is there, not just look for what I need to do next",
+     "r": false,
+     "sense": "out",
+     "src": "Short form"
+    },
+    {
+     "id": "sfc_21",
+     "text": "Even in a stressful moment, I can be curious about what I see and hear around me",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_22",
+     "text": "Even in dull places, like a waiting room, I can find something interesting to look at or listen to",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_23",
+     "text": "I can tell which moments in my day leave room for exploring what is around me",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "N2",
+     "text": "I often slip into the doing mode without meaning to",
+     "r": true,
+     "sense": "",
+     "src": "New"
+    },
+    {
+     "id": "A9",
+     "text": "I can pay attention to what I’m feeling in my body in new or unfamiliar places",
+     "r": false,
+     "sense": "in",
+     "src": "New"
+    }
+   ]
+  },
+  {
+   "key": "understanding",
+   "name": "Understanding",
+   "role": "Secondary score",
+   "def": "Learning by sensing: what noticing shows you about yourself and a situation, including how stress pulls you into rushing and fixing.",
+   "items": [
+    {
+     "id": "sf6_3",
+     "text": "For me, exploring what I see and hear is a different state of mind from planning and fixing",
+     "r": false,
+     "sense": "out",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_15",
+     "text": "When I am stressed, I notice myself falling into my usual way of rushing to fix things",
+     "r": false,
+     "sense": "",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_37",
+     "text": "The sensing and doing modes seem pretty similar to me",
+     "r": true,
+     "sense": "",
+     "src": "Short form"
+    },
+    {
+     "id": "sfc_8",
+     "text": "When I try to use the sensing mode, I notice how easily I shift back into thinking about what I have to do next",
+     "r": false,
+     "sense": "",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_9",
+     "text": "I don’t notice that I have been rushing to get things done until much later",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_2",
+     "text": "My attention works the same way whether I am stressed or relaxed",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "U1",
+     "text": "When I am stressed, a moment of looking around out of curiosity makes me less likely to react as usual",
+     "r": false,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "U3",
+     "text": "When I pause to notice my body, I can feel how much I had been rushing",
+     "r": false,
+     "sense": "in",
+     "src": "New"
+    },
+    {
+     "id": "U4",
+     "text": "Even when I pause to take in what is around me, I react to stress the same way",
+     "r": true,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "U6",
+     "text": "When I feel unsafe, I lose my curiosity about what is around me",
+     "r": false,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "U7",
+     "text": "Noticing what I can see, hear or feel often shows me something about a situation I had not thought of",
+     "r": false,
+     "sense": "mix",
+     "src": "New"
+    }
+   ]
+  },
+  {
+   "key": "valuing",
+   "name": "Valuing",
+   "role": "Primary score, with Access",
+   "def": "Treating time spent noticing out of curiosity as worthwhile, and enjoying it.",
+   "items": [
+    {
+     "id": "sf6_31",
+     "text": "Seeing something from a new or unexpected perspective feels valuable to me in its own right",
+     "r": false,
+     "sense": "",
+     "src": "Short form",
+     "study1": true
+    },
+    {
+     "id": "sf6_12",
+     "text": "Even when I am busy, it feels worth pausing to notice the sights and sounds around me",
+     "r": false,
+     "sense": "out",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_18",
+     "text": "When stress narrows my focus, looking around out of curiosity matters even more to me",
+     "r": false,
+     "sense": "out",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_27",
+     "text": "I enjoy exploring the sights, sounds and textures of ordinary moments",
+     "r": false,
+     "sense": "mix",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_11",
+     "text": "I value time spent just looking and listening, even when there is work to do",
+     "r": false,
+     "sense": "out",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_44",
+     "text": "When I am busy, returning to the sensing mode feels like a low priority",
+     "r": true,
+     "sense": "",
+     "src": "Short form",
+     "study1": true
+    },
+    {
+     "id": "sfc_24",
+     "text": "Looking closely at ordinary things around me often gives me a sense of wonder",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_25",
+     "text": "When I look around out of curiosity, I enjoy noticing things I did not expect",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_34",
+     "text": "When I try to spend time in the sensing mode, I feel I should be doing something more useful",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "V10",
+     "text": "I enjoy taking a moment just to notice how my body feels, like my breathing, the soles of my feet, or posture",
+     "r": false,
+     "sense": "in",
+     "src": "New"
+    },
+    {
+     "id": "V11",
+     "text": "I enjoy noticing smells in ordinary places, like rain or coffee",
+     "r": false,
+     "sense": "ts",
+     "src": "New"
+    },
+    {
+     "id": "sf6_43",
+     "text": "Only time spent getting things done feels worthwhile to me",
+     "r": true,
+     "sense": "",
+     "src": "Short form",
+     "study1": true
+    }
+   ]
+  },
+  {
+   "key": "forage",
+   "name": "Forage",
+   "role": "Companion measure of practice",
+   "def": "Habits of curious noticing in ordinary moments, around you and in your body. No amounts or frequencies.",
+   "items": [
+    {
+     "id": "sfc_18",
+     "text": "Even on rushed days, I find moments to notice the sky or the sounds around me",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_17",
+     "text": "In familiar places, I get curious about details I have not noticed before",
+     "r": false,
+     "sense": "out",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_36",
+     "text": "Even in chores I have done many times, I notice sounds, smells or textures I had missed",
+     "r": false,
+     "sense": "mix",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sfc_x2",
+     "text": "It never seems to be the right time to go into the sensing mode",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "N7",
+     "text": "When I am waiting somewhere, I look around out of curiosity instead of reaching for my phone",
+     "r": false,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "sfc_35",
+     "text": "During my day, I take a moment to explore what I can see, hear and touch",
+     "r": false,
+     "sense": "mix",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "N4",
+     "text": "As I go about my day, I notice the light, colours and sounds around me with interest",
+     "r": false,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "N5",
+     "text": "I have small habits of noticing what is around me, like watching the clouds on my way somewhere",
+     "r": false,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "N6",
+     "text": "When I walk somewhere familiar, I notice very little of what I pass",
+     "r": true,
+     "sense": "out",
+     "src": "New"
+    },
+    {
+     "id": "F10",
+     "text": "During my day, I notice how my breathing or body feels, just out of curiosity",
+     "r": false,
+     "sense": "in",
+     "src": "New"
+    },
+    {
+     "id": "F11",
+     "text": "When I eat something familiar, I notice whether I still like it as much as I expect",
+     "r": false,
+     "sense": "ts",
+     "src": "New"
+    }
+   ]
+  },
+  {
+   "key": "letting",
+   "name": "Letting be",
+   "role": "Secondary score",
+   "def": "Staying with what is noticed before explaining, resolving or acting on it. The pause can be brief: letting something be for a moment, then acting when you choose, still counts. Its opposite is the pull to add meaning, predict what comes next, or respond straight away.",
+   "items": [
+    {
+     "id": "sfc_32",
+     "text": "I can pause when something starts to bother me, before I do anything about it",
+     "r": false,
+     "sense": "",
+     "src": "Study 1 pool"
+    },
+    {
+     "id": "sf6_40",
+     "text": "I need to understand why I feel fleeting sensations in my body",
+     "r": true,
+     "sense": "in",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_47",
+     "text": "I don’t like going to events unless I know the full itinerary",
+     "r": true,
+     "sense": "",
+     "src": "Short form"
+    },
+    {
+     "id": "sf6_21",
+     "text": "I can let a sensation simply be, without figuring out what it means or where it leads",
+     "r": false,
+     "sense": "in",
+     "src": "Short form",
+     "study1": true
+    },
+    {
+     "id": "sfc_10",
+     "text": "When something feels unpleasant, I first notice it without trying to change it",
+     "r": false,
+     "sense": "in",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_12",
+     "text": "When I notice something, I start explaining it to myself straight away",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_14",
+     "text": "When I notice something, I have trouble just letting it be",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_26",
+     "text": "When I notice a sensation, I take it in for a moment before deciding what to do about it",
+     "r": false,
+     "sense": "in",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_28",
+     "text": "When something unexpected happens, I pause and take in what is happening before I react",
+     "r": false,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_29",
+     "text": "When I notice a problem, I let it be for a moment before trying to fix it",
+     "r": false,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_30",
+     "text": "As soon as I notice something, I feel I have to do something about it",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "sfc_31",
+     "text": "I react to things before I have really taken them in",
+     "r": true,
+     "sense": "",
+     "src": "Study 1 pool",
+     "study1": true
+    },
+    {
+     "id": "L15",
+     "text": "When a sensation in my body is hard to name, I stay curious about it for a while",
+     "r": false,
+     "sense": "in",
+     "src": "New"
+    },
+    {
+     "id": "sfc_13",
+     "text": "When I notice a sensation, my mind quickly moves on to thoughts about it",
+     "r": true,
+     "sense": "in",
+     "src": "Study 1 pool"
+    }
+   ]
+  }
+ ],
+ "dropped": [
+  "sf6_22",
+  "sfc_4",
+  "sfc_x1",
+  "sfc_x3",
+  "U2",
+  "U5",
+  "N1",
+  "N3",
+  "U8",
+  "sfc_3",
+  "sfc_20",
+  "sfc_37",
+  "sfc_15"
+ ]
+}
