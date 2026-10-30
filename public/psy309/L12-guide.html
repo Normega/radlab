@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY309 · L12 · Review and Write</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root { --ink:#141B22; --muted:#5C6773; --accent:#1F5C8B; --ground:#FCFBF8; --line:#DCE2E6; --warn:#B5540F; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.55; }
+  main { max-width:760px; margin:0 auto; padding:40px 16px 80px; }
+  .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
+            text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:30px; margin:0 0 14px; }
+  h2 { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:14px; letter-spacing:1px;
+       text-transform:uppercase; color:var(--accent); margin:30px 0 8px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-top:16px; background:#fff; }
+  .warn { border-left:4px solid var(--warn); }
+  .tablewrap { overflow-x:auto; }
+  table { border-collapse:collapse; margin:8px 0; font-size:15px; width:100%; }
+  td, th { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:#EEF2F4; }
+  td:first-child { font-weight:700; white-space:nowrap; }
+  code { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; background:#EEF2F4; padding:1px 6px; border-radius:4px; }
+  ul li, ol li { margin:0 0 6px; }
+  .small { font-size:14px; color:var(--muted); }
+  nav a { color:var(--accent); font-weight:600; margin-right:16px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">PSY309 · Lecture 10 · Poster Review Day</p>
+  <h1>Review, then write</h1>
+  <nav><a href="#review">Peer review</a><a href="#paper">Final paper</a></nav>
+
+  <h2 id="review">1 · What the numbers mean</h2>
+  <p>Score each poster out of 10 on both criteria. These are the anchors the class agreed on.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Score</th><th>Engaging</th><th>Informative</th></tr>
+    <tr><td>9–10</td><td>I&#8217;d stop at this poster at a conference and stay for the whole thing</td><td>I could explain their design, result and its limits to someone else afterwards</td></tr>
+    <tr><td>7–8</td><td>Held my attention; clear hook, clean figure</td><td>I understood the study; one or two things I&#8217;d ask about</td></tr>
+    <tr><td>5–6</td><td>I followed it, but drifted; dense or flat in places</td><td>The claim is there but the design or numbers are hazy</td></tr>
+    <tr><td>3–4</td><td>Hard to stay with; text-heavy or disorganized</td><td>I can&#8217;t reconstruct what they did</td></tr>
+    <tr><td>1–2</td><td>I stopped paying attention</td><td>I don&#8217;t know what was studied</td></tr>
+  </table></div>
+
+  <div class="box warn">
+    <p><strong>Judge the communication, not the result.</strong> A modest or null-shaped finding presented honestly can outscore an oversold one.</p>
+    <p><strong>Use the range.</strong> Five posters genuinely differ. Scores far from the group average are checked.</p>
+  </div>
+
+  <h2>Before you submit each review</h2>
+  <ul>
+    <li><strong>Your strength names something.</strong> &#8220;The hook image made the question land before you spoke&#8221;, not &#8220;great job&#8221;.</li>
+    <li><strong>Your improvement is something the author could act on.</strong> &#8220;The axis labels were too small to read&#8221;, not &#8220;figure unclear&#8221;.</li>
+    <li><strong>You criticized the poster, not the study.</strong> Not &#8220;their sample was small&#8221;, but &#8220;did the poster say what its sample can&#8217;t tell us?&#8221;</li>
+  </ul>
+  <p class="small">Five assigned posters on Quercus, due <strong>Friday Dec 4, 11:59 pm</strong>. Anonymous to the author: honest, never cruel.</p>
+
+  <h2 id="paper">2 · The final paper</h2>
+  <p>Due <strong>Tuesday Dec 8, 11:59 pm</strong>: one knitted .docx on Quercus. Two studies, 12–14 pages including figures and tables (title page, references and code appendix don&#8217;t count).</p>
+  <div class="tablewrap"><table>
+    <tr><th>Section</th><th>About</th><th>Marks</th><th>You already drafted it in</th></tr>
+    <tr><td>Introduction</td><td>4 pp</td><td>20</td><td>Practicals 1–2 (literature), 3 (outline, hypotheses); covariate from 4, manipulation from 5</td></tr>
+    <tr><td>Method</td><td>3–4 pp</td><td>20</td><td>Practical 3 (materials, procedure); Participants and power from 4 and 5</td></tr>
+    <tr><td>Results</td><td>2–3 pp</td><td>25</td><td>Study 1 from Practical 4; Study 2 from Practical 5, at your tier</td></tr>
+    <tr><td>General Discussion</td><td>2–3 pp</td><td>20</td><td>New</td></tr>
+    <tr><td>Writing &amp; format</td><td>&#8212;</td><td>10</td><td>The template does the format</td></tr>
+    <tr><td>Code appendix</td><td>&#8212;</td><td>5</td><td>Prints itself; must reproduce every number</td></tr>
+  </table></div>
+  <p class="small">Reusing your own practical text is the intended workflow, not an academic offence. Revise it with the feedback you got.</p>
+
+  <h2>Knit check, before Dec 8</h2>
+  <ol>
+    <li><code>PSY309_template.Rmd</code> and <code>psy309_apa_reference.docx</code> are in the same folder.</li>
+    <li>The Method says the data were <strong>simulated in R</strong>, with the values, the model and the seed.</li>
+    <li>Every statistic in the Results is inline R code. No numbers typed by hand.</li>
+    <li>Figures 1 and 2: saved with <code>ggsave(..., dpi = 300)</code>, shown with <code>knitr::include_graphics()</code>, captioned, referred to in the text.</li>
+    <li>No code in the body. It prints in the appendix.</li>
+    <li>The <strong>Reflection</strong> section is deleted.</li>
+    <li>It knits from a fresh session. Knit after every working session, not on the night.</li>
+  </ol>
+  <p class="small">Something goes wrong? Request Special Consideration before the deadline: no penalty applies if it&#8217;s approved. Otherwise 10% per calendar day.</p>
+</main>
+</body>
+</html>
