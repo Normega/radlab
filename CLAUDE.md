@@ -34,9 +34,33 @@ A *gate* is any condition a participant must meet before a session may reach the
 
 ---
 
+## Every new table gets explicit grants — Supabase stops adding them on 2026-10-30
+
+Until 2026-10-30 a new table in `public` was opened to `anon`, `authenticated` and `service_role` automatically (default privileges), and RLS did the protecting. From that date Supabase stops granting new tables at all, in every existing project (RADlab Main, radlab-academic, senseforaging). **A table created without grants is unreachable through the Data API**: supabase-js, PostgREST and Edge Functions (`service_role` too) get `permission denied` (42501). The migration applies cleanly, so nothing fails until the app silently stops saving.
+
+**So the migration that creates a table also grants it**, right after `ENABLE ROW LEVEL SECURITY` and the policies:
+
+```sql
+-- browser access (signed-in participants and staff), still filtered by RLS
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.your_table TO authenticated;
+-- Edge Functions and scripts
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.your_table TO service_role;
+-- only if a logged-out page genuinely reads or writes it:
+-- GRANT SELECT ON public.your_table TO anon;
+```
+
+- **Grant only what the table needs.** An append-only response table gets `SELECT, INSERT` (rule 5 below), not `UPDATE, DELETE`. `anon` is opt-in, never a default: existing tables are all open to `anon` with RLS as the only barrier, and new ones should not repeat that.
+- **A table reached only through `SECURITY DEFINER` functions** (no direct client or Edge Function access) needs no grant, and one used only by Edge Functions needs only `service_role`. Say so in the migration with a marker line, which the CI check reads instead of requiring both roles: `-- no-api-grants: public.your_table -- reached only via your_rpc()`.
+- **Views and materialized views need the same grants.** Functions are unaffected; their execute privileges are unchanged.
+- Existing tables keep their grants. Do not touch them for this.
+
+`src/lib/tableGrants.test.mjs` fails CI if a migration dated 2026-10-30 or later creates a table or view in `public` without granting it to `authenticated` and `service_role` in the same file, or marking it `no-api-grants`.
+
+---
+
 ## RLS policy pattern for game tables
 
-Every table that game code writes to must have explicit RLS policies for the `authenticated` role. RLS is enabled on all tables by default — **a table with RLS enabled but no matching policy silently blocks all operations**, with no error surfaced to the client.
+Every table that game code writes to must have explicit RLS policies for the `authenticated` role, **and explicit grants (see the section above)**. RLS is enabled on all tables by default — **a table with RLS enabled but no matching policy silently blocks all operations**, with no error surfaced to the client.
 
 ### When adding a new game table, always add at minimum:
 
