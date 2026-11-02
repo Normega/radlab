@@ -1,0 +1,2521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#bfe0f2">
+<title>Kitewright</title>
+<link rel="icon" type="image/svg+xml" href="/RADlab_Logo.svg">
+<!-- Static page outside the bundle: senseforaging.com's two families
+     (Bricolage Grotesque, Literata) from Google Fonts, as in hive.html. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+  /*
+    KITEWRIGHT: a kite workshop where every plan on the wall is a breath
+    (prototype level, 2026-11-01). Chapter 2, "the square sail": the box
+    pattern 3 / 3 / 3 / 3 (also 2.5 and 2), played as Learn (full guide),
+    Echo (turn cues only) and Fly (from memory). Hold "breathe in" (up arrow
+    or I) while breathing in and "breathe out" (down arrow or O) while
+    breathing out; the breath builds the kite one spar per phase, as in
+    Kite 2.0. A sibling of Kite 2.0: that one is the open field, this one is
+    the workshop. Design of record: docs/markdowns/kitewright_design.md (GDD
+    v3, locked), section 10 is this file's spec.
+    Stores at most one localStorage key (kitewright.v1: stars, size, stamped,
+    two settings); sends nothing. ?debug=1 (or ?dev) shows the per-breath
+    panel; ?demo keeps nothing. window.__kw / window.__kitewright drive it
+    headlessly on a virtual clock; __kw.selftest() runs the spec's 24 checks.
+    No CSS transitions or animations: every fade is written from the game's
+    clocks each frame (D63).
+  */
+  :root{
+    color-scheme:light;
+    --ink:#1f2a3d; --ink2:#3a4558; --plate:rgba(255,255,255,.78); --pill:rgba(255,255,255,.85);
+    --paper:#fffdf8; --line:rgba(31,42,61,.25); --denim:#8cb2dd; --denim-d:#245282;
+    --display:'Bricolage Grotesque',system-ui,sans-serif;
+    --serif:'Literata',Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  html,body{margin:0;height:100%;background:#bfe0f2;color:var(--ink);overflow:hidden;
+    font:16px/1.5 var(--serif);-webkit-tap-highlight-color:transparent;}
+  body{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+  button{font:inherit;color:inherit;cursor:pointer;}
+  canvas{position:fixed;inset:0;display:block;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  :focus-visible{outline:3px solid var(--ink);outline-offset:2px;box-shadow:0 0 0 6px #fff;}
+
+  .pill{min-height:44px;border-radius:24px;padding:0 16px;background:var(--pill);color:var(--ink);
+    border:1.5px solid rgba(31,42,61,.55);font:600 16px/1.2 var(--display);display:inline-flex;align-items:center;gap:8px;}
+  .pill[aria-pressed="true"]{background:#fff;border-color:var(--ink);}
+  .bar{position:fixed;top:max(8px,env(safe-area-inset-top));display:flex;gap:8px;z-index:30;flex-wrap:wrap;}
+  #topR{right:8px;justify-content:flex-end;}
+  #topL{left:8px;}
+  body.portrait #topL{top:calc(max(8px,env(safe-area-inset-top)) + 52px);}
+
+  #caps{position:fixed;left:0;right:0;top:64px;display:flex;flex-direction:column;align-items:center;gap:8px;
+    pointer-events:none;z-index:20;padding:0 16px;}
+  body.portrait #caps{top:156px;}
+  .cap{background:var(--plate);color:var(--ink);border-radius:12px;padding:8px 16px;max-width:560px;text-align:center;
+    font:600 18px/1.4 var(--display);opacity:0;}
+  body.portrait .cap{font-size:16px;}
+  .cap.safe{border:1.5px solid var(--ink);}
+  .cap:empty{display:none;}
+
+  #bottom{position:fixed;left:0;right:0;bottom:max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;
+    align-items:center;gap:8px;z-index:20;pointer-events:none;}
+  #bottom > *{pointer-events:auto;}
+  #word{margin:0;min-height:22px;font:600 16px/1.3 var(--display);letter-spacing:.06em;color:var(--ink);opacity:.9;
+    background:rgba(255,255,255,.6);padding:0 8px;border-radius:12px;pointer-events:none;}
+  #word:empty{visibility:hidden;}
+  body.portrait #word{font-size:14px;}
+  #mid{position:relative;width:100%;height:44px;}
+  #notmine{position:absolute;left:50%;transform:translateX(-50%);top:0;}
+  #notmine[aria-disabled="true"]{opacity:.35;cursor:default;}
+  #smaller{position:absolute;right:16px;top:0;}
+  body.portrait #notmine, body.short.pageup #notmine{left:16px;transform:none;}
+  /* phone landscape (height under 520): one row under the kite, the phase word left of the
+     pads and "not my breath" right of them, so neither sits on the kite's bottom tip */
+  body.short:not(.pageup) #bottom{flex-direction:row;justify-content:center;align-items:flex-end;gap:16px;}
+  body.short:not(.pageup) #word{order:0;width:140px;text-align:center;align-self:center;}
+  body.short:not(.pageup) #pads{order:1;}
+  body.short:not(.pageup) #mid{order:2;width:auto;height:auto;display:flex;flex-direction:column-reverse;align-items:flex-start;gap:8px;}
+  body.short:not(.pageup) #notmine, body.short:not(.pageup) #smaller{position:static;transform:none;}
+  #pads{display:flex;gap:16px;justify-content:center;}
+  .pad{width:240px;height:88px;border-radius:24px;border:2px solid var(--ink);background:var(--pill);color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;touch-action:none;
+    font:600 18px/1.2 var(--display);}
+  .pad .g{font-size:24px;line-height:1;}
+  .pad .h{font:400 12px/1.3 var(--display);opacity:.9;}
+  body.portrait .pad .h{display:none;}
+  .pad.on{background:var(--denim);box-shadow:inset 0 0 0 3px var(--ink);}
+  .pad[aria-disabled="true"]{opacity:.5;}
+
+  .card{background:var(--paper);color:var(--ink);border-radius:12px;padding:24px;box-shadow:0 8px 32px rgba(31,42,61,.18);
+    border:1px solid var(--line);}
+  .card h2{font:600 24px/1.25 var(--display);margin:0 0 16px;}
+  .card p{margin:0 0 8px;}
+  .card .lead{font:600 18px/1.4 var(--display);}
+  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;border-radius:24px;padding:0 24px;
+    font:600 16px/1.2 var(--display);border:1.5px solid var(--ink);background:#fff;color:var(--ink);}
+  .btn.primary{background:var(--ink);color:#fff;}
+  .btn[disabled]{opacity:.5;cursor:default;}
+  .link{background:none;border:0;padding:8px 0;min-height:44px;color:var(--ink);font:600 16px/1.2 var(--display);
+    text-decoration:underline;text-underline-offset:3px;}
+  .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+
+  .modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .modal.dim{background:rgba(31,42,61,.35);}
+  .modal .card{max-width:520px;width:100%;max-height:calc(100% - 32px);overflow:auto;}
+  #intro .card{max-width:480px;}
+  #paused{align-items:flex-start;padding-top:180px;pointer-events:none;}
+  body.portrait #paused{padding-top:220px;}
+  #paused .card{pointer-events:auto;max-width:360px;}
+
+  /* The plan page. placePage() sets left, top, width and max-height from the scene and the
+     bottom controls; nothing on it is sticky, so no button ever covers its text. */
+  #page{position:fixed;z-index:15;width:min(440px,calc(100% - 32px));overflow:auto;opacity:0;}
+  body.compact #page{padding:16px;}
+  #page .ttl{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;column-gap:16px;}
+  #page .ttl h2{margin:0;}
+  #page .ttl .link{min-height:44px;}
+  #page .leadrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+  #page .leadrow .lead{margin:0;}
+  body.compact #page .lead{font-size:16px;}
+  #page .ownpin{display:flex;flex-direction:column;align-items:center;font:600 12px/1.2 var(--display);text-align:center;white-space:nowrap;flex:none;}
+  #page .ownpin canvas{position:static;width:28px;height:28px;}
+  #page .stars{list-style:none;margin:8px 0 0;padding:0;font-size:14px;display:flex;flex-wrap:wrap;column-gap:16px;}
+  #page .stars li{display:flex;align-items:center;gap:4px;min-height:24px;}
+  #page .fine{margin:0 0 4px;}
+  #page details{margin:0 0 4px;}
+  #page summary{min-height:44px;display:flex;align-items:center;gap:8px;font:600 14px/1.2 var(--display);cursor:pointer;}
+  #page summary span{text-decoration:underline;text-underline-offset:3px;}
+  #page summary::before{content:'+';font-size:16px;}
+  #page details[open] summary::before{content:'−';}
+  #page .acts{margin-top:8px;}
+  #page .sizes{display:flex;gap:8px;margin:8px 0;}
+  #page .sizes .btn{min-width:72px;padding:0 16px;}
+  #page .sizes .btn[aria-pressed="true"]{background:var(--ink);color:#fff;}
+  .lbl, #page .lbl{font:600 14px/1.3 var(--display);margin:16px 0 0;}
+  body.compact #page .lbl{margin-top:8px;}
+  .fine{font-size:14px;}
+  #stampbox{position:relative;height:72px;margin:8px 0;}
+  #strip{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:16px 0 8px;opacity:0;}
+  #strip canvas{position:static;width:44px;height:44px;}
+  #strip .own{display:flex;flex-direction:column;align-items:center;margin-left:8px;font-size:12px;line-height:1.2;width:56px;text-align:center;}
+  #strip .own canvas{width:28px;height:28px;}
+  body.portrait #strip{gap:6px;margin-top:8px;}
+  body.portrait #strip > canvas{width:40px;height:40px;}
+  body.portrait #strip .own{margin-left:0;width:48px;}
+  /* phone landscape: the pin lies flat beside the plan line, the size buttons and "show me" are
+     44 px, and the strip keeps "your own kite" on its row, so the chooser and its safety line fit */
+  body.compact.landscape #page .ownpin{flex-direction:row;gap:4px;}
+  body.compact.landscape #page .sizes{margin:4px 0;}
+  body.compact.landscape #page .sizes .btn, body.compact.landscape #page .acts .btn{min-height:44px;}
+  body.compact.landscape #strip{gap:6px;margin-top:8px;}
+  /* in portrait the page covers the hub, so a loose kite's phase word would only sit on the page */
+  body.portrait.pageup #word{visibility:hidden;}
+  body.short.pageup #mid{display:flex;flex-direction:column-reverse;align-items:center;height:auto;gap:8px;}
+  body.short.pageup #notmine, body.short.pageup #smaller{position:static;transform:none;}
+  #endtext{opacity:0;}
+  #endtext p{margin:0 0 8px;}
+  #endbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  #endbtns.one{grid-template-columns:1fr;}
+  #endbtns .btn{min-height:44px;padding:4px 12px;line-height:1.25;text-align:center;}
+
+  #loosePanel{position:fixed;z-index:18;right:16px;top:50%;transform:translateY(-50%);max-width:300px;}
+  body.portrait #loosePanel{right:16px;left:16px;top:auto;bottom:240px;transform:none;max-width:none;}
+  #ownLbl{position:fixed;z-index:12;font:600 12px/1.2 var(--display);color:var(--ink);pointer-events:none;
+    background:rgba(255,253,248,.9);padding:0 4px;border-radius:4px;}
+
+  #debug{position:fixed;left:8px;top:120px;z-index:35;background:rgba(255,255,255,.92);border:1px solid var(--ink);
+    border-radius:12px;padding:8px;font:12px/1.35 ui-monospace,Menlo,Consolas,monospace;max-height:60vh;overflow:auto;max-width:420px;}
+  #debug table{border-collapse:collapse;} #debug td{padding:0 4px;}
+</style>
+</head>
+<body class="landscape">
+<canvas id="bg" aria-hidden="true"></canvas>
+<canvas id="fg" role="img" aria-label="the kite workshop"></canvas>
+
+<!-- Stop and "dizzy or short of air" are the first two Tab stops (D61). -->
+<div class="bar" id="topR">
+  <button class="pill" id="btnStop" type="button">stop (Esc)</button>
+  <button class="pill" id="btnDizzy" type="button" aria-label="I feel dizzy or short of air; stop the plans">dizzy or short of air</button>
+</div>
+<div class="bar" id="topL">
+  <button class="pill" id="togBells" type="button" aria-pressed="true" title="the breeze stays on">bells on</button>
+  <button class="pill" id="togMotion" type="button" aria-pressed="false">less motion</button>
+</div>
+
+<div id="caps">
+  <div class="cap safe" id="capSafe" role="status"></div>
+  <div class="cap" id="capMentor" aria-live="polite"></div>
+</div>
+
+<div id="page" class="card" aria-label="the plan page"></div>
+<div id="ownLbl" hidden>your own kite</div>
+
+<div id="loosePanel" class="card" hidden>
+  <p class="lead" id="looseReady"></p>
+  <div class="row">
+    <button class="btn primary" type="button" id="btnCarry">carry on</button>
+    <button class="btn" type="button" id="btnBack" hidden></button>
+    <button class="btn" type="button" id="togBells2" aria-pressed="true" title="the breeze stays on">bells on</button>
+  </div>
+</div>
+
+<div id="bottom">
+  <p id="word"></p>
+  <div id="mid">
+    <button class="pill" id="notmine" type="button" aria-label="that kite didn't match my breath; leave it out" aria-disabled="true">not my breath</button>
+    <button class="pill" id="smaller" type="button" hidden>smaller kite · 2.5 s</button>
+  </div>
+  <div id="pads">
+    <button class="pad" id="padIn" type="button" aria-label="breathe in (hold)"><span class="g" aria-hidden="true">↑</span><span>breathe in</span><span class="h" aria-hidden="true">↑ or I</span></button>
+    <button class="pad" id="padOut" type="button" aria-label="breathe out (hold)"><span class="g" aria-hidden="true">↓</span><span>breathe out</span><span class="h" aria-hidden="true">↓ or O</span></button>
+  </div>
+</div>
+
+<div class="modal dim" id="intro" hidden>
+  <div class="card" role="dialog" aria-labelledby="introH">
+    <h2 id="introH">Kitewright</h2>
+    <div id="introBody"></div>
+    <div class="row">
+      <button class="btn primary" type="button" id="btnBegin">begin</button>
+      <button class="link" type="button" data-act="know">what we know</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="paused" hidden>
+  <div class="card" role="dialog" aria-label="paused">
+    <p class="lead" id="pausedText"></p>
+    <div class="row"><button class="btn primary" type="button" id="btnResumeP">carry on</button></div>
+  </div>
+</div>
+
+<div class="modal dim" id="stopScr" hidden>
+  <div class="card" role="dialog" aria-labelledby="stopH">
+    <h2 id="stopH"></h2>
+    <div id="stopBody"></div>
+    <div class="row">
+      <button class="btn" type="button" id="btnDizzy2" aria-label="I feel dizzy or short of air; stop the plans">dizzy or short of air</button>
+      <button class="btn primary" type="button" id="btnResume">carry on</button>
+      <button class="btn" type="button" id="btnEndStop">finish for today</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal dim" id="dizzyScr" hidden>
+  <div class="card" role="dialog" aria-labelledby="dizzyH">
+    <h2 id="dizzyH"></h2>
+    <div id="dizzyBody"></div>
+    <div class="row"><button class="btn primary" type="button" id="btnDone">done for today</button></div>
+  </div>
+</div>
+
+<div class="modal dim" id="know" hidden>
+  <div class="card" role="dialog" aria-labelledby="knowH">
+    <h2 id="knowH">What we know</h2>
+    <p>This game times your key presses. It can't measure your breathing itself.</p>
+    <p>Two small trials, of 66 and 47 people, found that people felt less anxious in a stressful moment after a short session of box breathing than after breathing normally or doing nothing. The first trial found the same for long out-breaths. A study of 84 students found square breathing did not change mood, and a 2026 review of 8 box-breathing trials called the evidence limited.</p>
+    <p>If you feel dizzy, light-headed or tingly, stop and breathe normally. These are common signs of breathing more air than your body needs. If you feel short of air or uneasy, stop and breathe normally.</p>
+    <p class="fine">Sources: McAllister et al. 2026, doi:10.1016/j.cpnec.2026.100360 · Riedl et al. 2026, doi:10.1080/10615806.2026.2659809 · Marchant et al. 2025, doi:10.1007/s10484-025-09688-z · Dujawara et al. 2026, doi:10.1007/s10484-026-09812-7</p>
+    <div class="row"><button class="btn primary" type="button" id="btnKnowClose">close</button></div>
+  </div>
+</div>
+
+<div id="debug" hidden></div>
+
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════════════════════════
+// 10.1 Constants
+// ════════════════════════════════════════════════════════════════════════════
+const PH = ['inh', 'hold', 'exh', 'rest'];
+const SIZES = { 3: { inh: 3, hold: 3, exh: 3, rest: 3 }, 2.5: { inh: 2.5, hold: 2.5, exh: 2.5, rest: 2.5 }, 2: { inh: 2, hold: 2, exh: 2, rest: 2 } };
+const q = x => Math.round(x * 1000) / 1000;                     // quantise seconds to whole ms
+const TOL = { floor: 0.6, pct: 0.20, zero: 0.5 };               // ?debug can tune these live
+const tolFor = t => t > 0 ? Math.max(TOL.floor, TOL.pct * t) : TOL.zero;   // D46
+const CYCLES = 6, ROUND_CAP_MS = 180000, LOAD_CAP_MS = 720000;
+const IDLE_PAUSE_MS = 10000, OVERRUN_S = 2, TIMEOUT_EXTRA_S = 2, KEY_MAX_S = 12;
+const CONFIRM_MS = 300;                                         // = MIN_HOLD_MS
+const LOOSE_MIN_BREATHS = 3, LOOSE_MIN_MS = 20000;
+const LOOSE_FALLBACK_MS = 45000;   // not in the spec: "ready" also appears after 45 s with fewer than 3 kites, so a player who stops pressing is never stranded
+const BASELINE_N = 4, BASELINE_MAX_MS = 60000, BASELINE_LAST_REST_S = 2.5;   // Kite 2.0's LAST_REST_S
+const PRESELECT_SMALLER_BELOW_S = 5;                            // baseline mean cycle
+const BELL_LOOKAHEAD_MS = 150, BELL_FADE_MS = 80;
+const CAPTION_DELAY_MS = 1000, TILE_DELAY_MS = 900, NOTMINE_FINAL_MS = 1000;
+const STAR = { learn: 1, echo: 2, fly: 3 };
+const EPS = 1e-3;                                               // ms: deadline comparisons
+
+// ════════════════════════════════════════════════════════════════════════════
+// Parser: verbatim copy of F:\gits\radlab_project\radlab\src\games\Kite\breathShapes.js
+// (normalizeSegments, parseBreaths and their helpers; the only change is that
+// the `export` keywords are dropped, since this is an inline script). D3.
+// ════════════════════════════════════════════════════════════════════════════
+const MERGE_GAP_MS = 300
+const MIN_HOLD_MS  = 300
+
+// One pass, two jobs: fuse adjacent same-phase segments, and absorb a
+// sub-MERGE_GAP_MS pause sitting between two holds of the same phase.
+function coalesce(segments) {
+  const out = []
+  for (const s of segments) {
+    const prev  = out[out.length - 1]
+    const prev2 = out[out.length - 2]
+    if (prev && prev.phase === s.phase) {
+      prev.t1 = s.t1
+      continue
+    }
+    if (s.phase !== 'pause' && prev && prev2 &&
+        prev.phase === 'pause' && prev.t1 - prev.t0 < MERGE_GAP_MS &&
+        prev2.phase === s.phase) {
+      out.pop()
+      prev2.t1 = s.t1
+      continue
+    }
+    out.push({ ...s })
+  }
+  return out
+}
+
+function demoteShortHolds(segments) {
+  return segments.map(s =>
+    s.phase !== 'pause' && s.t1 - s.t0 < MIN_HOLD_MS ? { ...s, phase: 'pause' } : s)
+}
+
+// coalesce → demote → coalesce: the first pass rescues rapid same-key tapping
+// into one long hold before the length test; the last stitches holds back
+// together around a demoted slip (out · blip-in · out becomes one exhale).
+function normalizeSegments(segments) {
+  return coalesce(demoteShortHolds(coalesce(segments)))
+}
+
+function parseBreaths(segments) {
+  const breaths = []
+  let cur = null
+
+  for (const s of normalizeSegments(segments)) {
+    const dur = (s.t1 - s.t0) / 1000
+    if (dur <= 0) continue
+
+    if (s.phase === 'in') {
+      if (cur && cur.seenOut) {
+        breaths.push(finish(cur))
+        cur = null
+      }
+      if (!cur) cur = { inh: 0, hold: 0, exh: 0, rest: 0, seenOut: false }
+      cur.inh += dur
+    } else if (s.phase === 'out') {
+      if (!cur) continue
+      cur.seenOut = true
+      cur.exh += dur
+    } else {
+      if (!cur) continue
+      if (cur.seenOut) cur.rest += dur
+      else cur.hold += dur
+    }
+  }
+
+  if (cur && cur.seenOut) breaths.push(finish(cur))
+  return breaths
+}
+
+function finish({ inh, hold, exh, rest }) {
+  return { inh, hold, exh, rest }
+}
+
+function meanBreath(breaths) {
+  const n = breaths.length
+  if (n === 0) return { inh: 0, hold: 0, exh: 0, rest: 0 }
+  const sum = breaths.reduce(
+    (a, b) => ({ inh: a.inh + b.inh, hold: a.hold + b.hold, exh: a.exh + b.exh, rest: a.rest + b.rest }),
+    { inh: 0, hold: 0, exh: 0, rest: 0 },
+  )
+  return { inh: sum.inh / n, hold: sum.hold / n, exh: sum.exh / n, rest: sum.rest / n }
+}
+// ── end of the verbatim copy ──
+
+// Kite 2.0 geometry (F:\gits\Handbook\src\games\Kite2\kiteGeom.js), unchanged.
+const CAP_S = 9;
+const FLOOR_UP = 0.4, FLOOR_SIDE = 0.55;
+function spars(b, S) {
+  const c = v => Math.min(CAP_S, Math.max(0, v || 0));
+  return { top: Math.max(FLOOR_UP, c(b.inh)) * S, right: Math.max(FLOOR_SIDE, c(b.hold)) * S,
+    bottom: Math.max(FLOOR_UP, c(b.exh)) * S, left: Math.max(FLOOR_SIDE, c(b.rest)) * S };
+}
+function personality(b) {
+  const tall = (b.inh || 0) + (b.exh || 0) + 0.5;
+  const wide = (b.hold || 0) + (b.rest || 0) + 0.9;
+  const aspect = tall / wide;
+  const size = Math.sqrt(tall * wide);
+  const slow = 1 / (1 + size * 0.07);
+  if (aspect > 4.5) return { kind: 'dart', ampX: 13, ampY: 5, freq: 1.5 * slow, tilt: 0.2 };
+  if (aspect < 2) return { kind: 'float', ampX: 5, ampY: 12, freq: 0.5 * slow, tilt: 0.06 };
+  return { kind: 'sail', ampX: 9, ampY: 8, freq: 0.9 * slow, tilt: 0.11 };
+}
+const KITE_COLORS = ['#2fa9b3', '#e2557f', '#f0a032', '#8a6fd1', '#62a845'];
+function tint(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = s => Math.round(((n >> s) & 255) + (255 - ((n >> s) & 255)) * k);
+  return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+}
+function tailPoints(b, S, scale, t, flutter) {
+  const len = (Math.min(CAP_S, b.exh || 0) * S * 0.9 + 24) * scale;
+  const n = 16, pts = [];
+  for (let k = 0; k <= n; k++) { const f = k / n; pts.push([Math.sin(k * 0.85 + t * flutter) * 7 * scale * f, f * len]); }
+  return pts;
+}
+// Kite 2.0's D-major pentatonic, D3 to D5
+const SCALE = [146.83, 164.81, 185.0, 220.0, 246.94, 293.66, 329.63, 369.99, 440.0, 493.88, 587.33];
+const TURN_PITCH = [SCALE[5], SCALE[7], SCALE[3], SCALE[1]];   // in-, pause-, out-, rest-turn
+const STATE_WORDS = { in: 'breathing in', hold: 'pause', out: 'breathing out', rest: 'resting' };
+const INK = '#1f2a3d', LINE_INK = 'rgba(31,42,61,0.42)', SQUARE_C = '#e2557f';
+
+// ════════════════════════════════════════════════════════════════════════════
+// 10.4 Lines
+// ════════════════════════════════════════════════════════════════════════════
+const LINES = {
+  'intro.1': 'this is the workshop. every plan on the wall is a breath.',
+  'intro.2': 'hold “breathe in” (↑ or I) as you breathe in.',
+  'intro.2b': 'hold “breathe out” (↓ or O) as you breathe out.',
+  'intro.3': 'let go of both for the pause and the rest.',
+  'intro.press': 'press when your breath turns, not when the kite does.',
+  'intro.seat': 'sit down for this one, somewhere steady.',
+  'intro.safe1': 'if you feel dizzy, light-headed or tingly, stop and breathe normally.',
+  'intro.safe2': 'these are common signs of breathing more air than your body needs.',
+  'intro.safe3': 'if you feel short of air or uneasy, stop and breathe normally.',
+  'base.1': 'first, just your own breath. four of them, any shape.',
+  'base.end': "that's your own kite. i'll pin it by the plan.",
+  'size.label': 'kite size',
+  'size.air': 'short of air at any point? pick a smaller kite.',
+  'learn.demo': 'listen for the four bells.',
+  'learn.demom': 'watch the light walk the four sides.',
+  'learn.0': "here's the square. in for {n}, pause for {n}.",
+  'learn.0b': 'out for {n}, rest for {n}. four equal sides.',
+  'learn.go': 'now yours. small, easy breaths. the bells keep time.',
+  'learn.gom': 'now yours. small, easy breaths. the light keeps time.',
+  'learn.p2': "small breaths are fine. it's the timing.",
+  'learn.p1': 'the pause and rest are soft. no clamping.',
+  'loose.1': "round's done. your own breath for a bit, any shape.",
+  'loose.f1': "i'm restringing an old one. no hurry.",
+  'loose.f2': "these ones don't need a plan.",
+  'loose.ready': 'ready when you are.',
+  'echo.0': 'this time, just the bells. press when your breath turns.',
+  'echo.0m': 'this time, just the rings. press when your breath turns.',
+  'echo.p1': 'four bells, four turns.',
+  'echo.p1m': 'four rings, four turns.',
+  'echo.p2': "the bells keep the plan's time.",
+  'echo.p2m': 'each ring marks where the next side ends.',
+  'fly.0': 'now from memory, no bells. the plan shows after each kite.',
+  'fly.p1': 'the first one is for settling in.',
+  'help.back': 'the guide is back for two kites.',
+  'drift.fast': 'slower is fine. smaller is fine too.',
+  'drift.fast2': 'slower is fine. stop any time.',
+  'drift.still': 'short of air? a smaller square fits.',
+  'drift.still2': 'short of air? stop and breathe normally.',
+  'drift.overKey': "let go whenever you're ready.",
+  'drift.overHold': "breathe out whenever you're ready.",
+  'drift.overRest': "breathe in whenever you're ready.",
+  'drift.idle': 'breathe however you like. carry on when ready.',
+  'drift.slipIn': 'hold for the whole in-breath, then let go.',
+  'drift.slipOut': 'hold for the whole out-breath, then let go.',
+  'drift.small': 'a smaller square is still a square.',
+  'master.1': "that's the square sail. the stamp's there for you.",
+  'master.2': "it's yours now. it flies on the hill line.",
+  'end.m1': 'your last {n} kites were square on every side.',
+  'end.m2': 'you flew it from memory: {k} of {s} kites matched the plan.',
+  'end.n1': '{k} of your last {s} kites matched the plan on every side.',
+  'end.n2': 'your typical kite: in {inh} · pause {hold} · out {exh} · rest {rest} s.',
+  'end.n3': "plans keep. the wall isn't going anywhere.",
+  'end.later': "the shed's open whenever. loose kites need no plan.",
+  'stop.1': 'stopped. breathe however it comes.',
+  'stop.2': 'nothing here needs a bigger breath.',
+  'dizzy.1': 'rest here until it passes.',
+  'dizzy.2b': 'if you felt short of air, your own pace is enough.',
+  'dizzy.4': "if it hasn't passed in 10 minutes, ask someone for help.",
+  'dizzy.3': "that's enough plans for today. the kites will keep.",
+};
+// Caption classes (§9 priority: safety, help, drift, flavour). learn.p1/p2 count as
+// safety (spec); the fast, still and over* lines are §6 safety cues, so they also
+// use the role="status" safety region and are never rate-limited away.
+const CLS = { 'learn.p1': 'safety', 'learn.p2': 'safety', 'drift.fast': 'safety', 'drift.fast2': 'safety',
+  'drift.still': 'safety', 'drift.still2': 'safety', 'drift.overKey': 'safety', 'drift.overHold': 'safety',
+  'drift.overRest': 'safety', 'help.back': 'help', 'drift.idle': 'drift', 'drift.slipIn': 'drift',
+  'drift.slipOut': 'drift', 'drift.small': 'drift' };
+const PRI = { safety: 0, help: 1, drift: 2, flavour: 3 };
+const fmtN = x => { const r = Math.round(x * 10) / 10; return String(r); };   // 3, 2.5, 7.5, 3.3
+function fill(text, vars = {}) { return text.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? (typeof vars[k] === 'number' ? fmtN(vars[k]) : vars[k]) : '{' + k + '}')); }
+
+// ════════════════════════════════════════════════════════════════════════════
+// 10.6 Scoring (pure)
+// ════════════════════════════════════════════════════════════════════════════
+function evaluateBreath(T, b, { restOneSided = false } = {}) {
+  const phases = {};
+  for (const k of PH) {
+    let err = q(b[k] - T[k]);
+    if (k === 'rest' && restOneSided) err = Math.min(err, 0);      // final breath only (D45)
+    const tol = tolFor(T[k]);
+    phases[k] = { err, fit: Math.abs(err) <= tol, far: Math.abs(err) > 2 * tol };
+  }
+  const sum = o => PH.reduce((s, k) => s + o[k], 0);
+  const cycle = sum(b), cycleT = sum(T);
+  const mv = b.inh + b.exh, mvT = T.inh + T.exh;
+  const st = b.hold + b.rest, stT = T.hold + T.rest;
+  const fast = mv < 0.7 * mvT && cycle < 0.7 * cycleT;              // in and out rushed (D47)
+  const shortStill = stT > 0 && st < 0.5 * stT;                     // pause and rest dropped
+  return { fit: !fast && PH.every(k => phases[k].fit),
+           wellOff: fast || PH.some(k => phases[k].far), fast, shortStill, cycle, phases };
+}
+const inWindow = x => x.st === 'fit' || x.st === 'off' || x.st === 'dropped';
+function masteryOf(res) {
+  const win = res.filter(inWindow).slice(-5);
+  return win.length >= 4 && win.filter(x => x.st === 'fit').length >= 4;
+}
+function saveStar(sq, tier, size) {
+  if (STAR[tier] > (sq.stars || 0)) return { stars: STAR[tier], size, stamped: tier === 'fly' };
+  return sq;
+}
+const moreAllowed = (patternedMs, dizzyUsed, viaStop) => !dizzyUsed && !viaStop && patternedMs + ROUND_CAP_MS <= LOAD_CAP_MS;
+const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+// §10.9: ending numbers use fit and off breaths only
+function endingSentences(R, mode) {
+  if (!R) return [{ id: 'end.n3', vars: {} }];
+  const res = R.res;
+  if (mode === 'stamp') {
+    const win = res.filter(inWindow).slice(-5);
+    let run = 0; for (let i = win.length - 1; i >= 0 && win[i].st === 'fit'; i--) run++;
+    if (run >= 3) return [{ id: 'end.m1', vars: { n: run } }];
+    return [{ id: 'end.m2', vars: { k: win.filter(x => x.st === 'fit').length, s: win.filter(x => x.st === 'fit' || x.st === 'off').length } }];
+  }
+  const fo = res.filter(x => x.st === 'fit' || x.st === 'off');
+  if (!fo.length) return [{ id: 'end.n3', vars: {} }];
+  const last5 = fo.slice(-5), k = last5.filter(x => x.st === 'fit').length;
+  const out = [];
+  if (k > 0) out.push({ id: 'end.n1', vars: { k, s: last5.length } });
+  const med = {}; for (const p of PH) med[p] = Math.round(q(median(fo.map(x => q(x.b[p])))) * 10) / 10;
+  out.push({ id: 'end.n2', vars: med });
+  out.push({ id: 'end.n3', vars: {} });
+  return out;
+}
+const sentenceText = list => list.map(x => fill(LINES[x.id], x.vars));
+
+// ════════════════════════════════════════════════════════════════════════════
+// The core: all game logic on one breath clock, no DOM. The page runs one;
+// the self-tests run many, each with a fake audio and memory storage.
+// ════════════════════════════════════════════════════════════════════════════
+function defaultSaved() { return { square: { stars: 0, size: null, stamped: false }, settings: { bells: true, lessMotion: false } }; }
+function createCore(env) {
+  const A = env.audio;
+  const store = env.store;
+  const saved = store.load();
+  let roundSeq = 0, tseq = 0;
+  const C = {
+    bt: 0, overlay: null, overlayWhy: null, overlayT: 0, beat: 'INTRO', beatT0: 0, beatSeq: 0,
+    size: 3, planSel: 3, preselect: 3, origSize: 3,
+    saved, patternedMs: 0, dizzyUsed: false,
+    R: null, rounds: [], play: null,
+    sky: [], kiteN: 0, kiteId: 0, skySlot: 0, lastLaunch: null, aria: 'the kite workshop',
+    guide: null, help: null, helpEnd: null,
+    bellLog: [], ev: [], queue: [], cap: { mentor: null, safety: null }, lastCls: {}, lastId: {},
+    baseline: null, loose: null, end: null, demoCheck: [],
+    notMine: { open: false, R: null }, tiles: [], glint: { t: -1e9, n: 0 },
+    pose: { cur: 'A', prev: null, t: -1e9, want: 'A', since: 0 },
+    stitch: null, timers: [], lastKeyT: 0, warmT: -1e9,
+    ghost: { a0: 0, a1: 0, t: 0, dur: 1, revealT: -1e9, per: 300 },
+    page: null, wallStarT: -1e9,
+    hillSquare: saved.square.stamped ? { t: -1e9, size: saved.square.size || 3 } : null,
+    buntingT: saved.square.stamped ? -1e9 : null,
+    looseCount: 0, allBreaths: [], closingPress: null, nKites: 0,
+  };
+  const K = { down: { in: false, out: false }, at: { in: 0, out: 0 }, dead: { in: false, out: false },
+    ign: { in: false, out: false }, active: null, pid: { in: 0, out: 0 } };
+
+  const ev = (type, o = {}) => { C.ev.push({ t: C.bt, type, ...o }); if (C.ev.length > 8000) C.ev.splice(0, 2000); };
+  const persist = () => store.save(C.saved);
+  function at(t, fn, tag = '') { C.timers.push({ t, fn, tag, seq: tseq++ }); C.timers.sort((a, b) => a.t - b.t || a.seq - b.seq); }
+  const cancelTag = tag => { C.timers = C.timers.filter(x => x.tag !== tag); };
+
+  // ── captions (one mentor slot, one safety slot; 6 s each) ──
+  function say(id, atT = C.bt, vars = {}) {
+    const cls = CLS[id] || 'flavour';
+    C.queue.push({ id, at: atT, vars, cls, slot: cls === 'safety' ? 'safety' : 'mentor', seq: C.beatSeq });
+    ev('say', { id, at: atT });
+  }
+  function captions(t) {
+    for (const slot of ['safety', 'mentor']) {
+      const cur = C.cap[slot];
+      if (cur && t >= cur.start + 6000 - EPS) C.cap[slot] = null;
+      for (let g = 0; g < 50; g++) {
+        const due = C.queue.filter(x => x.slot === slot && x.at <= t + EPS);
+        if (!due.length) break;
+        due.sort((a, b) => PRI[a.cls] - PRI[b.cls] || a.at - b.at);
+        const x = due[0];
+        const drop = why => { C.queue.splice(C.queue.indexOf(x), 1); ev('drop', { id: x.id, why }); };
+        if (x.cls === 'flavour' && (t - x.at > 6000 || x.seq !== C.beatSeq)) { drop('stale'); continue; }
+        if ((x.cls === 'help' || x.cls === 'drift') && t - x.at > 6000) { drop('stale'); continue; }
+        if ((x.cls === 'help' || x.cls === 'drift') && t - (C.lastCls[x.cls] ?? -1e9) < 20000) { drop('rate'); continue; }
+        if (x.cls !== 'flavour' && t - (C.lastId[x.id] ?? -1e9) < 20000) { drop('repeat'); continue; }
+        const busy = C.cap[slot];
+        // The drift.over* lines fire the moment their threshold is crossed (§9), so they take the
+        // safety slot from learn.p1/p2, which are advice rather than a live cue.
+        const preempt = busy && x.id.startsWith('drift.over') && (busy.id === 'learn.p1' || busy.id === 'learn.p2');
+        if (busy && !preempt && !(busy.cls === 'flavour' && PRI[x.cls] < PRI.flavour)) break;
+        if (preempt) ev('preempt', { id: busy.id, by: x.id });
+        C.queue.splice(C.queue.indexOf(x), 1);
+        C.cap[slot] = { id: x.id, text: fill(LINES[x.id], x.vars), start: t, cls: x.cls };
+        C.lastCls[x.cls] = t; C.lastId[x.id] = t;
+        ev('show', { id: x.id, slot });
+        break;
+      }
+    }
+  }
+
+  // ── plays: one segment log per phase of play ──
+  function newPlay(kind, carry = null) {
+    if (!kind) { C.play = null; return; }
+    const P = { kind, log: [], open: null, closedN: 0, curStart: null, recording: false, endOf: {} };
+    C.play = P;
+    if (K.active === 'in') { const t0 = carry != null ? carry : C.bt; P.open = { phase: 'in', t0 }; P.curStart = t0; P.recording = true; }
+  }
+  function setPhase(phase, t) {
+    const P = C.play; if (!P) return;
+    if (P.open) {
+      if (t > P.open.t0) P.log.push({ phase: P.open.phase, t0: P.open.t0, t1: t });
+      if (P.open.phase !== 'pause') P.endOf[P.open.phase] = t;
+      P.open = null;
+    }
+    if (!P.recording) { if (phase !== 'in') return; P.recording = true; P.curStart = t; }
+    P.open = { phase, t0: t };
+  }
+  // The live kite: closed segments normalised, the open segment appended raw (§8).
+  function liveInfo() {
+    const P = C.play;
+    if (!P || !P.recording || P.curStart == null) return null;
+    let segs = normalizeSegments(P.log.filter(s => s.t0 >= P.curStart - EPS));
+    if (P.open) segs = coalesce([...segs, { phase: P.open.phase, t0: P.open.t0, t1: Math.max(P.open.t0, C.bt) }]);
+    const list = []; let cur = null;
+    for (const s of segs) {
+      const d = Math.max(0, (s.t1 - s.t0) / 1000);
+      if (s.phase === 'in') {
+        if (cur && cur.seenOut) { list.push(cur); cur = null; }
+        if (!cur) cur = { inh: 0, hold: 0, exh: 0, rest: 0, seenOut: false, start: s.t0, ends: {}, ph: 'inh' };
+        cur.inh += d; cur.ph = 'inh'; cur.ends.inh = s.t1;
+      } else if (s.phase === 'out') {
+        if (!cur) continue;
+        if (cur.ends.hold == null) cur.ends.hold = s.t0;
+        cur.seenOut = true; cur.exh += d; cur.ph = 'exh'; cur.ends.exh = s.t1;
+      } else {
+        if (!cur) continue;
+        if (cur.seenOut) { cur.rest += d; cur.ph = 'rest'; cur.ends.rest = s.t1; }
+        else { cur.hold += d; cur.ph = 'hold'; cur.ends.hold = s.t1; }
+      }
+    }
+    return { list, cur, phase: P.open ? P.open.phase : null, open: P.open };
+  }
+
+  // ── input (keyboard, pads and the debug API all come through here) ──
+  function acceptsInput() {
+    if (C.overlay) return false;
+    if (C.beat === 'INTRO' || C.beat === 'DONE') return false;
+    if (C.beat === 'LEARN_INTRO' && !C.R) return false;         // the demo is playing
+    return true;
+  }
+  function keyDown(kind) {
+    const t = C.bt;
+    if (K.down[kind]) return;                                     // e.repeat, or a second source
+    K.down[kind] = true; K.at[kind] = t; K.dead[kind] = false;
+    if (C.overlay === 'PAUSED' && kind === 'in') resume('press');
+    if (!acceptsInput()) { K.ign[kind] = true; return; }
+    K.ign[kind] = false;
+    A.arm();
+    C.lastKeyT = t;
+    if (C.beat === 'BASELINE' && C.baseline && C.baseline.waiting && kind === 'in') restartBaseline();
+    K.active = kind;                                              // the last one pressed wins
+    setPhase(kind, t);
+    A.breezeOn(kind);
+    const id = ++K.pid[kind];
+    // a same-phase re-press within 300 ms carries on the same spar
+    const P = C.play; let run = t, skip = false;
+    if (P && P.log.length >= 2) {
+      const pz = P.log[P.log.length - 1], hs = P.log[P.log.length - 2];
+      if (pz.phase === 'pause' && pz.t1 - pz.t0 < MERGE_GAP_MS && Math.abs(pz.t1 - t) < EPS && hs.phase === kind) {
+        if (hs.t1 - hs.t0 >= CONFIRM_MS) skip = true; else run = hs.t0;
+      }
+    }
+    if (!skip) at(Math.max(t, run + CONFIRM_MS), () => confirm(kind, id, run), 'key');
+  }
+  function confirm(kind, id, run) {
+    if (K.active !== kind || K.pid[kind] !== id || !K.down[kind] || !C.play) return;
+    if (kind === 'in') onInConfirmed(run); else onOutConfirmed(run);
+  }
+  function keyUp(kind) {
+    const t = C.bt;
+    if (!K.down[kind]) return;
+    K.down[kind] = false;
+    if (K.ign[kind]) { K.ign[kind] = false; return; }
+    C.lastKeyT = t;
+    if (kind === 'in') { const R = C.R; if (R && R.ended && !R.committed && R.t0End == null && R.closeHow === 'press') setT0End(R, t); }
+    if (K.dead[kind]) { K.dead[kind] = false; return; }
+    if (K.active !== kind) return;                                // it had been overridden
+    const other = kind === 'in' ? 'out' : 'in';
+    const held = t - K.at[kind];
+    if (held < CONFIRM_MS) slipLine(kind);
+    // Rollover (D60): fall back to the still-held control only after a slip.
+    if (K.down[other] && !K.dead[other] && !K.ign[other] && held < CONFIRM_MS) {
+      K.active = other; setPhase(other, t); A.breezeOn(other);
+    } else {
+      if (K.down[other]) K.dead[other] = true;
+      K.active = null; setPhase('pause', t); A.breezeOff();
+    }
+  }
+  function releaseAll() { keyUp('in'); keyUp('out'); }
+  function slipLine(kind) {
+    const R = C.R;
+    if (R && R.anchored && !R.ended && C.play && C.play.kind === 'round') say(kind === 'in' ? 'drift.slipIn' : 'drift.slipOut', K.at[kind] + CAPTION_DELAY_MS);
+  }
+
+  // ── breaths close at the next confirmed in-press (D44) ──
+  function onInConfirmed(c) {
+    const P = C.play;
+    if (P.kind === 'demo') return demoConfirm(c);
+    const list = parseBreaths(P.log.filter(s => s.t1 <= c + EPS));
+    C.closingPress = c;
+    if (list.length > P.closedN) { P.closedN = list.length; breathClosed(list[list.length - 1], c, 'press'); }
+    C.closingPress = null;
+    const P2 = C.play;
+    if (P2 && P2.recording) P2.curStart = c;
+    const R = C.R;
+    if (R && !R.ended && P2 && P2.kind === 'round') {
+      if (!R.anchored) anchor(R, c);
+      cycleLines(R, c);
+    }
+    newStitch(c);
+  }
+  function onOutConfirmed() {
+    if (C.stitch && stitchOn() && !C.stitch.hold) { const L = liveInfo(); const x = L && (L.list[0] || L.cur); if (x) judge('hold', x.hold); }
+  }
+  function closeByTimeout() {
+    const P = C.play; const t = C.bt;
+    const segs = P.log.slice(); if (P.open && t > P.open.t0) segs.push({ phase: P.open.phase, t0: P.open.t0, t1: t });
+    const list = parseBreaths(segs);
+    if (list.length <= P.closedN) return;
+    P.closedN = list.length;
+    if (P.open) { if (t > P.open.t0) P.log.push({ phase: P.open.phase, t0: P.open.t0, t1: t }); P.open = null; P.recording = false; P.curStart = null; }
+    breathClosed(list[list.length - 1], null, 'timeout');
+  }
+  function breathClosed(b, c, how) {
+    const P = C.play;
+    const st = C.stitch && C.stitch.start != null ? C.stitch : null;
+    if (st && stitchOn()) { const T = SIZES[C.R.size]; st.rest = { t: C.bt, fit: Math.abs(q(b.rest - T.rest)) <= tolFor(T.rest) || (C.R.res.length === C.R.cycles - 1 && b.rest >= T.rest) }; }
+    const kite = launchKite(b, { stitch: stitchOn() ? st : null });
+    C.allBreaths.push({ b, kind: P.kind, t: C.bt, kiteId: kite.id });
+    if (P.kind === 'baseline') {
+      C.baseline.breaths.push(b);
+      if (C.baseline.breaths.length >= BASELINE_N) closeBaseline();
+    } else if (P.kind === 'round' && C.R && C.R.anchored && !C.R.ended) {
+      onBreathClosed(C.R, b, { closeT0: how === 'press' ? c : null, afterPause: false, isFinal: C.R.res.length === C.R.cycles - 1, kite });
+    } else {
+      C.looseCount++;
+      if (C.loose && C.beat === 'LOOSE') C.loose.count++;
+      if (C.end && C.beat === 'END') { C.end.looseN++; if (C.end.looseN >= 3) C.end.moreAt = Math.min(C.end.moreAt, C.bt); }
+    }
+  }
+
+  function onBreathClosed(R, b, ctx) {
+    const r = evaluateBreath(SIZES[R.size], b, { restOneSided: ctx.isFinal });
+    let st;
+    if (R.settleNext || ctx.afterPause) { st = 'settle'; R.settleNext = false; }
+    else if (R.help > 0) { st = 'helped'; R.help--; }                // no extension (D48)
+    else st = r.fit ? 'fit' : 'off';
+    const closeT = ctx.closeT0 != null ? ctx.closeT0 : C.bt;
+    R.res.push({ st, r, b, kiteId: ctx.kite ? ctx.kite.id : null, closeT, t: C.bt });
+    ev('breath', { st, tier: R.tier, n: R.res.length, b: { ...b } });
+    C.notMine = { open: st === 'fit' || st === 'off', R };
+    if (R.tier === 'fly') C.tiles.push({ R, idx: R.res.length - 1, b: { ...b }, T: SIZES[R.size], showT: closeT + TILE_DELAY_MS,
+      color: ctx.kite ? ctx.kite.color : KITE_COLORS[0], fits: PH.map(k => r.phases[k].fit), droppedT: null });
+    const last2 = R.res.slice(-2), scored = x => x.st === 'fit' || x.st === 'off';
+    if (R.tier !== 'learn' && !R.helpUsed && !ctx.isFinal && last2.length === 2 &&
+        last2.every(x => scored(x) && x.r.wellOff)) {
+      R.helpUsed = true; R.help = 2;
+      startHelpGuide(closeT);                       // c0 = the press that just closed this breath
+      say('help.back', closeT + CAPTION_DELAY_MS);
+      glintSmaller(R);
+    }
+    if (last2.length === 2 && last2.every(x => x.r.fast)) say(R.size === 2 ? 'drift.fast2' : 'drift.fast', closeT + CAPTION_DELAY_MS);
+    else if (last2.length === 2 && last2.every(x => x.r.shortStill)) { say(R.size === 2 ? 'drift.still2' : 'drift.still', closeT + CAPTION_DELAY_MS); glintSmaller(R); }
+    if (!R.smallLineShown && R.size !== 2 && R.res.filter(x => x.st === 'off').length >= 3) {
+      R.smallLineShown = true; say('drift.small', closeT + CAPTION_DELAY_MS); glintSmaller(R);
+    }
+    if (R.res.length >= R.cycles) { endRound(R); finishRound(R, ctx.closeT0 != null ? 'press' : 'timeout', ctx.closeT0); }
+  }
+  function glintSmaller(R) { if (R.smallShown || R.size === 2) return; R.smallShown = true; C.glint = { t: C.bt, n: C.glint.n + 1 }; ev('glint'); }
+
+  function endRound(R) {
+    R.ended = true; R.endRuns = (R.endRuns || 0) + 1;
+    R.mastered = !R.aborted && masteryOf(R.res);
+    if (!R.counted) { R.counted = true; R.endT = C.bt; C.patternedMs += R.startMs != null ? C.bt - R.startMs : 0; }
+    ev('endRound', { tier: R.tier, mastered: R.mastered, runs: R.endRuns });
+  }
+  function finishRound(R, how, c) {
+    if (!R.ended) endRound(R);
+    R.closeAt = C.bt; R.closeHow = how;
+    if (C.help) C.helpEnd = { ...C.help, fadeT: C.bt };
+    C.guide = null; C.help = null;
+    R.t0End = null;
+    if (how === 'press') { if (!(K.active === 'in' && K.down.in)) setT0End(R, C.bt); }
+    else setT0End(R, C.bt);
+    const next = (R.fromEnd || R.tier === 'fly') ? 'END' : 'LOOSE';
+    enterBeat(next, { carry: how === 'press' ? c : null, R });
+  }
+  function setT0End(R, t) { if (R.t0End != null) return; R.t0End = t; at(t + NOTMINE_FINAL_MS, () => commitRound(R), 'commit'); }
+  function commitRound(R) {
+    if (R.committed) return; R.committed = true;
+    if (C.notMine.R === R) C.notMine = { open: false, R: null };
+    const sq = C.saved.square, wasStamped = !!sq.stamped, before = sq.stars || 0;
+    if (R.mastered) {
+      const n2 = saveStar(sq, R.tier, R.size);
+      if (n2 !== sq) { C.saved.square = n2; persist(); if (R.tier !== 'fly') C.wallStarT = C.bt; }
+    }
+    R.newStar = (C.saved.square.stars || 0) > before;
+    ev('commit', { tier: R.tier, mastered: R.mastered, stars: C.saved.square.stars });
+    if (C.beat === 'END' && C.end && C.end.R === R && C.end.pageT == null) renderEnd(R, wasStamped);
+  }
+  function renderEnd(R, wasStamped) {
+    const E = C.end;
+    E.mode = (!E.viaStop && R && R.tier === 'fly' && R.mastered && !R.aborted) ? 'stamp' : 'open';
+    E.pageT = C.bt; E.lines = endingSentences(R, E.mode); E.size = R ? R.size : C.size;
+    E.alreadyStamped = E.mode === 'stamp' && wasStamped;
+    E.fly = !!(R && R.tier === 'fly');
+    E.more = moreAllowed(C.patternedMs, C.dizzyUsed, E.viaStop);
+    if (E.mode === 'stamp') {
+      say('master.1', C.bt);
+      if (E.alreadyStamped) { E.revealT = C.bt + 800; E.btnT = E.revealT + 1200; }
+      else at(C.bt + 800, () => { E.stampReady = C.bt; }, 'stamp');
+    } else { E.revealT = C.bt; E.btnT = C.bt + 700; }
+    ev('end', { mode: E.mode });
+  }
+  function stampTap() {
+    const E = C.end; if (!E || E.mode !== 'stamp' || E.stampReady == null || E.tapT != null) return;
+    E.tapT = C.bt; A.stamp(); ev('stamp');
+    at(C.bt + 800, () => { E.arcT = C.bt; say('master.2'); }, 'stamp');
+    at(C.bt + 800 + 2400, () => { C.hillSquare = { t: C.bt, size: E.size }; }, 'stamp');
+    at(C.bt + 3200, () => { C.buntingT = C.bt; }, 'stamp');
+    at(C.bt + 4700, () => { E.revealT = C.bt; E.btnT = C.bt + 1200; }, 'stamp');
+  }
+
+  // ── guides: fixed at the anchor, never move (D43) ──
+  function makeGuide(kind, c0, cycles, size, opts = {}) {
+    const T = SIZES[size], cyc = (T.inh + T.hold + T.exh + T.rest) * 1000;
+    const off = [0, T.inh * 1000, (T.inh + T.hold) * 1000, (T.inh + T.hold + T.exh) * 1000];
+    const turns = [];
+    for (let k = 0; k < cycles; k++) for (let j = 0; j < 4; j++)
+      turns.push({ t: c0 + k * cyc + off[j], j, k, ring: !(k === 0 && j === 0) || !!opts.ringAnchor, sched: false, kind });
+    return { kind, c0, cycles, size, T, cyc, off, turns, endT: c0 + cycles * cyc, startT: C.bt };
+  }
+  function anchor(R, c) {
+    R.anchored = true; if (R.startMs == null) R.startMs = c;
+    if (C.beat !== 'ROUND') C.beat = 'ROUND';
+    if (R.tier === 'learn' || R.tier === 'echo') C.guide = makeGuide(R.tier, c, R.cycles - R.res.length, R.size);
+    C.lastKeyT = Math.max(C.lastKeyT, c);
+    ev('anchor', { c, tier: R.tier });
+  }
+  function startHelpGuide(c0) { C.help = makeGuide('help', c0, 2, C.R.size); ev('help', { c0 }); }
+  function cycleLines(R, c) {
+    const n = R.res.length + 1, bells = C.saved.settings.bells, once = id => { if (R.lines[id]) return; R.lines[id] = 1; say(id, c + CAPTION_DELAY_MS); };
+    if (R.tier === 'learn') { if (n === 2) once('learn.p2'); if (n === 4) once('learn.p1'); }
+    if (R.tier === 'echo') { if (n === 2) once(bells ? 'echo.p1' : 'echo.p1m'); if (n === 4) once(bells ? 'echo.p2' : 'echo.p2m'); }
+    if (R.tier === 'fly') { if (n === 1) once('fly.p1'); if (n === 2) once('learn.p2'); }
+  }
+  function bellCandidates() {
+    const out = [];
+    if (!C.saved.settings.bells) return out;
+    for (const g of [C.guide, C.help]) {
+      if (!g) continue;
+      for (const tr of g.turns) {
+        if (!tr.ring || tr.sched || tr.t <= C.bt - EPS) continue;
+        if (g === C.guide && C.help && tr.t >= C.help.c0 && tr.t < C.help.endT) continue;   // the help guide rings instead
+        out.push(tr);
+      }
+    }
+    return out;
+  }
+  function bells() {
+    if (C.overlay) return;
+    for (const tr of bellCandidates()) {
+      if (tr.t - BELL_LOOKAHEAD_MS <= C.bt + EPS) {
+        tr.sched = true;
+        const h = A.bell(TURN_PITCH[tr.j], (tr.t - C.bt) / 1000, 0.05, 2.2);
+        C.bellLog.push({ t: tr.t, j: tr.j, kind: tr.kind, at: C.bt, h, cancelled: false });
+        ev('bell', { turn: tr.t, j: tr.j });
+      }
+    }
+  }
+  function cancelBells() { A.cancelBells(); for (const b of C.bellLog) if (b.t > C.bt && !b.cancelled) b.cancelled = true; }
+
+  // ── stitches (Learn and Echo) ──
+  function stitchOn() { const R = C.R; return !!(R && R.anchored && !R.ended && C.play && C.play.kind === 'round' && (R.tier === 'learn' || R.tier === 'echo')); }
+  function newStitch(c) { C.stitch = stitchOn() ? { start: c } : null; }
+  function judge(ph, val) {
+    const key = { in: 'inh', hold: 'hold', out: 'exh', rest: 'rest' }[ph], T = SIZES[C.R.size];
+    C.stitch[ph] = { t: C.bt, fit: Math.abs(q(val - T[key])) <= tolFor(T[key]) };
+  }
+
+  // ── sky ──
+  function launchKite(b, o = {}) {
+    const k = { id: ++C.kiteId, b: { inh: b.inh, hold: b.hold, exh: b.exh, rest: b.rest }, color: KITE_COLORS[C.kiteN++ % 5],
+      t: C.bt, slot: C.skySlot++ % 12, void: !!o.void, demo: !!o.demo, stitch: o.stitch || null, drift: null };
+    C.sky.push(k); C.lastLaunch = { id: k.id, t: C.bt, secs: { ...k.b } };
+    if (!o.demo) { A.launch(); C.nKites++; C.aria = `kite ${C.nKites}: in ${fmtN(b.inh)}, pause ${fmtN(b.hold)}, out ${fmtN(b.exh)}, rest ${fmtN(b.rest)} seconds`; }
+    ev('launch', { id: k.id, secs: { ...k.b }, void: k.void, demo: k.demo });
+    const flying = C.sky.filter(x => x.drift == null && !x.demo);
+    if (flying.length > 12) flying[0].drift = C.bt;
+    return k;
+  }
+  function driftOff() { for (const k of C.sky) if (k.drift == null) k.drift = C.bt; C.skySlot = 0; }
+
+  // A breath closed by a pause, stop, size change or cap: unscored, still flies, not a cycle.
+  function closeOpenUnscored(reason) {
+    const P = C.play, R = C.R;
+    if (!P) return;
+    const t = C.bt;
+    const segs = P.log.slice(); if (P.open && t > P.open.t0) segs.push({ phase: P.open.phase, t0: P.open.t0, t1: t });
+    const list = parseBreaths(segs);
+    if (list.length > P.closedN) { const b = list[list.length - 1]; launchKite(b, { void: true }); if (R) R.void.push({ b, reason, t }); ev('void', { reason, b }); }
+    else { const L = liveInfo(); if (L && L.cur && L.cur.inh > 0 && R) { R.void.push({ b: { inh: L.cur.inh, hold: L.cur.hold, exh: L.cur.exh, rest: L.cur.rest }, reason, t, partial: true }); ev('void', { reason, partial: true }); } }
+    for (const k of ['in', 'out']) if (K.down[k]) K.dead[k] = true;
+    K.active = null; A.breezeOff();
+    newPlay(P.kind);
+    if (R && !R.ended) { R.anchored = false; R.settleNext = true; }
+    if (C.help) C.helpEnd = { ...C.help, fadeT: C.bt };
+    C.guide = null; C.help = null; C.stitch = null;
+    cancelBells();
+  }
+
+  // ── overlays: the breath clock does not run under them ──
+  function enterPause(why) {
+    if (C.overlay) return;
+    C.overlay = 'PAUSED'; C.overlayWhy = why; C.overlayT = C.bt;
+    cancelBells(); A.breezeOff(); ev('pause', { why });
+  }
+  function resume(why) { if (!C.overlay) return; const o = C.overlay; C.overlay = null; ev('resume', { from: o, why }); }
+  function hidden() {
+    if (C.overlay) return;
+    const R = C.R;
+    if (R && R.anchored && !R.ended && C.play && C.play.kind === 'round') closeOpenUnscored('hidden');
+    else if (C.play && C.play.open && C.play.open.phase !== 'pause') { setPhase('pause', C.bt); K.active = null; }
+    for (const k of ['in', 'out']) if (K.down[k]) K.dead[k] = true;
+    enterPause('hidden');
+  }
+  function stop() {
+    if (C.overlay === 'STOPPED' || C.overlay === 'DIZZY') return;
+    // Nothing has been played yet on the intro card, and nothing is live once finished:
+    // a stop screen there would only offer "finish for today" for a session never started.
+    if (C.beat === 'INTRO' || C.beat === 'DONE') return;
+    C.overlay = null;
+    const R = C.R;
+    if (R && !R.ended && R.anchored && C.play && C.play.kind === 'round') closeOpenUnscored('stop');
+    C.overlay = 'STOPPED'; C.overlayT = C.bt; cancelBells(); A.breezeOff(); ev('stop');
+  }
+  function abortRound(R) {
+    if (!R || R.ended) return;
+    if (R.anchored && C.play && C.play.kind === 'round') closeOpenUnscored('stop');
+    R.aborted = true; endRound(R); R.closeAt = C.bt; R.closeHow = 'stop'; R.t0End = C.bt;
+  }
+  function finishFromStop() {
+    C.overlay = null;
+    let R = C.R;
+    if (R && !R.ended) { if (R.res.length || R.startMs != null) abortRound(R); else { R.ended = true; R.aborted = true; R.committed = true; R = lastPlayed(); } }
+    enterBeat('END', { R, viaStop: true });
+    if (R && !R.committed) commitRound(R); else renderEnd(R, C.saved.square.stamped);
+  }
+  function lastPlayed() { for (let i = C.rounds.length - 1; i >= 0; i--) if (C.rounds[i].res.length && !C.rounds[i].replaced) return C.rounds[i]; return null; }
+  function dizzy() {
+    if (C.overlay === 'DIZZY') return;
+    C.overlay = null;
+    C.dizzyUsed = true;
+    const R = C.R;
+    if (R && !R.ended) { abortRound(R); R.committed = true; if (C.notMine.R === R) C.notMine = { open: false, R: null }; }
+    C.overlay = 'DIZZY'; C.overlayT = C.bt; cancelBells(); A.breezeOff(); ev('dizzy');
+  }
+
+  // ── size ──
+  function smaller() {
+    if (C.size === 2 || C.dizzyUsed) return;
+    const next = C.size === 3 ? 2.5 : 2;
+    const R = C.R;
+    if (R && !R.ended) {
+      if (R.anchored && C.play && C.play.kind === 'round') closeOpenUnscored('size');
+      const R2 = newRound(R.tier, next, { origSize: R.origSize, fromEnd: R.fromEnd, cycles: R.cycles });
+      R2.startMs = R.startMs; R2.sizedDown = true; R2.smallShown = R.smallShown; R2.smallLineShown = R.smallLineShown; R2.lines = R.lines;
+      R.ended = true; R.replaced = true; R.committed = true;
+      C.R = R2; C.rounds.push(R2);
+      if (C.play && C.play.kind === 'round') newPlay('round');
+    }
+    C.size = next; C.ghost.revealT = C.bt; C.ghost.per = 150;
+    cancelBells(); ev('size', { n: next });
+  }
+  function newRound(tier, size, o = {}) {
+    return { id: ++roundSeq, tier, size, cycles: o.cycles || CYCLES, res: [], help: 0, helpUsed: false, smallShown: false,
+      smallLineShown: false, settleNext: true, startMs: null, anchored: false, ended: false, void: [], flags: {},
+      origSize: o.origSize != null ? o.origSize : size, sizedDown: false, fromEnd: !!o.fromEnd, lines: {} };
+  }
+  function notMine() {
+    const N = C.notMine; if (!N.open || !N.R) return;
+    const R = N.R, last = R.res[R.res.length - 1];
+    if (last && (last.st === 'fit' || last.st === 'off')) {
+      last.st = 'dropped';                 // keeps its slot as not-fit; extends nothing
+      ev('dropped', { n: R.res.length });
+      const tile = C.tiles.find(x => x.R === R && x.idx === R.res.length - 1); if (tile) tile.droppedT = C.bt;
+      if (R.ended) endRound(R);            // final breath: re-judge before END renders
+    }
+    C.notMine = { open: false, R: null };
+  }
+
+  // ── ghost visibility ──
+  function ghostA() { const g = C.ghost; const p = Math.min(1, Math.max(0, (C.bt - g.t) / g.dur)); return g.a0 + (g.a1 - g.a0) * p; }
+  function ghostTo(a, dur) { C.ghost = { ...C.ghost, a0: ghostA(), a1: a, t: C.bt, dur: Math.max(1, dur) }; }
+  function setPose(p) { if (C.pose.want !== p) { C.pose.want = p; C.pose.since = C.bt; } }
+  function poseTick() {
+    const P = C.pose; if (P.want === P.cur) return;
+    const t = C.bt, near = x => Math.abs(t - x) < 1000;
+    let blocked = (C.lastLaunch && near(C.lastLaunch.t)) || near(C.glint.t);
+    if (!blocked && C.guide && C.guide.kind === 'echo') blocked = C.guide.turns.some(tr => tr.ring && near(tr.t));
+    if (!blocked || t - P.since > 4000) { P.prev = P.cur; P.cur = P.want; P.t = t; ev('pose', { pose: P.cur }); }
+  }
+  function headAngle() {
+    if (C.beat === 'LEARN_INTRO' && !C.R) return 6;           // the demo: the ghost is their plan
+    const R = C.R; if (R && R.anchored && !R.ended) return -6; // scored breaths: the bench work
+    return 0;
+  }
+
+  // ── beats ──
+  function enterBeat(name, o = {}) {
+    cancelTag('beat');
+    C.beat = name; C.beatT0 = C.bt; C.beatSeq++;
+    ev('beat', { beat: name });
+    const t = C.bt, bellsOn = C.saved.settings.bells;
+    switch (name) {
+      case 'INTRO': setPose('A'); break;
+      case 'BASELINE':
+        C.baseline = { breaths: [], start: t, closed: false, waiting: false, mean: null, tileT: null };
+        newPlay('baseline'); say('base.1', t); setPose('C'); break;
+      case 'PLAN':
+        if (!C.play || C.play.kind !== 'plan') newPlay('plan');
+        C.page = { t, dir: 'in' }; C.planSel = C.preselect; setPose('A'); break;
+      case 'LEARN_INTRO': {
+        C.R = null; newPlay(null); ghostTo(1, 300); C.ghost.revealT = t; C.ghost.per = 300; setPose('D'); C.tiles = [];
+        const n = C.size, s = n * 1000;
+        say(bellsOn ? 'learn.demo' : 'learn.demom', t);
+        at(t + 6000, () => { newPlay('demo'); K.active = null; setPhase('in', C.bt); C.guide = makeGuide('demo', C.bt, 1, n, { ringAnchor: true }); say('learn.0', C.bt, { n }); }, 'beat');
+        at(t + 6000 + s, () => setPhase('pause', C.bt), 'beat');
+        at(t + 6000 + 2 * s, () => { setPhase('out', C.bt); say('learn.0b', C.bt, { n }); }, 'beat');
+        at(t + 6000 + 3 * s, () => setPhase('pause', C.bt), 'beat');
+        at(t + 6000 + 4 * s, () => { setPhase('in', C.bt); const c = C.bt; at(c + CONFIRM_MS, () => demoConfirm(c), 'beat'); }, 'beat');
+        at(t + 6000 + 4 * s + 1400, () => {
+          say(C.saved.settings.bells ? 'learn.go' : 'learn.gom', C.bt);
+          C.R = newRound('learn', C.size, { origSize: C.size }); C.rounds.push(C.R); newPlay('round');
+        }, 'beat');
+        break;
+      }
+      case 'LOOSE':
+        C.loose = { t0: t, n: o.R && o.R.tier === 'echo' ? 2 : 1, count: 0, ready: false, R: o.R || null };
+        newPlay('loose', o.carry); ghostTo(0, 800); C.warmT = t; setPose('C');
+        say('loose.1', t + 1000); say(C.loose.n === 1 ? 'loose.f1' : 'loose.f2', t + 7500);
+        break;
+      case 'ECHO_INTRO':
+        C.R = newRound('echo', C.size, o); C.rounds.push(C.R); newPlay('round'); C.loose = null;
+        say(bellsOn ? 'echo.0' : 'echo.0m', t); ghostTo(1, 300); setPose('A'); break;
+      case 'FLY_INTRO':
+        C.R = newRound('fly', C.size, o); C.rounds.push(C.R); newPlay('round'); C.loose = null; C.tiles = [];
+        say('fly.0', t); ghostTo(0, 600); setPose('B'); break;
+      case 'END':
+        C.end = { R: o.R || null, t0: t, mode: null, pageT: null, viaStop: !!o.viaStop, looseN: 0,
+          moreAt: (o.R && o.R.closeAt != null ? o.R.closeAt : t) + 20000, moreOn: false };
+        newPlay('end', o.carry); ghostTo(0, 800); setPose('C'); C.loose = null; break;
+      case 'DONE':
+        newPlay(null); K.active = null; say('end.later', t); setPose('C'); ghostTo(0, 400); C.loose = null;
+        if (!C.end || C.end.pageT == null) { const R = lastPlayed(); C.end = { R, t0: t, viaStop: true, looseN: 0, moreAt: Infinity, moreOn: false, pageT: null }; renderEnd(R, C.saved.square.stamped); }
+        break;
+      case 'FREE':
+        newPlay('free'); C.page = null; setPose('C'); ghostTo(0, 400); C.loose = null; break;
+    }
+  }
+  function demoConfirm(c) {
+    const P = C.play; if (!P || P.kind !== 'demo') return;
+    const list = parseBreaths(P.log.filter(s => s.t1 <= c + EPS));
+    const b = list[list.length - 1];
+    C.demoCheck.push({ n: C.size, b: { ...b } });
+    launchKite(b, { demo: true });
+    C.guide = null; newPlay(null);
+  }
+  function closeBaseline() {
+    const B = C.baseline; if (!B || B.closed) return;
+    if (!B.breaths.length) { if (!B.waiting) { B.waiting = true; say('drift.idle'); } return; }
+    B.closed = true; B.mean = meanBreath(B.breaths); B.tileT = C.bt;
+    const cyc = PH.reduce((s, k) => s + B.mean[k], 0);
+    C.preselect = cyc < PRESELECT_SMALLER_BELOW_S ? 2.5 : 3; C.planSel = C.preselect;
+    say('base.end'); driftOff();
+    newPlay('plan', C.closingPress);
+    at(C.bt + 1500, () => enterBeat('PLAN'), 'beat');
+  }
+  function restartBaseline() { C.baseline = { breaths: [], start: C.bt, closed: false, waiting: false, mean: null, tileT: null }; newPlay('baseline'); }
+
+  // ── dynamic thresholds: each returns its exact due time ──
+  function conds() {
+    const out = [], t = C.bt, P = C.play, R = C.R;
+    const L = liveInfo();
+    if (C.beat === 'BASELINE' && C.baseline && !C.baseline.closed && !C.baseline.waiting) {
+      out.push({ due: C.baseline.start + BASELINE_MAX_MS, act: closeBaseline });
+      if (C.baseline.breaths.length === BASELINE_N - 1 && L && L.cur && L.cur.seenOut && L.phase === 'pause')
+        out.push({ due: t + (BASELINE_LAST_REST_S - L.cur.rest) * 1000, act: closeByTimeout });
+    }
+    if (R && !R.ended && P && P.kind === 'round' && R.anchored) {
+      const T = SIZES[R.size];
+      if (L && L.cur) {
+        const cur = L.cur, ph = L.phase, fk = Math.round(cur.start) + ':';
+        if (ph === 'in' || ph === 'out') {
+          const key = ph === 'in' ? 'inh' : 'exh', el = cur[key];
+          if (!R.flags[fk + key]) out.push({ due: t + (T[key] + OVERRUN_S - el) * 1000, act: () => { R.flags[fk + key] = 1; say('drift.overKey'); } });
+          out.push({ due: t + (KEY_MAX_S - el) * 1000, act: () => { closeOpenUnscored('keymax'); enterPause('keymax'); } });
+        } else if (ph === 'pause') {
+          if (!cur.seenOut) { if (!R.flags[fk + 'hold']) out.push({ due: t + (T.hold + OVERRUN_S - cur.hold) * 1000, act: () => { R.flags[fk + 'hold'] = 1; say('drift.overHold'); } }); }
+          else if (R.res.length === R.cycles - 1 && !L.list.length) out.push({ due: t + (T.rest + TIMEOUT_EXTRA_S - cur.rest) * 1000, act: closeByTimeout });
+          else if (!L.list.length && !R.flags[fk + 'rest']) out.push({ due: t + (T.rest + OVERRUN_S - cur.rest) * 1000, act: () => { R.flags[fk + 'rest'] = 1; say('drift.overRest'); } });
+        }
+      }
+      if (!K.down.in && !K.down.out) out.push({ due: C.lastKeyT + IDLE_PAUSE_MS, act: () => { closeOpenUnscored('idle'); say('drift.idle'); enterPause('idle'); } });
+      if (R.startMs != null) out.push({ due: Math.min(R.startMs + ROUND_CAP_MS, R.startMs + LOAD_CAP_MS - C.patternedMs), act: () => { closeOpenUnscored('cap'); finishRound(R, 'cap', null); } });
+    }
+    // Unscored plays (plan, loose, end, free): a pause or rest past CAP_S lets the kite go, as in
+    // Kite 2.0 (a finished breath flies; an in-breath with no out-breath fades away).
+    if (P && ['plan', 'loose', 'end', 'free'].includes(P.kind) && L && L.cur && L.phase === 'pause' && !L.list.length) {
+      const el = L.cur.seenOut ? L.cur.rest : L.cur.hold;
+      out.push({ due: t + (CAP_S - el) * 1000, act: () => { if (L.cur.seenOut) closeByTimeout(); else newPlay(P.kind); } });
+    }
+    if (R && R.ended && !R.committed && R.t0End == null && R.closeAt != null) out.push({ due: R.closeAt + 6000, act: () => setT0End(R, C.bt) });
+    if (C.beat === 'LOOSE' && C.loose && !C.loose.ready) {
+      const due = C.loose.count >= LOOSE_MIN_BREATHS ? C.loose.t0 + LOOSE_MIN_MS : C.loose.t0 + LOOSE_FALLBACK_MS;
+      out.push({ due, act: () => { C.loose.ready = true; say('loose.ready'); } });
+    }
+    if (C.beat === 'END' && C.end && !C.end.moreOn && C.end.moreAt < Infinity) out.push({ due: C.end.moreAt, act: () => { C.end.moreOn = true; } });
+    if (C.stitch && stitchOn() && P) {
+      for (const ph of ['in', 'out']) {
+        const e = P.endOf[ph];
+        if (!C.stitch[ph] && e != null && e > C.stitch.start && L && L.phase !== ph) {
+          out.push({ due: e + CONFIRM_MS, act: () => { const L2 = liveInfo(); const x = L2 && (L2.list[0] || L2.cur); if (x) judge(ph, x[ph === 'in' ? 'inh' : 'exh']); else C.stitch[ph] = { t: C.bt, fit: false }; } });
+        }
+      }
+    }
+    return out;
+  }
+  function fire() {
+    for (let g = 0; g < 400; g++) {
+      if (C.overlay) return;
+      let did = false;
+      while (C.timers.length && C.timers[0].t <= C.bt + EPS) { const x = C.timers.shift(); x.fn(); did = true; if (C.overlay) return; }
+      for (const c of conds()) if (c.due <= C.bt + EPS) { c.act(); did = true; break; }
+      if (C.overlay) return;
+      if (!did) break;
+    }
+    bells(); captions(C.bt); poseTick();
+    C.sky = C.sky.filter(k => !(k.drift != null && C.bt - k.drift > 3000) && !(k.demo && C.bt - k.t > 1500));
+  }
+  function nextDeadline() {
+    let d = Infinity; const t = C.bt + EPS;
+    if (C.timers.length) d = Math.min(d, C.timers[0].t);
+    for (const c of conds()) if (c.due > t) d = Math.min(d, c.due);
+    for (const x of C.queue) if (x.at > t) d = Math.min(d, x.at);
+    for (const s of ['safety', 'mentor']) { const c = C.cap[s]; if (c && c.start + 6000 > t) d = Math.min(d, c.start + 6000); }
+    for (const tr of bellCandidates()) { const p = tr.t - BELL_LOOKAHEAD_MS; if (p > t) d = Math.min(d, p); }
+    return d;
+  }
+  // Advance the breath clock to T, stopping at every exact deadline on the way.
+  function advance(T) {
+    if (C.overlay) return;
+    for (let g = 0; g < 200000; g++) {
+      fire(); if (C.overlay) return;
+      const d = nextDeadline();
+      if (!(d <= T)) break;
+      C.bt = Math.max(C.bt, d);
+    }
+    if (C.overlay) return;
+    if (T > C.bt) C.bt = T;
+    fire();
+  }
+  function input(type, kind, t) {
+    if (!C.overlay && t != null) advance(t);
+    if (type === 'down') keyDown(kind); else keyUp(kind);
+    fire();
+  }
+
+  function button(id, arg) {
+    const t = C.bt;
+    switch (id) {
+      case 'begin': if (C.beat === 'INTRO') enterBeat('BASELINE'); break;
+      case 'size': if (C.beat === 'PLAN') C.planSel = arg; break;
+      case 'show': if (C.beat === 'PLAN' && C.page && C.page.dir === 'in') { C.size = C.planSel; C.origSize = C.size; C.page = { t, dir: 'out' }; at(t + 500, () => enterBeat('LEARN_INTRO'), 'beat'); } break;
+      case 'carry': if (C.beat === 'LOOSE' && C.loose && C.loose.ready) { driftOff(); enterBeat(C.loose.n === 1 ? 'ECHO_INTRO' : 'FLY_INTRO'); } break;
+      case 'back': if (C.beat === 'LOOSE' && C.loose && C.loose.R && C.loose.R.sizedDown) { C.size = C.loose.R.origSize; C.ghost.revealT = t; C.ghost.per = 150; C.loose.R.sizedDown = false; } break;
+      case 'smaller': smaller(); break;
+      case 'notmine': notMine(); break;
+      case 'stop': stop(); break;
+      case 'resume': if (C.overlay === 'STOPPED' || C.overlay === 'PAUSED') resume('button'); break;
+      case 'endStop': if (C.overlay === 'STOPPED') finishFromStop(); break;
+      case 'dizzy': dizzy(); break;
+      case 'done': if (C.overlay === 'DIZZY') { C.overlay = null; enterBeat('DONE'); } break;
+      case 'moreEcho': case 'moreFly':
+        if (C.beat === 'END' && C.end && C.end.mode === 'open' && C.end.more && C.end.moreOn) { driftOff(); C.page = null; enterBeat(id === 'moreEcho' ? 'ECHO_INTRO' : 'FLY_INTRO', { fromEnd: true }); }
+        break;
+      case 'loose': if (C.beat === 'END' || C.beat === 'DONE') { driftOff(); enterBeat('FREE'); } break;
+      case 'end': if (C.beat === 'END' || C.beat === 'FREE') enterBeat('DONE'); break;
+      case 'stamp': stampTap(); break;
+      case 'bells':
+        C.saved.settings.bells = !C.saved.settings.bells; persist();
+        if (!C.saved.settings.bells) cancelBells();
+        break;
+      case 'motion': C.saved.settings.lessMotion = !C.saved.settings.lessMotion; persist(); break;
+    }
+    fire();
+  }
+
+  // Jump into a tier for tests and the debug API (skips intro, baseline and plan).
+  function debugStart(tier, size = 3, o = {}) {
+    C.size = size; C.origSize = size; C.planSel = size;
+    if (o.patternedMs != null) C.patternedMs = o.patternedMs;
+    if (tier === 'baseline') return enterBeat('BASELINE');
+    if (tier === 'plan') return enterBeat('PLAN');
+    if (tier === 'learnIntro') return enterBeat('LEARN_INTRO');
+    if (tier === 'learn') {
+      enterBeat('LEARN_INTRO'); cancelTag('beat'); C.queue = [];
+      C.R = newRound('learn', size, o); C.rounds.push(C.R); newPlay('round'); return;
+    }
+    if (tier === 'echo') return enterBeat('ECHO_INTRO', o);
+    if (tier === 'fly') return enterBeat('FLY_INTRO', o);
+  }
+
+  function state() {
+    const L = liveInfo(), R = C.R;
+    const cap = s => C.cap[s] && { id: C.cap[s].id, text: C.cap[s].text, start: C.cap[s].start };
+    return {
+      beat: C.beat, overlay: C.overlay, t: C.bt, size: C.size, patternedMs: C.patternedMs, dizzyUsed: C.dizzyUsed,
+      round: R && { tier: R.tier, size: R.size, statuses: R.res.map(x => x.st), cycles: R.res.length, help: R.help,
+        helpUsed: R.helpUsed, anchored: R.anchored, startMs: R.startMs, ended: R.ended, mastered: !!R.mastered,
+        void: R.void.map(v => ({ reason: v.reason, partial: !!v.partial, b: v.b })),
+        errs: R.res.map(x => PH.map(k => x.r.phases[k].err)) },
+      live: L && L.cur ? { phase: L.phase, secs: { inh: q(L.cur.inh), hold: q(L.cur.hold), exh: q(L.cur.exh), rest: q(L.cur.rest) }, pending: L.list.length > 0 } : null,
+      lastKite: C.lastLaunch && { ...C.lastLaunch, secs: { ...C.lastLaunch.secs } },
+      guide: C.guide && { kind: C.guide.kind, c0: C.guide.c0, cycles: C.guide.cycles, cycleMs: C.guide.cyc, turns: C.guide.turns.map(x => x.t) },
+      help: C.help && { c0: C.help.c0, turns: C.help.turns.map(x => x.t) },
+      bells: C.bellLog.map(b => ({ t: b.t, j: b.j, kind: b.kind, at: b.at, cancelled: b.cancelled })),
+      pose: C.pose.cur, head: headAngle(),
+      captions: { mentor: cap('mentor'), safety: cap('safety') },
+      saved: JSON.parse(JSON.stringify(C.saved)),
+      end: C.end && { mode: C.end.mode, pageT: C.end.pageT, lines: C.end.lines ? sentenceText(C.end.lines) : null, more: C.end.more, moreOn: C.end.moreOn, stampReady: C.end.stampReady ?? null, tapT: C.end.tapT ?? null },
+      notMine: C.notMine.open, sky: C.sky.length, kites: C.nKites, glints: C.glint.n,
+    };
+  }
+  return { C, K, advance, input, keyDown, keyUp, releaseAll, button, state, live: liveInfo, hidden, debugStart,
+    acceptsInput, ghostA, headAngle, enterBeat, newRound, fire };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Audio: Web Audio, synthesised; the context is made on "begin" and nothing
+// sounds until the first press after it. Bells belong to the plan's clock only.
+// ════════════════════════════════════════════════════════════════════════════
+function createAudio() {
+  let ac = null, master = null, bellBus = null, noise = null, breeze = null, armed = false;
+  const live = [];
+  const A = {
+    init() {
+      if (ac) return;
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        master = ac.createGain(); master.gain.value = 0.6;
+        const dl = ac.createDelay(1), fb = ac.createGain(), wet = ac.createGain();
+        dl.delayTime.value = 0.23; fb.gain.value = 0.32; wet.gain.value = 0.22;
+        master.connect(ac.destination); master.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(ac.destination);
+        bellBus = ac.createGain(); bellBus.gain.value = 1; bellBus.connect(master);
+        noise = ac.createBuffer(1, ac.sampleRate * 4, ac.sampleRate);
+        const d = noise.getChannelData(0); let last = 0;
+        for (let k = 0; k < d.length; k++) { const w = Math.random() * 2 - 1; last = (last + 0.04 * w) / 1.04; d[k] = last * 3.2; }
+      } catch { ac = null; }
+    },
+    ok() { return !!(ac && armed); },
+    arm() { if (!ac) return; armed = true; if (ac.state === 'suspended') ac.resume(); },
+    latency() { return ac ? (ac.outputLatency || 0) : 0; },
+    suspend() { if (ac && ac.state === 'running') ac.suspend(); },
+    resume() { if (ac && armed && ac.state === 'suspended') ac.resume(); },
+    _bell(f, when, level, tau, bus) {
+      const g = ac.createGain(), o1 = ac.createOscillator(), o2 = ac.createOscillator(), g2 = ac.createGain();
+      o1.type = 'sine'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2.005; g2.gain.value = 0.16;
+      g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(level, when + 0.12); g.gain.setTargetAtTime(0.0001, when + 0.12, tau);
+      o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(bus);
+      const end = when + 0.12 + tau * 6;
+      o1.start(when); o2.start(when); o1.stop(end); o2.stop(end);
+      return { o1, o2, g, when, end };
+    },
+    bell(f, delay, level, tau) {
+      if (!A.ok()) return null;
+      const h = A._bell(f, ac.currentTime + Math.max(0, delay), level, tau, bellBus);
+      live.push(h); while (live.length > 40) live.shift();
+      return h;
+    },
+    cancelBells() {
+      if (!ac) return;
+      const t = ac.currentTime;
+      try {
+        bellBus.gain.cancelScheduledValues(t); bellBus.gain.setValueAtTime(bellBus.gain.value, t);
+        bellBus.gain.linearRampToValueAtTime(0, t + BELL_FADE_MS / 1000);
+        for (const h of live.splice(0)) { try { h.o1.stop(t + BELL_FADE_MS / 1000); h.o2.stop(t + BELL_FADE_MS / 1000); } catch { /* already stopped */ }
+          setTimeout(() => { try { h.g.disconnect(); } catch { /* fine */ } }, 200); }
+        bellBus.gain.setValueAtTime(1, t + BELL_FADE_MS / 1000 + 0.01);
+      } catch { /* fine */ }
+    },
+    breezeOff(tau = 0.6) {
+      if (!breeze || !ac) return;
+      const { src, g } = breeze; breeze = null; const t = ac.currentTime;
+      g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(0.0001, t, tau); src.stop(t + tau * 6);
+    },
+    breezeOn(kind) {
+      if (!A.ok()) return;
+      const [from, to, level, tau] = kind === 'in' ? [380, 1150, 0.11, 2.2] : [950, 300, 0.09, 3.2];
+      A.breezeOff(0.25);
+      const src = ac.createBufferSource(); src.buffer = noise; src.loop = true; src.loopStart = Math.random() * 3;
+      const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7;
+      const g = ac.createGain(), t = ac.currentTime;
+      bp.frequency.setValueAtTime(from, t); bp.frequency.setTargetAtTime(to, t, tau);
+      g.gain.setValueAtTime(0.0001, t); g.gain.setTargetAtTime(level, t, 0.45);
+      src.connect(bp); bp.connect(g); g.connect(master); src.start(t, src.loopStart);
+      breeze = { src, g };
+    },
+    launch() { if (!A.ok()) return; const t = ac.currentTime + 0.05; A._bell(SCALE[3], t, 0.03, 3, master); A._bell(SCALE[5], t + 0.08, 0.03, 3, master); },
+    stamp() { if (!A.ok()) return; A._bell(SCALE[0], ac.currentTime + 0.02, 0.04, 2.2, master); },
+  };
+  return A;
+}
+function fakeAudio() {
+  const fa = { now: () => 0, bells: [], arm() {}, breezeOn() {}, breezeOff() {}, launch() {}, stamp() {}, latency: () => 0,
+    bell(f, delay, level, tau) { const h = { f, start: fa.now() + delay, cancelled: false, level, tau }; fa.bells.push(h); return h; },
+    cancelBells() { const n = fa.now(); for (const h of fa.bells) if (h.start > n) h.cancelled = true; } };
+  return fa;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Storage: one namespaced key, every access wrapped
+// ════════════════════════════════════════════════════════════════════════════
+const QS = new URLSearchParams(location.search);
+const DEBUG = QS.get('debug') === '1' || QS.has('dev');
+const DEMO = QS.has('demo');
+const STORE_KEY = 'kitewright.v1';
+const pageStore = {
+  load() {
+    const d = defaultSaved();
+    if (DEMO) return d;
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (s && s.square) d.square = { stars: +s.square.stars || 0, size: s.square.size || null, stamped: !!s.square.stamped };
+      if (s && s.settings) d.settings = { bells: s.settings.bells !== false, lessMotion: !!s.settings.lessMotion };
+    } catch { /* storage blocked: memory only */ }
+    return d;
+  },
+  save(o) { if (DEMO) return; try { localStorage.setItem(STORE_KEY, JSON.stringify(o)); } catch { /* memory only */ } },
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// The page
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const AUD = createAudio();
+const G = createCore({ audio: AUD, store: pageStore });
+const C = G.C;
+const bg = $('bg'), fg = $('fg'), bctx = bg.getContext('2d'), ctx = fg.getContext('2d');
+const mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const lessMotion = () => mqReduce.matches || C.saved.settings.lessMotion;
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const easeInOut = a => a < 0.5 ? 2 * a * a : 1 - Math.pow(-2 * a + 2, 2) / 2;
+const easeOut = a => 1 - (1 - a) * (1 - a);
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let rng = mulberry32(QS.has('seed') ? +QS.get('seed') : 20261101);
+
+// ── layout (D22): 1280×720 landscape or 390×844 portrait, scaled uniformly ──
+const L = {};
+function layout() {
+  const W = window.innerWidth || 1280, H = window.innerHeight || 720;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const portrait = H > W;
+  Object.assign(L, { W, H, dpr, portrait });
+  if (!portrait) {
+    Object.assign(L, { RW: 1280, RH: 720, S: 43.2, hub: [600, 330], peg: [640, 180], sk: 0.36,
+      mast: [600, 176, 560], bar: [556, 644, 180], bench: [120, 700, 500, 560], mentor: [260, 500, 4],
+      shed: [40, 470, 118, 560], roof: [24, 486, 96, 120], plans: [[125, 185], [235, 185], [345, 185]], paper: 78,
+      own: [292, 252], tileSpot: [505, 476], tileSize: 44, meadow: 560 });
+  } else {
+    Object.assign(L, { RW: 390, RH: 844, S: 29.25, hub: [195, 380], peg: [232, 286], sk: 0.3,
+      mast: [195, 284, 610], bar: [160, 236, 286], bench: [0, 390, 610, 650], mentor: [64, 610, 2.4],
+      shed: [0, 390, 522, 650], roof: [0, 390, 512, 524], plans: [[232, 562], [292, 562], [352, 562]], paper: 50,
+      own: [140, 556], tileSpot: [150, 588], tileSize: 40, meadow: 650 });
+  }
+  L.k = Math.min(W / L.RW, H / L.RH);
+  L.ox = (W - L.RW * L.k) / 2; L.oy = (H - L.RH * L.k) / 2;
+  L.vx0 = -L.ox / L.k; L.vx1 = (W - L.ox) / L.k; L.vy0 = -L.oy / L.k; L.vy1 = (H - L.oy) / L.k;
+  L.px = 1 / (L.k * dpr);   // one device pixel in reference units
+  for (const c of [bg, fg]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.style.width = W + 'px'; c.style.height = H + 'px'; }
+  L.short = !portrait && H < 520;   // phone landscape
+  L.compact = portrait || H < 680;  // the plan page folds its prose and tightens
+  document.body.classList.toggle('portrait', portrait); document.body.classList.toggle('landscape', !portrait);
+  document.body.classList.toggle('short', L.short); document.body.classList.toggle('compact', L.compact);
+  $('caps').style.top = portrait ? capsTop() + 'px' : '';
+  hillPosts(); bakeSprites(); drawBg(); pageKey = ''; placePage(PAGE.mode);
+}
+// pads: 240×88 landscape; 171×112 portrait (scaled). In phone landscape they share one row
+// with the phase word (140 px, left) and "not my breath" (right), or, while the plan page is
+// up, the half of the screen the page leaves free.
+const WORD_W = 140, RIGHTCOL_W = 190;
+function sizePads() {
+  const W = L.W, up = document.body.classList.contains('pageup');
+  let pw, ph;
+  if (L.portrait) { pw = Math.max(120, (W - 48) / 2); ph = Math.max(64, Math.min(112, 112 * L.k)); }
+  else if (L.short && up) { pw = Math.max(120, Math.min(240, (W - PAGE.right - 8 - 16 - 16 - 16) / 2)); ph = 64; }   // the half the page leaves
+  else if (L.short) { pw = Math.max(120, Math.min(240, (W - 32 - WORD_W - RIGHTCOL_W - 48) / 2)); ph = 64; }
+  else { pw = Math.min(240, (W - 48) / 2); ph = 88; }
+  for (const p of [$('padIn'), $('padOut')]) { p.style.width = pw + 'px'; p.style.height = ph + 'px'; }
+}
+const toRef = (x, y) => [(x - L.ox) / L.k, (y - L.oy) / L.k];
+const toScr = (x, y) => [L.ox + x * L.k, L.oy + y * L.k];
+function refT(c) { c.setTransform(L.k * L.dpr, 0, 0, L.k * L.dpr, L.ox * L.dpr, L.oy * L.dpr); }
+
+// hill line: 8 tether posts (D64)
+function hillPosts() {
+  L.posts = [];
+  if (!L.portrait) {
+    const qx = s => (1 - s) * (1 - s) * 760 + 2 * (1 - s) * s * 1010 + s * s * 1280, qy = s => (1 - s) * (1 - s) * 520 + 2 * (1 - s) * s * 440 + s * s * 470;
+    for (let i = 0; i < 8; i++) {
+      const x = 812 + i * 62; let s = 0.5; for (let it = 0; it < 30; it++) { s += (x - qx(s)) / 600; s = clamp01(s); }
+      L.posts.push({ x, y: qy(s), slot: [x, 260], sw: 60, sh: 90, ceil: 0.4 });
+    }
+  } else {
+    const ry = x => 146 - 22 * Math.sin(Math.PI * x / 390);
+    const xs = [[355, 105], [265, 105], [175, 105], [85, 105], [310, 40], [220, 40], [130, 40], [40, 40]];   // post 1 first: the corner the controls leave clear
+    for (const [x, y] of xs) L.posts.push({ x, y: ry(x), slot: [x, y], sw: 40, sh: 70, ceil: 0.3 });
+  }
+}
+
+// ── sprites: clouds, glow, mentor layers (D66) ──
+const SPR = {};
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; }
+function bakeSprites() {
+  const s = L.k * L.dpr;
+  // cloud
+  { const w = 240, h = 110, c = mkCanvas(w * s, h * s), x = c.getContext('2d'); x.scale(s, s); x.fillStyle = 'rgba(255,255,255,0.72)';
+    for (const [dx, dy, r] of [[120, 62, 34], [80, 70, 26], [160, 70, 28], [104, 44, 24], [140, 46, 22]]) { x.beginPath(); x.ellipse(dx, dy, r * 1.4, r * 0.8, 0, 0, 6.283); x.fill(); }
+    SPR.cloud = { c, w, h }; }
+  // bead glow
+  { const w = 40, c = mkCanvas(w * s, w * s), x = c.getContext('2d'); x.scale(s, s);
+    const g = x.createRadialGradient(20, 20, 0, 20, 20, 20); g.addColorStop(0, 'rgba(255,255,255,0.75)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, w, w); SPR.glow = { c, w }; }
+  // mentor torso + apron (the only scaled layer) and head (cap, spectacles, shoulders)
+  const u = L.mentor[2];
+  { const w = 40 * u, h = 34 * u, c = mkCanvas(w * s, h * s), x = c.getContext('2d'); x.scale(s, s); x.translate(w / 2, 30 * u);
+    x.lineWidth = Math.max(1.25 * L.px, 0.4 * u);
+    x.beginPath(); x.moveTo(-11 * u, -26 * u); x.quadraticCurveTo(-13 * u, -14 * u, -17 * u, 3 * u); x.lineTo(17 * u, 3 * u); x.quadraticCurveTo(13 * u, -14 * u, 11 * u, -26 * u); x.closePath();
+    x.fillStyle = '#4a76a8'; x.fill(); x.strokeStyle = 'rgba(31,42,61,0.6)'; x.stroke();
+    x.beginPath(); x.moveTo(-8 * u, -20 * u); x.lineTo(8 * u, -20 * u); x.lineTo(11 * u, 3 * u); x.lineTo(-11 * u, 3 * u); x.closePath();
+    x.fillStyle = '#8cb2dd'; x.fill(); x.strokeStyle = 'rgba(31,42,61,0.5)'; x.stroke();
+    x.beginPath(); x.moveTo(-7.5 * u, -20 * u); x.lineTo(-5.5 * u, -26.5 * u); x.moveTo(7.5 * u, -20 * u); x.lineTo(5.5 * u, -26.5 * u); x.stroke();
+    x.strokeRect(-5 * u, -11 * u, 10 * u, 6 * u);
+    x.beginPath(); x.moveTo(2 * u, -7 * u); x.lineTo(5 * u, -17 * u); x.strokeStyle = '#8a5f3a'; x.lineWidth = 1.2 * u; x.lineCap = 'round'; x.stroke();
+    SPR.torso = { c, w, h, ox: w / 2, oy: 30 * u }; }
+  { const w = 30 * u, h = 22 * u, c = mkCanvas(w * s, h * s), x = c.getContext('2d'); x.scale(s, s); x.translate(w / 2, 17 * u);
+    const lw = Math.max(1.25 * L.px, 0.35 * u);
+    x.fillStyle = '#4a76a8'; x.beginPath(); x.ellipse(0, 1.5 * u, 11.5 * u, 3 * u, 0, Math.PI, 0); x.fill();    // shoulders
+    x.fillStyle = '#efcfae'; x.beginPath(); x.arc(0, -6 * u, 7 * u, 0, 6.283); x.fill();
+    x.strokeStyle = 'rgba(31,42,61,0.55)'; x.lineWidth = lw; x.stroke();
+    x.fillStyle = '#cfcfcf'; for (const sx of [-1, 1]) { x.beginPath(); x.ellipse(sx * 6.4 * u, -4.5 * u, 1.6 * u, 2.4 * u, 0, 0, 6.283); x.fill(); }
+    x.fillStyle = '#6b5a48'; x.beginPath(); x.moveTo(-7.6 * u, -7.5 * u); x.quadraticCurveTo(-7 * u, -14.5 * u, 0, -14 * u); x.quadraticCurveTo(7 * u, -14.5 * u, 7.8 * u, -8.5 * u);
+    x.lineTo(11 * u, -7.4 * u); x.lineTo(7.4 * u, -6.6 * u); x.closePath(); x.fill(); x.stroke();
+    x.strokeStyle = INK; x.lineWidth = Math.max(1.25 * L.px, 0.3 * u);
+    for (const sx of [-1, 1]) { x.beginPath(); x.arc(sx * 3.2 * u, -5.5 * u, 2.6 * u, 0, 6.283); x.stroke(); }
+    x.beginPath(); x.moveTo(-0.6 * u, -5.7 * u); x.lineTo(0.6 * u, -5.7 * u); x.stroke();
+    SPR.head = { c, w, h, ox: w / 2, oy: 17 * u }; }
+  SPR.kites = new Map();
+}
+
+// ── background canvas: sky, sun, meadow, hill, shed, posts, frame; redrawn on resize only ──
+function drawBg() {
+  const c = bctx; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, bg.width, bg.height); refT(c);
+  const sky = c.createLinearGradient(0, L.vy0, 0, L.vy1);
+  sky.addColorStop(0, '#86c0e6'); sky.addColorStop(0.55, '#bfe0f2'); sky.addColorStop(0.82, '#e3f0f2'); sky.addColorStop(1, '#eef5e6');
+  c.fillStyle = sky; c.fillRect(L.vx0, L.vy0, L.vx1 - L.vx0, L.vy1 - L.vy0);
+  const sx = L.portrait ? 330 : 720, sy = L.portrait ? 170 : 60, sr = L.portrait ? 160 : 300;
+  const sun = c.createRadialGradient(sx, sy, 0, sx, sy, sr);
+  sun.addColorStop(0, 'rgba(255,250,225,0.95)'); sun.addColorStop(0.12, 'rgba(255,246,215,0.55)'); sun.addColorStop(1, 'rgba(255,246,215,0)');
+  c.fillStyle = sun; c.fillRect(L.vx0, L.vy0, L.vx1 - L.vx0, L.vy1 - L.vy0);
+  // hill ridge + posts
+  c.fillStyle = '#d3e7c2';
+  if (!L.portrait) { c.beginPath(); c.moveTo(760, 520); c.quadraticCurveTo(1010, 440, 1280, 470); c.lineTo(L.vx1, 470); c.lineTo(L.vx1, 600); c.lineTo(700, 600); c.closePath(); c.fill(); }
+  else { c.beginPath(); c.moveTo(L.vx0, 150); for (let x = 0; x <= 390; x += 10) c.lineTo(x, 146 - 22 * Math.sin(Math.PI * x / 390)); c.lineTo(L.vx1, 150); c.lineTo(L.vx1, 168); c.lineTo(L.vx0, 168); c.closePath(); c.fill(); }
+  c.fillStyle = 'rgba(31,42,61,0.5)';
+  for (const p of L.posts) c.fillRect(p.x - 1.5, p.y - (L.portrait ? 10 : 22), 3, L.portrait ? 10 : 22);
+  // meadow
+  c.fillStyle = '#c3dfab'; c.beginPath(); c.moveTo(L.vx0, L.meadow); c.quadraticCurveTo(L.RW * 0.4, L.meadow - 30, L.vx1, L.meadow - 6); c.lineTo(L.vx1, L.vy1); c.lineTo(L.vx0, L.vy1); c.closePath(); c.fill();
+  c.fillStyle = '#aed293'; c.beginPath(); c.moveTo(L.vx0, L.meadow + 50); c.quadraticCurveTo(L.RW * 0.5, L.meadow + 30, L.vx1, L.meadow + 52); c.lineTo(L.vx1, L.vy1); c.lineTo(L.vx0, L.vy1); c.closePath(); c.fill();
+  bakeShed();
+}
+// The shed and the build frame sit in front of the clouds, so they are a sprite drawn on fg.
+function bakeShed() {
+  const sc = L.k * L.dpr, bx0 = L.portrait ? L.vx0 : 0, bx1 = L.portrait ? L.vx1 : 700, by0 = L.portrait ? 270 : 80, by1 = L.portrait ? 660 : 600;
+  const cv = mkCanvas((bx1 - bx0) * sc, (by1 - by0) * sc), c = cv.getContext('2d'); c.scale(sc, sc); c.translate(-bx0, -by0);
+  SPR.shed = { c: cv, x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0 };
+  // shed: back wall, planks, roof eave, side posts
+  const [x0, x1, y0, y1] = L.shed, [rx0, rx1, ry0, ry1] = L.roof;
+  c.fillStyle = '#efe3cf'; c.fillRect(L.portrait ? L.vx0 : x0, y0, (L.portrait ? L.vx1 - L.vx0 : x1 - x0), y1 - y0);
+  c.strokeStyle = 'rgba(31,42,61,0.07)'; c.lineWidth = 1;
+  for (let x = x0 + 24; x < x1; x += 24) { c.beginPath(); c.moveTo(x, y0); c.lineTo(x, y1); c.stroke(); }
+  c.fillStyle = '#b98d64'; c.fillRect(L.portrait ? L.vx0 : rx0, ry0, L.portrait ? L.vx1 - L.vx0 : rx1 - rx0, ry1 - ry0);
+  c.strokeStyle = 'rgba(31,42,61,0.45)'; c.lineWidth = Math.max(1, 1.25 * L.px); c.strokeRect(L.portrait ? L.vx0 : rx0, ry0, L.portrait ? L.vx1 - L.vx0 : rx1 - rx0, ry1 - ry0);
+  if (!L.portrait) { c.fillStyle = '#a77d55'; c.fillRect(x0, y0, 12, y1 - y0); c.fillRect(x1 - 12, y0, 12, y1 - y0); }
+  // build frame: mast and crossbar with its peg
+  c.strokeStyle = '#a87b52'; c.lineWidth = L.portrait ? 4 : 6; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(L.mast[0], L.mast[2]); c.lineTo(L.mast[0], L.mast[1]); c.moveTo(L.bar[0], L.bar[2]); c.lineTo(L.bar[1], L.bar[2]); c.stroke();
+  c.fillStyle = INK; c.beginPath(); c.arc(L.peg[0], L.peg[1], L.portrait ? 2.5 : 3.5, 0, 6.283); c.fill();
+}
+
+// ── decoration clock (clamped dt): wind, clouds, flight, tails, springs ──
+const D = { t: 0, clouds: [], fp: 0, motion: { next: 4, start: -99, dur: 0, kind: null, up: false }, lastPose: null };
+function initClouds() { D.clouds = Array.from({ length: 6 }, (_, i) => ({ x: rng(), y: 0.02 + i * 0.035 + rng() * 0.03, s: 0.6 + rng() * 0.7, v: 0.004 + rng() * 0.006 })); }
+const wind = t => 0.6 + 0.25 * Math.sin(2 * Math.PI * t / 23) + 0.15 * Math.sin(2 * Math.PI * t / 37 + 1.3);
+function decor(dt) {
+  D.t += dt;
+  const sp = lessMotion() ? 0.25 : 1;
+  for (const c of D.clouds) { c.x += c.v * wind(D.t) * dt * sp; if (c.x > 1.25) c.x = -0.25; }
+  // player fullness for the live sail's fill (τ 1.6 s rising, 2.2 s falling)
+  const ph = C.play && C.play.open ? C.play.open.phase : null, Lv = ph ? G.live() : null;
+  const target = ph === 'in' ? 1 : ph === 'pause' && Lv && Lv.cur && !Lv.cur.seenOut ? 1 : 0;
+  const tau = target > D.fp ? 1.6 : 2.2; D.fp += (target - D.fp) * (1 - Math.exp(-dt / tau));
+  // idle motions: still for 5-12 s, then 0.8-2.5 s of motion (pose C winds 3-5 turns)
+  const M = D.motion;
+  if (D.t >= M.next) {
+    M.start = D.t; M.kind = C.pose.cur;
+    M.dur = M.kind === 'C' ? (3 + Math.floor(rng() * 3)) * 2.5 : M.kind === 'B' ? 0.8 : 0.8 + rng() * 1.7;
+    if (M.kind === 'B') M.up = !M.up;
+    M.next = D.t + M.dur + 5 + rng() * 7;
+  }
+}
+
+// ── drawing helpers (reference units) ──
+const lw = w => Math.max(w, 1.25 * L.px);
+function tipsOf(sp) { return [[0, -sp.top], [sp.right, 0], [0, sp.bottom], [-sp.left, 0]]; }
+function drawSail(c, sp, color, o = {}) {
+  const [T, R, B, Lf] = tipsOf(sp);
+  c.globalAlpha = (o.alpha ?? 1) * (o.fillA ?? 1);
+  if (o.species === 'square') {
+    const lite = tint(color, 0.55);
+    const tri = (a, b, f) => { c.beginPath(); c.moveTo(0, 0); c.lineTo(...a); c.lineTo(...b); c.closePath(); c.fillStyle = f; c.fill(); };
+    tri(T, Lf, lite); tri(T, R, color); tri(B, R, lite); tri(B, Lf, color);
+  } else {
+    c.beginPath(); c.moveTo(...T); c.lineTo(...Lf); c.lineTo(...B); c.closePath(); c.fillStyle = tint(color, 0.35); c.fill();
+    c.beginPath(); c.moveTo(...T); c.lineTo(...R); c.lineTo(...B); c.closePath(); c.fillStyle = color; c.fill();
+  }
+  c.globalAlpha = (o.alpha ?? 1);
+  c.beginPath(); c.moveTo(...T); c.lineTo(...R); c.lineTo(...B); c.lineTo(...Lf); c.closePath();
+  c.strokeStyle = `rgba(31,42,61,${o.outlineA ?? 0.45})`; c.lineWidth = lw(o.outW ?? 1.5); c.stroke();
+  c.beginPath(); c.moveTo(...T); c.lineTo(...B); c.moveTo(...Lf); c.lineTo(...R);
+  if (o.species === 'square') { c.strokeStyle = 'rgba(31,42,61,0.6)'; c.lineWidth = lw(1.5); } else { c.strokeStyle = 'rgba(31,42,61,0.28)'; c.lineWidth = lw(1); }
+  c.stroke();
+  c.globalAlpha = 1;
+}
+function drawTail(c, b, S, t, flutter, o = {}) {
+  const pts = tailPoints(b, S, 1, t, flutter), by = Math.max(FLOOR_UP, Math.min(CAP_S, b.exh || 0)) * S;
+  let maxLen = o.maxLen ?? Infinity;
+  c.beginPath(); let len = 0, prev = null;
+  for (const [tx, ty] of pts) { if (prev) { len += Math.hypot(tx - prev[0], ty - prev[1]); if (len > maxLen) break; } if (!prev) c.moveTo(tx, ty + by); else c.lineTo(tx, ty + by); prev = [tx, ty]; }
+  c.strokeStyle = LINE_INK; c.lineWidth = lw(1.6 / (o.scale || 1)); c.stroke();
+  if (o.bows) {
+    len = 0; prev = null;
+    pts.forEach(([tx, ty], k) => {
+      if (prev) len += Math.hypot(tx - prev[0], ty - prev[1]); prev = [tx, ty];
+      if (!k || k % 4 || len > maxLen) return;
+      c.beginPath();
+      if (o.square) { const r = (o.bowR || 5); c.rect(tx - r / 2, ty + by - r / 2, r, r); c.fillStyle = k % 8 === 0 ? o.color : tint(o.color, 0.45); c.fill(); c.strokeStyle = INK; c.lineWidth = lw(1); c.stroke(); }
+      else { c.moveTo(tx - 5, ty + by - 3); c.lineTo(tx + 5, ty + by + 3); c.lineTo(tx + 5, ty + by - 3); c.lineTo(tx - 5, ty + by + 3); c.closePath(); c.fillStyle = k % 8 === 0 ? o.color : tint(o.color, 0.45); c.fill(); }
+    });
+  }
+}
+function starPath(c, cx, cy, r) {
+  c.beginPath();
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; i ? c.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : c.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+  c.closePath();
+}
+const STAR_SVG = (filled, faint) => `<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="${(() => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 4.05 : 9; d += (i ? 'L' : 'M') + (10 + Math.cos(a) * r).toFixed(2) + ' ' + (10.5 + Math.sin(a) * r).toFixed(2); } return d + 'Z'; })()}" fill="${filled ? INK : 'none'}" stroke="${INK}" stroke-width="1.4" ${faint ? 'stroke-dasharray="2 2" opacity=".55"' : ''}/></svg>`;
+
+// Bake a finished kite to a sprite at DPR; only its tail and string stay vector (D66).
+function kiteSprite(k, withRest) {
+  const key = k.id + (withRest ? 'r' : '');
+  let s = SPR.kites.get(key); if (s) return s;
+  const sp = spars(k.b, L.S), pad = 6, w = sp.left + sp.right + pad * 2, h = sp.top + sp.bottom + pad * 2, sc = L.k * L.dpr;
+  const c = mkCanvas(w * sc, h * sc), x = c.getContext('2d'); x.scale(sc, sc); x.translate(sp.left + pad, sp.top + pad);
+  drawSail(x, sp, k.color, { outlineA: 0.45 });
+  if (k.stitch) for (const ph of ['in', 'hold', 'out', 'rest']) { if (ph === 'rest' && !withRest) continue; if (k.stitch[ph] && k.stitch[ph].fit) drawStitches(x, sp, ph, 1, 0); }
+  s = { c, w, h, ox: sp.left + pad, oy: sp.top + pad }; SPR.kites.set(key, s);
+  if (SPR.kites.size > 80) SPR.kites.delete(SPR.kites.keys().next().value);
+  return s;
+}
+const PH_TIP = { in: 0, hold: 1, out: 2, rest: 3 };
+function drawStitches(c, sp, ph, n6, hl) {
+  const tip = tipsOf(sp)[PH_TIP[ph]], len = Math.hypot(tip[0], tip[1]), ux = tip[0] / len, uy = tip[1] / len;
+  c.strokeStyle = 'rgba(31,42,61,0.75)'; c.lineWidth = lw(1.5);
+  const nx = -uy, ny = ux, a = Math.SQRT1_2;
+  for (let i = 0; i < 6; i++) {
+    const vis = clamp01(n6 * 6 - i); if (vis <= 0) break;
+    const f = (i + 0.5) / 6, cx = ux * len * f, cy = uy * len * f;
+    const dx = (ux * a + nx * a) * 3, dy = (uy * a + ny * a) * 3;
+    c.globalAlpha = vis; c.beginPath(); c.moveTo(cx - dx, cy - dy); c.lineTo(cx + dx, cy + dy); c.stroke();
+  }
+  c.globalAlpha = 1;
+  if (hl > 0 && hl < 1) { const f = hl, h0 = Math.max(0, f * len - 9), h1 = Math.min(len, f * len + 9);
+    c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = lw(3); c.beginPath(); c.moveTo(ux * h0, uy * h0); c.lineTo(ux * h1, uy * h1); c.stroke(); }
+}
+function stitchProgress(s, now, red) {   // → [stitch fraction, highlight fraction]
+  const e = now - s.t;
+  if (red) return [clamp01(e / 200), 0];
+  return [clamp01(e / 240), e > 240 && e < 740 ? (e - 240) / 500 : 0];
+}
+
+// ── ghost and guide ──
+function guideView(t) {
+  const g = (C.help && t >= C.help.c0 && t < C.help.endT) ? C.help : C.guide;
+  if (!g || t < g.c0) return { g, parked: true };
+  if (t >= g.endT) return { g, parked: true, done: true };
+  const rel = t - g.c0, k = Math.floor(rel / g.cyc), w = rel - k * g.cyc;
+  let j = 3; for (let i = 0; i < 4; i++) if (w >= g.off[i]) j = i;
+  const dur = [g.T.inh, g.T.hold, g.T.exh, g.T.rest][j] * 1000, p = dur > 0 ? clamp01((w - g.off[j]) / dur) : 1;
+  const f = j === 0 ? (1 - Math.cos(Math.PI * p)) / 2 : j === 1 ? 1 : j === 2 ? (1 + Math.cos(Math.PI * p)) / 2 : 0;
+  const nextT = g.c0 + k * g.cyc + (j < 3 ? g.off[j + 1] : g.cyc);
+  return { g, k, j, p, f, nextT, el: (w - g.off[j]) / 1000, sinceTurn: w - g.off[j] };
+}
+function ghostGeom(n) { const sp = spars(SIZES[n], L.S); return { sp, tipTopY: L.hub[1] - sp.top }; }
+function drawGhost(c, t) {
+  const R = C.R, base = G.ghostA();
+  const helpOn = C.help && t >= C.help.c0 - 1 && t < C.help.endT;
+  const helpFade = C.helpEnd ? 1 - clamp01((t - C.helpEnd.fadeT) / 1200) : 0;
+  const fly = R && R.tier === 'fly';
+  const alpha = fly ? Math.max(base, helpOn ? 1 : 0, helpFade) : base;
+  if (alpha < 0.01) return null;
+  const n = C.size, T = SIZES[n], { sp } = ghostGeom(n), tips = tipsOf(sp);
+  const gv = guideView(t), red = lessMotion();
+  const learnish = gv.g && (gv.g.kind === 'learn' || gv.g.kind === 'demo' || gv.g.kind === 'help');
+  const f = learnish && !gv.parked && !red ? gv.f : 0;
+  const rv = [0, 1, 2, 3].map(j => clamp01((t - C.ghost.revealT - j * C.ghost.per) / C.ghost.per));
+  c.save(); c.translate(L.hub[0], L.hub[1]);
+  // fill: the only part of the ghost that swells
+  c.globalAlpha = alpha; c.beginPath(); c.moveTo(...tips[0]); for (let j = 1; j < 4; j++) c.lineTo(...tips[j]); c.closePath();
+  c.fillStyle = `rgba(255,255,255,${0.16 + 0.08 * f})`; c.fill();
+  // outline dashed, revealed in breath order
+  c.setLineDash([6, 5]); c.strokeStyle = 'rgba(31,42,61,0.65)'; c.lineWidth = lw(2);
+  for (let j = 0; j < 4; j++) {
+    const a = tips[j], b = tips[(j + 1) % 4], r = rv[(j + 1) % 4] || (j === 3 ? rv[3] : 0); if (r <= 0) continue;
+    c.beginPath(); c.moveTo(...a); c.lineTo(a[0] + (b[0] - a[0]) * r, a[1] + (b[1] - a[1]) * r); c.stroke();
+  }
+  // spars dashed; the next one brightens before (Learn) or at (Echo) its turn
+  c.setLineDash([2, 4]);
+  for (let j = 0; j < 4; j++) {
+    if (rv[j] <= 0) continue;
+    let a = 0.45, w = 1.5;
+    if (gv.g && !gv.parked) {
+      const nj = (gv.j + 1) % 4, toNext = gv.nextT - t;
+      if (learnish && nj === j && toNext <= 400) a = 0.9;
+      if (gv.g.kind === 'echo' && j === gv.j && gv.sinceTurn < 400 && !(gv.k === 0 && gv.j === 0)) { a = 1; w = 3; }
+    }
+    c.strokeStyle = `rgba(31,42,61,${a})`; c.lineWidth = lw(w);
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(tips[j][0] * rv[j], tips[j][1] * rv[j]); c.stroke();
+  }
+  c.setLineDash([]);
+  // end-ticks with the plan number
+  const vals = [T.inh, T.hold, T.exh, T.rest];
+  c.font = '600 12px "Bricolage Grotesque", system-ui, sans-serif'; c.textBaseline = 'middle';
+  for (let j = 0; j < 4; j++) {
+    if (rv[j] < 1) continue;
+    const [x, y] = tips[j], vert = j % 2 === 0;
+    c.strokeStyle = INK; c.lineWidth = lw(1.5); c.beginPath();
+    if (vert) { c.moveTo(x - 3, y); c.lineTo(x + 3, y); } else { c.moveTo(x, y - 3); c.lineTo(x, y + 3); } c.stroke();
+    const tx = vert ? x + 8 : x + (j === 1 ? 6 : -14), ty = vert ? y : y - 12, s = fmtN(vals[j]);
+    c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,0.7)'; c.strokeText(s, tx, ty); c.fillStyle = INK; c.fillText(s, tx, ty);
+  }
+  // Echo ring at the next spar's end-tick (visual cue offset by output latency when bells are on)
+  const lat = C.saved.settings.bells ? AUD.latency() * 1000 : 0;
+  const eg = C.guide && C.guide.kind === 'echo' ? C.guide : null;
+  if (eg) for (const tr of eg.turns) {
+    if (!tr.ring) continue; const tv = tr.t + lat, e = t - tv; if (e < 0 || e > 600) continue;
+    if (C.help && tr.t >= C.help.c0 && tr.t < C.help.endT) continue;
+    const [x, y] = tips[tr.j], p = e / 600;
+    if (red) { c.globalAlpha = alpha * (0.4 + 0.5 * Math.sin(Math.PI * p)); c.fillStyle = INK; c.beginPath(); c.arc(x, y, 6, 0, 6.283); c.fill(); }
+    else { const r = 8 + 14 * p; c.globalAlpha = alpha * (1 - p); c.strokeStyle = '#fff'; c.lineWidth = 4; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.stroke();
+      c.strokeStyle = 'rgba(31,42,61,0.8)'; c.lineWidth = lw(2.5); c.stroke(); }
+    c.globalAlpha = alpha;
+  }
+  // the bead: the head of the current phase's ghost spar (D62)
+  if (gv.g && !gv.parked) {
+    let ba = 1;
+    if (gv.g.kind === 'echo') ba = gv.k === 0 ? 0.4 : 0;
+    if (gv.g.kind === 'help') ba = 0.6 * clamp01((t - gv.g.startT) / 600);
+    if (ba > 0.01) {
+      const tip = tips[gv.j], len = gv.p, x = tip[0] * len, y = tip[1] * len;
+      const fadeIn = clamp01(gv.sinceTurn / 120);
+      drawBead(c, x, y, ba * alpha * fadeIn);
+      // the previous bead fades out at its end-tick over 120 ms
+      if (gv.sinceTurn < 120 && !(gv.k === 0 && gv.j === 0)) { const pj = (gv.j + 3) % 4; drawBead(c, tips[pj][0], tips[pj][1], ba * alpha * (1 - gv.sinceTurn / 120)); }
+    }
+  } else if (gv.g && gv.done && gv.g.kind === 'help') { /* fading handled by helpEnd */ }
+  else if (base > 0.5 && (C.beat === 'LEARN_INTRO' || (R && R.tier === 'learn'))) drawBead(c, 0, 0, alpha);   // parked at the hub
+  if (C.helpEnd && helpFade > 0 && !helpOn) drawBead(c, 0, 0, 0.6 * helpFade);
+  c.restore();
+  return gv;
+}
+function drawBead(c, x, y, a) {
+  if (a < 0.01) return;
+  c.globalAlpha = a * 0.8; c.drawImage(SPR.glow.c, x - 14, y - 14, 28, 28);
+  c.globalAlpha = a; c.beginPath(); c.arc(x, y, 5, 0, 6.283); c.fillStyle = 'rgba(255,255,255,0.9)'; c.fill();
+  c.strokeStyle = INK; c.lineWidth = lw(1.5); c.stroke(); c.globalAlpha = 1;
+}
+
+// ── the live kite at the hub ──
+const UI = { stub: null, lastStub: null, stubFade: null };
+function phaseLens(cur, now, S) {
+  const keys = ['inh', 'hold', 'exh', 'rest'], floor = { inh: FLOOR_UP, hold: FLOOR_SIDE, exh: FLOOR_UP, rest: FLOOR_SIDE };
+  const order = { inh: 0, hold: 1, exh: 2, rest: 3 }, curI = order[cur.ph];
+  const started = k => order[k] <= curI || (k === 'hold' && cur.seenOut);
+  const out = {};
+  for (const k of keys) {
+    if (!started(k)) { out[k] = 0; continue; }
+    const d = Math.min(CAP_S, cur[k]);
+    if (k === cur.ph && C.play && C.play.open && (C.play.open.phase !== 'pause' || k === 'hold' || k === 'rest')) { out[k] = d * S; continue; }
+    if (d < floor[k]) { const e = cur.ends[k] != null ? cur.ends[k] : now; const p = easeOut(clamp01((now - e) / 120)); out[k] = (d + (floor[k] - d) * p) * S; }
+    else out[k] = d * S;
+  }
+  return { top: out.inh, right: out.hold, bottom: out.exh, left: out.rest };
+}
+function drawBuilding(c, cur, color, now, opts = {}) {
+  const sp = phaseLens(cur, now, L.S), tips = tipsOf(sp);
+  c.save(); c.translate(L.hub[0], L.hub[1]);
+  drawTail(c, cur, L.S, D.t, 2, {});
+  drawSail(c, sp, color, { fillA: 0.10 + 0.12 * (lessMotion() ? 0.5 : D.fp), outlineA: 0.55, outW: 1.5 });
+  const cj = PH_TIP[{ inh: 'in', hold: 'hold', exh: 'out', rest: 'rest' }[cur.ph]];
+  const tip = tips[cj];
+  if (!opts.complete) {
+    c.lineCap = 'round';
+    c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 9; c.beginPath(); c.moveTo(0, 0); c.lineTo(...tip); c.stroke();
+    c.strokeStyle = color; c.lineWidth = 4; c.beginPath(); c.moveTo(0, 0); c.lineTo(...tip); c.stroke();
+    c.lineCap = 'butt';
+  }
+  const st = opts.stitch;
+  if (st) for (const ph of ['in', 'hold', 'out', 'rest']) if (st[ph] && st[ph].fit) { const [a, h] = stitchProgress(st[ph], now, lessMotion() || ph === 'rest'); drawStitches(c, sp, ph, a, h); }
+  if (!opts.complete) {
+    c.beginPath(); c.arc(tip[0], tip[1], 6.5, 0, 6.283); c.strokeStyle = color; c.lineWidth = lw(1); c.stroke();
+    c.beginPath(); c.arc(tip[0], tip[1], 5, 0, 6.283); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = 'rgba(31,42,61,0.85)'; c.lineWidth = lw(2); c.stroke();
+  }
+  c.restore();
+  return sp;
+}
+
+// ── sky kites ──
+function slotPoint(i) {
+  const row = i % 2, col = Math.floor(i / 2);
+  return L.portrait ? [34 + col * 60 + row * 30, row ? 250 : 190] : [700 + col * 100 + row * 50, row ? 140 : 80];
+}
+function drawSkyKite(c, k, t) {
+  const red = lessMotion(), pers = personality(k.b), amp = red ? 0.3 : 1;
+  const w = D.t * pers.freq + k.id * 1.7;
+  const [sx0, sy0] = slotPoint(k.slot);
+  let ex = sx0 + Math.sin(w) * pers.ampX * amp, ey = sy0 + Math.cos(w * 0.8) * pers.ampY * amp;
+  if (k.demo) { ex = L.hub[0] + L.RW * 0.08; ey = L.portrait ? 170 : 40; }
+  const a = clamp01((t - k.t) / 1400);
+  let x, y, sc = L.sk, alpha = 1;
+  const [hx, hy] = L.hub;
+  if (red) {
+    if (t - k.t < 400) { x = hx; y = hy; sc = 1; alpha = 1 - (t - k.t) / 400; }
+    else { x = ex; y = ey; alpha = clamp01((t - k.t - 400) / 400); }
+  } else {
+    const e = easeInOut(a), cx = (hx + ex) / 2 + 0.15 * L.RW, cy = (hy + ey) / 2 - 0.10 * L.RH, u = 1 - e;
+    x = u * u * hx + 2 * u * e * cx + e * e * ex; y = u * u * hy + 2 * u * e * cy + e * e * ey; sc = 1 - (1 - L.sk) * e;
+  }
+  if (k.demo) alpha *= 1 - a;
+  if (k.drift != null) { const p = clamp01((t - k.drift) / 3000); x += p * p * L.RW * 0.7; alpha *= 1 - p; }
+  if (alpha < 0.01) return;
+  c.globalAlpha = alpha;
+  if (!k.demo && a >= 1) { c.strokeStyle = LINE_INK; c.lineWidth = lw(1); c.beginPath(); c.moveTo(...L.peg); c.lineTo(x, y); c.stroke(); }
+  const sp = kiteSprite(k, a >= 1);
+  c.save(); c.translate(x, y); c.rotate(Math.sin(w * 1.1) * pers.tilt * (a >= 1 ? 1 : a) * amp); c.scale(sc, sc);
+  drawTail(c, k.b, L.S, D.t, pers.freq * 3, { bows: true, color: k.color, scale: sc });
+  c.drawImage(sp.c, -sp.ox, -sp.oy, sp.w, sp.h);
+  if (a < 1 && k.stitch && k.stitch.rest && k.stitch.rest.fit) { c.globalAlpha = alpha * clamp01((t - k.t) / 200); drawStitches(c, spars(k.b, L.S), 'rest', 1, 0); }
+  c.restore(); c.globalAlpha = 1;
+}
+function hillScale(b, p, S) { const sp = spars(b, S); return Math.min(p.ceil, p.sw / (sp.left + sp.right), p.sh / (sp.top + sp.bottom + 30 / p.ceil)); }
+function drawSquareKite(c, x, y, size, sc, t, alpha = 1) {
+  const b = SIZES[size], sp = spars(b, L.S);
+  c.save(); c.globalAlpha = alpha; c.translate(x, y); c.scale(sc, sc);
+  drawTail(c, b, L.S, t, 1.2, { bows: true, square: true, color: SQUARE_C, bowR: 5 / sc, maxLen: 30 / sc, scale: sc });
+  drawSail(c, sp, SQUARE_C, { species: 'square', outlineA: 0.45, outW: 1.5 / sc });
+  c.restore(); c.globalAlpha = 1;
+}
+
+// ── the mentor ("Hollis", internal only): no mouth, no brows; gaze by head turn ──
+function drawMentor(c, t) {
+  const [mx, by, u] = L.mentor, P = C.pose;
+  const fade = clamp01((t - P.t) / 900);
+  const g = C.guide && (C.guide.kind === 'learn' || C.guide.kind === 'demo') && P.cur === 'D' ? guideView(t) : null;
+  const swell = g && !g.parked ? g.f : 0;
+  // torso + apron (the only scaled layer)
+  c.save(); c.translate(mx, by); c.scale(1 + 0.03 * swell, 1); c.drawImage(SPR.torso.c, -SPR.torso.ox, -SPR.torso.oy, SPR.torso.w, SPR.torso.h); c.restore();
+  // arms: the outgoing pose at α 1, the incoming drawn over it 0 → 1
+  if (P.prev && fade < 1) drawArms(c, P.prev, mx, by, u, 1);
+  drawArms(c, P.cur, mx, by, u, P.prev ? fade : 1);
+  // head layer, turned by the head angle (6°)
+  const ang = G.headAngle();
+  c.save(); c.translate(mx, by - 27 * u); c.rotate(ang * Math.PI / 180);
+  c.drawImage(SPR.head.c, -SPR.head.ox, -SPR.head.oy + 0 * u, SPR.head.w, SPR.head.h);
+  const gx = ang > 0 ? 1 : ang < 0 ? -0.35 : 0.2, gy = ang > 0 ? -0.15 : ang < 0 ? 0.9 : 0.3, gl = Math.hypot(gx, gy) || 1;
+  const off = 2.6 * u * 0.3, er = Math.max(1.5 * L.px, 0.55 * u);
+  c.fillStyle = INK;
+  for (const sx of [-1, 1]) { c.beginPath(); c.arc(sx * 3.2 * u + off * gx / gl, -5.5 * u - 17 * u + 17 * u + off * gy / gl, er, 0, 6.283); c.fill(); }
+  c.restore();
+}
+function drawArms(c, pose, mx, by, u, alpha) {
+  const M = D.motion, mt = D.t - M.start, inMotion = M.kind === pose && mt >= 0 && mt <= M.dur;
+  let L1 = [-12 * u, -1 * u], R1 = [12 * u, -1 * u], prop = null;
+  if (pose === 'A') { const pan = inMotion ? 3 * u * Math.sin(Math.PI * mt / M.dur) : 0; R1 = [8 * u + pan, -31 * u]; L1 = [-9 * u, -1 * u]; prop = { k: 'spar', at: R1 }; }
+  if (pose === 'B') { const rise = M.kind === 'B' ? (M.up ? clamp01(mt / 0.8) : 1 - clamp01(mt / 0.8)) * 8 * u : 0; L1 = [-6 * u, -2 * u]; R1 = [5 * u, -3 * u - rise]; prop = { k: 'needle', at: R1 }; }
+  if (pose === 'C') { const ang = inMotion ? 2 * Math.PI * (mt / 2.5) : 0; L1 = [-4 * u, -6 * u]; R1 = [6 * u + Math.cos(ang) * 3 * u, -6 * u + Math.sin(ang) * 3 * u]; prop = { k: 'spool' }; }
+  c.save(); c.globalAlpha = alpha; c.translate(mx, by); c.lineCap = 'round';
+  for (const [sh, h] of [[[-11 * u, -24 * u], L1], [[11 * u, -24 * u], R1]]) {
+    c.strokeStyle = 'rgba(31,42,61,0.55)'; c.lineWidth = 5.2 * u; c.beginPath(); c.moveTo(...sh); c.lineTo(...h); c.stroke();
+    c.strokeStyle = '#4a76a8'; c.lineWidth = 4.2 * u; c.stroke();
+  }
+  if (prop && prop.k === 'spar') { c.strokeStyle = '#8a5f3a'; c.lineWidth = 1.2 * u; c.beginPath(); c.moveTo(R1[0] - 4 * u, R1[1] + 1 * u); c.lineTo(R1[0] + 14 * u, R1[1] - 3 * u); c.stroke(); }
+  if (prop && prop.k === 'needle') { c.fillStyle = tint(KITE_COLORS[1], 0.3); c.beginPath(); c.moveTo(-10 * u, 0); c.lineTo(-2 * u, -4 * u); c.lineTo(4 * u, 0); c.closePath(); c.fill();
+    c.strokeStyle = INK; c.lineWidth = lw(0.4 * u); c.beginPath(); c.moveTo(R1[0], R1[1]); c.lineTo(R1[0] + 1 * u, R1[1] - 4 * u); c.stroke(); }
+  if (prop && prop.k === 'spool') { c.fillStyle = '#c49a6c'; c.fillRect(-1 * u, -9 * u, 4 * u, 6 * u); c.strokeStyle = 'rgba(31,42,61,0.5)'; c.lineWidth = lw(0.3 * u); c.strokeRect(-1 * u, -9 * u, 4 * u, 6 * u); }
+  for (const h of [L1, R1]) { c.fillStyle = '#efcfae'; c.beginPath(); c.arc(h[0], h[1], 2.2 * u, 0, 6.283); c.fill(); c.strokeStyle = 'rgba(31,42,61,0.5)'; c.lineWidth = lw(0.3 * u); c.stroke(); }
+  c.restore();
+}
+
+// ── wall plans, bench, tile, bunting, hill ──
+function drawWall(c, t) {
+  const P = L.paper, S = L.S * 0.2;
+  const plans = [{ b: { inh: 4, hold: 0, exh: 4, rest: 0 } }, { b: SIZES[C.size], square: true }, { b: { inh: 4, hold: 0, exh: 6, rest: 0 } }];
+  plans.forEach((pl, i) => {
+    const [x, y] = L.plans[i];
+    c.fillStyle = '#fbf7ee'; c.fillRect(x - P / 2, y - P / 2, P, P); c.strokeStyle = 'rgba(31,42,61,0.35)'; c.lineWidth = lw(1); c.strokeRect(x - P / 2, y - P / 2, P, P);
+    c.fillStyle = INK; c.beginPath(); c.arc(x, y - P / 2 + 4, 2, 0, 6.283); c.fill();
+    const sp = spars(pl.b, S), cy = y - (pl.square ? 4 : 0);
+    c.save(); c.translate(x, cy);
+    if (pl.square) drawSail(c, sp, SQUARE_C, { species: 'square', alpha: 0.55, outlineA: 0.55, outW: 1 });
+    c.setLineDash([3, 3]); c.strokeStyle = pl.square ? 'rgba(31,42,61,0.65)' : 'rgba(31,42,61,0.4)'; c.lineWidth = lw(1);
+    const tp = tipsOf(sp); c.beginPath(); c.moveTo(...tp[0]); for (let j = 1; j < 4; j++) c.lineTo(...tp[j]); c.closePath(); c.stroke(); c.setLineDash([]);
+    c.restore();
+    if (pl.square) {   // stars as paths: pencilled outline, stamped filled
+      const stars = C.saved.square.stars || 0, stamped = stampShown(), r = L.portrait ? 3.5 : 5;
+      for (let s = 0; s < 3; s++) {
+        if (s >= stars) continue;
+        const sx = x + (s - 1) * r * 2.6, sy = y + P / 2 - r - 3;
+        let a = 1; if (C.wallStarT > -1e8 && s === stars - 1 && !stamped) a = clamp01((t - C.wallStarT) / 600);
+        c.globalAlpha = a; starPath(c, sx, sy, r);
+        if (stamped) { c.fillStyle = INK; c.fill(); } else { c.strokeStyle = INK; c.lineWidth = lw(1.2); c.stroke(); }
+        c.globalAlpha = 1;
+      }
+    }
+  });
+  // the baseline tile: "your own kite", shape only (D56)
+  const B = C.baseline;
+  if (B && B.mean) {
+    const a = clamp01((t - B.tileT) / 600), [x, y] = L.own, sz = 28;
+    c.globalAlpha = a; c.fillStyle = '#fbf7ee'; c.fillRect(x - sz / 2, y - sz / 2, sz, sz); c.strokeStyle = 'rgba(31,42,61,0.35)'; c.lineWidth = lw(1); c.strokeRect(x - sz / 2, y - sz / 2, sz, sz);
+    drawTileKite(c, x, y, sz, B.mean, null, KITE_COLORS[0], null);
+    c.globalAlpha = 1;
+  }
+}
+// The logbook tile (D55): the plan (dashed) under the player's kite, one shared scale.
+function drawTileKite(c, x, y, size, b, T, color, fits) {
+  const all = T ? [spars(b, 1), spars(T, 1)] : [spars(b, 1)];
+  const ref = all[all.length - 1], ext = Math.max(ref.top + ref.bottom, ref.left + ref.right);
+  const sc = 0.7 * size / ext;
+  const cx = x - (ref.right - ref.left) * sc / 2, cy = y + (ref.top - ref.bottom) * sc / 2;
+  c.save(); c.beginPath(); c.rect(x - size / 2, y - size / 2, size, size); c.clip(); c.translate(cx, cy);
+  if (T) { const tp = tipsOf(spars(T, sc)); c.setLineDash([3, 2]); c.strokeStyle = 'rgba(31,42,61,0.65)'; c.lineWidth = lw(1); c.beginPath(); c.moveTo(...tp[0]); for (let j = 1; j < 4; j++) c.lineTo(...tp[j]); c.closePath(); c.stroke(); c.setLineDash([]); }
+  const sp = spars(b, sc), tp = tipsOf(sp);
+  c.beginPath(); c.moveTo(...tp[0]); for (let j = 1; j < 4; j++) c.lineTo(...tp[j]); c.closePath();
+  c.globalAlpha *= 0.85; c.fillStyle = color; c.fill(); c.globalAlpha /= 0.85;
+  c.strokeStyle = 'rgba(31,42,61,0.85)'; c.lineWidth = lw(1.25); c.stroke();
+  if (fits) for (let j = 0; j < 4; j++) if (fits[j]) { const [tx, ty] = tp[j]; c.strokeStyle = INK; c.lineWidth = lw(1.25); c.beginPath(); c.moveTo(tx * 0.5 - 2, ty * 0.5 - 2); c.lineTo(tx * 0.5 + 2, ty * 0.5 + 2); c.stroke(); }
+  c.restore();
+}
+function drawTile(c, t) {
+  const tiles = C.tiles.filter(x => x.showT <= t);
+  if (!tiles.length || C.beat === 'END' || C.beat === 'DONE' || C.beat === 'FREE') return;
+  const tl = tiles[tiles.length - 1];
+  let a = clamp01((t - tl.showT) / 300); if (tl.droppedT != null) a *= 1 - clamp01((t - tl.droppedT) / 200);
+  if (a < 0.01) return;
+  const [x, y] = L.tileSpot, s = L.tileSize;
+  c.globalAlpha = a; c.fillStyle = '#fbf7ee'; c.fillRect(x - s / 2, y - s / 2, s, s); c.strokeStyle = 'rgba(31,42,61,0.45)'; c.lineWidth = lw(1); c.strokeRect(x - s / 2, y - s / 2, s, s);
+  drawTileKite(c, x, y, s, tl.b, tl.T, tl.color, tl.fits); c.globalAlpha = 1;
+}
+function drawBench(c, t) {
+  const [x0, x1, y0, y1] = L.bench;
+  const bx0 = L.portrait ? L.vx0 : x0, bx1 = L.portrait ? L.vx1 : x1;
+  c.fillStyle = '#d8b48b'; c.fillRect(bx0, y0, bx1 - bx0, 12); c.fillStyle = '#c9a27a'; c.fillRect(bx0, y0 + 12, bx1 - bx0, y1 - y0 - 12);
+  c.strokeStyle = 'rgba(31,42,61,0.4)'; c.lineWidth = lw(1); c.strokeRect(bx0, y0, bx1 - bx0, y1 - y0);
+  if (C.beat === 'LOOSE') { const a = 0.04 * clamp01((t - C.warmT) / 1200); c.fillStyle = `rgba(255,190,110,${a * 4})`; c.globalAlpha = 0.25; c.fillRect(bx0, y0, bx1 - bx0, y1 - y0); c.globalAlpha = 1; }
+}
+function drawBunting(c, t) {
+  if (C.buntingT == null) return;
+  const [x0, x1, , y] = L.roof, n = 9, red = lessMotion();
+  const a0 = L.portrait ? 20 : x0 + 20, a1 = L.portrait ? 370 : x1 - 20;
+  c.strokeStyle = LINE_INK; c.lineWidth = lw(1); c.beginPath(); c.moveTo(a0, y + 2); c.quadraticCurveTo((a0 + a1) / 2, y + 14, a1, y + 2); c.stroke();
+  for (let i = 0; i < n; i++) {
+    const s = i / (n - 1), px = a0 + (a1 - a0) * s, py = y + 2 + 12 * 4 * s * (1 - s) * 0.5 * 2 / 2;
+    const ti = (t - C.buntingT - i * 150) / 1000; if (ti < 0) continue;
+    const grow = red ? 1 : clamp01(ti / 0.15), w0 = 6, z = 0.5, om = 6, wd = om * Math.sqrt(1 - z * z);
+    const ang = red ? 0 : 0.25 * Math.exp(-z * om * ti) * Math.cos(wd * ti);
+    c.save(); c.translate(px, py); c.rotate(ang); c.globalAlpha = red ? clamp01(ti / 0.3) : 1;
+    c.beginPath(); c.moveTo(-8, 0); c.lineTo(8, 0); c.lineTo(0, 20 * grow); c.closePath(); c.fillStyle = KITE_COLORS[i % 5]; c.fill();
+    c.strokeStyle = 'rgba(31,42,61,0.5)'; c.lineWidth = lw(1); c.stroke(); c.restore(); c.globalAlpha = 1;
+    void w0;
+  }
+}
+function drawHill(c, t) {
+  const p = L.posts[0];
+  const H = C.hillSquare;
+  if (H && H.t <= t) {
+    const sc = hillScale(SIZES[H.size], p, L.S), w = D.t * 0.34 * 0.6;
+    const x = p.slot[0] + Math.sin(w) * Math.min(4, 5) * (lessMotion() ? 0.3 : 1), y = p.slot[1] + Math.cos(w * 0.8) * 4 * (lessMotion() ? 0.3 : 1);
+    c.strokeStyle = LINE_INK; c.lineWidth = lw(1); c.beginPath(); c.moveTo(p.x, p.y - (L.portrait ? 10 : 22)); c.lineTo(x, y); c.stroke();
+    drawSquareKite(c, x, y, H.size, sc, D.t, 1);
+  }
+  // the stamp's kite lifting off the page to post 1 (2.4 s arc)
+  const E = C.end;
+  if (E && E.arcT != null && (!H || H.t > t)) {
+    const a = clamp01((t - E.arcT) / 2400), sc1 = hillScale(SIZES[E.size], p, L.S);
+    const from = pageAnchorRef();
+    if (lessMotion()) { if (a > 0.8) drawSquareKite(c, p.slot[0], p.slot[1], E.size, sc1, D.t, clamp01((a - 0.8) / 0.17)); }
+    else { const e = easeInOut(a), u = 1 - e, cx = (from[0] + p.slot[0]) / 2, cy = Math.min(from[1], p.slot[1]) - 120;
+      const x = u * u * from[0] + 2 * u * e * cx + e * e * p.slot[0], y = u * u * from[1] + 2 * u * e * cy + e * e * p.slot[1];
+      drawSquareKite(c, x, y, E.size, 0.2 + (sc1 - 0.2) * e, D.t, 1); }
+  }
+}
+function pageAnchorRef() { const r = $('stampbox') ? $('stampbox').getBoundingClientRect() : null; return r ? toRef(r.left + r.width / 2, r.top + r.height / 2) : [200, 300]; }
+
+// ── one frame ──
+function draw() {
+  const t = C.bt;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, fg.width, fg.height); refT(ctx);
+  for (const cl of D.clouds) { const w = SPR.cloud.w * cl.s, h = SPR.cloud.h * cl.s; ctx.drawImage(SPR.cloud.c, L.vx0 + cl.x * (L.vx1 - L.vx0) - w / 2, L.vy0 + cl.y * (L.vy1 - L.vy0), w, h); }
+  ctx.drawImage(SPR.shed.c, SPR.shed.x, SPR.shed.y, SPR.shed.w, SPR.shed.h);
+  drawHill(ctx, t);
+  drawBunting(ctx, t);
+  drawWall(ctx, t);
+  drawMentor(ctx, t);
+  drawBench(ctx, t);
+  drawTile(ctx, t);
+  for (const k of C.sky) drawSkyKite(ctx, k, t);
+  drawGhost(ctx, t);
+  const Lv = G.live();
+  const color = KITE_COLORS[C.kiteN % 5];
+  let stubLen = 0;
+  if (Lv && Lv.cur) {
+    if (Lv.list.length) drawBuilding(ctx, Lv.list[Lv.list.length - 1], KITE_COLORS[C.kiteN % 5], t, { complete: true, stitch: C.stitch });
+    const cc = Lv.list.length ? KITE_COLORS[(C.kiteN + 1) % 5] : color;
+    const sp = drawBuilding(ctx, Lv.cur, cc, t, { stitch: Lv.list.length ? null : C.stitch });
+    if (Lv.list.length) stubLen = sp.top;
+  }
+  // a slip stub pulls back over 200 ms once released
+  if (UI.lastStub && !stubLen && !(C.lastLaunch && C.lastLaunch.t > UI.lastStub.t)) UI.stubFade = { len: UI.lastStub.len, t };
+  UI.lastStub = stubLen ? { len: stubLen, t } : null;
+  if (UI.stubFade) { const p = (t - UI.stubFade.t) / 200; if (p >= 1 || p < 0) UI.stubFade = null; else { ctx.strokeStyle = 'rgba(31,42,61,0.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(...L.hub); ctx.lineTo(L.hub[0], L.hub[1] - UI.stubFade.len * (1 - p)); ctx.stroke(); } }
+  if (!Lv && C.play && !['INTRO', 'DONE'].includes(C.beat)) { ctx.beginPath(); ctx.arc(L.hub[0], L.hub[1], 4 + Math.sin(D.t * 2) * 1.2, 0, 6.283); ctx.fillStyle = 'rgba(31,42,61,0.45)'; ctx.fill(); }
+}
+
+// ── DOM: written only when a value changes, on the game's clocks (D63) ──
+const W$ = new Map();
+function put(el, key, val) { const id = el.id + '|' + key; if (W$.get(id) === val) return; W$.set(id, val);
+  if (key === 'text') el.textContent = val; else if (key === 'html') el.innerHTML = val; else if (key === 'hidden') el.hidden = val;
+  else if (key.startsWith('aria-') || key === 'title' || key === 'aria') el.setAttribute(key === 'aria' ? 'aria-label' : key, val);
+  else el.style[key] = val; }
+const capAlpha = (cap, t) => { if (!cap) return 0; const e = t - cap.start; return e < 600 ? e / 600 : e > 5400 ? Math.max(0, (6000 - e) / 600) : 1; };
+let uiT = 0;
+const OV = { shown: null, t: 0 };
+let pageKey = '';
+function syncDom() {
+  const t = C.bt, bellsOn = C.saved.settings.bells;
+  // captions
+  for (const [slot, el] of [['mentor', $('capMentor')], ['safety', $('capSafe')]]) {
+    const cap = C.cap[slot]; put(el, 'text', cap ? cap.text : ''); put(el, 'opacity', String(Math.round(capAlpha(cap, t) * 100) / 100));
+  }
+  // toggles
+  for (const el of [$('togBells'), $('togBells2')]) { put(el, 'text', bellsOn ? 'bells on' : 'bells off'); put(el, 'aria-pressed', String(bellsOn)); }
+  put($('togMotion'), 'aria-pressed', String(lessMotion()));
+  // intro
+  const introOn = C.beat === 'INTRO';
+  put($('intro'), 'hidden', !introOn); if (introOn) put($('intro'), 'opacity', String(Math.min(1, (t - C.beatT0) / 600 + (uiT > 0 ? 0 : 0))));
+  // overlays (their own clamped lane)
+  const ov = C.overlay; noteOverlay();
+  const oa = String(Math.min(1, (uiT - OV.t) / 200));
+  put($('paused'), 'hidden', ov !== 'PAUSED'); put($('stopScr'), 'hidden', ov !== 'STOPPED'); put($('dizzyScr'), 'hidden', ov !== 'DIZZY');
+  if (ov === 'PAUSED') put($('paused'), 'opacity', oa); if (ov === 'STOPPED') put($('stopScr'), 'opacity', oa); if (ov === 'DIZZY') put($('dizzyScr'), 'opacity', oa);
+  // pads, word, buttons
+  const live = G.acceptsInput() || C.overlay === 'PAUSED';
+  for (const [el, k] of [[$('padIn'), 'in'], [$('padOut'), 'out']]) { put(el, 'aria-disabled', String(!live)); el.classList.toggle('on', SRC[k].size > 0 && live); }
+  const Lv = G.live();
+  let word = '';
+  if (Lv && Lv.cur && C.play) { const ph = Lv.phase === 'pause' ? (Lv.cur.seenOut ? 'rest' : 'hold') : Lv.phase; word = STATE_WORDS[ph] || ''; }
+  // the prompt only where a press starts something: the baseline and the rounds. Plan, loose,
+  // end and free play show nothing until a kite builds (an empty word is hidden by CSS).
+  else if (C.play && G.acceptsInput() && (C.play.kind === 'baseline' || C.play.kind === 'round')) word = 'hold “breathe in” to begin';
+  put($('word'), 'text', word);
+  const nm = C.notMine.open; put($('notmine'), 'aria-disabled', String(!nm)); put($('notmine'), 'opacity', nm ? '1' : '0.35');
+  const smallOn = C.size > 2 && !C.dizzyUsed && ['LEARN_INTRO', 'ROUND', 'ECHO_INTRO', 'FLY_INTRO', 'LOOSE', 'END'].includes(C.beat) && !(C.beat === 'END' && C.end && C.end.mode === 'stamp');
+  put($('smaller'), 'hidden', !smallOn); put($('smaller'), 'text', `smaller kite · ${C.size === 3 ? '2.5' : '2'} s`);
+  if (smallOn) { const e = t - C.glint.t; const a = e >= 0 && e < 1200 ? 0.6 + 0.4 * Math.sin(Math.PI * e / 1200) : 1; put($('smaller'), 'opacity', String(Math.round(a * 100) / 100));
+    put($('smaller'), 'box-shadow', e >= 0 && e < 1200 ? '0 0 0 3px #fff, 0 0 0 5px #1f2a3d' : 'none'); }
+  // loose panel
+  const lp = C.beat === 'LOOSE' && C.loose && C.loose.ready && !C.overlay;
+  put($('loosePanel'), 'hidden', !lp);
+  if (lp) { put($('looseReady'), 'text', LINES['loose.ready']); const R = C.loose.R; const back = !!(R && R.sizedDown);
+    put($('btnBack'), 'hidden', !back); if (back) put($('btnBack'), 'text', fill('back to the {n} s square', { n: R.origSize })); }
+  // "your own kite" label
+  const B = C.baseline; const own = !!(B && B.mean) && C.beat !== 'INTRO';
+  put($('ownLbl'), 'hidden', !own);
+  if (own) { const [sx, sy] = toScr(L.own[0], L.own[1] + 14 + (L.portrait ? 2 : 4)); put($('ownLbl'), 'left', (sx - 36) + 'px'); put($('ownLbl'), 'top', sy + 'px'); }
+  syncPage(t);
+  put(fg, 'aria', C.aria);
+  if (DEBUG) syncDebug();
+}
+// The overlay lane's fade starts when the overlay opens, not at the next sync: step() and the
+// frame loop note it before advancing uiT, so a step()-driven screenshot of a safety screen is
+// as visible as real play (200 ms after it opened, fully).
+function noteOverlay() { const ov = C.overlay; if (ov !== OV.shown) { OV.shown = ov; OV.t = uiT; onOverlay(ov); } }
+function onOverlay(ov) {
+  if (ov === 'STOPPED') setTimeout(() => $('btnDizzy2').focus(), 0);   // the dizzy exit first (D61)
+  if (ov === 'DIZZY') setTimeout(() => $('btnDone').focus(), 0);
+  if (ov === 'PAUSED') put($('pausedText'), 'text', LINES['drift.idle']);
+}
+// Where the plan page goes. Landscape: on the shed side, clear of the pads; at END(stamp) it
+// sits below the roof and the wall plans when it fits, so the bunting and the wall's stars stay
+// in view. Portrait: under a band kept for the captions. Phone landscape: the left half, with
+// the pads moved to the right half. The page is never taller than the room it has; if its
+// content is, it scrolls, and nothing on it is sticky.
+const PAGE = { mode: null, right: 0 };
+const CAP_BAND = 64;   // two caption lines at 16 px, plate padding included
+const capsTop = () => Math.max(112, Math.round(toScr(0, 150)[1]) + 6);   // portrait: under the hill band and the second control row
+function placePage(mode) {
+  const el = $('page'), body = document.body;
+  PAGE.mode = mode || null;
+  body.classList.toggle('pageup', !!mode);
+  if (!mode) { $('caps').style.left = '0px'; $('bottom').style.left = '0px'; PAGE.right = 0; sizePads(); return; }
+  const W = L.W, H = L.H;
+  let left, width, top0, topMin;
+  if (L.portrait) { left = 16; width = W - 32; topMin = top0 = capsTop() + CAP_BAND; }
+  else if (L.short) { left = 16; width = Math.min(440, W - 16 - 8 - 288); topMin = top0 = 60; }   // 288: two 128 px pads and their gutters
+  else {
+    left = Math.max(16, toScr(40, 0)[0]); width = Math.min(440, W - 32); topMin = 64;
+    top0 = mode === 'end-stamp' ? Math.max(64, toScr(0, 232)[1]) : 64;   // below the wall plans (ref y 224)
+  }
+  PAGE.right = left + width;
+  // captions move off the page in landscape; in phone landscape the bottom controls do too
+  $('caps').style.left = L.portrait ? '0px' : (PAGE.right + 8) + 'px';
+  $('bottom').style.left = L.short ? (PAGE.right + 8) + 'px' : '0px';
+  sizePads();
+  // the bottom of the room: the first bottom control the page would overlap (the phase word
+  // keeps its row even while empty, so a loose kite's word never lands on the page)
+  let bottom = H - 16;
+  const over = r => r.width > 0 && r.right > left && r.left < left + width;
+  for (const id of ['padIn', 'padOut', 'notmine', 'smaller']) { const e = $(id); if (e.hidden) continue; const r = e.getBoundingClientRect(); if (over(r)) bottom = Math.min(bottom, r.top - 8); }
+  const wr = $('word').getBoundingClientRect(), wc = (wr.left + wr.right) / 2;
+  if (!L.portrait && over({ width: 1, left: wc - 75, right: wc + 75 })) bottom = Math.min(bottom, wr.top - 8);
+  el.style.left = left + 'px'; el.style.right = 'auto'; el.style.width = width + 'px';
+  el.style.top = topMin + 'px'; el.style.maxHeight = 'none';
+  const h = el.offsetHeight;   // border box, as max-height is
+  const top = Math.max(topMin, Math.min(top0, bottom - h));
+  el.style.top = top + 'px'; el.style.maxHeight = Math.max(120, bottom - top) + 'px';
+}
+// The ★★★ shows filled only once the page is stamped: at END(stamp) that is the tap (or straight
+// away when the page was stamped on an earlier visit), even though commitRound saved it already.
+function stampShown() {
+  const E = C.end;
+  if (!C.saved.square.stamped) return false;
+  return !(E && E.mode === 'stamp' && !E.alreadyStamped && E.tapT == null);
+}
+const compactPage = () => L.compact;
+function planHtml(n, mode) {
+  const sec = 4 * n, bpm = 60 / sec, sq = C.saved.square, stars = sq.stars || 0;
+  const showStamped = stampShown();
+  const starLi = (k, txt) => `<li>${[1, 2, 3].slice(0, k).map(() => STAR_SVG(k === 3 ? showStamped && stars >= 3 : false, stars < k)).join('')}<span>${txt}</span></li>`;
+  const starsUl = `<ul class="stars" aria-label="stars on this page">${starLi(1, 'flown with the guide')}${starLi(2, 'flown with turn cues')}${starLi(3, 'flown from memory')}</ul>`;
+  // "your own kite" is pinned by the plan on the plan page itself, so the page never hides it (D56: shape only)
+  const own = mode === 'plan' && C.baseline && C.baseline.mean ? `<span class="ownpin" aria-hidden="true"><canvas id="ownPin" width="56" height="56"></canvas>your own kite</span>` : '';
+  let h = `<div class="ttl"><h2>the square sail</h2><button class="link" type="button" data-act="know">what we know</button></div>
+    <div class="leadrow"><p class="lead">in ${fmtN(n)} · pause ${fmtN(n)} · out ${fmtN(n)} · rest ${fmtN(n)}</p>${own}</div>`;
+  if (mode === 'plan') {
+    const prose = `<p class="fine">four equal sides: a pause after the in-breath, a rest after the out. ${fmtN(sec)} seconds a breath, ${fmtN(bpm)} breaths a minute.</p>
+    <p class="fine">also called box breathing.</p>
+    <p class="fine">the pause and the rest are soft, not a clamped hold.</p>
+    <p class="fine">sizes: 3 s, 2.5 s or 2 s a side. every size is the square.</p>`;
+    // on a phone the prose folds away so the size chooser and its safety line stay in view
+    h += compactPage() ? `<details><summary><span>about the square</span></summary>${prose}</details>` : prose;
+    h += `<p class="lbl" id="szl">${LINES['size.label']}</p><div class="sizes" role="group" aria-labelledby="szl">` +
+      [3, 2.5, 2].map(s => `<button class="btn" type="button" data-size="${s}" aria-pressed="${C.planSel === s}">${fmtN(s)} s</button>`).join('') +
+      `</div><p class="fine">${LINES['size.air']}</p><div class="row acts"><button class="btn primary" type="button" data-act="show">show me</button></div>` + starsUl;
+  } else if (mode === 'end' || mode === 'done') {
+    h += starsUl;
+    h += `<div id="stampbox" aria-hidden="true"><svg id="stampsvg" width="100%" height="72" viewBox="0 0 300 72"></svg></div>`;
+    h += `<div id="strip"></div><div id="endtext"></div><div id="endbtns"></div>`;
+  }
+  return h;
+}
+function syncPage(t) {
+  const el = $('page');
+  let mode = null;
+  if (C.beat === 'PLAN' && C.page) mode = 'plan';
+  else if (C.beat === 'LEARN_INTRO' && C.page && C.page.dir === 'out' && t - C.page.t < 500) mode = 'plan';
+  else if (C.beat === 'END' && C.end && C.end.pageT != null) mode = 'end';
+  else if (C.beat === 'DONE' && C.end) mode = 'done';
+  put(el, 'hidden', !mode);
+  if (!mode) { if (pageKey || PAGE.mode) placePage(null); pageKey = ''; return; }
+  const n = mode === 'plan' ? C.planSel : (C.end && C.end.size) || C.size;
+  const key = [mode, n, C.planSel, C.saved.square.stars, C.saved.square.stamped, C.end && C.end.tapT, C.end && C.end.mode, L.portrait, L.short, L.compact].join('|');
+  if (key !== pageKey) { const f = document.activeElement && el.contains(document.activeElement) ? document.activeElement.getAttribute('data-size') || document.activeElement.getAttribute('data-act') : null;
+    const open = el.querySelector('details') && el.querySelector('details').open;
+    pageKey = key; el.innerHTML = planHtml(n, mode); W$.forEach((v, k) => { if (k.startsWith('strip|') || k.startsWith('endtext|') || k.startsWith('endbtns|') || k.startsWith('stampsvg|')) W$.delete(k); });
+    if (open && el.querySelector('details')) el.querySelector('details').open = true;
+    const pin = $('ownPin'); if (pin && C.baseline && C.baseline.mean) { const x = pin.getContext('2d'); x.scale(2, 2); const keep = L.px; L.px = 0.5;
+      x.fillStyle = '#fbf7ee'; x.fillRect(0, 0, 28, 28); x.strokeStyle = 'rgba(31,42,61,0.35)'; x.strokeRect(0.5, 0.5, 27, 27); drawTileKite(x, 14, 14, 28, C.baseline.mean, null, KITE_COLORS[0], null); L.px = keep; }
+    if (mode === 'end' || mode === 'done') { if (C.end) C.end.scrolled = false; syncEnd(t, mode, true); }   // build the strip, text and buttons before measuring
+    placePage(mode === 'plan' ? 'plan' : mode === 'done' ? 'done' : C.end && C.end.mode === 'stamp' ? 'end-stamp' : 'end-open');
+    if (f) { const g = el.querySelector(`[data-size="${f}"],[data-act="${f}"]`); if (g) g.focus(); } }
+  // page tween: translateY −24 → 0, α 0 → 1 over 700 ms (fades only in reduced motion)
+  let a = 1, dy = 0;
+  if (mode === 'plan' && C.page) { const e = t - C.page.t; if (C.page.dir === 'in') { const p = easeOut(clamp01(e / 700)); a = p; dy = -24 * (1 - p); } else { const p = clamp01(e / 500); a = 1 - p; dy = -24 * p; } }
+  if (mode === 'end') { const p = easeOut(clamp01((t - C.end.pageT) / 700)); a = p; dy = -24 * (1 - p); }
+  if (lessMotion()) dy = 0;
+  put(el, 'opacity', String(Math.round(a * 100) / 100)); put(el, 'transform', `translateY(${dy.toFixed(1)}px)`);
+  if (mode === 'end' || mode === 'done') syncEnd(t, mode);
+}
+function syncEnd(t, mode, building = false) {
+  const E = C.end; if (!E) return;
+  const strip = $('strip'), text = $('endtext'), btns = $('endbtns'), svg = $('stampsvg');
+  const reveal = E.revealT != null && t >= E.revealT;
+  const ra = reveal ? clamp01((t - E.revealT) / 1200) : 0;
+  // strip: the Fly round's tiles, dropped left out, plus "your own kite"
+  const tiles = E.fly && E.R ? C.tiles.filter(x => x.R === E.R && x.droppedT == null).slice(-6) : [];
+  const sk = tiles.length + ':' + (C.baseline && C.baseline.mean ? 1 : 0) + ':' + (E.R ? E.R.id : 0);
+  if (W$.get('strip|k') !== sk) { W$.set('strip|k', sk); strip.innerHTML = '';
+    const list = document.createElement('ul'); list.className = 'sr'; list.setAttribute('aria-label', 'your kites from this round');
+    for (const tl of tiles) { const cv = document.createElement('canvas'); cv.width = cv.height = 88; const x = cv.getContext('2d'); x.scale(2, 2);
+      const keep = L.px; L.px = 0.5; x.fillStyle = '#fbf7ee'; x.fillRect(0, 0, 44, 44); x.strokeStyle = 'rgba(31,42,61,0.45)'; x.strokeRect(0.5, 0.5, 43, 43);
+      drawTileKite(x, 22, 22, 44, tl.b, tl.T, tl.color, tl.fits); L.px = keep; cv.setAttribute('aria-hidden', 'true'); strip.appendChild(cv);
+      const li = document.createElement('li'); li.textContent = `in ${fmtN(tl.b.inh)}, pause ${fmtN(tl.b.hold)}, out ${fmtN(tl.b.exh)}, rest ${fmtN(tl.b.rest)} seconds`; list.appendChild(li); }
+    if (C.baseline && C.baseline.mean) { const d = document.createElement('div'); d.className = 'own'; const cv = document.createElement('canvas'); cv.width = cv.height = 56; const x = cv.getContext('2d'); x.scale(2, 2);
+      const keep = L.px; L.px = 0.5; x.fillStyle = '#fbf7ee'; x.fillRect(0, 0, 28, 28); drawTileKite(x, 14, 14, 28, C.baseline.mean, null, KITE_COLORS[0], null); L.px = keep;
+      cv.setAttribute('aria-hidden', 'true'); d.appendChild(cv); const s = document.createElement('span'); s.textContent = 'your own kite'; d.appendChild(s); strip.appendChild(d); }
+    if (tiles.length) strip.appendChild(list); }
+  put(strip, 'opacity', String(Math.round(ra * 100) / 100));
+  const lines = E.lines ? sentenceText(E.lines) : [];
+  put(text, 'html', lines.map(s => `<p>${s}</p>`).join('')); put(text, 'opacity', String(Math.round(ra * 100) / 100));
+  // the stamp (END(stamp) only)
+  let sv = '';
+  if (E.mode === 'stamp') {
+    const inked = E.alreadyStamped || (E.tapT != null && t - E.tapT >= 400);
+    const ink = E.alreadyStamped ? 0.85 : E.tapT != null ? 0.85 * clamp01((t - E.tapT - 400) / 250) : 0;
+    let sx = 0, sy = 0, sc = 1;
+    if (!E.alreadyStamped) {
+      if (E.stampReady != null && E.tapT == null) sx = lessMotion() ? 0 : -40 * (1 - easeOut(clamp01((t - E.stampReady) / 600)));
+      if (E.tapT != null) { const e = t - E.tapT; sy = lessMotion() ? 0 : (e < 400 ? 22 * easeInOut(e / 400) : e < 520 ? 22 : 22 * (1 - clamp01((e - 520) / 300))); sc = e >= 400 && e < 520 ? 0.96 : 1; }
+    }
+    sv += `<g opacity="${ink.toFixed(2)}"><rect x="8" y="8" width="56" height="56" rx="4" fill="none" stroke="${INK}" stroke-width="2"/>` +
+      `<path d="M36 14 L58 36 L36 58 L14 36 Z M36 14 L36 58 M14 36 L58 36" fill="none" stroke="${INK}" stroke-width="2"/>` +
+      `<text x="76" y="42" font-family="Bricolage Grotesque, system-ui" font-size="16" font-weight="600" fill="${INK}">${inked ? fmtN(E.size) + ' s' : ''}</text></g>`;
+    if (!E.alreadyStamped && E.stampReady != null && !(E.tapT != null && t - E.tapT > 820)) sv += `<g transform="translate(${(220 + sx).toFixed(1)} ${(sy - 0).toFixed(1)}) scale(${sc})"><rect x="0" y="2" width="44" height="18" rx="4" fill="#a87b52" stroke="${INK}" stroke-width="1.5"/><rect x="16" y="-8" width="12" height="12" rx="3" fill="#a87b52" stroke="${INK}" stroke-width="1.5"/><rect x="2" y="20" width="40" height="6" fill="${INK}" opacity=".8"/></g>`;
+  }
+  put(svg, 'html', sv); put($('stampbox'), 'display', E.mode === 'stamp' ? 'block' : 'none');
+  // buttons. Until they are due, the final set is laid out invisibly, so the page has its full
+  // height from the start: it never grows or jumps, and the scroll below lands where it should.
+  const fin = mode === 'done' ? 'done' : E.mode === 'stamp' ? 'stampEnd' : 'open:' + (E.more ? 1 : 0);
+  let bk = '', ghost = false;
+  if (mode === 'done') bk = 'done';
+  else if (E.mode === 'stamp' && E.stampReady != null && E.tapT == null && !E.alreadyStamped) bk = 'stamp';
+  else if (E.btnT != null && t >= E.btnT) bk = fin;
+  else { bk = fin; ghost = true; }
+  const moreLbl = C.saved.settings.bells ? 'one more round · with bells' : 'one more round · with rings';
+  const bkey = bk + ':' + ghost + ':' + moreLbl;
+  if (W$.get('endbtns|k') !== bkey) { W$.set('endbtns|k', bkey);
+    const dis = ghost ? ' disabled tabindex="-1"' : '';
+    const B = (act, txt, primary, extra = '') => `<button class="btn${primary ? ' primary' : ''}" type="button" data-act="${act}" ${extra}${dis}>${txt}</button>`;
+    let h = '';
+    if (bk === 'stamp') h = B('stamp', 'stamp the page', true);
+    if (bk === 'stampEnd') h = B('loose', 'loose kites', true) + B('end', 'finish for today');
+    // two columns: the two "one more round" choices, then loose kites and finish, then the bells toggle
+    if (bk.startsWith('open')) { if (E.more) h += B('moreEcho', moreLbl, false, 'data-more="1"') + B('moreFly', 'one more round · from memory', false, 'data-more="1"');
+      h += B('loose', 'loose kites', true) + B('end', 'finish for today') + `<button class="btn" type="button" data-act="bells" aria-pressed="${C.saved.settings.bells}" title="the breeze stays on"${dis}>${C.saved.settings.bells ? 'bells on' : 'bells off'}</button>`; }
+    if (bk === 'done') h = B('loose', 'loose kites', true);
+    const fa = document.activeElement && btns.contains(document.activeElement) ? document.activeElement.getAttribute('data-act') : null;
+    btns.innerHTML = h; if (fa) { const g = btns.querySelector(`[data-act="${fa}"]`); if (g) g.focus(); } btns.className = (bk === 'stamp' || bk === 'done') ? 'one' : '';
+    btns.style.visibility = ghost ? 'hidden' : 'visible'; btns.setAttribute('aria-hidden', String(ghost));
+    // a short page keeps "stamp the page" in view when it appears (the strip's room is held below the stamp)
+    if (bk === 'stamp' && !building) { const pg = $('page'); const need = btns.offsetTop + btns.offsetHeight + 8 - pg.clientHeight;
+      if (need > pg.scrollTop) pg.scrollTop = Math.min(pg.scrollHeight - pg.clientHeight, need); } }
+  if (!ghost) for (const b of btns.querySelectorAll('[data-more]')) b.disabled = !E.moreOn;
+  // once the strip and sentences show, bring them into view; the buttons follow them
+  // (the strip's top if all of it fits, else as much strip as leaves the buttons whole, never past the sentences' top)
+  if (!building && reveal && !E.scrolled) { E.scrolled = true; const pg = $('page');
+    if (pg.scrollHeight > pg.clientHeight + 1) {
+      const need = btns.offsetTop + btns.offsetHeight + 8 - pg.clientHeight;
+      pg.scrollTop = Math.min(pg.scrollHeight - pg.clientHeight, text.offsetTop - 8, Math.max(strip.offsetTop - 8, need));
+    } }
+}
+function syncDebug() {
+  const R = C.R, el = $('debug'); el.hidden = false;
+  if (!el.dataset.built) { el.dataset.built = '1';
+    el.innerHTML = `<div><b>kitewright debug</b> · tolerance floor <input id="dbgF" type="range" min="0.2" max="1.2" step="0.05" value="${TOL.floor}"> <span id="dbgFv"></span> · pct <input id="dbgP" type="range" min="0.05" max="0.4" step="0.01" value="${TOL.pct}"> <span id="dbgPv"></span></div><div id="dbgB"></div>`;
+    $('dbgF').addEventListener('input', e => { TOL.floor = +e.target.value; }); $('dbgP').addEventListener('input', e => { TOL.pct = +e.target.value; }); }
+  $('dbgFv').textContent = TOL.floor.toFixed(2); $('dbgPv').textContent = TOL.pct.toFixed(2);
+  const rows = [];
+  rows.push(`<div>${C.beat}${C.overlay ? ' · ' + C.overlay : ''} · t ${(C.bt / 1000).toFixed(1)} s · size ${C.size} · patterned ${(C.patternedMs / 1000).toFixed(1)} s</div>`);
+  if (R) {
+    rows.push(`<div>${R.tier} · cycles ${R.res.length}/${R.cycles} · help ${R.help}${R.helpUsed ? ' (used)' : ''}${R.ended ? ' · ended' + (R.mastered ? ' · mastered' : '') : ''}</div><table><tr><td>#</td><td>st</td><td>in</td><td>pause</td><td>out</td><td>rest</td><td>err</td></tr>`);
+    R.res.forEach((x, i) => rows.push(`<tr><td>${i + 1}</td><td>${x.st}</td>${PH.map(k => `<td>${x.b[k].toFixed(2)}</td>`).join('')}<td>${PH.map(k => (x.r.phases[k].err >= 0 ? '+' : '') + x.r.phases[k].err.toFixed(2)).join(' ')}${x.r.fast ? ' fast' : ''}${x.r.shortStill ? ' still' : ''}</td></tr>`));
+    R.void.forEach(v => rows.push(`<tr><td>v</td><td>${v.reason}</td>${PH.map(k => `<td>${(v.b[k] || 0).toFixed(2)}</td>`).join('')}<td>${v.partial ? 'partial' : 'unscored'}</td></tr>`));
+    rows.push('</table>');
+  }
+  $('dbgB').innerHTML = rows.join('');
+}
+
+// ── input sources: keyboard, pads (multitouch), debug API; one control may be held by several ──
+const SRC = { in: new Set(), out: new Set() };
+let manual = false, lastReal = performance.now();
+const evTime = ts => (manual || C.overlay) ? C.bt : C.bt + Math.max(0, Math.min(1000, (ts ?? performance.now()) - lastReal));
+function srcDown(kind, src, ts) { const had = SRC[kind].size > 0; SRC[kind].add(src); if (!had) { G.input('down', kind, evTime(ts)); } }
+function srcUp(kind, src, ts) { if (!SRC[kind].has(src)) return; SRC[kind].delete(src); if (!SRC[kind].size) G.input('up', kind, evTime(ts)); }
+function releaseAllSrc(ts) { for (const k of ['in', 'out']) for (const s of [...SRC[k]]) srcUp(k, s, ts); }
+const keyKind = code => (code === 'ArrowUp' || code === 'KeyI') ? 'in' : (code === 'ArrowDown' || code === 'KeyO') ? 'out' : null;
+window.addEventListener('keydown', e => {
+  if (e.code === 'Escape') { e.preventDefault(); if (!$('know').hidden) { closeKnow(); return; } G.button('stop'); return; }
+  const k = keyKind(e.code); if (!k) return;
+  e.preventDefault(); if (e.repeat) return;
+  srcDown(k, 'key:' + e.code, e.timeStamp);
+});
+window.addEventListener('keyup', e => { const k = keyKind(e.code); if (!k) return; e.preventDefault(); srcUp(k, 'key:' + e.code, e.timeStamp); });
+window.addEventListener('blur', () => releaseAllSrc());
+for (const [el, k] of [[$('padIn'), 'in'], [$('padOut'), 'out']]) {
+  el.addEventListener('pointerdown', e => { e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch { /* fine */ } srcDown(k, 'p' + e.pointerId, e.timeStamp); });
+  const up = e => srcUp(k, 'p' + e.pointerId, e.timeStamp);
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  el.addEventListener('contextmenu', e => e.preventDefault());
+  el.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) srcDown(k, 'kp', e.timeStamp); } });
+  el.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); srcUp(k, 'kp', e.timeStamp); } });
+}
+document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.pad, canvas')) e.preventDefault(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { releaseAllSrc(); if (!manual) G.advance(evTime()); G.hidden(); AUD.suspend(); cancelAnimationFrame(raf); raf = 0; }
+  else { lastReal = performance.now(); AUD.resume(); if (!raf) raf = requestAnimationFrame(frame); }
+});
+document.addEventListener('toggle', e => { if (e.target.closest && e.target.closest('#page')) placePage(PAGE.mode); }, true);   // "about the square" opens or folds
+window.addEventListener('resize', () => { clearTimeout(window.__kwRz); window.__kwRz = setTimeout(layout, 80); });
+
+// buttons
+const btn = (id, act, arg) => $(id).addEventListener('click', () => { G.button(act, arg); });
+$('btnBegin').addEventListener('click', () => { AUD.init(); G.button('begin'); setTimeout(() => $('padIn').focus({ preventScroll: true }), 0); });
+btn('btnStop', 'stop'); btn('btnDizzy', 'dizzy'); btn('btnDizzy2', 'dizzy'); btn('btnResume', 'resume'); btn('btnResumeP', 'resume');
+btn('btnEndStop', 'endStop'); btn('btnDone', 'done'); btn('btnCarry', 'carry'); btn('btnBack', 'back');
+btn('togBells', 'bells'); btn('togBells2', 'bells'); btn('togMotion', 'motion'); btn('smaller', 'smaller');
+$('notmine').addEventListener('click', () => { if ($('notmine').getAttribute('aria-disabled') !== 'true') G.button('notmine'); });
+let knowReturn = null;
+function openKnow(from) { knowReturn = from || document.activeElement; $('know').hidden = false; $('btnKnowClose').focus(); }
+function closeKnow() { $('know').hidden = true; if (knowReturn && knowReturn.focus) knowReturn.focus(); }
+$('btnKnowClose').addEventListener('click', closeKnow);
+document.addEventListener('click', e => {
+  const el = e.target.closest && e.target.closest('[data-act],[data-size]'); if (!el) return;
+  if (el.hasAttribute('data-size')) { G.button('size', +el.getAttribute('data-size')); return; }
+  const act = el.getAttribute('data-act');
+  if (act === 'know') openKnow(el); else if (el.closest('#page')) G.button(act);
+});
+
+// copy for the static cards
+$('introBody').innerHTML = ['intro.1', 'intro.2', 'intro.2b', 'intro.3', 'intro.press', 'intro.seat'].map(id => `<p${id === 'intro.1' ? ' class="lead"' : ''}>${LINES[id]}</p>`).join('') +
+  `<div style="border-top:1px solid var(--line);margin-top:16px;padding-top:8px">${['intro.safe1', 'intro.safe2', 'intro.safe3'].map(id => `<p>${LINES[id]}</p>`).join('')}</div>`;
+$('stopH').textContent = LINES['stop.1'];
+$('stopBody').innerHTML = ['stop.2', 'intro.safe1', 'intro.safe2', 'intro.safe3'].map(id => `<p>${LINES[id]}</p>`).join('');
+$('dizzyH').textContent = LINES['dizzy.1'];
+$('dizzyBody').innerHTML = ['intro.safe1', 'intro.safe2', 'dizzy.2b', 'dizzy.4', 'dizzy.3'].map(id => `<p>${LINES[id]}</p>`).join('');
+
+// ── the loop: one breath clock (unclamped) and a clamped decoration dt (D63) ──
+let raf = 0;
+function frame(now) {
+  const d = Math.max(0, now - lastReal); lastReal = now;
+  const dd = Math.min(50, d);
+  if (!manual) { noteOverlay(); if (!C.overlay) G.advance(C.bt + d); noteOverlay(); uiT += dd; decor(dd / 1000); }
+  draw(); syncDom();
+  raf = document.hidden ? 0 : requestAnimationFrame(frame);
+}
+initClouds(); layout(); G.enterBeat('INTRO');
+syncDom();
+raf = requestAnimationFrame(frame);
+
+// ════════════════════════════════════════════════════════════════════════════
+// Debug API (headless driving on a virtual clock; same input path as real input)
+// ════════════════════════════════════════════════════════════════════════════
+function stepMs(ms) {
+  manual = true;
+  let left = ms;
+  noteOverlay();
+  while (left > 0) { const s = Math.min(16.7, left); left -= s; if (!C.overlay) G.advance(C.bt + s); noteOverlay(); uiT += s; decor(Math.min(50, s) / 1000); }
+  draw(); syncDom();
+  return G.state();
+}
+window.__kw = {
+  step: ms => stepMs(ms), press: kind => { manual = true; srcDown(kind, 'api'); return G.state(); }, release: kind => { manual = true; if (kind) srcUp(kind, 'api'); else { srcUp('in', 'api'); srcUp('out', 'api'); } return G.state(); },
+  state: () => G.state(), seed: n => { rng = mulberry32(n); initClouds(); }, setTier: t => { manual = true; G.debugStart(t, C.size); syncDom(); return G.state(); },
+  setSize: n => { C.size = n; C.planSel = n; C.origSize = n; return G.state(); }, selftest: () => selftest(), button: (id, arg) => { G.button(id, arg); syncDom(); return G.state(); },
+  core: G,
+};
+window.__kitewright = {
+  state: () => G.state(), step: (n = 1) => stepMs(16 * n), press: phase => window.__kw.press(phase), release: kind => window.__kw.release(kind),
+  skipTo: sec => { const target = sec * 1000; if (target > C.bt) stepMs(target - C.bt); return G.state(); },
+  breaths: () => C.allBreaths.map(x => ({ ...x.b, kind: x.kind, t: x.t })), events: () => C.ev.slice(),
+  selftest: () => selftest(), button: (id, arg) => window.__kw.button(id, arg), clickText: txt => { const b = [...document.querySelectorAll('button')].find(x => !x.closest('[hidden]') && x.textContent.trim() === txt); if (b) b.click(); return !!b; },
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// 10.7 Self-tests: __kw.selftest()
+// ════════════════════════════════════════════════════════════════════════════
+function makeSim(tier, size = 3, o = {}) {
+  const fa = fakeAudio(); const mem = { v: null };
+  const core = createCore({ audio: fa, store: { load: () => o.saved ? JSON.parse(JSON.stringify(o.saved)) : defaultSaved(), save: v => { mem.v = JSON.parse(JSON.stringify(v)); } } });
+  fa.now = () => core.C.bt / 1000;
+  if (tier) core.debugStart(tier, size, o);
+  const S = { core, C: core.C, fa, mem,
+    to: t => core.advance(t),
+    down: (k, t) => core.input('down', k, t), up: (k, t) => core.input('up', k, t),
+    segs(list) {   // [['in',0,3100],['pause',3100,6000],...]: ups before downs at a shared instant
+      const evs = [];
+      for (const [ph, a, b] of list) if (ph !== 'pause') { evs.push({ t: a, d: 1, k: ph }); if (b != null) evs.push({ t: b, d: 0, k: ph }); }
+      evs.sort((x, y) => x.t - y.t || x.d - y.d);
+      for (const e of evs) e.d ? S.down(e.k, e.t) : S.up(e.k, e.t);
+    },
+    breath(t0, inh, hold, exh, rest, closeNext = true) {   // t0 in ms, phases in s; returns the next breath's start
+      const a = t0, b = a + inh * 1000, c2 = b + hold * 1000, d = c2 + exh * 1000, e = d + rest * 1000;
+      S.segs([['in', a, b], ['out', c2, d]]); if (closeNext) S.to(e); return e;
+    },
+    said: id => core.C.ev.filter(x => x.type === 'say' && x.id === id),
+    closes: () => core.C.ev.filter(x => x.type === 'breath'),
+  };
+  return S;
+}
+const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
+const nearB = (b, e4, e = 1e-6) => PH.every((k, i) => near(b[k], e4[i], e));
+function selftest() {
+  const out = [];
+  const test = (n, name, fn) => { let pass = false, detail = ''; try { const r = fn(); pass = r === true || (r && r.pass); detail = r && r.detail ? r.detail : ''; } catch (err) { detail = 'threw: ' + err.message; } out.push({ n, name, pass: !!pass, detail }); };
+  const T3 = SIZES[3];
+  const parseList = list => parseBreaths(list.map(([phase, t0, t1]) => ({ phase, t0, t1 })));
+  const keep = { ...TOL }; Object.assign(TOL, { floor: 0.6, pct: 0.2, zero: 0.5 });
+
+  test(1, 'a clean breath', () => {
+    const b = parseList([['in', 0, 3100], ['pause', 3100, 6000], ['out', 6000, 9200], ['pause', 9200, 12100], ['in', 12100, 12500]])[0];
+    const S = makeSim('learn'); S.segs([['in', 0, 3100], ['out', 6000, 9200], ['in', 12100, 12500]]); S.to(12500);
+    const x = S.C.R.res[0];
+    return { pass: nearB(b, [3.1, 2.9, 3.2, 2.9]) && evaluateBreath(T3, b).fit && x && nearB(x.b, [3.1, 2.9, 3.2, 2.9]) && x.r.fit, detail: JSON.stringify(b) };
+  });
+  test(2, 'a merged key-up', () => {
+    const b = parseList([['in', 0, 1500], ['pause', 1500, 1700], ['in', 1700, 3000], ['pause', 3000, 6500], ['out', 6500, 9400], ['pause', 9400, 12100], ['in', 12100, 12500]])[0];
+    return { pass: nearB(b, [3.0, 3.5, 2.9, 2.7]) && evaluateBreath(T3, b).fit, detail: JSON.stringify(b) };
+  });
+  test(3, 'a slip during the pause', () => {
+    const b = parseList([['in', 0, 3000], ['pause', 3000, 4400], ['out', 4400, 4600], ['pause', 4600, 6000], ['out', 6000, 9000], ['pause', 9000, 12000], ['in', 12000, 12400]])[0];
+    return { pass: nearB(b, [3, 3, 3, 3]) && evaluateBreath(T3, b).fit, detail: JSON.stringify(b) };
+  });
+  test(4, 'rushed breaths bring help', () => {
+    const S = makeSim('echo');
+    S.segs([['in', 0, 3000], ['out', 6000, 9000], ['in', 12000, 13500], ['out', 13500, 15500], ['in', 15500, 17000], ['out', 17000, 19000], ['in', 19000, 22000], ['out', 25000, 28000], ['in', 31000, 34000], ['out', 37000, 40000], ['in', 43000, 46000], ['out', 49000, 52000]]);
+    S.to(60000);
+    const R = S.C.rounds[0], st = R.res.map(x => x.st), helpEv = S.C.ev.find(x => x.type === 'help');
+    const rushed = R.res[1].r;
+    const ok = rushed.fast && rushed.shortStill && rushed.wellOff && st.join() === 'settle,off,off,helped,helped,fit' && R.helpUsed && R.help === 0 &&
+      S.said('help.back').length === 1 && helpEv && helpEv.c0 === 19000 && S.said('drift.fast').length >= 1 && S.C.glint.n === 1 && R.ended && !R.mastered && R.res.length === 6;
+    return { pass: ok, detail: `st=${st} c0=${helpEv && helpEv.c0} glints=${S.C.glint.n}` };
+  });
+  test(5, '"not my breath" never helps', () => {
+    const mk = sts => sts.map(st => ({ st }));
+    const a = masteryOf(mk(['settle', 'fit', 'dropped', 'fit', 'off', 'fit']));
+    const b = masteryOf(mk(['settle', 'fit', 'fit', 'dropped', 'fit', 'fit']));
+    const sv = saveStar({ stars: 0, size: null, stamped: false }, 'fly', 3);
+    return { pass: !a && b && sv.stars === 3 && sv.stamped, detail: `a=${a} b=${b}` };
+  });
+  test(6, 'the final rest is one-sided', () => {
+    const r4 = evaluateBreath(T3, { inh: 3, hold: 3, exh: 3, rest: 4 }, { restOneSided: true }).fit;
+    const r5 = evaluateBreath(T3, { inh: 3, hold: 3, exh: 3, rest: 5 }, { restOneSided: true }).fit;
+    const r2 = evaluateBreath(T3, { inh: 3, hold: 3, exh: 3, rest: 2 }, { restOneSided: true }).fit;
+    const S = makeSim('fly'); let t = 0; for (let i = 0; i < 5; i++) t = S.breath(t, 3, 3, 3, 3); S.breath(t, 3, 3, 3, 0, false); S.to(t + 15000);
+    const last = S.C.rounds[0].res[5];
+    return { pass: r4 && r5 && !r2 && last && near(last.b.rest, 5) && last.st === 'fit', detail: `timeout rest=${last && last.b.rest}` };
+  });
+  test(7, 'the demo kite', () => {
+    let ok = true, d = [];
+    for (const n of [3, 2.5, 2]) {
+      const S = makeSim('learnIntro', n); S.to(6000 + 4 * n * 1000 + 400);
+      const dc = S.C.demoCheck[0], lk = S.C.lastLaunch;
+      const good = dc && nearB(dc.b, [n, n, n, n]) && lk && PH.every(k => Math.abs(lk.secs[k] - dc.b[k]) <= 0.001);
+      ok = ok && good; d.push(n + ':' + (good ? 'ok' : JSON.stringify(dc)));
+    }
+    return { pass: ok, detail: d.join(' ') };
+  });
+  test(8, 'Chapter 1 check', () => {
+    const b = parseList([['in', 0, 4100], ['pause', 4100, 4350], ['out', 4350, 8200], ['pause', 8200, 8500], ['in', 8500, 8900]])[0];
+    return { pass: nearB(b, [4.1, 0.25, 3.85, 0.3]) && evaluateBreath({ inh: 4, hold: 0, exh: 4, rest: 0 }, b).fit, detail: JSON.stringify(b) };
+  });
+  test(9, 'a slip cannot close a breath', () => {
+    const S = makeSim('learn');
+    S.segs([['in', 0, 3100], ['out', 6000, 9200], ['in', 12100, 12250], ['in', 13000, 13400]]); S.to(13600);
+    const cl = S.closes(), x = S.C.R.res[0];
+    return { pass: cl.length === 1 && cl[0].t === 13300 && near(x.b.rest, 3.8) && !x.r.fit, detail: `closes at ${cl.map(c => c.t)} rest=${x && x.b.rest}` };
+  });
+  test(10, 'the schedule never moves', () => {
+    const S = makeSim('learn'); let t = 0;
+    t = S.breath(t, 3, 3, 3, 3); t = S.breath(t, 3, 3, 3, 1.6);   // cycle-3 press at 22.6 s, 1.4 s before its in-turn
+    for (let i = 0; i < 3; i++) t = S.breath(t, 3, 3, 3, 3);
+    S.breath(t, 3, 3, 3, 0, false); S.to(t + 14500);   // the sixth breath closes by timeout
+    const turns = S.C.bellLog.map(b => b.t), exp = []; for (let k = 0; k < 6; k++) for (let j = 0; j < 4; j++) if (k || j) exp.push(k * 12000 + j * 3000);
+    const a = exp.every(x => turns.includes(x)) && turns.length === exp.length;
+    const S2 = makeSim('learn'); t = 0; for (let i = 0; i < 6; i++) t = S2.breath(t, 3, 3, 3, 2); S2.to(t + 400);
+    const g = S2.C.bellLog.filter(b => b.j === 0).map(b => b.t), R2 = S2.C.rounds[0];
+    const gaps = g.slice(1).map((x, i) => x - g[i]);
+    const b = gaps.every(x => x === 12000) && R2.res.slice(1).every(x => near(x.r.phases.rest.err, -1) && x.st === 'off');
+    return { pass: a && b, detail: `turns=${turns.length}/${exp.length} gaps=${gaps}` };
+  });
+  test(11, 'presses ring nothing', () => {
+    const S = makeSim('echo'); let t = 0; for (let i = 0; i < 6; i++) t = S.breath(t, 3, 3, 3, 3); S.to(t + 6000);
+    const B = S.C.bellLog, R = S.C.rounds[0];
+    const nearAnchor = B.some(b => Math.abs(b.t - R.startMs) < 50) || S.fa.bells.some(h => Math.abs(h.start * 1000 - R.startMs) < 50);
+    const first = B[0], lastIn = B.filter(b => b.j === 0 && b.t >= R.startMs + 6 * 12000);
+    return { pass: !nearAnchor && first && first.j === 1 && first.t === R.startMs + 3000 && !lastIn.length, detail: `first=${first && first.t} j=${first && first.j}` };
+  });
+  test(12, 'held-key cap', () => {
+    const S = makeSim('learn'); S.down('in', 0); S.to(20000); const pauseT = S.C.bt; S.up('in', 20000);
+    const ok = S.said('drift.overKey').some(x => x.at === 5000) && S.C.overlay === 'PAUSED' && pauseT === 12000 && S.C.R.res.length === 0 && S.C.R.void.length === 1;
+    return { pass: ok, detail: `pause at ${pauseT} overlay=${S.C.overlay}` };
+  });
+  test(13, 'round and load caps', () => {
+    const S = makeSim('learn'); let t = 0;
+    for (let i = 0; i < 4; i++) t = S.breath(t, 10, 9, 10, 9);
+    S.segs([['in', t, t + 10000], ['out', t + 19000, null]]); S.to(t + 30000);
+    const R = S.C.rounds[0];
+    const S2 = makeSim('learn', 3, { patternedMs: 700000 }); S2.breath(0, 3, 3, 3, 3); S2.breath(12000, 3, 3, 3, 3, false); S2.to(40000);
+    const R2 = S2.C.rounds[0];
+    return { pass: R.ended && R.endT === 180000 && R.closeHow === 'cap' && R2.ended && R2.endT === 20000, detail: `end ${R.endT} / ${R2.endT}` };
+  });
+  test(14, 'tolerance', () => near(tolFor(2), 0.6) && near(tolFor(2.5), 0.6) && near(tolFor(3), 0.6) && near(tolFor(4), 0.8) && near(tolFor(0), 0.5));
+  test(15, 'rollover', () => {
+    const S = makeSim('learn'); S.down('in', 0); S.down('out', 3000); S.up('out', 6000); S.to(8000);
+    const P = S.C.play, a = P.open.phase === 'pause' && !P.log.some(s => s.phase === 'in' && s.t0 >= 6000);
+    const S2 = makeSim('learn'); S2.down('in', 0); S2.down('out', 3000); S2.up('out', 3200); S2.to(4000);
+    const b = S2.C.play.open.phase === 'in' && S2.C.play.open.t0 === 3200;
+    return { pass: a && b, detail: `a=${a} b=${b}` };
+  });
+  test(16, 'skipped pauses get "smaller", not "slower"', () => {
+    const S = makeSim('learn'); S.segs([['in', 0, 4000], ['out', 4000, 8000], ['in', 8000, 12000], ['out', 12000, 16000], ['in', 16000, null]]); S.to(16400);
+    const r = S.C.R.res[1].r;
+    return { pass: !r.fast && r.shortStill && S.said('drift.still').length === 1 && S.C.glint.n === 1 && !S.said('drift.fast').length, detail: `glints=${S.C.glint.n}` };
+  });
+  test(17, 'last-breath "not my breath"', () => {
+    const run = tapAfter => { const S = makeSim('fly'); let t = 0; for (let i = 0; i < 5; i++) t = S.breath(t, 3, 3, 3, 3); S.breath(t, 3, 3, 3, 0, false);
+      const T = t + 9000 + 5000; S.to(T + tapAfter); const R = S.C.rounds[0]; const pageBefore = S.C.end && S.C.end.pageT; S.core.button('notmine'); S.to(T + 2000); return { R, S, T, pageBefore }; };
+    const a = run(500), b = run(1100);
+    const okA = a.R.res[5].st === 'dropped' && a.R.endRuns === 2 && a.pageBefore == null && a.S.C.end.pageT === a.T + 1000;
+    const okB = b.R.res[5].st === 'fit' && b.R.endRuns === 1;
+    return { pass: okA && okB, detail: `a=${a.R.res[5].st}/${a.R.endRuns} b=${b.R.res[5].st}` };
+  });
+  test(18, 'saved size', () => { let s = saveStar({ stars: 0, size: null, stamped: false }, 'fly', 3); s = saveStar(s, 'learn', 2); return s.size === 3 && s.stars === 3 && s.stamped; });
+  test(19, 'rounding', () => {
+    const fake = { res: [{ st: 'fit', b: { inh: 3.3, hold: 3, exh: 3, rest: 3 } }, { st: 'off', b: { inh: 3.3, hold: 3, exh: 3, rest: 3 } }, { st: 'fit', b: { inh: 3.3, hold: 3, exh: 3, rest: 3 } }] };
+    const txt = sentenceText(endingSentences(fake, 'open')).find(s => s.startsWith('your typical'));
+    return { pass: q(9.2 - 6.0 - 3.0) === 0.2 && txt === 'your typical kite: in 3.3 · pause 3 · out 3 · rest 3 s.', detail: txt };
+  });
+  test(20, 'stop silences bells', () => {
+    const S = makeSim('echo'); S.down('in', 0); S.up('in', 3000); S.to(5950); S.core.button('stop'); S.to(9000);
+    const stopT = 5.95, late = S.fa.bells.filter(h => h.start > stopT);
+    return { pass: late.length > 0 && late.every(h => h.cancelled) && S.C.bellLog.filter(b => b.t > 5950).every(b => b.cancelled), detail: `late=${late.length}` };
+  });
+  test(21, 'the ghost is static', () => [3, 2.5, 2].every(n => near(ghostGeom(n).tipTopY, L.hub[1] - n * L.S)));
+  test(22, 'Echo with bells off is visible', () => {
+    const c = mkCanvas(64, 64), x = c.getContext('2d');
+    let bgc = [134, 192, 230];   // the darkest sky, unless the real pixel behind the end-tick can be read
+    try { const [tx, ty] = toScr(L.hub[0] + spars(SIZES[3], L.S).right, L.hub[1]); const d = bctx.getImageData(Math.round(tx * L.dpr), Math.round(ty * L.dpr), 1, 1).data; if (d[3] > 0) bgc = [d[0], d[1], d[2]]; } catch { /* fine */ }
+    x.fillStyle = `rgb(${bgc})`; x.fillRect(0, 0, 64, 64);
+    x.strokeStyle = '#fff'; x.lineWidth = 4; x.beginPath(); x.arc(32, 32, 8, 0, 6.283); x.stroke();
+    x.strokeStyle = 'rgba(31,42,61,0.8)'; x.lineWidth = 2.5; x.stroke();
+    const p = x.getImageData(40, 32, 1, 1).data;
+    const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+    const l1 = lum([p[0], p[1], p[2]]), l2 = lum(bgc), cr = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    return { pass: cr >= 3, detail: 'contrast ' + cr.toFixed(2) + ':1' };
+  });
+  test(23, '"one more round" gating', () => {
+    const S = makeSim('echo'); S.breath(0, 3, 3, 3, 3); S.to(13000); S.core.button('stop'); S.core.button('endStop');
+    return { pass: moreAllowed(540000, false, false) && !moreAllowed(560000, false, false) && S.C.end && S.C.end.more === false, detail: `viaStop more=${S.C.end && S.C.end.more}` };
+  });
+  test(24, 'help at most once', () => {
+    const S = makeSim('echo', 3, { cycles: 10 }); let t = 0;
+    t = S.breath(t, 3, 3, 3, 3); t = S.breath(t, 1.5, 0, 2, 0); t = S.breath(t, 1.5, 0, 2, 0);
+    t = S.breath(t, 3, 3, 3, 3); t = S.breath(t, 3, 3, 3, 3);
+    t = S.breath(t, 1.5, 0, 2, 0); t = S.breath(t, 1.5, 0, 2, 0); t = S.breath(t, 3, 3, 3, 3); S.to(t + 400);
+    const R = S.C.rounds[0];
+    return { pass: S.said('help.back').length === 1 && R.help === 0 && R.res[5].st === 'off' && R.res[6].st === 'off', detail: R.res.map(x => x.st).join() };
+  });
+  Object.assign(TOL, keep);
+  const passed = out.filter(x => x.pass).length;
+  return { passed, total: out.length, results: out };
+}
+</script>
+</body>
+</html>
