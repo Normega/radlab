@@ -107,7 +107,7 @@ export default function ComposableQuestionnaireRenderer({
     }))
   }, [clock])
 
-  function finish() {
+  function finish(current = responses) {
     if (previewMode) {
       setDone(true)
       return
@@ -120,7 +120,7 @@ export default function ComposableQuestionnaireRenderer({
     // the order this participant saw is recorded with their answers (rule 3:
     // column names and analysis come from recorded facts, not inference).
     const normalized = markNotApplicable(
-      pages, normalizeComposableResponses(questionnaire, responses), collects)
+      pages, normalizeComposableResponses(questionnaire, current), collects)
     if (presentation.order) normalized._order = presentation.order
     const c = clockRef.current
     const end = clock()
@@ -151,13 +151,20 @@ export default function ComposableQuestionnaireRenderer({
     return () => clearTimeout(t)
   }, [isSimMode])
 
-  function next() {
+  // A component that runs its own flow (`ownsNavigation`) records its answer and
+  // moves on in the same tap, before React has re-rendered with that answer, so
+  // it passes the answer along and the check reads it from there.
+  function advanceFrom(componentId, value) {
+    next(value === undefined ? responses : { ...responses, [componentId]: value })
+  }
+
+  function next(current = responses) {
     // An incomplete page does not advance: it shows which questions are missing,
     // and scrolls to the first. A greyed-out button that did nothing left people
     // on a long phone page with no idea which card they had skipped.
-    if (!pageIsComplete(page, responses)) {
+    if (!pageIsComplete(page, current)) {
       const ids = page.components
-        .filter(c => collects(c) && !responseIsComplete(c, responses[c.id]))
+        .filter(c => collects(c) && !responseIsComplete(c, current[c.id]))
         .map(c => c.id)
       setMissing(ids)
       document.getElementById(`${ids[0]}-prompt`)?.closest('.cs-question-card')
@@ -167,7 +174,7 @@ export default function ComposableQuestionnaireRenderer({
     setMissing([])
 
     if (nextShown == null) {
-      finish()
+      finish(current)
       return
     }
 
@@ -233,6 +240,7 @@ export default function ComposableQuestionnaireRenderer({
   }
 
   const canContinue = pageIsComplete(page, responses)
+  const ownsNav = page.components.some(c => COMPONENT_TYPES[c.type]?.ownsNavigation === true)
   const stillMissing = missing.filter(id => {
     const c = page.components.find(x => x.id === id)
     return c && !responseIsComplete(c, responses[id])
@@ -262,10 +270,12 @@ export default function ComposableQuestionnaireRenderer({
           responses={responses}
           onChange={updateResponse}
           missingIds={stillMissing}
+          onAdvance={advanceFrom}
+          seed={orderSeed ?? previewSeed}
         />
       </main>
 
-      <div className="cs-navigation">
+      {!ownsNav && <div className="cs-navigation">
         <button type="button" className="cs-secondary-button" onClick={back}>
           ← Back
         </button>
@@ -280,11 +290,11 @@ export default function ComposableQuestionnaireRenderer({
           type="button"
           className={canContinue ? 'cs-primary-button' : 'cs-primary-button is-waiting'}
           aria-disabled={!canContinue}
-          onClick={next}
+          onClick={() => next()}
         >
           {nextShown == null ? 'Finish' : 'Next →'}
         </button>
-      </div>
+      </div>}
     </div>
   )
 }

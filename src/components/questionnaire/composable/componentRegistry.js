@@ -12,6 +12,7 @@ import InformationBlock from './InformationBlock'
 import OpenTextListQuestion from './OpenTextListQuestion'
 import OpenTextQuestion from './OpenTextQuestion'
 import HierarchicalBeliefQuestion from './HierarchicalBeliefQuestion'
+import SensingPauseOffer from './SensingPauseOffer'
 import { countWords } from './textLimits'
 
 export const COMPONENT_TYPES = {
@@ -63,6 +64,15 @@ export const COMPONENT_TYPES = {
     component: HierarchicalBeliefQuestion,
     collectsResponse: true,
   },
+  // RADlab: the free-choice pause (Sense Foraging Study 2b's behavioural
+  // criterion). It runs its own flow and advances the page itself, so the
+  // renderer hides Back/Next on a page that holds one (`ownsNavigation`).
+  sensing_pause: {
+    label: 'Sensing pause offer',
+    component: SensingPauseOffer,
+    collectsResponse: true,
+    ownsNavigation: true,
+  },
 }
 
 export function getComponentDefinition(type) {
@@ -108,6 +118,8 @@ export function responseIsComplete(config, value) {
   const required = config.required !== false
 
   if (type === 'information') return true
+
+  if (type === 'sensing_pause') return value?.done === true
 
   if (type === 'likert' || type === 'slider' || type === 'likert_slider' || type === 'graphic_slider') {
     return !required || value != null

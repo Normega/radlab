@@ -901,3 +901,187 @@
   justify-content: center;
   margin: 8px 0 16px;
 }
+
+/* Sensing pause offer (SensingPauseOffer.jsx), a RADlab addition. The two
+   choices have equal standing: same bordered button, no suggested option. */
+.cs-pause {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+}
+
+.cs-pause-text p {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+
+.cs-pause-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-16);
+}
+
+.cs-pause-pair .cs-pause-choice {
+  flex: 1 1 200px;
+}
+
+.cs-pause-choice {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--tx);
+  background: var(--bgc);
+  border: 1px solid var(--bds);
+  border-radius: 24px;
+  padding: var(--sp-16) var(--sp-24);
+  cursor: pointer;
+  text-align: center;
+}
+
+.cs-pause-choice:hover {
+  border-color: var(--pk);
+}
+
+.cs-pause-choice.is-selected {
+  border-color: var(--pkd);
+  background: var(--pkb);
+}
+
+.cs-pause-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.cs-pause-ask {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.cs-pause-ask-next {
+  margin-top: var(--sp-8);
+}
+
+.cs-pause-optional {
+  margin-left: var(--sp-8);
+  font-size: var(--fs-body-sm);
+  font-weight: 400;
+  color: var(--tx2);
+}
+
+.cs-pause-skip {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: var(--tx2);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: var(--fs-body-sm);
+  text-decoration: underline;
+  padding: var(--sp-8) 0;
+  cursor: pointer;
+}
+
+.cs-pause-note {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cs-pause-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cs-pause-pna {
+  align-self: flex-start;
+  font-size: var(--fs-body-sm);
+  font-weight: 400;
+  color: var(--tx2);
+  padding: var(--sp-8) var(--sp-16);
+}
+
+.cs-pause-scale {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--sp-8);
+}
+
+.cs-pause-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-8) var(--sp-4);
+  border: 1px solid var(--bds);
+  border-radius: 24px;
+  background: var(--bgc);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--tx);
+  cursor: pointer;
+}
+
+.cs-pause-point.is-selected {
+  border-color: var(--pkd);
+  background: var(--pkb);
+}
+
+.cs-pause-point-n {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.cs-pause-point-label {
+  font-size: var(--fs-min);
+  color: var(--tx2);
+  text-align: center;
+}
+
+/* The quiet screen: nothing to read but one line, a slow colour field that asks
+   for nothing (no breathing rhythm, no focus point), and the way back. */
+.cs-pause-quiet {
+  position: relative;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-24);
+  padding: var(--sp-48) var(--sp-24);
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.cs-pause-field {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(40% 40% at 30% 35%, rgba(240, 104, 164, 0.16), transparent 70%),
+    radial-gradient(45% 45% at 70% 60%, rgba(110, 150, 190, 0.14), transparent 70%),
+    radial-gradient(35% 35% at 50% 80%, rgba(150, 190, 150, 0.12), transparent 70%);
+  animation: cs-pause-drift 40s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+.cs-pause-quiet > :not(.cs-pause-field) {
+  position: relative;
+  z-index: 1;
+}
+
+.cs-pause-quiet-text {
+  margin: 0;
+  max-width: 360px;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+@keyframes cs-pause-drift {
+  from { transform: translate(-4%, -2%) rotate(0deg); }
+  to   { transform: translate(4%, 3%) rotate(12deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-pause-field { animation: none; }
+}

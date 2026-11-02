@@ -1,6 +1,6 @@
 import { getComponentDefinition } from './componentRegistry'
 
-export default function SurveyComponentRenderer({ config, value, onChange }) {
+export default function SurveyComponentRenderer({ config, value, onChange, onAdvance, seed }) {
   const definition = getComponentDefinition(config.type)
 
   if (!definition) {
@@ -18,6 +18,8 @@ export default function SurveyComponentRenderer({ config, value, onChange }) {
       config={config}
       value={value}
       onChange={onChange}
+      onAdvance={onAdvance}
+      seed={seed}
     />
   )
 }
