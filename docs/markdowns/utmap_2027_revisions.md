@@ -32,7 +32,10 @@ Block 6 and 478 frequency-slider answers in Block 7 at the time) and the 2026 pr
 
 ## Consider
 
-5. **Hide the slider's numeric readout** ("Value 73" appears once moved) for Block 7. Chasing a
+5. **Time estimate: "about 10 minutes", not "8 minutes"** on the flyer, sign-up page and consent
+   form. The 2026 median was 9.1 minutes, from opening the sign-up page to the last answer.
+
+6. **Hide the slider's numeric readout** ("Value 73" appears once moved) for Block 7. Chasing a
    number that "feels right" depends on seeing one; the anchors carry the meaning. Check that
    `SliderScale`'s `showValue` can be set per item before relying on it.
 
@@ -45,3 +48,9 @@ Block 6 and 478 frequency-slider answers in Block 7 at the time) and the 2026 pr
   apply to the order either: the self-report PHQ-4 is step 6, before Block 7. Data showed no
   struggle: median 2 change events per frequency slider, 11% of answers on multiples of 25
   (about 5% by chance).
+- **Adding an "Average" midpoint to the sources-of-stress and stress-by-month scales** (second
+  internal tester, 2026-11-02). Both blocks are carried unchanged from 2023–2025 (Attachment 2),
+  and the cross-year trend is the point of the survey, so the 6-point no-midpoint format stays.
+  2026 use of the two middle options was 20.5% and 23.0%, with 1.5% prefer-not-to-answer.
+  A real limitation to name in write-ups instead: the labels mix absolute and relative anchors
+  (Low/High against Below/Above Average) without saying what "average" is relative to.
