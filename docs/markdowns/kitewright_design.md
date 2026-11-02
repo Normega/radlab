@@ -82,7 +82,7 @@ Each chapter is one plan page, played as Learn, then Echo, then Fly. Chapters un
 **Session caps (all chapters):**
 - at most 180 s of patterned breathing per round
 - at most 12 min of patterned breathing per page load
-- at least 3 natural breaths or 20 s between rounds
+- a 20 s break between rounds, shown as a countdown; pressing during it is optional (Norm, 2026-11-02)
 - once the 12 min are used, only loose kites are offered
 
 **Tier stars.** One mastered round at a tier earns that tier's star. A replay can start at any tier.
@@ -302,7 +302,7 @@ const tolFor = t => t > 0 ? Math.max(0.6, 0.20 * t) : 0.5      // D46
 const CYCLES = 6, ROUND_CAP_MS = 180000, LOAD_CAP_MS = 720000
 const IDLE_PAUSE_MS = 10000, OVERRUN_S = 2, TIMEOUT_EXTRA_S = 2, KEY_MAX_S = 12
 const CONFIRM_MS = 300                                         // = MIN_HOLD_MS
-const LOOSE_MIN_BREATHS = 3, LOOSE_MIN_MS = 20000
+const LOOSE_MIN_MS = 20000                                     // Nov 2: a plain 20 s, no breath count
 const BASELINE_N = 4, BASELINE_MAX_MS = 60000, BASELINE_LAST_REST_S = 2.5   // Kite 2.0's LAST_REST_S
 const PRESELECT_SMALLER_BELOW_S = 5                            // baseline mean cycle
 const BELL_LOOKAHEAD_MS = 150, BELL_FADE_MS = 80
@@ -358,6 +358,7 @@ Times are relative to the start of each beat. Every "press" below means a **conf
 
 - The plan page eases forward from the wall onto the bench (translateY −24 → 0, α 0 → 1, 700 ms). Mentor in pose A.
 - The page shows the plan text (§10.4) and a size chooser: three buttons, "3 s", "2.5 s", "2 s", under the label "kite size", with the preselected size marked. Below them, `size.air`.
+- The page says `plan.how` above the button, the phase word reads "pick a size, then “start”", and the mentor says `plan.go` 1.2 s in (Norm, 2026-11-02: it was not clear how to begin).
 - Button `btn.show`. On tap, the page eases back to the wall (500 ms) and the chosen size becomes `n`. → B3
 
 **B3. LEARN_INTRO** (about 6 + 4n + 1.4 s; about 20 s at size 3)
@@ -390,7 +391,8 @@ Times are relative to the start of each beat. Every "press" below means a **conf
 | 1.0 | Caption `loose.1`. |
 | 7.5 | Caption `loose.f1`. |
 | any | Free breaths build and fly, recorded but not scored. |
-| at max(3 breaths, 20 s) | Caption `loose.ready`, buttons `btn.carry`, `tog.bells`, and `btn.back` (only if the player sized down during the round). |
+| 0.0–20 | The break panel shows from the start: "a short break · N s" counting down, with `btn.carry` disabled (Norm, 2026-11-02: how long do I breathe freely?). |
+| 20 s | Caption `loose.ready`; the panel says it too, and `btn.carry`, `tog.bells` and `btn.back` (only if the player sized down during the round) are live. |
 | on `btn.carry` | Round kites drift off. → B6 |
 
 **B6. ECHO_INTRO, then ROUND(echo)**
@@ -473,7 +475,9 @@ END(open): the same timeline without the stamp. The page comes forward showing a
 | base.end | that's your own kite. i'll pin it by the plan. |
 | size.label *(v3)* | kite size |
 | size.air *(v3)* | short of air at any point? pick a smaller kite. |
-| btn.show *(v3)* | show me |
+| btn.show *(Nov 2)* | start |
+| plan.how *(Nov 2)* | tap start: i'll fly one first so you can watch, then it's your turn. |
+| plan.go *(Nov 2)* | pick a size, then tap “start”. i'll fly one first so you can watch. |
 
 **Learn**
 
@@ -483,8 +487,8 @@ END(open): the same timeline without the stamp. The page comes forward showing a
 | learn.demom *(v3)* | watch the light walk the four sides. |
 | learn.0 *(v3)* | here's the square. in for {n}, pause for {n}. |
 | learn.0b *(v3)* | out for {n}, rest for {n}. four equal sides. |
-| learn.go *(v3)* | now yours. small, easy breaths. the bells keep time. |
-| learn.gom *(v3)* | now yours. small, easy breaths. the light keeps time. |
+| learn.go *(Nov 2)* | your turn. small, easy breaths. hold “breathe in” as your next one begins; the bells keep time. |
+| learn.gom *(Nov 2)* | your turn. small, easy breaths. hold “breathe in” as your next one begins; the light keeps time. |
 | learn.p2 | small breaths are fine. it's the timing. *(cycle 2 of Learn; cycle 2 of Fly)* |
 | learn.p1 *(v3)* | the pause and rest are soft. no clamping. *(cycle 4 of Learn)* |
 
@@ -492,10 +496,11 @@ END(open): the same timeline without the stamp. The page comes forward showing a
 
 | id | text |
 |---|---|
-| loose.1 *(v3)* | round's done. your own breath for a bit, any shape. |
+| loose.1 *(Nov 2)* | round's done. a 20-second break: breathe your own way. no need to press anything. |
 | loose.f1 | i'm restringing an old one. no hurry. |
 | loose.f2 | these ones don't need a plan. |
-| loose.ready | ready when you are. |
+| loose.ready *(Nov 2)* | ready when you are. stay as long as you like. |
+| btn.carry *(Nov 2)* | next round · turn cues (after Learn) / next round · from memory (after Echo) |
 | btn.carry | carry on |
 | btn.back *(v3)* | back to the {n} s square |
 

@@ -149,7 +149,7 @@
   body.portrait #strip{gap:6px;margin-top:8px;}
   body.portrait #strip > canvas{width:40px;height:40px;}
   body.portrait #strip .own{margin-left:0;width:48px;}
-  /* phone landscape: the pin lies flat beside the plan line, the size buttons and "show me" are
+  /* phone landscape: the pin lies flat beside the plan line, the size buttons and "start" are
      44 px, and the strip keeps "your own kite" on its row, so the chooser and its safety line fit */
   body.compact.landscape #page .ownpin{flex-direction:row;gap:4px;}
   body.compact.landscape #page .sizes{margin:4px 0;}
@@ -282,8 +282,7 @@ const tolFor = t => t > 0 ? Math.max(TOL.floor, TOL.pct * t) : TOL.zero;   // D4
 const CYCLES = 6, ROUND_CAP_MS = 180000, LOAD_CAP_MS = 720000;
 const IDLE_PAUSE_MS = 10000, OVERRUN_S = 2, TIMEOUT_EXTRA_S = 2, KEY_MAX_S = 12;
 const CONFIRM_MS = 300;                                         // = MIN_HOLD_MS
-const LOOSE_MIN_BREATHS = 3, LOOSE_MIN_MS = 20000;
-const LOOSE_FALLBACK_MS = 45000;   // not in the spec: "ready" also appears after 45 s with fewer than 3 kites, so a player who stops pressing is never stranded
+const LOOSE_MIN_MS = 20000;        // the break between rounds is a plain 20 s (Norm, Nov 2: say how long); pressing is optional
 const BASELINE_N = 4, BASELINE_MAX_MS = 60000, BASELINE_LAST_REST_S = 2.5;   // Kite 2.0's LAST_REST_S
 const PRESELECT_SMALLER_BELOW_S = 5;                            // baseline mean cycle
 const BELL_LOOKAHEAD_MS = 150, BELL_FADE_MS = 80;
@@ -436,14 +435,15 @@ const LINES = {
   'learn.demom': 'watch the light walk the four sides.',
   'learn.0': "here's the square. in for {n}, pause for {n}.",
   'learn.0b': 'out for {n}, rest for {n}. four equal sides.',
-  'learn.go': 'now yours. small, easy breaths. the bells keep time.',
-  'learn.gom': 'now yours. small, easy breaths. the light keeps time.',
+  'plan.go': "pick a size, then tap “start”. i'll fly one first so you can watch.",
+  'learn.go': 'your turn. small, easy breaths. hold “breathe in” as your next one begins; the bells keep time.',
+  'learn.gom': 'your turn. small, easy breaths. hold “breathe in” as your next one begins; the light keeps time.',
   'learn.p2': "small breaths are fine. it's the timing.",
   'learn.p1': 'the pause and rest are soft. no clamping.',
-  'loose.1': "round's done. your own breath for a bit, any shape.",
+  'loose.1': "round's done. a 20-second break: breathe your own way. no need to press anything.",
   'loose.f1': "i'm restringing an old one. no hurry.",
   'loose.f2': "these ones don't need a plan.",
-  'loose.ready': 'ready when you are.',
+  'loose.ready': 'ready when you are. stay as long as you like.',
   'echo.0': 'this time, just the bells. press when your breath turns.',
   'echo.0m': 'this time, just the rings. press when your breath turns.',
   'echo.p1': 'four bells, four turns.',
@@ -1045,7 +1045,7 @@ function createCore(env) {
         newPlay('baseline'); say('base.1', t); setPose('C'); break;
       case 'PLAN':
         if (!C.play || C.play.kind !== 'plan') newPlay('plan');
-        C.page = { t, dir: 'in' }; C.planSel = C.preselect; setPose('A'); break;
+        C.page = { t, dir: 'in' }; C.planSel = C.preselect; setPose('A'); say('plan.go', t + 1200); break;
       case 'LEARN_INTRO': {
         C.R = null; newPlay(null); ghostTo(1, 300); C.ghost.revealT = t; C.ghost.per = 300; setPose('D'); C.tiles = [];
         const n = C.size, s = n * 1000;
@@ -1138,8 +1138,7 @@ function createCore(env) {
     }
     if (R && R.ended && !R.committed && R.t0End == null && R.closeAt != null) out.push({ due: R.closeAt + 6000, act: () => setT0End(R, C.bt) });
     if (C.beat === 'LOOSE' && C.loose && !C.loose.ready) {
-      const due = C.loose.count >= LOOSE_MIN_BREATHS ? C.loose.t0 + LOOSE_MIN_MS : C.loose.t0 + LOOSE_FALLBACK_MS;
-      out.push({ due, act: () => { C.loose.ready = true; say('loose.ready'); } });
+      out.push({ due: C.loose.t0 + LOOSE_MIN_MS, act: () => { C.loose.ready = true; say('loose.ready'); } });
     }
     if (C.beat === 'END' && C.end && !C.end.moreOn && C.end.moreAt < Infinity) out.push({ due: C.end.moreAt, act: () => { C.end.moreOn = true; } });
     if (C.stitch && stitchOn() && P) {
@@ -1982,6 +1981,7 @@ function draw() {
 const W$ = new Map();
 function put(el, key, val) { const id = el.id + '|' + key; if (W$.get(id) === val) return; W$.set(id, val);
   if (key === 'text') el.textContent = val; else if (key === 'html') el.innerHTML = val; else if (key === 'hidden') el.hidden = val;
+  else if (key === 'disabled') el.disabled = val;
   else if (key.startsWith('aria-') || key === 'title' || key === 'aria') el.setAttribute(key === 'aria' ? 'aria-label' : key, val);
   else el.style[key] = val; }
 const capAlpha = (cap, t) => { if (!cap) return 0; const e = t - cap.start; return e < 600 ? e / 600 : e > 5400 ? Math.max(0, (6000 - e) / 600) : 1; };
@@ -2010,7 +2010,8 @@ function syncDom() {
   for (const [el, k] of [[$('padIn'), 'in'], [$('padOut'), 'out']]) { put(el, 'aria-disabled', String(!live)); el.classList.toggle('on', SRC[k].size > 0 && live); }
   const Lv = G.live();
   let word = '';
-  if (Lv && Lv.cur && C.play) { const ph = Lv.phase === 'pause' ? (Lv.cur.seenOut ? 'rest' : 'hold') : Lv.phase; word = STATE_WORDS[ph] || ''; }
+  if (C.beat === 'PLAN' && !C.overlay) word = 'pick a size, then “start”';
+  else if (Lv && Lv.cur && C.play) { const ph = Lv.phase === 'pause' ? (Lv.cur.seenOut ? 'rest' : 'hold') : Lv.phase; word = STATE_WORDS[ph] || ''; }
   // the prompt only where a press starts something: the baseline and the rounds. Plan, loose,
   // end and free play show nothing until a kite builds (an empty word is hidden by CSS).
   else if (C.play && G.acceptsInput() && (C.play.kind === 'baseline' || C.play.kind === 'round')) word = 'hold “breathe in” to begin';
@@ -2021,9 +2022,12 @@ function syncDom() {
   if (smallOn) { const e = t - C.glint.t; const a = e >= 0 && e < 1200 ? 0.6 + 0.4 * Math.sin(Math.PI * e / 1200) : 1; put($('smaller'), 'opacity', String(Math.round(a * 100) / 100));
     put($('smaller'), 'box-shadow', e >= 0 && e < 1200 ? '0 0 0 3px #fff, 0 0 0 5px #1f2a3d' : 'none'); }
   // loose panel
-  const lp = C.beat === 'LOOSE' && C.loose && C.loose.ready && !C.overlay;
+  const lp = C.beat === 'LOOSE' && C.loose && !C.overlay;
   put($('loosePanel'), 'hidden', !lp);
-  if (lp) { put($('looseReady'), 'text', LINES['loose.ready']); const R = C.loose.R; const back = !!(R && R.sizedDown);
+  if (lp) { const rdy = C.loose.ready, left = Math.max(1, Math.ceil((C.loose.t0 + LOOSE_MIN_MS - t) / 1000));
+    put($('looseReady'), 'text', rdy ? LINES['loose.ready'] : `a short break · ${left} s`);
+    put($('btnCarry'), 'disabled', !rdy); put($('btnCarry'), 'text', C.loose.n === 1 ? 'next round · turn cues' : 'next round · from memory');
+    const R = C.loose.R; const back = !!(R && R.sizedDown);
     put($('btnBack'), 'hidden', !back); if (back) put($('btnBack'), 'text', fill('back to the {n} s square', { n: R.origSize })); }
   // "your own kite" label
   const B = C.baseline; const own = !!(B && B.mean) && C.beat !== 'INTRO';
@@ -2107,7 +2111,7 @@ function planHtml(n, mode) {
     h += compactPage() ? `<details><summary><span>about the square</span></summary>${prose}</details>` : prose;
     h += `<p class="lbl" id="szl">${LINES['size.label']}</p><div class="sizes" role="group" aria-labelledby="szl">` +
       [3, 2.5, 2].map(s => `<button class="btn" type="button" data-size="${s}" aria-pressed="${C.planSel === s}">${fmtN(s)} s</button>`).join('') +
-      `</div><p class="fine">${LINES['size.air']}</p><div class="row acts"><button class="btn primary" type="button" data-act="show">show me</button></div>` + starsUl;
+      `</div><p class="fine">${LINES['size.air']}</p><p class="fine">tap start: i'll fly one first so you can watch, then it's your turn.</p><div class="row acts"><button class="btn primary" type="button" data-act="show">start</button></div>` + starsUl;
   } else if (mode === 'end' || mode === 'done') {
     h += starsUl;
     h += `<div id="stampbox" aria-hidden="true"><svg id="stampsvg" width="100%" height="72" viewBox="0 0 300 72"></svg></div>`;
