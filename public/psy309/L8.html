@@ -383,12 +383,72 @@
   </div>
   <div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div>
   </div>
-  <p class="small"><strong>Before you come back:</strong> log in at <a href="http://r.datatools.utoronto.ca/" style="color:inherit">r.datatools.utoronto.ca</a> and open <a href="./L8-lab.html" style="color:inherit"><code>radlab.zone/psy309/L8-lab.html</code></a> on your laptop. The lab block runs on it.</p>
+  <p class="small"><strong>Before you come back:</strong> log in at <a href="http://r.datatools.utoronto.ca/" style="color:inherit">r.datatools.utoronto.ca</a> and open your Practical 4 file, or the worked example <code>Practical4_2026.Rmd</code> (Quercus &#8594; Files &#8594; Rcode). The lab block is Practical 4.</p>
   <aside class="notes"><p>Check-in position 15.</p></aside>
 </section>
 
+<section class="dense">
+  <p class="kicker">Test 2 &#183; Tuesday 17 November</p>
+  <h1>What the test looks like</h1>
+  <div class="cols">
+    <div>
+      <p><strong>Same format as Test 1.</strong></p>
+      <ul>
+        <li>In our room, 9:15 start, about two hours. Closed book.</li>
+        <li>About <strong>40 multiple choice</strong> and <strong>4 short answers</strong>, 5 marks each: argue a position, interpret some data, or critique a design.</li>
+        <li>Each half takes about half the time. Accommodations as for Test 1.</li>
+      </ul>
+    </div>
+    <div>
+      <p><strong>What&#8217;s on it: weeks 6&#8211;10.</strong></p>
+      <ul>
+        <li>Describing data, effect sizes, confidence intervals and power.</li>
+        <li>Experiments and their threats.</li>
+        <li>Factorial designs and interactions, quasi-experiments and small-N: today.</li>
+        <li>Mixed models: next week.</li>
+      </ul>
+      <p class="small">Earlier material can come back, especially claims and validities. Coding is never on a test.</p>
+    </div>
+  </div>
+  <div class="box hidden-until">
+    <p><strong>Today&#8217;s exercises are the test&#8217;s format.</strong> Reading a 2 &#215; 2 and naming the design are both on it. Next week ends with the question types and a short answer worked on the board.</p>
+  </div>
+  <aside class="notes"><p>Five minutes. The format is the syllabus's: "Term Test 2: same format as Term Test 1", about 40 MC and about 4 short answers at 5 marks each, two hours, closed book, in person. L9 ends with the question families and a worked short answer, so keep this to the format and the coverage.</p></aside>
+</section>
+
+<section data-kind="activity" class="dense">
+  <p class="kicker">Lab block &#183; 35 minutes</p>
+  <h1>Practical 4, due Friday</h1>
+  <div class="cols" style="grid-template-columns:1.35fr 1fr">
+    <div>
+      <ol>
+        <li><strong>From before the break:</strong> why the two should be related, two empirical papers with their <em>r</em>, and your <em>n</em> for 80% power.</li>
+        <li><strong>Simulate at your <em>n</em></strong> with your <em>r</em>:
+          <pre>rnorm_multi(n = 79, vars = 2,
+  mu = c(50, 20), sd = c(10, 4),
+  r = -.31,
+  varnames = c("Optimism", "Stress"))</pre></li>
+        <li><strong>Report it in APA style</strong> from <code>cor.test()</code>: <em>r</em>(df) = .xx, 95% CI [.xx, .xx], <em>p</em> = .xxx.</li>
+        <li><strong>Figure 1:</strong> scatterplot with a line of best fit, <code>ggsave(&#8230;, dpi = 300)</code>, called back with a caption.</li>
+        <li><strong>Reflect</strong> in 3&#8211;5 sentences. Knit to <strong>one .docx</strong>, due Friday 11:59 pm.</li>
+      </ol>
+    </div>
+    <div>
+      <div class="box">
+        <p><strong>The worked example does every step:</strong> <code>Practical4_2026.Rmd</code>, Quercus &#8594; Files &#8594; Rcode.</p>
+        <p class="small">Field Guide: <em>Practical 4: Correlation Stats and Plots</em>.</p>
+      </div>
+      <div class="box warn" style="margin-top:2vmin">
+        <p><strong>Stuck?</strong> Put your hand up: TAs are circulating. <strong>Done?</strong> Start the Practical 5 dry run at <code>radlab.zone/psy309/L8-lab.html</code>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
+  <aside class="notes"><p>Check-in position 20: their r, its source and n, which parts are done, and what they're stuck on. Read it early so the TAs go to the stuck first. The code line is the worked example's (Practical4_2026.Rmd, Study 1: n1 = 79 from pwr.r.test at r = &#8722;.31); rnorm_multi() is from faux, which the worked example loads. The two common losses are an r in the paper that doesn't match the one simulated, and a figure pasted as a screenshot instead of saved at 300 dpi.</p></aside>
+</section>
+
 <section>
-  <p class="kicker">Practical 5 · due Nov 27, after Test 2 on Nov 17</p>
+  <p class="kicker">Looking ahead · Practical 5</p>
   <h1>Your covariate becomes a factor</h1>
   <table>
     <tr><th>Tier</th><th>Your Study 2 question</th><th>Analysis</th></tr>
@@ -397,6 +457,7 @@
     <tr><td class="rowhead">3</td><td>Does the covariate <em>continuously</em> change the effect?</td><td>Moderated regression</td></tr>
   </table>
   <p class="big hidden-until">Every tier can earn full marks. Pick the one your hypothesis needs.</p>
+  <p class="small hidden-until">Practical 4 done? The dry run is at <code>radlab.zone/psy309/L8-lab.html</code>. Practical 5 is due Nov 27, after Test 2.</p>
   <aside class="notes"><p>The runsheet puts this preview here because today is the factorial lecture. Tiers 2 and 3 ask the same question, does the IV's effect depend on the covariate, with the covariate categorized or kept continuous. Tier 1 is a complete, legitimate practical.</p></aside>
 </section>
 
@@ -427,29 +488,6 @@
   <p class="hidden-until">Interactions need about <strong>four times the sample</strong>. Splitting the covariate costs power on top: everyone just above the median is treated as different from everyone just below.</p>
   <p class="small hidden-until">What it buys: four means you can see and say in a sentence. That trade is the Tier 2 reflection question.</p>
   <aside class="notes"><p>Simulation: the Practical 5 worked-example equation (gratitude +5, stress slope &#8722;0.78, moderation +0.60, noise SD 9.5), 1,000 studies per row, interaction p &lt; .05 in lm(Y ~ stress * condition) with stress centred vs split at the median. The 4&#215; rule is in the Practical 5 text.</p></aside>
-</section>
-
-<section data-kind="activity">
-  <p class="kicker">Lab block · 35 minutes</p>
-  <h1>Your Study 2 as a 2 &#215; 2</h1>
-  <div class="cols">
-    <div>
-      <div class="box">
-        <p><strong>Practical 4 not finished?</strong> It&#8217;s due Friday. Sit with a TA. That&#8217;s your lab block.</p>
-      </div>
-    </div>
-    <div>
-      <ol>
-        <li><strong>Six numbers:</strong> your <em>n</em>, your covariate&#8217;s mean and SD, its slope, the effect, the moderation.</li>
-        <li class="hidden-until"><strong>Run</strong> the template. Read the four cells.</li>
-        <li class="hidden-until"><strong>Post</strong> your numbers and your interaction sentence.</li>
-      </ol>
-    </div>
-  </div>
-  <p class="small" style="margin-bottom:0">The code, and where each number comes from:</p>
-  <p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3.4vmin;color:var(--accent);font-weight:600;margin-top:0">radlab.zone/psy309/L8-lab.html</p>
-  <div class="qr-row"><p class="url" style="font-family:'JetBrains Mono',monospace;font-size:3vmin;color:var(--accent);font-weight:600">radlab.zone/class/psy309</p><div class="break-qr"><img src="./assets/psy309-qr.png" alt="QR code linking to radlab.zone/class/psy309"></div></div>
-  <aside class="notes"><p>Check-in position 20. TAs circulating. The hard part of Practical 5, by its own reflection prompt, is writing a hypothesis as an equation; the six numbers are that equation. The slope comes from their Practical 4 r: r &#215; SD(DV) &#247; SD(covariate). Anyone whose Practical 4 isn't started goes to a TA first; Friday is three days away. The page has them rerun with moder = 0, so they see what "no moderation" looks like.</p></aside>
 </section>
 
 <section data-kind="break">
