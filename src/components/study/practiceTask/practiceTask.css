@@ -1,0 +1,205 @@
+/* PracticeTaskStep: the breathing practice and the reading task (Sandy Study 4). */
+
+.pt-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--tx);
+}
+
+.pt-card {
+  background: var(--bgc);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 16px 0;
+}
+
+.pt-card h2 {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.25;
+  margin: 0 0 16px;
+}
+
+.pt-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.pt-card p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.pt-muted {
+  color: var(--tx2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.pt-btn {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 24px;
+  background: var(--pkd);
+  color: var(--bgc);
+  padding: 8px 24px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.pt-btn:hover:not(:disabled) { background: var(--pkdd); }
+
+.pt-btn:disabled {
+  background: var(--bd);
+  color: var(--tx2);
+  cursor: default;
+}
+
+.pt-btn-quiet {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--bds);
+  border-radius: 24px;
+  background: var(--bgc);
+  color: var(--tx2);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.pt-btn-quiet[aria-pressed='true'] {
+  border-color: var(--pkd);
+  background: var(--bgp);
+  color: var(--tx);
+}
+
+/* breathing */
+.pt-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 0 8px;
+}
+
+.pt-pacer {
+  width: 240px;
+  height: 240px;
+  max-width: 64vw;
+  max-height: 64vw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--bgp), var(--pk));
+  transform: scale(0.55);
+  will-change: transform;
+}
+
+.pt-cue {
+  font-size: 28px;
+  min-height: 40px;
+  text-align: center;
+}
+
+.pt-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--bd);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.pt-progress > div {
+  height: 100%;
+  width: 0;
+  background: var(--pkd);
+}
+
+.pt-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.pt-bar .pt-grow { flex: 1; }
+
+/* reading */
+.pt-passage p { margin: 0 0 16px; }
+
+.pt-q {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+
+.pt-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--tx);
+  background: var(--bgc);
+  border: 1px solid var(--bds);
+  border-radius: 12px;
+  padding: 8px 16px;
+  margin: 0 0 8px;
+  cursor: pointer;
+}
+
+.pt-opt[aria-checked='true'] {
+  border-color: var(--pkd);
+  background: var(--bgp);
+  box-shadow: inset 0 0 0 1px var(--pkd);
+}
+
+/* demo and preview chrome — never shown to participants */
+.pt-demo {
+  border: 1px dashed var(--gy);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  font-size: 14px;
+  color: var(--tx2);
+}
+
+.pt-demo strong { color: var(--tx); }
+
+.pt-demo .pt-actions { margin-top: 16px; }
+
+.pt-demo pre {
+  white-space: pre-wrap;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 8px;
+  max-height: 320px;
+  overflow: auto;
+  margin: 8px 0 0;
+}
+
+.pt-note {
+  padding: 24px;
+  font-size: 16px;
+  color: var(--tx2);
+}

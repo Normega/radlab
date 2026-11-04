@@ -48,6 +48,7 @@ const Unsubscribe    = lazy(() => import('./pages/Unsubscribe'))
 const Withdraw       = lazy(() => import('./pages/Withdraw'))
 const BuddyCheckin   = lazy(() => import('./pages/BuddyCheckin'))
 const TaskPreview    = lazy(() => import('./pages/TaskPreview'))
+const PracticeTaskPreview = lazy(() => import('./pages/admin/PracticeTaskPreview'))
 const PublicDisplay  = lazy(() => import('./pages/PublicDisplay'))
 const ConsentPage    = lazy(() => import('./pages/ConsentPage'))
 const Verified       = lazy(() => import('./pages/Verified'))
@@ -1033,6 +1034,8 @@ export default function App() {
             <Route path="/admin/studies/:id/session/:enrollmentId/:studySessionId" element={<StudySessionRunner />} />
             {/* The lab's own no-save task preview — what a share link's recipient sees */}
             <Route path="/admin/tasks/preview/:slug" element={<TaskPreview />} />
+            {/* No-save preview of a practice task step (Sandy Study 4's breathing / reading arms) */}
+            <Route path="/admin/practice-preview" element={<PracticeTaskPreview />} />
 
             <Route element={<AdminLayout session={session} superAdmin={superAdmin} />}>
               <Route path="/admin"                  element={<AdminDashboard />} />

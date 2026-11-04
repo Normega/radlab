@@ -100,6 +100,34 @@ export function instrumentColumns(prefix, type, response, def = null) {
       return out
     }
 
+    case 'practice_task': {
+      // A practice run in the session (PracticeTaskStep): one arm per row, so
+      // the other arm's columns stay blank rather than 0. Reading answers are
+      // the option NUMBER shown (1-4), from the recorded 0-based index.
+      const r = response ?? {}
+      const b = r.breathing ?? null
+      const q = r.reading ?? null
+      const secs = ms => Number.isFinite(ms) ? Math.round(ms / 100) / 10 : null
+      out[`${prefix}_arm`]       = r.arm ?? null
+      out[`${prefix}_completed`] = r.completed === true ? 1 : r.completed === false ? 0 : null
+      out[`${prefix}_hidden_s`]  = secs((b ?? q)?.hidden_ms)
+      out[`${prefix}_left_page`] = (b ?? q)?.left_page_count ?? null
+      out[`${prefix}_breath_visible_s`] = b ? secs(b.visible_ms) : null
+      out[`${prefix}_breath_cycles`]    = b ? (b.cycles ?? null) : null
+      out[`${prefix}_breath_voice`]     = b ? (b.voice_available ? 1 : 0) : null
+      out[`${prefix}_breath_voice_off_s`] = b ? secs(b.voice_off_ms) : null
+      out[`${prefix}_read_passage`] = q ? (q.passage ?? null) : null
+      out[`${prefix}_read_s`]       = q ? secs(q.read_ms) : null
+      out[`${prefix}_read_questions_s`] = q ? secs(q.questions_ms) : null
+      for (const a of q?.answers ?? []) {
+        if (!Number.isInteger(a?.question)) continue
+        out[`${prefix}_read_q${a.question}`] = Number.isInteger(a.answer) ? a.answer + 1 : null
+        out[`${prefix}_read_q${a.question}_correct`] = a.correct === true ? 1 : a.correct === false ? 0 : null
+      }
+      out[`${prefix}_read_correct`] = q ? (q.total_correct ?? null) : null
+      return out
+    }
+
     default:
       // An unregistered type must still export its data — JSON beats dropping
       // the answer on the floor.
