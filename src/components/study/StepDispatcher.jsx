@@ -14,6 +14,7 @@ import GameStepWrapper          from './GameStepWrapper'
 import PhysioSetupStep          from './PhysioSetupStep'
 import TrainingStepWrapper      from './TrainingStepWrapper'
 import EmbeddedPracticeStep     from './EmbeddedPracticeStep'
+import PracticeTaskStep         from './PracticeTaskStep'
 import VasStepWrapper          from './VasStepWrapper'
 import ComposableInstrumentStepWrapper from './ComposableInstrumentStepWrapper'
 import MidpointStep            from './MidpointStep'
@@ -176,6 +177,24 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}
         demoMode={demoMode}
+      />
+    )
+  }
+
+  // A practice task run in the session itself, its arm read from an assignment
+  // slot (Sandy Study 4's breathing practice or reading task).
+  if (category === 'practice_task') {
+    return (
+      <PracticeTaskStep
+        subcategory={subcategory}
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        stepIndex={stepIndex}
+        onComplete={onComplete}
+        supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+        demoMode={demoMode}
+        assignments={assignments}
       />
     )
   }
