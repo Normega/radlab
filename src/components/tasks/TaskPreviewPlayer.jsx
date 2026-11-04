@@ -14,6 +14,7 @@ const GAMES = {
   aptitude_suite: lazy(() => import('../../games/AptitudeSuite/AptitudeSuite')),
   color_max:      lazy(() => import('../../games/ColorMax/ColorMax')),
   word_max:       lazy(() => import('../../games/WordMax/WordMax')),
+  foggy_valleys:  lazy(() => import('../../games/FoggyValleys/FoggyValleys')),
 }
 
 export default function TaskPreviewPlayer({ slug, name, quickDemo = false }) {
