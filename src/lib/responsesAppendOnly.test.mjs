@@ -32,6 +32,10 @@ const RESPONSE_TABLES = [
   // note_response_trg to flag.
   'buddy_goals',
   'buddy_outcomes',
+  // Foggy Valleys (20261105_foggy_valleys_tables.sql), the same way: a client-made
+  // run id and unique (run_id, picture_number) leave nothing to flag.
+  'foggy_valleys_runs',
+  'foggy_valleys_pictures',
 ]
 
 let pass = 0, fail = 0
