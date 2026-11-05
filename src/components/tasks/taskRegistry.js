@@ -20,9 +20,11 @@ export const TASKS = {
   aptitude_suite: { name: 'Aptitude Suite', route: '/games/aptitude-suite', previewable: true, timed: true, runsInSessions: true },
   color_max:      { name: 'ColorMax', route: '/games/color-max',      previewable: true, timed: true, runsInSessions: true },
   word_max:       { name: 'WordMax', route: '/games/word-max',       previewable: true, timed: true, runsInSessions: true },
-  // Preview only until its tables exist (Sandy Study 4); no live route either,
-  // since the live game would save to them.
+  // Foggy Valleys (Sandy Study 4): the preview plays both valleys; a session runs
+  // one valley per step (FoggyValleysStep.jsx). No live route: it would save.
   foggy_valleys:  { name: 'Foggy Valleys', previewable: true, timed: true, note: 'Sandy Study 4 · not piloted' },
+  foggy_valleys_1: { name: 'Foggy Valleys – first valley', runsInSessions: true, note: 'Sandy Study 4 · fog from slot valley_order' },
+  foggy_valleys_2: { name: 'Foggy Valleys – second valley', runsInSessions: true, note: 'Sandy Study 4 · after the first valley' },
   pond_watch:     { name: 'Pond Watch', route: '/games/pond-watch',     runsInSessions: true },
   still_water:    { name: 'Still Water', route: '/games/still-water',    runsInSessions: true },
   breath_belt:    { name: 'Breath Belt', route: '/games/breath-belt',    runsInSessions: true, note: 'Requires Polar H10 belt' },

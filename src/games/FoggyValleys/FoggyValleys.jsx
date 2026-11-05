@@ -26,9 +26,10 @@ import './FoggyValleys.css'
 //     session step with the platform's rating steps between them:
 //       { valleys: ['thick'], valleyOffset: 1, totalValleys: 2, deckStart: 6 }
 //     The picture deck comes from a seed fixed per participant and study, so a
-//     second step continues the same deck from `deckStart` (the first step's
-//     result carries deck_next). Nothing in a study can run this yet: it is not
-//     in GameStepWrapper, and the tables it writes do not exist (see below).
+//     second step continues the same deck from `deckStart`. In a session this
+//     runs through FoggyValleysStep.jsx (game steps foggy_valleys_1 and _2),
+//     which reads the fog from the assignment slot valley_order and the deck
+//     position from the pictures already saved.
 //
 // Saving (append-only; no row is ever updated):
 //   foggy_valleys_runs      one row when a valley starts (client-made id)
@@ -216,8 +217,11 @@ export default function FoggyValleys({
     if (studyMode) {
       if (lock.current) return
       lock.current = true
+      // found / differences / pictures are this step's, for a display step's variables
       onSessionComplete?.({
         game_version: GAME_VERSION, points: s.score, pictures: s.pics.length,
+        found: s.pics.reduce((n, p) => n + p.found, 0),
+        differences: s.pics.reduce((n, p) => n + p.totalDifferences, 0),
         valleys: s.order, run_ids: s.runs.map(r => r.id), deck_seed: s.deckSeed, deck_next: s.deckPos,
       })
       return
