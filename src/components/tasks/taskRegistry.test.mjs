@@ -26,7 +26,7 @@ const src = rel => readFileSync(join(here, rel), 'utf8')
 function literalKeys(text, name) {
   const m = text.match(new RegExp(`const ${name} = \\{([\\s\\S]*?)\\n\\}`))
   if (!m) return null
-  return [...m[1].matchAll(/^\s+([a-z_]+):/gm)].map(x => x[1]).sort()
+  return [...m[1].matchAll(/^\s+([a-z0-9_]+):/gm)].map(x => x[1]).sort()
 }
 
 const sessionSlugs = literalKeys(src('../study/GameStepWrapper.jsx'), 'GAME_COMPONENTS')
