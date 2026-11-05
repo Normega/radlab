@@ -156,14 +156,16 @@ function outlineFromDeck(html) {
   })
 }
 
-// Shared gate: a valid main-project JWT belonging to a lab/super user or an
-// admin of the class in question.
+// Shared gate: a valid main-project JWT belonging to a super admin or an admin
+// of the class in question. The lab role no longer passes (2026-11-05, class
+// fencing): summaries send students' written answers to Anthropic and show them
+// to the caller, so only the class's own instructors and TAs may run them.
 async function requireClassAdmin(service, req, classId) {
   const jwt = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
   const { data: { user }, error } = await service.auth.getUser(jwt)
   if (error || !user) return { error: 'Unauthorized', status: 401 }
-  const { data: prof } = await service.from('profiles').select('role, super_admin').eq('id', user.id).single()
-  if (prof?.role === 'lab' || prof?.super_admin === true) return { user }
+  const { data: prof } = await service.from('profiles').select('super_admin').eq('id', user.id).single()
+  if (prof?.super_admin === true) return { user }
   const { data: adm } = await service.from('class_admins')
     .select('id').eq('class_id', classId).eq('user_id', user.id).maybeSingle()
   return adm ? { user } : { error: 'Not a class admin', status: 403 }
