@@ -376,6 +376,7 @@ function Intro({ cfg, setCfg, studyMode, showRules, onStart }) {
             <p>You have <b>{fmtMin(cfg.minutes)}</b> in each valley. Every difference you find is worth one point. Some pictures have fewer differences and some have more, and you will not be told how many.</p>
             {!cfg.clock && <p>There is no clock on the screen.{cfg.warn > 0 ? ` A notice will tell you when ${cfg.warn} seconds are left.` : ''}</p>}
             <p>You can move on to a new picture at any time by pressing <b>Next picture</b>. The new picture has to clear before you can search it.</p>
+            {cfg.pictureQuestions && <p>After each picture you will answer two short questions about it, and then see what you found and what you missed. The clock stops while you do.</p>}
             <p>{freeText(cfg)}</p>
           </div>
         )}
