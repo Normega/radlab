@@ -36,6 +36,8 @@ const RESPONSE_TABLES = [
   // run id and unique (run_id, picture_number) leave nothing to flag.
   'foggy_valleys_runs',
   'foggy_valleys_pictures',
+  // …and its questions after each picture (20261105_foggy_valleys_picture_ratings.sql)
+  'foggy_valleys_picture_ratings',
 ]
 
 let pass = 0, fail = 0
