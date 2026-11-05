@@ -129,11 +129,11 @@ check('hyphens are stripped from ids',
 {
   const br = instrumentColumns('relax_s1', 'practice_task', {
     arm: 'breathing', completed: true, reading: null,
-    breathing: { visible_ms: 240012, hidden_ms: 5100, left_page_count: 1, cycles: 24, voice_available: false, voice_off_ms: 0 },
+    breathing: { visible_ms: 240012, hidden_ms: 5100, left_page_count: 1, cycles: 24, shape: 'natural', voice_available: false, voice_off_ms: 0 },
   })
   check('the breathing arm exports its times and leaves the reading columns blank',
     br.relax_s1_arm === 'breathing' && br.relax_s1_completed === 1 && br.relax_s1_breath_visible_s === 240 &&
-    br.relax_s1_hidden_s === 5.1 && br.relax_s1_left_page === 1 && br.relax_s1_breath_cycles === 24 &&
+    br.relax_s1_hidden_s === 5.1 && br.relax_s1_left_page === 1 && br.relax_s1_breath_cycles === 24 && br.relax_s1_breath_shape === 'natural' &&
     br.relax_s1_breath_voice === 0 && br.relax_s1_read_s === null && br.relax_s1_read_correct === null)
   const rd = instrumentColumns('relax_s1', 'practice_task', {
     arm: 'reading', completed: true, breathing: null,
@@ -144,7 +144,7 @@ check('hyphens are stripped from ids',
   check('reading answers export as the option number shown (index + 1) with 1/0 correctness',
     rd.relax_s1_read_q1 === 1 && rd.relax_s1_read_q1_correct === 1 && rd.relax_s1_read_q2 === 4 &&
     rd.relax_s1_read_q2_correct === 0 && rd.relax_s1_read_correct === 2 && rd.relax_s1_read_s === 131 &&
-    rd.relax_s1_breath_cycles === null && rd.relax_s1_hidden_s === 0)
+    rd.relax_s1_breath_cycles === null && rd.relax_s1_breath_shape === null && rd.relax_s1_hidden_s === 0)
 }
 
 console.log(`instrumentColumns: ${pass} passed, ${fail} failed`)

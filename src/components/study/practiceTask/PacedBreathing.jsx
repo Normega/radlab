@@ -7,7 +7,9 @@ import { useScrollToTopOn } from '../../../lib/scrollToTop'
 // The breathing arm of PracticeTaskStep: Sandy's paced slow breathing, about
 // 4 minutes at 6 breaths a minute (4 s in, 6 s out), following a circle that
 // grows and shrinks. Wording and timing are her prototype's
-// (relaxation_step_prototype.html, Study 4 Design folder).
+// (relaxation_step_prototype.html, Study 4 Design folder); the circle moves in
+// the natural breath shape unless the step's config sets shape 'symmetric'
+// (breathTiming.js).
 //
 // Time counts only while the page is visible, so a participant who switches away
 // comes back to the practice where they left it, and the time away is recorded.
@@ -62,7 +64,8 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
     say('settle', CUES.settle)
 
     const timer = setInterval(() => {
-      const now = performance.now(), dt = now - last
+      // capped, so a frozen tab or a sleeping laptop can't jump the practice ahead
+      const now = performance.now(), dt = Math.min(250, now - last)
       last = now
       if (document.hidden) return
       visible += dt
@@ -86,6 +89,7 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
           inhale_ms:       cfg.inhale_ms,
           exhale_ms:       cfg.exhale_ms,
           settle_ms:       cfg.settle_ms,
+          shape:           cfg.shape,
           cycles,
           duration_ms:     Math.round(performance.now() - t0),
           visible_ms:      Math.round(visible),

@@ -114,6 +114,7 @@ export function instrumentColumns(prefix, type, response, def = null) {
       out[`${prefix}_left_page`] = (b ?? q)?.left_page_count ?? null
       out[`${prefix}_breath_visible_s`] = b ? secs(b.visible_ms) : null
       out[`${prefix}_breath_cycles`]    = b ? (b.cycles ?? null) : null
+      out[`${prefix}_breath_shape`]     = b ? (b.shape ?? null) : null
       out[`${prefix}_breath_voice`]     = b ? (b.voice_available ? 1 : 0) : null
       out[`${prefix}_breath_voice_off_s`] = b ? secs(b.voice_off_ms) : null
       out[`${prefix}_read_passage`] = q ? (q.passage ?? null) : null
