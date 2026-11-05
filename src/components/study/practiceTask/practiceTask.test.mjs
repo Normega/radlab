@@ -24,6 +24,20 @@ check('6 breaths a minute', BREATH_DEFAULTS.inhale_ms + BREATH_DEFAULTS.exhale_m
 check('done at the planned length, not before', !breathAt(239999).done && breathAt(240000).done && breathAt(240000).progress === 1)
 check('a short preview length is honoured', breathAt(30000, { breathing_seconds: 30 }).done)
 
+// the natural shape: an even S in, front-loaded out; symmetric keeps the prototype's cosine
+const outAt = (x, shape) => breathAt(2500 + 4000 + 6000 * x, { shape }).scale
+const fill = s => (s - 0.55) / 0.45
+check('natural is the default shape', BREATH_DEFAULTS.shape === 'natural')
+check('natural exhale is past halfway out by its midpoint', fill(outAt(0.5)) < 0.45 && near(fill(outAt(0.5, 'symmetric')), 0.5))
+check('natural exhale settles slowly at the end', fill(outAt(0.9)) > fill(outAt(0.9, 'symmetric')))
+check('natural inhale is about half in at its midpoint', Math.abs(fill(breathAt(2500 + 2000).scale) - 0.47) < 0.01)
+check('natural meets the end points', near(breathAt(6500).scale, 1) && near(outAt(0.9999999), 0.55) || Math.abs(outAt(0.9999999) - 0.55) < 1e-6)
+{
+  let prev = 2, mono = true
+  for (let x = 0; x <= 1; x += 0.01) { const v = outAt(x); if (v > prev + 1e-12) mono = false; prev = v }
+  check('natural exhale never refills', mono)
+}
+
 // ── 2. Time away ────────────────────────────────────────────────────────────
 {
   let t = 0
