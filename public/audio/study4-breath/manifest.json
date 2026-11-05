@@ -1,0 +1,19 @@
+{
+  "engine": "kokoro-v1.0 (kokoro-onnx)",
+  "voice": "af_heart",
+  "speed": 0.88,
+  "clips": {
+    "settle": {
+      "text": "Get comfortable",
+      "seconds": 1.07
+    },
+    "cue_in": {
+      "text": "In through your nose",
+      "seconds": 1.22
+    },
+    "cue_out": {
+      "text": "Out through your mouth",
+      "seconds": 1.28
+    }
+  }
+}
