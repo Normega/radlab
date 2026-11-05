@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import useBreathVoice from '../useBreathVoice'
 import { createAwayTracker } from './awayTracker'
 import { BREATH_DEFAULTS, breathAt } from './breathTiming'
+import { holdSummary } from './breathHold'
 import { useScrollToTopOn } from '../../../lib/scrollToTop'
 
 // The breathing arm of PracticeTaskStep: Sandy's paced slow breathing, about
@@ -22,6 +23,13 @@ import { useScrollToTopOn } from '../../../lib/scrollToTop'
 // existing Breath Sensation clips ("Breathe in" / "and out") stay silent here.
 // Without clips the practice is visual only; the prototype's placeholder note
 // is shown in demos, never to participants.
+//
+// Adherence check (config `hold_to_inhale`, off unless a step sets it). The
+// participant holds a button under the circle, or the space bar, while
+// breathing in, and lets go while breathing out. Presses are timed on the
+// pacer's visible clock, so they line up with the phase on screen, and are
+// scored by breathHold.js. Leaving the page or the window lets go of the press.
+// Nothing tells the participant whether they are in time.
 
 const CUES = {
   settle: 'Get comfortable',
@@ -39,15 +47,38 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
   const [stage, setStage]   = useState('intro')   // intro → practice → finished
   const [cue, setCue]       = useState(CUES.settle)
   const [voiceOff, setVoiceOff] = useState(false)
+  const [held, setHeld]     = useState(false)
   const pacerRef  = useRef(null)
   const progRef   = useRef(null)
   const resultRef = useRef(null)
   const togglesRef = useRef(0)
+  const clk  = useRef({ visible: 0, last: 0 })                  // the pacer's visible clock
+  const hold = useRef({ down: null, list: [], input: new Set() })
+  const holdOn = cfg.hold_to_inhale === true
   useScrollToTopOn(stage)
 
   const voice = useBreathVoice(cfg.voice_base ?? null)
   const voiceRef = useRef(voice)
   useEffect(() => { voiceRef.current = voice })
+
+  // visible time now, between the pacer's 50 ms ticks
+  const visibleNow = () => clk.current.visible + Math.min(250, performance.now() - clk.current.last)
+
+  function press(input) {
+    const h = hold.current
+    if (h.down !== null || document.hidden) return
+    h.down = visibleNow()
+    h.input.add(input)
+    setHeld(true)
+  }
+
+  function letGo(at = visibleNow()) {
+    const h = hold.current
+    if (h.down === null) return
+    if (h.list.length < 1000) h.list.push({ down: Math.round(h.down), up: Math.round(at) })
+    h.down = null
+    setHeld(false)
+  }
 
   function start() {
     voice.unlock()   // inside the tap: the only way a phone will start audio
@@ -58,20 +89,22 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
     if (stage !== 'practice') return
     const away = createAwayTracker()
     const t0 = performance.now()
-    let last = t0, visible = 0, voiceOffMs = 0, phase = '', cycles = 0, finished = false
+    const c = clk.current
+    c.visible = 0; c.last = t0
+    let voiceOffMs = 0, phase = '', cycles = 0, finished = false
 
     const say = (key, text) => voiceRef.current.play(key, text)
     say('settle', CUES.settle)
 
     const timer = setInterval(() => {
       // capped, so a frozen tab or a sleeping laptop can't jump the practice ahead
-      const now = performance.now(), dt = Math.min(250, now - last)
-      last = now
+      const now = performance.now(), dt = Math.min(250, now - c.last)
+      c.last = now
       if (document.hidden) return
-      visible += dt
+      c.visible += dt
       if (voiceRef.current.offRef.current) voiceOffMs += dt
 
-      const b = breathAt(visible, cfg)
+      const b = breathAt(c.visible, cfg)
       if (pacerRef.current) pacerRef.current.style.transform = `scale(${b.scale.toFixed(3)})`
       if (progRef.current)  progRef.current.style.width = `${(b.progress * 100).toFixed(2)}%`
       if (b.phase !== phase) {
@@ -84,6 +117,7 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
         finished = true
         clearInterval(timer)
         const { hidden_ms, left_page_count } = away.stop()
+        letGo(c.visible)
         resultRef.current = {
           planned_seconds: cfg.breathing_seconds,
           inhale_ms:       cfg.inhale_ms,
@@ -92,18 +126,43 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
           shape:           cfg.shape,
           cycles,
           duration_ms:     Math.round(performance.now() - t0),
-          visible_ms:      Math.round(visible),
+          visible_ms:      Math.round(c.visible),
           hidden_ms,
           left_page_count,
           voice_available: !!voiceRef.current.available,
           voice_off_ms:    Math.round(voiceOffMs),
           voice_toggles:   togglesRef.current,
+          hold: holdOn ? {
+            input:  [...hold.current.input].sort(),
+            ...holdSummary(hold.current.list, cfg, c.visible),
+            events: hold.current.list,
+          } : null,
         }
         setStage('finished')
       }
     }, 50)
 
     return () => { clearInterval(timer); away.stop() }
+  }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The space bar, and letting go when the page or the window loses focus
+  useEffect(() => {
+    if (stage !== 'practice' || !holdOn) return
+    const isSpace = e => e.code === 'Space' || e.key === ' '
+    const down = e => { if (!isSpace(e)) return; e.preventDefault(); if (!e.repeat) press('key') }
+    const up   = e => { if (!isSpace(e)) return; e.preventDefault(); letGo() }
+    const away = () => letGo()
+    const vis  = () => { if (document.hidden) letGo() }
+    window.addEventListener('keydown', down, true)
+    window.addEventListener('keyup', up, true)
+    window.addEventListener('blur', away)
+    document.addEventListener('visibilitychange', vis)
+    return () => {
+      window.removeEventListener('keydown', down, true)
+      window.removeEventListener('keyup', up, true)
+      window.removeEventListener('blur', away)
+      document.removeEventListener('visibilitychange', vis)
+    }
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleVoice() {
@@ -117,6 +176,7 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
       <div className="pt-card">
         <h2>Next: a breathing practice</h2>
         <p>It takes about {length}. You will breathe slowly along with a circle that grows and shrinks. Please sit comfortably. Please stay on this page during the task, and do not switch tabs. Press Start to begin the task.</p>
+        {holdOn && <p>While you breathe in, press and hold the button under the circle, or the space bar if you are using a keyboard. Let go as you breathe out.</p>}
         <div className="pt-actions"><button type="button" className="pt-btn" onClick={start}>Start</button></div>
       </div>
     )
@@ -140,6 +200,24 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
         <div className="pt-cue" aria-live="polite">{cue}</div>
         <div className="pt-progress"><div ref={progRef} /></div>
       </div>
+      {holdOn && (
+        <div className="pt-hold-wrap">
+          <button
+            type="button"
+            tabIndex={-1}
+            className={`pt-hold${held ? ' on' : ''}`}
+            aria-pressed={held}
+            onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId); press(e.pointerType || 'pointer') }}
+            onPointerUp={() => letGo()}
+            onPointerCancel={() => letGo()}
+            onLostPointerCapture={() => letGo()}
+            onContextMenu={e => e.preventDefault()}
+          >
+            {held ? 'Breathing in' : 'Hold while you breathe in'}
+          </button>
+          <span className="pt-muted pt-hold-key">or hold the space bar</span>
+        </div>
+      )}
       <div className="pt-bar">
         <span className="pt-muted">In through your nose as the circle grows, out through your mouth as it shrinks.</span>
         <span className="pt-grow" />

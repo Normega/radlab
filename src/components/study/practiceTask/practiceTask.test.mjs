@@ -7,6 +7,7 @@
 import { breathAt, BREATH_DEFAULTS } from './breathTiming.js'
 import { createAwayTracker } from './awayTracker.js'
 import { PASSAGES } from './readingPassages.js'
+import { holdSummary } from './breathHold.js'
 
 let pass = 0, fail = 0
 function check(name, cond) {
@@ -68,6 +69,28 @@ check('natural meets the end points', near(breathAt(6500).scale, 1) && near(outA
   check('eight paragraphs and three questions', p.paragraphs.length === 8 && p.questions.length === 3)
   check('every question has four options and a valid key', p.questions.every(q => q.o.length === 4 && q.o[q.correct] !== undefined))
   check('keys match section 2c', p.questions.map(q => q.correct).join() === '0,1,1')
+}
+
+// ── 4. The hold-while-breathing-in check ───────────────────────────────────────
+{
+  const END = 240000
+  const starts = Array.from({ length: 24 }, (_, k) => 2500 + 10000 * k)
+  const exact = holdSummary(starts.map(s => ({ down: s, up: s + 4000 })), BREATH_DEFAULTS, END)
+  check('holding exactly through each in-breath scores 100',
+    exact.breaths === 24 && exact.cycles_pressed === 24 && exact.inhale_held_pct === 100 && exact.exhale_held_pct === 0 &&
+    exact.balanced_pct === 100 && exact.onset_lag_ms === 0 && exact.release_lag_ms === 0 && exact.phase_r === 1 && exact.phase_lag_ms === 0)
+  const always = holdSummary([{ down: 0, up: END }], BREATH_DEFAULTS, END)
+  check('holding throughout scores 50, like never pressing',
+    always.inhale_held_pct === 100 && always.exhale_held_pct === 100 && always.balanced_pct === 50 && always.release_lag_ms === null)
+  const never = holdSummary([], BREATH_DEFAULTS, END)
+  check('never pressing scores 50 with no lags', never.balanced_pct === 50 && never.cycles_pressed === 0 && never.phase_r === null && never.onset_lag_ms === null)
+  const late = holdSummary(starts.map(s => ({ down: s + 500, up: s + 4500 })), BREATH_DEFAULTS, END)
+  check('half a second late in both directions',
+    late.inhale_held_pct === 87.5 && late.exhale_held_pct === 8.5 && late.onset_lag_ms === 500 && late.release_lag_ms === 500 && late.phase_lag_ms === 500 && late.phase_r === 1)
+  const early = holdSummary([{ down: 1500, up: 6000 }], BREATH_DEFAULTS, END)
+  check('a press just before the in-breath counts for it, as a negative lag', early.cycles_pressed === 1 && early.onset_lag_ms === -1000)
+  const open = holdSummary([{ down: 232500, up: null }], BREATH_DEFAULTS, END)
+  check('a press still held at the end closes there and has no release', open.presses === 1 && open.release_lag_ms === null && open.cycles_pressed === 1)
 }
 
 console.log(`practiceTask: ${pass} passed, ${fail} failed`)

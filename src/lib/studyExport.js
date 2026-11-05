@@ -76,6 +76,11 @@ export const EXPORT_TABLES = [
   { table: 'safari_exhibit_sessions',  category: 'Games',         label: 'Night Safari — Exhibit sessions', strategy: 'session' },
   { table: 'safari_pause_events',      category: 'Games',         label: 'Night Safari — Pauses',      strategy: 'session' },
   { table: 'pond_watch_results',       category: 'Games',         label: 'Pond Watch',                 strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
+  // Foggy Valleys (Sandy Study 4): a row per valley, per picture, and per
+  // picture's questions; join the last two on run_id + picture_number
+  { table: 'foggy_valleys_runs',       category: 'Games',         label: 'Foggy Valleys — Valleys',    strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
+  { table: 'foggy_valleys_pictures',   category: 'Games',         label: 'Foggy Valleys — Pictures',   strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
+  { table: 'foggy_valleys_picture_ratings', category: 'Games',    label: 'Foggy Valleys — Picture questions', strategy: 'study', ownerSpace: 'profile', ownerCol: 'user_id' },
   // Questionnaires
   { table: 'questionnaire_responses',  category: 'Questionnaires', label: 'Questionnaire Responses',   strategy: 'profile',  col: 'user_id' },
   // Composable instruments (likert_slider / multiple_choice / open_list /

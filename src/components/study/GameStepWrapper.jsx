@@ -2,6 +2,7 @@ import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
 import BreathBelt    from '../../games/BreathBelt/BreathBelt'
 import ColorMax      from '../../games/ColorMax/ColorMax'
 import { FoggyValleysFirst, FoggyValleysSecond } from '../../games/FoggyValleys/FoggyValleysStep'
+import FoggyValleysReview from '../../games/FoggyValleys/FoggyValleysReview'
 import PondWatch     from '../../games/PondWatch'
 import StillWater    from '../../games/StillWater/StillWater'
 import WordMax       from '../../games/WordMax/WordMax'
@@ -13,6 +14,7 @@ const GAME_COMPONENTS = {
   color_max:      ColorMax,
   foggy_valleys_1: FoggyValleysFirst,
   foggy_valleys_2: FoggyValleysSecond,
+  foggy_valleys_review: FoggyValleysReview,
   pond_watch:     PondWatch,
   still_water:    StillWater,
   word_max:       WordMax,

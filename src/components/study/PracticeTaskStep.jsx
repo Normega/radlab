@@ -22,7 +22,9 @@ import './practiceTask/practiceTask.css'
  *     slot               the assignment slot to read   (default 'relaxation_arm')
  *     breathing_seconds  inhale_ms  exhale_ms  settle_ms   (defaults 240 / 4000 / 6000 / 2500)
  *     shape              'natural' or 'symmetric' pacer (default 'natural', breathTiming.js)
- *     voice_base         folder of recorded cues for the breathing arm (none yet)
+ *     voice_base         folder of recorded cues for the breathing arm
+ *     hold_to_inhale     true: hold a button or the space bar while breathing in,
+ *                        scored as an adherence check (breathHold.js)
  *     passage            reading passage key           (default 'mail_sorting_centre')
  *
  * Saved as ONE instrument_responses row (instrument type 'practice_task',

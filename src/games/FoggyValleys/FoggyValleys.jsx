@@ -3,8 +3,10 @@ import { supabase } from '../../lib/supabase'
 import { DEMO_SECS, isDemoMode } from '../../lib/demoMode'
 import { useScrollToTopOn } from '../../lib/scrollToTop'
 import SaveRetryBanner from '../../components/study/SaveRetryBanner'
+import NoDefaultSlider from '../../components/study/NoDefaultSlider'
+import { ReviewIcon, ReviewCross } from './ReviewIcons'
 import { FIXED_PICTURES, mulberry32, shuffle, f1, getScene, sceneSVG, foundOverlay, reviewOverlay, answerOverlay } from './scenes'
-import { CORE, VALLEY } from './items'
+import { CORE, VALLEY, MOVE_ON_QUESTION, MOVE_ON_REASONS, ESTIMATE_QUESTION } from './items'
 import './FoggyValleys.css'
 
 // ── Foggy Valleys ─────────────────────────────────────────────────────────────
@@ -31,15 +33,26 @@ import './FoggyValleys.css'
 //     which reads the fog from the assignment slot valley_order and the deck
 //     position from the pictures already saved.
 //
+// After each picture (setting pictureQuestions, on by default; Sandy Study 4
+// decisions D3, D4 and D7, 2026-11-05) the valley clock stops. The participant
+// says why they moved on (only if they pressed Next picture) and estimates the
+// share of that picture's differences they found. Only after they submit does
+// a feedback screen show the true share, with the found and missed differences
+// and the wrong clicks marked. The clock runs again with the next picture, so
+// each valley still has its full search time. A picture the clock ended while
+// still in fog is not asked about. Each valley ends with a summary of the
+// pictures searched, the differences in them and the differences found.
+//
 // Saving (append-only; no row is ever updated):
-//   foggy_valleys_runs      one row when a valley starts (client-made id)
-//   foggy_valleys_pictures  one row as each picture ends
-// A run insert that fails keeps the valley from starting; a picture insert that
-// fails is retried at the end of the valley, and Continue waits until every
-// picture has saved (SaveRetryBanner).
+//   foggy_valleys_runs             one row when a valley starts (client-made id)
+//   foggy_valleys_pictures         one row as each picture ends
+//   foggy_valleys_picture_ratings  one row as each picture's questions are submitted
+// A run insert that fails keeps the valley from starting; a picture or rating
+// insert that fails is retried at the end of the valley, and Continue waits
+// until every one has saved (SaveRetryBanner).
 
 const GAME_VERSION = 'foggy_valleys_v0.3'
-const DEFAULTS = { minutes: 4, thin: 3, thick: 12, order: 'random', lockout: 5, free: 1, fogCount: true, clock: false, warn: 30, debug: false, ratings: true }
+const DEFAULTS = { minutes: 4, thin: 3, thick: 12, order: 'random', lockout: 5, free: 1, fogCount: true, clock: false, warn: 30, debug: false, ratings: true, pictureQuestions: true }
 // Quick demo (?demo=1 or a quick-demo preview link): short valleys and fog
 const QUICK = { minutes: DEMO_SECS / 60, thin: 2, thick: 5, warn: 10 }
 const TOL = 6   // extra click margin around each difference, in picture units
@@ -50,6 +63,16 @@ const fmtClock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${
 const fmtS = ms => ms == null ? '–' : (ms / 1000).toFixed(1) + ' s'
 const fogName = t => t === 'thick' ? 'Heavy fog' : 'Light mist'
 const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`
+
+// "In this valley you searched N pictures…": pictures still in fog when the
+// clock ended were never searched, so they are left out
+function valleySummary(pics) {
+  const searched = pics.filter(p => p.fogCleared)
+  if (!searched.length) return 'No picture cleared before the time ran out in this valley.'
+  const diffs = searched.reduce((n, p) => n + p.totalDifferences, 0), found = searched.reduce((n, p) => n + p.found, 0)
+  return `In this valley you searched ${plural(searched.length, 'picture')}. There were ${plural(diffs, 'difference')} in them, and you found ${found}.`
+}
 
 function freeText(cfg) {
   const pause = `pauses both pictures for ${cfg.lockout} seconds`
@@ -100,7 +123,7 @@ export default function FoggyValleys({
     S.current = {
       order, deckSeed, deckStart, deck: buildDeck(deckSeed), deckPos: deckStart,
       totalValleys: config?.totalValleys ?? valleyOffset + order.length,
-      pics: [], ratings: [], score: 0, runs: [], jobs: [],
+      pics: [], ratings: [], answers: {}, score: 0, runs: [], jobs: [],
       startedAt: new Date().toISOString(), settings: { ...cfg },
     }
     setMeta({ order, totalValleys: S.current.totalValleys, settings: S.current.settings })
@@ -148,32 +171,46 @@ export default function FoggyValleys({
     setView({ name: 'play', i, startScore: s.score })
   }
 
-  function sendPicture(job) {
+  function send(job) {
     job.p = Promise.resolve()
-      .then(() => db.from('foggy_valleys_pictures').insert(job.row))
+      .then(() => db.from(job.table).insert(job.row))
       .then(res => {
         job.done = !res?.error || res.error.code === '23505'   // unique (run_id, picture_number): already saved
-        if (!job.done) console.warn('foggy_valleys_pictures insert failed', res.error)
-      }, e => { job.done = false; console.warn('foggy_valleys_pictures insert failed', e) })
+        if (!job.done) console.warn(`${job.table} insert failed`, res.error)
+      }, e => { job.done = false; console.warn(`${job.table} insert failed`, e) })
+  }
+
+  function queue(table, row) {
+    const job = { table, row, done: false }
+    S.current.jobs.push(job)
+    send(job)
   }
 
   function onPicture(i, rec) {
     const s = S.current
     s.pics.push(rec)
     s.score += rec.found
-    const job = {
-      done: false,
-      row: {
-        run_id: s.runs[i].id, user_id: userId, study_id: studyId, schedule_id: scheduleId, is_test: !!isSimMode,
-        picture_number: rec.picture, valley_number: rec.valley, fog: rec.fog,
-        scene: rec.scene, extra_scene: rec.extraScene, total_differences: rec.totalDifferences, found: rec.found,
-        fog_ms: rec.fogMs, fog_cleared: rec.fogCleared, search_ms: rec.searchMs, time_after_last_find_ms: rec.timeAfterLastFindMs,
-        wrong_clicks: rec.wrongClicks, ended_by: rec.endedBy, ended_after_warning: rec.endedAfterWarning,
-        record: rec,
-      },
-    }
-    s.jobs.push(job)
-    sendPicture(job)
+    queue('foggy_valleys_pictures', {
+      run_id: s.runs[i].id, user_id: userId, study_id: studyId, schedule_id: scheduleId, is_test: !!isSimMode,
+      picture_number: rec.picture, valley_number: rec.valley, fog: rec.fog,
+      scene: rec.scene, extra_scene: rec.extraScene, total_differences: rec.totalDifferences, found: rec.found,
+      fog_ms: rec.fogMs, fog_cleared: rec.fogCleared, search_ms: rec.searchMs, time_after_last_find_ms: rec.timeAfterLastFindMs,
+      wrong_clicks: rec.wrongClicks, ended_by: rec.endedBy, ended_after_warning: rec.endedAfterWarning,
+      record: rec,
+    })
+  }
+
+  function onAnswer(i, rec, ans) {
+    const s = S.current
+    s.answers[rec.picture] = ans
+    queue('foggy_valleys_picture_ratings', {
+      run_id: s.runs[i].id, user_id: userId, study_id: studyId, schedule_id: scheduleId, is_test: !!isSimMode,
+      picture_number: rec.picture, valley_number: rec.valley,
+      move_on_reason: ans.reason, estimated_found_pct: ans.estimate,
+      found: rec.found, total_differences: rec.totalDifferences,
+      answer_ms: ans.answerMs, shown_at: ans.shownAt, submitted_at: ans.submittedAt,
+      record: { ...ans, endedBy: rec.endedBy },
+    })
   }
 
   // Every picture saved, retrying the ones that failed once
@@ -181,7 +218,7 @@ export default function FoggyValleys({
     const jobs = S.current.jobs
     await Promise.all(jobs.map(j => j.p))
     const failed = jobs.filter(j => !j.done)
-    failed.forEach(sendPicture)
+    failed.forEach(send)
     await Promise.all(failed.map(j => j.p))
     return jobs.every(j => j.done)
   }
@@ -191,7 +228,8 @@ export default function FoggyValleys({
     const ok = await flush()
     setEndSave({ busy: false, error: ok ? null : new Error('pictures not saved') })
     const s = S.current, last = i === s.order.length - 1
-    const points = `You have ${s.score} point${s.score === 1 ? '' : 's'} so far.`
+    const summary = valleySummary(s.pics.filter(p => p.valley === valleyOffset + i + 1))
+    const points = studyMode ? summary : `${summary} You have ${plural(s.score, 'point')} so far.`
     if (cfg.ratings) {
       setView({
         name: 'ratings', point: `after_valley_${valleyOffset + i + 1}`,
@@ -232,8 +270,8 @@ export default function FoggyValleys({
   function snapshot() {
     const s = S.current
     return {
-      order: s.order, pics: s.pics.slice(), ratings: s.ratings.slice(), score: s.score, minutes: s.settings.minutes,
-      data: { version: `${GAME_VERSION} (not piloted)`, startedAt: s.startedAt, endedAt: new Date().toISOString(), settings: s.settings, valleyOrder: s.order, deckSeed: s.deckSeed, points: s.score, ratings: s.ratings, pictures: s.pics },
+      order: s.order, pics: s.pics.slice(), ratings: s.ratings.slice(), answers: { ...s.answers }, score: s.score, minutes: s.settings.minutes,
+      data: { version: `${GAME_VERSION} (not piloted)`, startedAt: s.startedAt, endedAt: new Date().toISOString(), settings: s.settings, valleyOrder: s.order, deckSeed: s.deckSeed, points: s.score, ratings: s.ratings, pictureAnswers: s.answers, pictures: s.pics },
     }
   }
 
@@ -290,6 +328,7 @@ export default function FoggyValleys({
         key={view.i} cfg={meta.settings} type={meta.order[view.i]}
         valleyNumber={valleyOffset + view.i + 1} totalValleys={meta.totalValleys} startScore={view.startScore}
         drawScene={drawScene} onPicture={rec => onPicture(view.i, rec)} onTimeUp={() => finishValley(view.i)}
+        onAnswer={meta.settings.pictureQuestions ? (rec, ans) => onAnswer(view.i, rec, ans) : null}
       />
     )
   } else if (view.name === 'timeUp') {
@@ -360,6 +399,7 @@ function Intro({ cfg, setCfg, studyMode, showRules, onStart }) {
             <label className="check"><input type="checkbox" defaultChecked={cfg.fogCount} onChange={flag('fogCount')} /> Count down while the fog clears</label>
             <label className="check"><input type="checkbox" defaultChecked={cfg.clock} onChange={flag('clock')} /> Show the valley clock</label>
             <label className="check"><input type="checkbox" defaultChecked={cfg.ratings} onChange={flag('ratings')} /> Ask the ratings</label>
+            <label className="check"><input type="checkbox" defaultChecked={cfg.pictureQuestions} onChange={flag('pictureQuestions')} /> Ask about each picture, then show what was missed</label>
             <label className="check"><input type="checkbox" defaultChecked={cfg.debug} onChange={flag('debug')} /> Show where the differences are</label>
           </div>
           <p className="fv-note">Each picture’s fog lasts the valley’s average plus or minus 25%, drawn at random. For a quick look, set the minutes to 1, the fog to 1 and 4 seconds, and turn off the ratings. Nothing is saved in a preview.</p>
@@ -376,13 +416,19 @@ function Intro({ cfg, setCfg, studyMode, showRules, onStart }) {
 // the pictures, the score and the buttons. The first picture is dealt in the
 // first animation frame, so StrictMode's dev-only double mount (cleaned up
 // before any frame runs) does not use up a picture.
+//
+// With onAnswer set, each picture that cleared is followed by its questions and
+// feedback (PictureQuestions, PictureFeedback). The clock stops while they are
+// on screen: the valley's start and end move later by the time spent. The
+// pictures stay mounted underneath, hidden, so the frame loop's refs survive.
 
-function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, onPicture, onTimeUp }) {
+function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, onPicture, onTimeUp, onAnswer = null }) {
   const [score, setScore] = useState(startScore)
   const [here, setHere] = useState(0)
   const [art, setArt] = useState({ A: '', B: '' })
   const [fogged, setFogged] = useState(true)
   const [warned, setWarned] = useState(false)
+  const [ask, setAsk] = useState(null)   // { rec, then: 'deal' | 'end', stage: 'questions' | 'feedback' }
   const el = useRef({})     // DOM nodes, set by callback refs
   const G = useRef(null)    // the running valley
 
@@ -397,7 +443,7 @@ function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, 
     const g = G.current, { idx, n } = drawScene(), sc = getScene(idx)
     g.pic = {
       n, valley: valleyNumber, fog: g.block.type, idx, sc, fogMs: Math.round(g.block.meanFog * (0.75 + 0.5 * Math.random())),
-      tDealAbs: performance.now(), tClearAbs: null, found: [], finds: [], wrong: 0, blocked: 0, repeat: 0, fogClicks: 0, clicks: [], misses: [], lockUntil: 0,
+      dealtAt: new Date().toISOString(), tDealAbs: performance.now(), tClearAbs: null, found: [], finds: [], wrong: 0, blocked: 0, repeat: 0, fogClicks: 0, clicks: [], misses: [], lockUntil: 0,
     }
     paint(); setHere(0); setFogged(true)
     for (const p of panels()) {
@@ -421,17 +467,35 @@ function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, 
     g.pic = null
     const t = performance.now(), cleared = p.tClearAbs !== null, searchMs = cleared ? Math.round(t - p.tClearAbs) : 0
     const last = p.finds.length ? p.finds[p.finds.length - 1].t : null
-    onPicture({
-      picture: p.n, valley: p.valley, fog: p.fog, scene: p.idx + 1, extraScene: p.idx >= FIXED_PICTURES, theme: p.sc.themeName, totalDifferences: p.sc.diffs.length,
+    const rec = {
+      picture: p.n, valley: p.valley, fog: p.fog, scene: p.idx + 1, extraScene: p.idx >= FIXED_PICTURES, theme: p.sc.themeName, totalDifferences: p.sc.diffs.length, dealtAt: p.dealtAt,
       found: p.found.length, foundIds: p.found.slice(), finds: p.finds, fogMs: p.fogMs, fogCleared: cleared, searchMs, lastFindMs: last,
       timeAfterLastFindMs: cleared ? searchMs - (last || 0) : null, wrongClicks: p.wrong, blockedClicks: p.blocked, repeatClicks: p.repeat, fogClicks: p.fogClicks,
       misses: p.misses, clicks: p.clicks, endedBy: how, endedAfterWarning: !!g.block.warned,
-    })
+    }
+    onPicture(rec)
+    return rec
+  }
+
+  // Questions and feedback stop the clock: the valley's start and end move on by the pause
+  function pause() { const b = G.current.block; if (b.pausedAt == null) b.pausedAt = performance.now() }
+  function resume() {
+    const b = G.current.block
+    if (b.pausedAt == null) return
+    const d = performance.now() - b.pausedAt
+    b.end += d; b.t0 += d; b.pausedAt = null
+  }
+
+  function afterAsk() {
+    const then = ask.then
+    setAsk(null)
+    if (then === 'end') { onTimeUp(); return }
+    resume(); deal()
   }
 
   function clickPanel(ev, w) {
     const g = G.current, pic = g?.pic
-    if (!pic || g.block.over) return
+    if (!pic || g.block.over || g.block.pausedAt != null) return
     const svg = el.current[w]?.art.querySelector('svg')
     if (!svg) return
     const rc = svg.getBoundingClientRect(), t = performance.now()
@@ -455,7 +519,9 @@ function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, 
 
   function next() {
     const g = G.current
-    if (g?.pic && g.pic.tClearAbs !== null && !g.block.over) { endPicture('next'); deal() }
+    if (!g?.pic || g.pic.tClearAbs === null || g.block.over || g.block.pausedAt != null) return
+    const rec = endPicture('next')
+    if (onAnswer) { pause(); setAsk({ rec, then: 'deal', stage: 'questions' }) } else deal()
   }
 
   useEffect(() => {
@@ -465,11 +531,14 @@ function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, 
     G.current = g
     const loop = () => {
       if (block.over) return
+      if (block.pausedAt != null) { g.raf = requestAnimationFrame(loop); return }
       const t = performance.now(), left = block.end - t
       if (left <= 0) {
         block.over = true
-        endPicture('time')
-        onTimeUp()
+        const rec = endPicture('time')
+        // the picture the clock ended is asked about too, unless it never cleared
+        if (onAnswer && rec?.fogCleared) setAsk({ rec, then: 'end', stage: 'questions' })
+        else onTimeUp()
         return
       }
       if (cfg.clock && el.current.clock) {
@@ -505,6 +574,10 @@ function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, 
 
   return (
     <section>
+      {ask && (ask.stage === 'questions'
+        ? <PictureQuestions key={ask.rec.picture} rec={ask.rec} onSubmit={ans => { onAnswer(ask.rec, ans); setAsk(a => ({ ...a, stage: 'feedback' })) }} />
+        : <PictureFeedback key={ask.rec.picture} rec={ask.rec} last={ask.then === 'end'} onNext={afterAsk} />)}
+      <div hidden={!!ask}>
       <div className="fv-hud">
         <div className="fv-hud-valley"><span className="fv-eyebrow">Valley {valleyNumber} of {totalValleys}</span><b>{fogName(type)}</b></div>
         <div className="fv-hud-clock">
@@ -531,6 +604,75 @@ function Valley({ cfg, type, valleyNumber, totalValleys, startScore, drawScene, 
           </div>
         ))}
       </div>
+      </div>
+    </section>
+  )
+}
+
+// ── after each picture: the questions, then the feedback ─────────────────────
+
+function PictureQuestions({ rec, onSubmit }) {
+  const sc = useMemo(() => getScene(rec.scene - 1), [rec.scene])
+  const askReason = rec.endedBy === 'next'
+  const [reason, setReason] = useState(null)
+  const [estimate, setEstimate] = useState(null)
+  const shown = useRef(null)
+  const sent = useRef(false)
+  useEffect(() => { shown.current = { at: new Date().toISOString(), t: performance.now() } }, [])
+  const done = estimate != null && (!askReason || reason != null)
+
+  function submit() {
+    if (!done || sent.current) return
+    sent.current = true
+    onSubmit({
+      reason: askReason ? reason : null, estimate,
+      answerMs: Math.round(performance.now() - shown.current.t), shownAt: shown.current.at, submittedAt: new Date().toISOString(),
+    })
+  }
+
+  return (
+    <section className="fv-card fv-intro">
+      <p className="fv-eyebrow">{askReason ? 'Before the next picture' : 'Time is up in this valley'}</p>
+      <h1>About the picture you just searched</h1>
+      <div className="fv-pic" dangerouslySetInnerHTML={{ __html: sceneSVG(sc, 'B', foundOverlay(sc, rec.foundIds, false)) }} />
+      {askReason && (
+        <div className="fv-item">
+          <div className="q" id={`fv-why-${rec.picture}`}>{MOVE_ON_QUESTION}</div>
+          <div className="fv-opts" role="radiogroup" aria-labelledby={`fv-why-${rec.picture}`}>
+            {MOVE_ON_REASONS.map(o => (
+              <button key={o.id} type="button" role="radio" aria-checked={reason === o.id} onClick={() => setReason(o.id)}>{o.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="fv-item">
+        <div className="q">{ESTIMATE_QUESTION}</div>
+        <div className="fv-est fv-num" aria-hidden="true">{estimate == null ? 'Move the slider' : `${estimate}%`}</div>
+        <NoDefaultSlider min={0} max={100} step={1} value={estimate} onChange={setEstimate} ariaLabel={ESTIMATE_QUESTION} />
+        <div className="fv-ends"><span>None of them</span><span>All of them</span></div>
+      </div>
+      <div className="fv-actions"><button type="button" className="fv-btn" disabled={!done} onClick={submit}>Submit</button></div>
+    </section>
+  )
+}
+
+function PictureFeedback({ rec, last, onNext }) {
+  const sc = useMemo(() => getScene(rec.scene - 1), [rec.scene])
+  const missed = sc.diffs.filter(d => !rec.foundIds.includes(d.id))
+  const pct = rec.totalDifferences ? Math.round(100 * rec.found / rec.totalDifferences) : 0
+  return (
+    <section className="fv-card fv-intro">
+      <p className="fv-eyebrow">{last ? 'Time is up in this valley' : 'How you did on that picture'}</p>
+      <h1>You found {rec.found} of the {plural(rec.totalDifferences, 'difference')} in this picture: {pct}%</h1>
+      <div className="fv-legend">
+        <span><ReviewIcon c="#2f9e44" /> found</span><span><ReviewIcon c="#e03131" dash /> not found</span>
+        <span><ReviewCross /> click that was not on a difference</span>
+      </div>
+      <div className="fv-pic" dangerouslySetInnerHTML={{ __html: sceneSVG(sc, 'B', reviewOverlay(sc, rec.foundIds, rec.misses)) }} />
+      {missed.length
+        ? <><h3>Not found</h3><ul className="fv-missed">{missed.map(d => <li key={d.id}>{d.text}</li>)}</ul></>
+        : <p className="fv-muted">You found every difference.</p>}
+      <div className="fv-actions"><button type="button" className="fv-btn" onClick={onNext}>{last ? 'Continue' : 'Next picture'}</button></div>
     </section>
   )
 }
@@ -592,10 +734,7 @@ function Ratings({ eyebrow, title, lead, groups, onDone, blocked = false }) {
 function Results({ snap, onAgain, onGallery }) {
   const [copied, setCopied] = useState('')
   const json = useMemo(() => JSON.stringify(snap.data, null, 1), [snap])
-  const { order, pics, ratings, score, minutes } = snap
-  const icon = (c, dash) => (
-    <svg width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke={c} strokeWidth="3" strokeDasharray={dash ? '4 3' : undefined} /></svg>
-  )
+  const { order, pics, ratings, answers, score, minutes } = snap
   const reviews = pics.filter(p => p.fogCleared)
 
   async function copy() {
@@ -630,18 +769,20 @@ function Results({ snap, onAgain, onGallery }) {
       )}
       <h2>Each picture</h2>
       <div className="fv-tbl"><table>
-        <thead><tr><th>#</th><th>Fog</th><th>Picture</th><th>Fog time</th><th>Found</th><th>Stay after the fog cleared</th><th>Time after the last find</th><th>Wrong clicks</th><th>Ended by</th></tr></thead>
+        <thead><tr><th>#</th><th>Fog</th><th>Picture</th><th>Fog time</th><th>Found</th><th>Stay after the fog cleared</th><th>Time after the last find</th><th>Wrong clicks</th><th>Ended by</th><th>Thought they found</th><th>Why they moved on</th></tr></thead>
         <tbody>{pics.map(p => (
           <tr key={p.picture}><td className="n">{p.picture}</td><td>{p.fog === 'thick' ? 'Heavy' : 'Light'}</td><td>{p.scene}{p.extraScene ? ' (extra)' : ''} · {p.theme}</td>
             <td className="n">{(p.fogMs / 1000).toFixed(1)} s</td><td className="n">{p.found} of {p.totalDifferences}</td><td className="n">{fmtS(p.searchMs)}</td>
             <td className="n">{fmtS(p.timeAfterLastFindMs)}</td><td className="n">{p.wrongClicks}</td>
-            <td>{p.endedBy === 'next' ? 'Next picture' : p.fogCleared ? 'Time up' : 'Time up in fog'}</td></tr>
+            <td>{p.endedBy === 'next' ? 'Next picture' : p.fogCleared ? 'Time up' : 'Time up in fog'}</td>
+            <td className="n">{answers[p.picture] ? `${answers[p.picture].estimate}%` : '–'}</td>
+            <td>{MOVE_ON_REASONS.find(o => o.id === answers[p.picture]?.reason)?.label ?? '–'}</td></tr>
         ))}</tbody>
       </table></div>
       <h2>Review of what was found and missed</h2>
       <div className="fv-legend">
-        <span>{icon('#2f9e44', false)} found</span><span>{icon('#e03131', true)} not found</span>
-        <span><svg width="22" height="22" aria-hidden="true"><path d="M5 5L17 17M17 5L5 17" stroke="#868e96" strokeWidth="3" strokeLinecap="round" /></svg> click that was not on a difference</span>
+        <span><ReviewIcon c="#2f9e44" /> found</span><span><ReviewIcon c="#e03131" dash /> not found</span>
+        <span><ReviewCross /> click that was not on a difference</span>
       </div>
       <div className="fv-rgrid">
         {reviews.length ? reviews.map(p => {
