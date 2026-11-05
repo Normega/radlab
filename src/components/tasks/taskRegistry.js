@@ -21,10 +21,12 @@ export const TASKS = {
   color_max:      { name: 'ColorMax', route: '/games/color-max',      previewable: true, timed: true, runsInSessions: true },
   word_max:       { name: 'WordMax', route: '/games/word-max',       previewable: true, timed: true, runsInSessions: true },
   // Foggy Valleys (Sandy Study 4): the preview plays both valleys; a session runs
-  // one valley per step (FoggyValleysStep.jsx). No live route: it would save.
+  // one valley per step (FoggyValleysStep.jsx), and the review of every searched
+  // picture is its own step (FoggyValleysReview.jsx). No live route: it would save.
   foggy_valleys:  { name: 'Foggy Valleys', previewable: true, timed: true, note: 'Sandy Study 4 · not piloted' },
   foggy_valleys_1: { name: 'Foggy Valleys – first valley', runsInSessions: true, note: 'Sandy Study 4 · fog from slot valley_order' },
   foggy_valleys_2: { name: 'Foggy Valleys – second valley', runsInSessions: true, note: 'Sandy Study 4 · after the first valley' },
+  foggy_valleys_review: { name: 'Foggy Valleys – review of what was missed', runsInSessions: true, note: 'Sandy Study 4 · after both valleys' },
   pond_watch:     { name: 'Pond Watch', route: '/games/pond-watch',     runsInSessions: true },
   still_water:    { name: 'Still Water', route: '/games/still-water',    runsInSessions: true },
   breath_belt:    { name: 'Breath Belt', route: '/games/breath-belt',    runsInSessions: true, note: 'Requires Polar H10 belt' },

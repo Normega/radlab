@@ -101,3 +101,11 @@
 .fv-lvl-easy{color:var(--fv-easy)}.fv-lvl-medium{color:var(--fv-medium)}.fv-lvl-hard{color:var(--fv-hard)}
 .fv textarea{width:100%;height:220px;font:12px/1.45 var(--fv-font-mono);color:var(--fv-fg);background:var(--fv-bg);border:1px solid var(--fv-line);border-radius:8px;padding:8px}
 .fv-err{color:var(--fv-hard);font-size:14px}
+/* after each picture: questions and feedback */
+.fv-pic{border:1px solid var(--fv-line);border-radius:10px;overflow:hidden;line-height:0;margin:8px 0 16px;max-width:600px}
+.fv-pic svg{display:block;width:100%;height:auto}
+.fv-opts{display:flex;flex-direction:column;gap:8px}
+.fv-opts button{text-align:left;padding:12px 16px;border:1px solid var(--fv-line);border-radius:12px;background:var(--fv-bg);color:var(--fv-fg);cursor:pointer;line-height:1.35}
+.fv-opts button[aria-checked="true"]{border-color:var(--fv-accent);background:var(--fv-accent-soft);box-shadow:inset 0 0 0 1px var(--fv-accent)}
+.fv-est{font:700 20px/1.2 var(--fv-font-body)}
+.fv-missed{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}

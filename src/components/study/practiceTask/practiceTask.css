@@ -139,6 +139,44 @@
 
 .pt-bar .pt-grow { flex: 1; }
 
+/* the hold-while-breathing-in button (adherence check) */
+.pt-hold-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pt-hold {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  width: 100%;
+  max-width: 320px;
+  min-height: 64px;
+  border: 2px solid var(--pkd);
+  border-radius: 24px;
+  background: var(--bgc);
+  color: var(--pkd);
+  padding: 16px 24px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pt-hold.on {
+  background: var(--pkd);
+  color: var(--bgc);
+}
+
+@media (hover: none) {
+  .pt-hold-key { display: none; }
+}
+
 /* reading */
 .pt-passage p { margin: 0 0 16px; }
 

@@ -117,6 +117,17 @@ export function instrumentColumns(prefix, type, response, def = null) {
       out[`${prefix}_breath_shape`]     = b ? (b.shape ?? null) : null
       out[`${prefix}_breath_voice`]     = b ? (b.voice_available ? 1 : 0) : null
       out[`${prefix}_breath_voice_off_s`] = b ? secs(b.voice_off_ms) : null
+      // the hold-while-breathing-in check (breathHold.js); blank when the step didn't ask it
+      const h = b?.hold ?? null
+      out[`${prefix}_breath_hold_presses`]     = h ? (h.presses ?? null) : null
+      out[`${prefix}_breath_hold_breaths`]     = h ? (h.cycles_pressed ?? null) : null
+      out[`${prefix}_breath_hold_inhale_pct`]  = h ? (h.inhale_held_pct ?? null) : null
+      out[`${prefix}_breath_hold_exhale_pct`]  = h ? (h.exhale_held_pct ?? null) : null
+      out[`${prefix}_breath_hold_balanced_pct`] = h ? (h.balanced_pct ?? null) : null
+      out[`${prefix}_breath_hold_onset_lag_s`] = h ? secs(h.onset_lag_ms) : null
+      out[`${prefix}_breath_hold_release_lag_s`] = h ? secs(h.release_lag_ms) : null
+      out[`${prefix}_breath_hold_phase_r`]     = h ? (h.phase_r ?? null) : null
+      out[`${prefix}_breath_hold_input`]       = h ? ((h.input ?? []).join('+') || null) : null
       out[`${prefix}_read_passage`] = q ? (q.passage ?? null) : null
       out[`${prefix}_read_s`]       = q ? secs(q.read_ms) : null
       out[`${prefix}_read_questions_s`] = q ? secs(q.questions_ms) : null
