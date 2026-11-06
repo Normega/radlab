@@ -3,6 +3,7 @@
 // are thin RPC wrappers. See randomizer_spec.md.
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { supabase as globalSupabase } from '../lib/supabase'
+import { expandAssignments } from '../lib/assignmentSlots'
 
 function assignmentQuery(db, studyId, slotKey, enabled) {
   return {
@@ -30,7 +31,8 @@ export function useAssignment(studyId, slotKey, { enabled = true, client } = {})
 /**
  * Draw all slots for a study. Returns:
  *   { assignments: { [slotKey]: value }, isLoading, isError }
- * assignments is only populated once every draw has resolved.
+ * assignments is only populated once every draw has resolved. A crossed slot
+ * (object arms) also supplies each of its parts by name; see assignmentSlots.js.
  */
 export function useAssignments(studyId, slotKeys, { enabled = true, client } = {}) {
   const db   = client ?? globalSupabase
@@ -48,5 +50,5 @@ export function useAssignments(studyId, slotKeys, { enabled = true, client } = {
     keys.forEach((k, i) => { assignments[k] = results[i].data?.value })
   }
 
-  return { assignments, isLoading, isError }
+  return { assignments: expandAssignments(assignments), isLoading, isError }
 }

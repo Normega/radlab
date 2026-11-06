@@ -5,6 +5,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { extractDeps } from '../../lib/displayDeps'
+import { isStructuredArms } from '../../lib/assignmentSlots'
 
 const DELIVERY_MODES = [
   {
@@ -28,6 +29,10 @@ const EMAIL_VARS = ['{{first_name}}', '{{study_day}}', '{{link_url}}', '{{expire
 
 const parseArms = text =>
   (text ?? '').split(',').map(a => a.trim()).filter(Boolean)
+
+// A crossed slot's arms are objects (assignmentSlots.js). The comma-separated
+// box cannot express them, so they are shown read-only and saved untouched.
+const armsOf = s => s.raw ?? parseArms(s.armsText)
 
 function useStudy(id) {
   return useQuery({
@@ -121,7 +126,7 @@ export default function StudyFormPage() {
       return deps
     },
   })
-  const definedSlotNames = new Set(slots.map(s => s.name.trim()))
+  const definedSlotNames = new Set(slots.flatMap(s => [s.name.trim(), ...Object.keys(s.raw?.[0] ?? {})]))
   const missingSlotDeps = (displaySlotDeps ?? []).filter(d => !definedSlotNames.has(d.slot))
 
   // Existing longitudinal studies are edited in the builder, not here.
@@ -143,10 +148,9 @@ export default function StudyFormPage() {
     setEmailSubject(existing.email_subject ?? '')
     setEmailBody(existing.email_body ?? '')
     setSlots(existing.assignment_slots
-      ? Object.entries(existing.assignment_slots).map(([slotName, arms]) => ({
-          name:     slotName,
-          armsText: Array.isArray(arms) ? arms.join(', ') : '',
-        }))
+      ? Object.entries(existing.assignment_slots).map(([slotName, arms]) => isStructuredArms(arms)
+          ? { name: slotName, raw: arms, armsText: arms.map(a => Object.values(a ?? {}).join(' + ')).join(' · ') }
+          : { name: slotName, armsText: Array.isArray(arms) ? arms.join(', ') : '' })
       : [])
   }, [existing])
 
@@ -165,12 +169,12 @@ export default function StudyFormPage() {
           if (!slotName) throw new Error('Every condition slot needs a name.')
           if (seen.has(slotName)) throw new Error(`Duplicate slot name "${slotName}".`)
           seen.add(slotName)
-          if (parseArms(s.armsText).length < 2) {
+          if (armsOf(s).length < 2) {
             throw new Error(`Slot "${slotName}" needs at least 2 arms (comma-separated).`)
           }
         }
         assignmentSlots = Object.fromEntries(
-          slots.map(s => [s.name.trim(), parseArms(s.armsText)])
+          slots.map(s => [s.name.trim(), armsOf(s)])
         )
       }
 
@@ -426,6 +430,7 @@ export default function StudyFormPage() {
 
             {slots.map((slot, i) => {
               const locked = lockedSlotNames.has(slot.name)
+              const crossed = !!slot.raw
               return (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -442,9 +447,9 @@ export default function StudyFormPage() {
                     <div style={{ ...S.fieldGroup, flex: 1, minWidth: 180 }}>
                       <label style={S.fieldLabel}>Arms (comma-separated, min 2)</label>
                       <input
-                        style={{ ...S.input, opacity: locked ? 0.55 : 1 }}
+                        style={{ ...S.input, opacity: locked || crossed ? 0.55 : 1 }}
                         value={slot.armsText}
-                        disabled={locked}
+                        disabled={locked || crossed}
                         onChange={e => setSlots(ss => ss.map((s, j) => j === i ? { ...s, armsText: e.target.value } : s))}
                         placeholder="control, treatment"
                       />
@@ -463,6 +468,12 @@ export default function StudyFormPage() {
                   {locked && (
                     <p style={{ ...S.muted, fontSize: 12, margin: 0 }}>
                       Assignments exist for this slot. Duplicate the study to change arms.
+                    </p>
+                  )}
+                  {crossed && !locked && (
+                    <p style={{ ...S.muted, fontSize: 12, margin: 0 }}>
+                      Crossed slot: each arm sets {Object.keys(slot.raw[0] ?? {}).join(' and ')} together, so every
+                      combination is balanced. Saved unchanged; it can only be edited in the database.
                     </p>
                   )}
                 </div>
