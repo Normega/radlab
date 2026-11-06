@@ -51,8 +51,8 @@ import './FoggyValleys.css'
 // insert that fails is retried at the end of the valley, and Continue waits
 // until every one has saved (SaveRetryBanner).
 
-const GAME_VERSION = 'foggy_valleys_v0.3'
-const DEFAULTS = { minutes: 4, thin: 3, thick: 12, order: 'random', lockout: 5, free: 1, fogCount: true, clock: false, warn: 30, debug: false, ratings: true, pictureQuestions: true }
+const GAME_VERSION = 'foggy_valleys_v0.4'   // v0.4: 3 s pause after a wrong click (was 5), Norm 2026-11-05
+const DEFAULTS = { minutes: 4, thin: 3, thick: 12, order: 'random', lockout: 3, free: 1, fogCount: true, clock: false, warn: 30, debug: false, ratings: true, pictureQuestions: true }
 // Quick demo (?demo=1 or a quick-demo preview link): short valleys and fog
 const QUICK = { minutes: DEMO_SECS / 60, thin: 2, thick: 5, warn: 10 }
 const TOL = 6   // extra click margin around each difference, in picture units
