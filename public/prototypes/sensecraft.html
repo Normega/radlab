@@ -48,10 +48,14 @@
     box-shadow:0 4px 18px rgba(20,10,30,0.18);opacity:0;transition:opacity 0.9s ease, transform 0.25s ease, box-shadow 0.25s ease;
   }
   .choice.show{opacity:0.5;pointer-events:none;}
+  .choice.show.listen{pointer-events:auto;cursor:default;}  /* a sound sign can be heard during the pause */
+  .choice.show.listen.playing:not(.ready){opacity:0.8;}
   .choice.ready{opacity:1;pointer-events:auto;}
+  .choice.ready.listen{cursor:pointer;}
+  #prompt .hint{display:block;margin-top:8px;font-family:system-ui,sans-serif;font-style:normal;font-size:14px;opacity:0.85;}
   .choice.ready:hover{box-shadow:0 6px 24px rgba(20,10,30,0.28);transform:translate(-50%,-100%) translateY(-2px);}
   .choice.picked{opacity:1;box-shadow:0 0 0 3px var(--pk),0 6px 24px rgba(20,10,30,0.28);}
-  .choice.gone{opacity:0 !important;pointer-events:none;}
+  .choice.gone{opacity:0 !important;pointer-events:none !important;}
   .choice .key{font-family:system-ui,sans-serif;font-size:12px;color:var(--ink2);}
   .choice.mid{min-width:72px;padding:8px 16px;font-size:14px;font-style:italic;background:rgba(251,247,241,0.7);}
   .choice canvas{display:block;border-radius:12px;}
@@ -125,7 +129,7 @@
 <div class="panel" id="intro">
   <p class="eyebrow">RADlab · Come, See · prototype</p>
   <h1>SenseCraft</h1>
-  <p>You're going on a walk. The path will fork eight times, and where it leads depends on what your senses notice.</p>
+  <p>You're going on a walk. The path will fork <span id="nForks">eight</span> times, and where it leads depends on what your senses notice.</p>
   <p>At each fork, notice what you see, hear and feel right now, and let that choose the way. There are no right answers. Notice what each side offers, and go the way you lean.</p>
   <p>If nothing comes, take the faint path in the middle: <i>nothing right now</i>. That counts too.</p>
   <p class="small">Choose with <kbd>←</kbd> <kbd>→</kbd>, <kbd>↑</kbd> for the middle path, or tap a sign. Sound on, if you can. Nothing you do here leaves this device.</p>
@@ -194,6 +198,7 @@
 const QS = new URLSearchParams(location.search);
 const DEV = QS.has('dev'), FAST = QS.has('fast');
 const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HOVER = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
 const SEED = QS.has('seed') ? (parseInt(QS.get('seed'), 10) >>> 0) : ((Math.random() * 4294967296) >>> 0);
 
 function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -214,7 +219,8 @@ const T = {
   pause: FAST ? 0.3 : 4,   // J4: the signs wait this long before they can be chosen
   lastWalk: 30,            // distance walked after the last fork before arriving
   branch: 0.62,            // rad between the road and each branch
-  forks: 8,                // J5
+  forks: clamp(parseInt(QS.get('forks'), 10) || 8, 6, 12), // J5; ?forks= to try a longer walk
+  minRoom: 3,              // a few room forks per walk, so the floating words read as a scatter
 };
 
 // ── the decks: one per sense (J6, F2) ───────────────────────────────────────
@@ -330,7 +336,18 @@ const SENSES = ['sight', 'sound', 'body', 'touch', 'smell', 'taste'];
 const SENSE_WORD = { sight: 'Sight', sound: 'Hearing', body: 'Body', touch: 'Touch', smell: 'Smell', taste: 'Taste' };
 const ROUND2_WEIGHT = { sight: 3, sound: 3, body: 2, touch: 2 }; // F2: skew toward the easy senses
 
+// A deal with too few room forks leaves one lonely floating word (playtest, Nov 2026),
+// so redeal until it has T.minRoom; the seed still fixes the result.
 function deal(){
+  let best = null, bestN = -1;
+  for (let k = 0; k < 40; k++){
+    const d = dealOnce(), n = d.filter(c => c.kind === 'room').length;
+    if (n >= T.minRoom) return d;
+    if (n > bestN){ best = d; bestN = n; }
+  }
+  return best;
+}
+function dealOnce(){
   const used = new Set();
   const decks = {}; SENSES.forEach(s => { decks[s] = shuffle(DECKS[s]); });
   const pick = (sense, pred = () => true) => {
@@ -341,13 +358,14 @@ function deal(){
   // round 1: one from every deck; base layers first (F7)
   const r1 = [pick('sight', c => c.base), pick('body', c => c.base)];
   shuffle(['sound', 'touch', 'smell', 'taste']).forEach(s => r1.push(pick(s)));
-  // round 2: two more, distinct decks, weighted, never the same sense twice in a row
+  // later rounds: distinct decks within a round, weighted, never the same sense twice in a row
   const out = r1.filter(Boolean);
   let last = out[out.length - 1].sense;
-  const pool = Object.keys(ROUND2_WEIGHT);
+  const ALL = Object.keys(ROUND2_WEIGHT);
+  let pool = ALL.slice();
   while (out.length < T.forks){
     const cand = pool.filter(s => s !== last && decks[s].some(c => !used.has(c.layer)));
-    if (!cand.length) break;
+    if (!cand.length){ if (pool.length === ALL.length) break; pool = ALL.slice(); continue; }
     let tot = cand.reduce((a, s) => a + ROUND2_WEIGHT[s], 0), x = rng() * tot, s = cand[0];
     for (const k of cand){ x -= ROUND2_WEIGHT[k]; if (x <= 0){ s = k; break; } }
     const c = pick(s); if (!c) break;
@@ -376,6 +394,7 @@ const S = {
   forkT0: 0, ready: false, obj: [], t: 0, placeT0: 0,
   record: { v: 1, seed: SEED, started: null, forks: [], ended: null },
 };
+document.getElementById('nForks').textContent = ['six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'][S.cards.length - 6] || S.cards.length;
 const LIVE_LAYERS = new Set(['light', 'palette', 'season', 'weather']);
 
 // ── canvas ──────────────────────────────────────────────────────────────────
@@ -953,16 +972,20 @@ function drawPlace(c, w, h, t){
 }
 
 // ── sound ───────────────────────────────────────────────────────────────────
-// Clips are Tune's BBC Sound Effects (RemArc licence), already loudness-matched in
-// the public-assets bucket. Instruments, chimes, fire and bees are synthesised.
-const CLIP = id => `https://qajrlfqoicfcfhthsfay.supabase.co/storage/v1/object/public/public-assets/tune-audio/${id}.mp3`;
+// Clips are BBC Sound Effects (RemArc licence). Most are Tune's, already loudness-matched
+// in the public-assets bucket; LOCAL ones are 120 s excerpts at -20 LUFS beside this page
+// (sensecraft-audio/), chosen for a clean bed: the old cricket clip had a dog in it, and
+// the old frog was one animal on a short loop. Instruments, chimes, fire and bees are synthesised.
+const LOCAL_CLIPS = new Set(['NHU05072033', 'NHU05006134']);
+const CLIP = id => LOCAL_CLIPS.has(id) ? `sensecraft-audio/${id}.mp3`
+  : `https://qajrlfqoicfcfhthsfay.supabase.co/storage/v1/object/public/public-assets/tune-audio/${id}.mp3`;
 const SND = {
   birds:    { type: 'events', clips: ['NHU05096015', 'NHU05085203'], every: [2.5, 6], slice: 3.2, vol: 0.4 },
   water:    { type: 'bed', clip: 'NHU05075046', vol: 0.32 },
   flute:    { type: 'flute', vol: 0.14 },
   strings:  { type: 'strings', vol: 0.1 },
-  crickets: { type: 'bed', clip: 'NHU05079181', vol: 0.22 },
-  frogs:    { type: 'events', clips: ['NHU05079035'], every: [1.2, 3.5], slice: 2.4, vol: 0.32 },
+  crickets: { type: 'bed', clip: 'NHU05072033', vol: 0.26 },  // night cricket chorus, slight wind in trees
+  frogs:    { type: 'bed', clip: 'NHU05006134', vol: 0.28 },  // several frogs honking in a pond
   breeze:   { type: 'bed', clip: '07005205', vol: 0.24 },
   chimes:   { type: 'chimes', vol: 0.12 },
   grey:     { type: 'bed', clip: 'NHU05032131', vol: 0.24 },
@@ -979,6 +1002,8 @@ function auInit(){
   AU.master = c.createGain(); AU.master.gain.value = 0.9; AU.master.connect(comp); comp.connect(c.destination);
   const n = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; AU.noise = n;
   document.getElementById('snd').hidden = false;
+  // fetch the clips this walk will offer, so a sign plays the moment it is pointed at
+  S.cards.forEach(cd => ['L', 'R'].forEach(sd => { const sp = SND[cd[sd].k]; if (!sp) return; if (sp.clip) loadClip(sp.clip).catch(() => {}); (sp.clips || []).forEach(id => loadClip(id).catch(() => {})); }));
 }
 function loadClip(id){
   if (!AU.buf[id]) AU.buf[id] = fetch(CLIP(id)).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(b => AU.ctx.decodeAudioData(b));
@@ -993,8 +1018,18 @@ function makeSource(key, vol, pan){
   const src = { key, out, pan: p, timers: [], nodes: [], alive: true, spec };
   const now = () => c.currentTime;
   if (spec.type === 'bed'){
-    loadClip(spec.clip).then(buf => { if (!src.alive) return; const s = c.createBufferSource(); s.buffer = buf; s.loop = true; s.loopStart = 1; s.loopEnd = Math.max(2, buf.duration - 1);
-      s.connect(out); s.start(0, 1 + Math.random() * Math.max(0, buf.duration - 3)); src.nodes.push(s); }).catch(() => {});
+    // never one stretch on a loop: random 16–32 s stretches of the clip, crossfaded at equal power
+    loadClip(spec.clip).then(buf => { if (!src.alive) return;
+      const XF = 3, up = new Float32Array(32).map((v, i) => Math.sin(i / 31 * Math.PI / 2)), down = up.slice().reverse();
+      let at = now(), first = true;
+      const stretch = () => { if (at < now()) at = now(); const len = Math.min(buf.duration - 0.2, 16 + Math.random() * 16), st = Math.random() * Math.max(0, buf.duration - len), s = c.createBufferSource(), g = c.createGain();
+        s.buffer = buf; s.connect(g); g.connect(out);
+        if (first) g.gain.setValueAtTime(1, at); else g.gain.setValueCurveAtTime(up, at, XF);
+        g.gain.setValueCurveAtTime(down, at + len - XF, XF);
+        s.start(at, st, len); src.nodes.push(s); if (src.nodes.length > 4) src.nodes.shift();
+        first = false; at += len - XF; };
+      stretch(); src.timers.push(setInterval(() => { if (src.alive && at < now() + 1) stretch(); }, 250));
+    }).catch(() => {});
   } else if (spec.type === 'events'){
     let next = now() + 0.3;
     src.timers.push(setInterval(() => { if (now() < next) return; next = now() + spec.every[0] + Math.random() * (spec.every[1] - spec.every[0]);
@@ -1069,17 +1104,23 @@ function showFork(){
   requestAnimationFrame(() => { for (const k in CARD) CARD[k].classList.add('show'); });
   promptEl.textContent = card.prompt; promptEl.classList.add('on');
   S.record.forks.push({ id: card.id, sense: card.sense, kind: card.kind, layer: card.layer, L: card.L.k, R: card.R.k, choice: undefined, side: null, word: null, tArrive: +S.t.toFixed(2), tReady: null, tChoose: null });
-  // sound forks: both sides play, each from its own side, taking turns to lead
+  // sound forks: each side plays from its own side, one at a time. With a mouse, a sign
+  // plays only while pointed at (playtest, Nov 2026: both at once was confusing); on a
+  // touchscreen the sides take turns, and a tap during the pause brings one forward.
   if (card.L.stim && card.L.stim.type === 'sound' && AU.ctx){
-    AU.preview = { L: makeSource(card.L.k, 0.0, -0.75), R: makeSource(card.R.k, 0.0, 0.75), lead: 'L', next: S.t + 0.2, hover: null };
+    AU.preview = { L: makeSource(card.L.k, 0.0, -0.75), R: makeSource(card.R.k, 0.0, 0.75), mode: HOVER ? 'hover' : 'turns', lead: 'L', next: S.t + 0.2, hover: null };
+    CARD.L.classList.add('listen'); CARD.R.classList.add('listen');
+    const hint = document.createElement('span'); hint.className = 'hint';
+    hint.textContent = HOVER ? 'Point at a sign to hear it.' : 'Each side plays in turn.';
+    promptEl.appendChild(hint);
   }
 }
 function previewTick(){
   const P = AU.preview; if (!P || S.phase !== 'fork') return;
-  if (S.t >= P.next){ P.lead = P.lead === 'L' ? 'R' : 'L'; P.next = S.t + 3.5; }
-  const lead = P.hover || P.lead;
-  for (const side of ['L', 'R']){ const src = P[side]; if (!src) continue; const want = (side === lead ? 1 : 0.22) * src.spec.vol * 1.3;
-    if (Math.abs((src.want || -1) - want) > 1e-3){ src.want = want; srcVol(src, want, 0.8); }
+  let lead = P.hover;
+  if (P.mode === 'turns'){ if (S.t >= P.next){ P.lead = P.lead === 'L' ? 'R' : 'L'; P.next = S.t + 3.5; } lead = P.hover || P.lead; }
+  for (const side of ['L', 'R']){ const src = P[side]; if (!src) continue; const want = side === lead ? src.spec.vol * 1.3 : 0;
+    if (src.want !== want){ src.want = want; srcVol(src, want, want ? 0.3 : 0.5); }
     CARD[side].classList.toggle('playing', side === lead); }
 }
 function choose(side){
@@ -1120,8 +1161,13 @@ function goOn(){
 }
 for (const side of ['L', 'M', 'R']){
   CARD[side].addEventListener('click', () => choose(side));
-  CARD[side].addEventListener('pointerenter', () => { if (AU.preview && side !== 'M') AU.preview.hover = side; });
-  CARD[side].addEventListener('pointerleave', () => { if (AU.preview) AU.preview.hover = null; });
+  if (side === 'M') continue;
+  const listen = () => { if (AU.preview) AU.preview.hover = side; };
+  const unlisten = () => { if (AU.preview && AU.preview.hover === side) AU.preview.hover = null; };
+  CARD[side].addEventListener('pointerenter', listen);
+  CARD[side].addEventListener('pointerleave', ev => { if (ev.pointerType === 'mouse') unlisten(); }); // a tap keeps its side forward
+  CARD[side].addEventListener('focus', listen); // Tab reaches a sign too
+  CARD[side].addEventListener('blur', unlisten);
 }
 addEventListener('keydown', ev => {
   if (S.phase === 'word') return;
@@ -1301,7 +1347,7 @@ resize(); initRoad();
 requestAnimationFrame(frame);
 
 // debug handle for headless checks (no tuning panel: this one has nothing to tune live yet)
-window.__sc = { S, T, get record(){ return S.record; }, choose, jumpToPlace, envNow, deal,
+window.__sc = { S, T, AU, HOVER, get record(){ return S.record; }, choose, jumpToPlace, envNow, deal,
   step(n = 1, dt = 1 / 30){ for (let i = 0; i < n; i++){ update(dt); } } };
 </script>
 </body>
