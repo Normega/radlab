@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-label="Phase 3, confidence rating">
+<defs>
+  <style>@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;family=DM+Serif+Display&amp;family=Space+Mono:wght@400;700&amp;display=swap');</style>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#7ea7c8"/><stop offset="0.38" stop-color="#a7c4da"/>
+    <stop offset="0.72" stop-color="#d2e0e9"/><stop offset="1" stop-color="#ecf0ee"/>
+  </linearGradient>
+  <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+    <stop offset="0.18" stop-color="#ffffff" stop-opacity="0.55"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="hill0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bccdc8"/><stop offset="1" stop-color="#ecf0ee"/></linearGradient>
+  <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(176,203,162)"/><stop offset="1" stop-color="#a5c495"/></linearGradient>
+  <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#80aa6d"/><stop offset="1" stop-color="rgb(105,139,89)"/></linearGradient>
+  <linearGradient id="cloudShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe8f0"/></linearGradient>
+  <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.42"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b4320"/><stop offset="0.5" stop-color="#b07d4a"/><stop offset="1" stop-color="#6b4320"/></linearGradient>
+  <linearGradient id="frost" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.74"/></linearGradient>
+  <radialGradient id="beadGlow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="0.35" stop-color="#fff" stop-opacity="0.5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75"><stop offset="0.6" stop-color="#1f2a3d" stop-opacity="0"/><stop offset="1" stop-color="#1f2a3d" stop-opacity="0.16"/></radialGradient>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>
+  <filter id="haze" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="kshadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="5" dy="10" stdDeviation="7" flood-color="#1f2a3d" flood-opacity="0.2"/></filter>
+  <filter id="card" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#1f2a3d" flood-opacity="0.13"/></filter>
+  <filter id="grass" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.32" numOctaves="3" seed="7" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.26  0 0 0 0 0.1  0 0 0 1.4 -0.55" result="st"/>
+    <feComposite in="st" in2="SourceGraphic" operator="in" result="st2"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="st2"/></feMerge>
+  </filter>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.16  0 0 0 0.09 0"/>
+  </filter>
+  <filter id="fabric" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="turbulence" baseFrequency="0.9 0.05" numOctaves="1" seed="2" result="w"/>
+    <feColorMatrix in="w" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.16 0" result="w2"/>
+    <feComposite in="w2" in2="SourceGraphic" operator="in" result="w3"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="w3"/></feMerge>
+  </filter>
+</defs>
+
+  <rect width="1280" height="720" fill="url(#sky)"/>
+  <circle cx="760" cy="90" r="260" fill="url(#sun)"/>
+  <circle cx="760" cy="90" r="26" fill="#ffffff" opacity="0.9"/>
+  
+  
+  <path d="M0 455 C 180 420 360 440 560 428 S 960 405 1280 432 V720 H0Z" fill="url(#hill0)" opacity="0.95"/>
+  <path d="M0 450 C 300 470 600 455 900 470 S 1180 450 1280 458" stroke="#ecf0ee" stroke-width="30" fill="none" opacity="0.55" filter="url(#haze)"/>
+  <path d="M0 520 C 230 478 500 512 760 497 S 1120 468 1280 492 V720 H0Z" fill="url(#hill1)"/>
+  <path d="M0 602 C 280 560 620 598 900 584 S 1180 556 1280 570 V720 H0Z" fill="url(#hill2)" filter="url(#grass)"/>
+  <circle cx="831.9" cy="705" r="1.5" fill="#fff6e0" opacity="0.8"/><circle cx="133.2" cy="634" r="2.2" fill="#f7d36b" opacity="0.8"/><circle cx="249.4" cy="644.4" r="2.3" fill="#f2b6c8" opacity="0.8"/><circle cx="433.7" cy="675" r="2.3" fill="#ffffff" opacity="0.8"/><circle cx="1219.5" cy="664.5" r="1.5" fill="#fff6e0" opacity="0.8"/><circle cx="580.1" cy="656.7" r="1.9" fill="#f7d36b" opacity="0.8"/><circle cx="328.9" cy="695.3" r="1.2" fill="#f2b6c8" opacity="0.8"/><circle cx="999.1" cy="614.1" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="564.1" cy="666.8" r="2" fill="#fff6e0" opacity="0.8"/><circle cx="837.3" cy="687.2" r="1.6" fill="#f7d36b" opacity="0.8"/><circle cx="1072" cy="614" r="1.1" fill="#f2b6c8" opacity="0.8"/><circle cx="521.5" cy="701" r="1.1" fill="#ffffff" opacity="0.8"/><circle cx="999.2" cy="676.9" r="2.4" fill="#fff6e0" opacity="0.8"/><circle cx="478.3" cy="690.5" r="2.3" fill="#f7d36b" opacity="0.8"/><circle cx="772.2" cy="680.5" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="1134.3" cy="690.6" r="2.3" fill="#ffffff" opacity="0.8"/><circle cx="817.9" cy="659.7" r="2.2" fill="#fff6e0" opacity="0.8"/><circle cx="356.3" cy="631.5" r="1.8" fill="#f7d36b" opacity="0.8"/><circle cx="282.8" cy="649.7" r="1.8" fill="#f2b6c8" opacity="0.8"/><circle cx="1130.8" cy="653.1" r="1.3" fill="#ffffff" opacity="0.8"/><circle cx="873.7" cy="685.4" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="44.7" cy="685.4" r="1.3" fill="#f7d36b" opacity="0.8"/><circle cx="457.1" cy="696.7" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="84.4" cy="658.3" r="2.3" fill="#ffffff" opacity="0.8"/><circle cx="739.8" cy="613.8" r="1.1" fill="#fff6e0" opacity="0.8"/><circle cx="396.7" cy="712" r="1.8" fill="#f7d36b" opacity="0.8"/><circle cx="868.4" cy="681.6" r="1.8" fill="#f2b6c8" opacity="0.8"/><circle cx="128.3" cy="671.3" r="1.7" fill="#ffffff" opacity="0.8"/><circle cx="1269.7" cy="620" r="2.4" fill="#fff6e0" opacity="0.8"/><circle cx="985.8" cy="676.4" r="1.1" fill="#f7d36b" opacity="0.8"/><circle cx="1090.1" cy="674.1" r="1.9" fill="#f2b6c8" opacity="0.8"/><circle cx="835.9" cy="657.1" r="2.1" fill="#ffffff" opacity="0.8"/><circle cx="756.5" cy="669" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="105.3" cy="648.5" r="2" fill="#f7d36b" opacity="0.8"/><circle cx="695.5" cy="639.5" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="500.6" cy="685.6" r="1.4" fill="#ffffff" opacity="0.8"/><circle cx="53.8" cy="620.7" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="1168.5" cy="698.5" r="2.4" fill="#f7d36b" opacity="0.8"/><circle cx="538" cy="647.6" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="1255.6" cy="617" r="2.2" fill="#ffffff" opacity="0.8"/><circle cx="14.7" cy="650.3" r="2" fill="#fff6e0" opacity="0.8"/><circle cx="1188.7" cy="686.2" r="1.5" fill="#f7d36b" opacity="0.8"/><circle cx="190.8" cy="663.6" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="114.4" cy="626.1" r="2.4" fill="#ffffff" opacity="0.8"/><circle cx="212.7" cy="617.6" r="2" fill="#fff6e0" opacity="0.8"/><circle cx="1019.3" cy="681.7" r="2.3" fill="#f7d36b" opacity="0.8"/><circle cx="507.3" cy="652.3" r="2.4" fill="#f2b6c8" opacity="0.8"/><circle cx="490.1" cy="678" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="221.1" cy="697.6" r="1.8" fill="#fff6e0" opacity="0.8"/><circle cx="233.6" cy="650" r="2.4" fill="#f7d36b" opacity="0.8"/><circle cx="1060.8" cy="683.7" r="2.3" fill="#f2b6c8" opacity="0.8"/><circle cx="676.3" cy="632.7" r="2.2" fill="#ffffff" opacity="0.8"/><circle cx="893.2" cy="645.5" r="1.1" fill="#fff6e0" opacity="0.8"/><circle cx="964.9" cy="661" r="1.4" fill="#f7d36b" opacity="0.8"/><circle cx="144.8" cy="618" r="2.1" fill="#f2b6c8" opacity="0.8"/><circle cx="246.1" cy="665.1" r="2.2" fill="#ffffff" opacity="0.8"/><circle cx="522.3" cy="636.1" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="226.6" cy="679.9" r="2" fill="#f7d36b" opacity="0.8"/><circle cx="1172.4" cy="630" r="1.3" fill="#f2b6c8" opacity="0.8"/><circle cx="53" cy="635.3" r="1.1" fill="#ffffff" opacity="0.8"/><circle cx="1241.7" cy="634.6" r="2.2" fill="#fff6e0" opacity="0.8"/><circle cx="152" cy="671.5" r="1.9" fill="#f7d36b" opacity="0.8"/><circle cx="1157" cy="684.8" r="2.6" fill="#f2b6c8" opacity="0.8"/><circle cx="950.2" cy="613.3" r="1.6" fill="#ffffff" opacity="0.8"/><circle cx="64.9" cy="710.8" r="1.3" fill="#fff6e0" opacity="0.8"/><circle cx="314.4" cy="705.9" r="2.3" fill="#f7d36b" opacity="0.8"/><circle cx="952.1" cy="642.4" r="2.2" fill="#f2b6c8" opacity="0.8"/><circle cx="1231.2" cy="669.1" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="405.1" cy="619.7" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="287.2" cy="643" r="1.1" fill="#f7d36b" opacity="0.8"/><g transform="translate(180,110) scale(0.7)" opacity="0.85" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g><g transform="translate(720,150) scale(1.05)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(785,159.91664810452468) scale(1.2364263030441802)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(850,147.4445889797317) scale(0.801577249091634)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(915,140.74185317672269) scale(1.1946099410970499)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(980,154.94113351138608) scale(1.105722478525062)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(1045,157.9848711262349) scale(0.831136956327893)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(1110,143.0012531240646) scale(1.2859239173610262)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(1175,143.81862887762966) scale(0.9544821457039986)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(1240,158.59161814856495) scale(0.9413585944820259)" opacity="0.98" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g></g>
+    <path d="M1010 190 Q 960 400 900 560" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.2" fill="none"/>
+    <g transform="translate(900,566)"><ellipse cx="0" cy="8" rx="20" ry="5" fill="#1f2a3d" opacity="0.15"/><rect x="-3" y="-16" width="6" height="24" rx="2" fill="#7a4e25"/><ellipse cx="0" cy="-5" rx="10" ry="6.5" fill="#c8a25a" stroke="#1f2a3d" stroke-opacity="0.4"/></g>
+    <g filter="url(#card)"><rect x="960" y="232" width="232" height="34" rx="12" fill="url(#frost)"/></g>
+    <text x="1076" y="254" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#1f2a3d">your kite is up in the clouds</text>
+    <g transform="translate(560,318)">
+    <path d="M0 -120 Q60 -60 120 0 Q60 60 0 120 Q-60 60 -120 0 Q-60 -60 0 -120 Z" fill="#fff" fill-opacity="0.2" stroke="#1f2a3d" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>
+    <line x1="0" y1="0" x2="0" y2="-120" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="120" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="0" y2="120" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="-120" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/>
+    <line x1="6" y1="-120" x2="-6" y2="-120" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><text x="0" y="-137" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-weight="600" font-size="14" fill="#1f2a3d" stroke="#fff" stroke-opacity="0.75" stroke-width="3" paint-order="stroke">3</text><line x1="120" y1="-6" x2="120" y2="6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><text x="142" y="5" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-weight="600" font-size="14" fill="#1f2a3d" stroke="#fff" stroke-opacity="0.75" stroke-width="3" paint-order="stroke">3</text><line x1="-6" y1="120" x2="6" y2="120" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><text x="0" y="147" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-weight="600" font-size="14" fill="#1f2a3d" stroke="#fff" stroke-opacity="0.75" stroke-width="3" paint-order="stroke">3</text><line x1="-120" y1="6" x2="-120" y2="-6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><text x="-142" y="5" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-weight="600" font-size="14" fill="#1f2a3d" stroke="#fff" stroke-opacity="0.75" stroke-width="3" paint-order="stroke">3</text>
+    
+  </g>
+    <g transform="translate(24,24)" filter="url(#card)">
+    <rect width="260" height="108" rx="12" fill="url(#frost)"/>
+    <text x="24" y="30" font-family="'Space Mono', ui-monospace, monospace" font-size="12" letter-spacing="1.5" fill="#1f2a3d" opacity="0.7">PHASE 3 OF 5</text>
+    <text x="24" y="64" font-family="'DM Serif Display', Georgia, serif" font-size="28" fill="#1f2a3d">Into the clouds</text>
+    <rect x="24.75" y="88.75" width="16.5" height="4.5" rx="2.25" fill="none" stroke="#1f2a3d" stroke-opacity="0.75" stroke-width="1.5"/><rect x="27" y="90" width="12" height="2" rx="1" fill="#1f2a3d" opacity="0.6"/><rect x="46.75" y="88.75" width="16.5" height="4.5" rx="2.25" fill="none" stroke="#1f2a3d" stroke-opacity="0.75" stroke-width="1.5"/><rect x="49" y="90" width="12" height="2" rx="1" fill="#1f2a3d" opacity="0.6"/><rect x="68" y="88" width="18" height="6" rx="3" fill="#1f2a3d"/><rect x="90.75" y="88.75" width="16.5" height="4.5" rx="2.25" fill="none" stroke="#1f2a3d" stroke-opacity="0.35" stroke-width="1.5"/><rect x="112.75" y="88.75" width="16.5" height="4.5" rx="2.25" fill="none" stroke="#1f2a3d" stroke-opacity="0.35" stroke-width="1.5"/>
+  </g><g font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2a3d">
+    <g filter="url(#card)"><rect x="876" y="24" width="208" height="44" rx="22" fill="url(#frost)" stroke="#1f2a3d" stroke-opacity="0.35"/></g>
+    <text x="980" y="51" text-anchor="middle">dizzy or short of air</text>
+    <g filter="url(#card)"><rect x="1096" y="24" width="160" height="44" rx="22" fill="url(#frost)" stroke="#1f2a3d" stroke-opacity="0.35"/></g>
+    <rect x="1120" y="39" width="12" height="12" rx="2" fill="#1f2a3d"/>
+    <text x="1184" y="51" text-anchor="middle">stop <tspan font-weight="400" opacity="0.65">(Esc)</tspan></text>
+  </g>
+    <rect width="1280" height="720" fill="#1f2a3d" opacity="0.28"/>
+    <g filter="url(#card)"><rect x="340" y="150" width="600" height="360" rx="12" fill="#fff" fill-opacity="0.96"/></g>
+    <text x="388" y="202" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">KITE 4 OF 6</text>
+    <text x="388" y="242" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="28" font-weight="400" fill="#1f2a3d" opacity="1">How close was that kite to the plan?</text>
+    <text x="388" y="274" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="0.75">Go by how the breath felt. There is no wrong answer.</text>
+    <g filter="url(#card)"><rect x="388" y="346" width="72" height="56" rx="24" fill="#fff" stroke="#1f2a3d" stroke-opacity="0.4" stroke-width="1.25"/></g>
+      <text x="424" y="380" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="20" font-weight="600" fill="#1f2a3d">1</text><g filter="url(#card)"><rect x="474" y="346" width="72" height="56" rx="24" fill="#fff" stroke="#1f2a3d" stroke-opacity="0.4" stroke-width="1.25"/></g>
+      <text x="510" y="380" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="20" font-weight="600" fill="#1f2a3d">2</text><g filter="url(#card)"><rect x="560" y="346" width="72" height="56" rx="24" fill="#fff" stroke="#1f2a3d" stroke-opacity="0.4" stroke-width="1.25"/></g>
+      <text x="596" y="380" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="20" font-weight="600" fill="#1f2a3d">3</text><g filter="url(#card)"><rect x="646" y="346" width="72" height="56" rx="24" fill="#1f2a3d" stroke="#1f2a3d" stroke-opacity="1" stroke-width="2.5"/></g>
+      <text x="682" y="380" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="20" font-weight="600" fill="#fff">4</text><g filter="url(#card)"><rect x="732" y="346" width="72" height="56" rx="24" fill="#fff" stroke="#1f2a3d" stroke-opacity="0.4" stroke-width="1.25"/></g>
+      <text x="768" y="380" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="20" font-weight="600" fill="#1f2a3d">5</text><g filter="url(#card)"><rect x="818" y="346" width="72" height="56" rx="24" fill="#fff" stroke="#1f2a3d" stroke-opacity="0.4" stroke-width="1.25"/></g>
+      <text x="854" y="380" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="20" font-weight="600" fill="#1f2a3d">6</text>
+    <text x="388" y="430" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.75">not close at all</text>
+    <text x="892" y="430" text-anchor="end" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.75">right on the plan</text>
+    <line x1="388" y1="456" x2="892" y2="456" stroke="#1f2a3d" stroke-opacity="0.1"/>
+    <text x="388" y="484" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">Press a number, or 1–6 on the keyboard. Breathe normally while you choose.</text>
+    <g transform="translate(1256,714)"><text text-anchor="end" font-family="'Space Mono', ui-monospace, monospace" font-size="12" fill="#1f2a3d" opacity="0.55">mock-up 3b · confidence after each hidden kite</text></g>
+<rect width="1280" height="720" fill="url(#vignette)"/>
+  <rect width="1280" height="720" filter="url(#grain)" opacity="1"/>
+</svg>
