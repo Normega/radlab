@@ -145,7 +145,7 @@
   <text x="640" y="596" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" fill="#1f2a3d">Here is the kite you just made. The next one starts with a rest.</text>
     <g filter="url(#card)"><rect x="380" y="626" width="520" height="68" rx="24" fill="#1f2a3d" fill-opacity="0.88" stroke="#1f2a3d" stroke-width="2.5"/></g>
     <text x="640" y="655" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" font-weight="600" fill="#fff">begin</text>
-    <text x="640" y="678" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#fff" fill-opacity="0.8">press it when you have finished breathing out (space)</text>
+    <text x="640" y="678" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#fff" fill-opacity="0.8">press it when you have finished breathing out (Enter)</text>
     <g transform="translate(1256,714)"><text text-anchor="end" font-family="'Space Mono', ui-monospace, monospace" font-size="12" fill="#1f2a3d" opacity="0.55">mock-up 3c · after the rating, the kite comes out of the clouds (W5); every kite starts with begin (W14)</text></g>
 <rect width="1280" height="720" fill="url(#vignette)"/>
   <rect width="1280" height="720" filter="url(#grain)" opacity="1"/>
