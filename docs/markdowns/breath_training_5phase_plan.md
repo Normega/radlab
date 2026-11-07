@@ -62,10 +62,11 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
     3. It gives the bead a visible stop at the side tip.
   - **Switching straight from in to out still fits.** Tolerance on a 0.5 s target is ±0.6 s (Kitewright's `tolFor`), so an immediate switch counts as a fit.
   - **The rates change slightly.** Long-tail goes from 10 s to 11 s per cycle and drifter likewise, both about 5.5 breaths a minute instead of 6. The game makes no claim tied to 6 a minute, so this is fine. Anything that later cites one (e.g. Kitewright's drifter card) would need the cycle kept at 10 s instead (e.g. 4.5/0.5/4.5/0.5).
+- **W11 (Norm, 2026-11-07). Pauses get their own axis, drawn 1.5× wider per second than the in- and out-breaths (option C of mock-up 6), in all five phases.** It applies to the player's kite, the plan's ghost, the bead on a pause spar, the stitches and the live kite as it grows. In the code this is `SIDE_K = 1.5` in `build.mjs`. The square sail 3/3/3/3 is now a wide diamond rather than a square, and narrow plans keep enough width to read as kites. Fit is still scored in seconds, so the scale changes only the drawing. (Answers G1. The findings that led to it are kept below.)
 
 ## Open questions
 
-- **G1. How narrow kites are drawn.** W10 settles the plans. What remains is how to draw narrow kites. The comparison sheet (mock-up 6) shows four ways, all with the tips in the same place so the timing is unchanged.
+- **G1 (answered by W11). How narrow kites are drawn.** W10 settles the plans. What remains is how to draw narrow kites. The comparison sheet (mock-up 6) shows four ways, all with the tips in the same place so the timing is unchanged.
 
   **Findings:**
   - **Narrow is the normal case, not the exception.** Natural pauses are short next to the in- and out-breaths, so most free kites in phase 1 are narrow too.

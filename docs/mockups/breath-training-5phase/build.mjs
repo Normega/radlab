@@ -23,7 +23,10 @@ const MONO = "'Space Mono', ui-monospace, monospace"
 
 // ── Kite 2.0 geometry ──────────────────────────────────────────────────────
 const CAP_S = 9, FLOOR_UP = 0.4, FLOOR_SIDE = 0.55
-function spars(b, S, sideK = 1) {
+// G1 (Norm, 2026-11-07): pauses get their own axis, 1.5x wider per second than in/out
+const SIDE_K = 1.5
+const axisK = k => (k === 'right' || k === 'left') ? SIDE_K : 1
+function spars(b, S, sideK = SIDE_K) {
   const c = v => Math.min(CAP_S, Math.max(0, v || 0))
   return {
     top: Math.max(FLOOR_UP, c(b.inh)) * S,
@@ -192,7 +195,7 @@ function tailPath(by, len, amp, phase) {
 
 // A finished kite, Kite 2.0 construction with a richer finish: two-tone
 // fabric, sheen, hem stitching, wooden spars, bridle, ribbon tail with bows.
-function kite({ x, y, b, S = 40, color = KITE_COLORS[0], scale = 1, rot = 0, tail = true, shadow = true, phase = 0, label = '', bulge = 0, sideK = 1 }) {
+function kite({ x, y, b, S = 40, color = KITE_COLORS[0], scale = 1, rot = 0, tail = true, shadow = true, phase = 0, label = '', bulge = 0, sideK = SIDE_K }) {
   const sp = spars(b, S, sideK)
   const T = [0, -sp.top], R = [sp.right, 0], B = [0, sp.bottom], L = [-sp.left, 0], O = [0, 0]
   const inset = q => [q[0] * 0.9, q[1] * 0.9]
@@ -222,7 +225,7 @@ function kite({ x, y, b, S = 40, color = KITE_COLORS[0], scale = 1, rot = 0, tai
 function liveKite({ x, y, sec, growing, S = 40, color = KITE_COLORS[1] }) {
   const L = { top: [0, -1], right: [1, 0], bottom: [0, 1], left: [-1, 0] }
   const order = ['top', 'right', 'bottom', 'left']
-  const tip = k => sec[k] == null ? null : [L[k][0] * sec[k] * S, L[k][1] * sec[k] * S]
+  const tip = k => sec[k] == null ? null : [L[k][0] * sec[k] * S * axisK(k), L[k][1] * sec[k] * S]
   let sail = ''
   for (let i = 0; i < 4; i++) {
     const a = order[i], c = order[(i + 1) % 4]
@@ -251,7 +254,7 @@ function liveKite({ x, y, sec, growing, S = 40, color = KITE_COLORS[1] }) {
 
 // The plan: dashed ink outline, faint fill, dashed spars, end ticks with the
 // seconds beside them. Optionally the bead (the pacer) on one spar.
-function ghost({ x, y, b, S = 40, bead = null, nums = true, brighten = null, bulge = 0, sideK = 1 }) {
+function ghost({ x, y, b, S = 40, bead = null, nums = true, brighten = null, bulge = 0, sideK = SIDE_K }) {
   const sp = spars(b, S, sideK)
   const T = [0, -sp.top], R = [sp.right, 0], B = [0, sp.bottom], L = [-sp.left, 0]
   const tick = (p, dir, n, key) => {
@@ -264,7 +267,7 @@ function ghost({ x, y, b, S = 40, bead = null, nums = true, brighten = null, bul
   let beadSvg = ''
   if (bead) {
     const dir = { top: [0, -1], right: [1, 0], bottom: [0, 1], left: [-1, 0] }[bead.spar]
-    const bx = dir[0] * bead.sec * S, by = dir[1] * bead.sec * S
+    const bx = dir[0] * bead.sec * S * sideK, by = dir[1] * bead.sec * S
     beadSvg = `<circle cx="${f1(bx)}" cy="${f1(by)}" r="22" fill="url(#beadGlow)"/><circle cx="${f1(bx)}" cy="${f1(by)}" r="6" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`
   }
   return `<g transform="translate(${x},${y})">
@@ -280,7 +283,7 @@ function stitches(x, y, spar, sec, S = 40) {
   const dir = { top: [0, -1], right: [1, 0], bottom: [0, 1], left: [-1, 0] }[spar]
   let s = ''
   for (let i = 1; i <= 6; i++) {
-    const t = (i / 7) * sec * S
+    const t = (i / 7) * sec * S * axisK(spar)
     const cx = x + dir[0] * t, cy = y + dir[1] * t
     s += `<path d="M${f1(cx - 4)} ${f1(cy - 4)} L${f1(cx + 4)} ${f1(cy + 4)}" stroke="${INK}" stroke-opacity="0.75" stroke-width="1.6" stroke-linecap="round"/>`
   }
@@ -545,8 +548,8 @@ function screen3c() {
   made.forEach((b, i) => {
     const x = 260 + i * 152, y = 330
     tiles += `<g filter="url(#card)"><rect x="${x - 64}" y="${y - 108}" width="128" height="200" rx="12" fill="url(#frost)"/></g>`
-    tiles += ghost({ x, y: y - 10, b: BOX, S: 13, nums: false })
-    tiles += kite({ x, y: y - 10, b, S: 13, color: KITE_COLORS[i % 5], scale: 1, tail: false, shadow: false })
+    tiles += ghost({ x, y: y - 10, b: BOX, S: 11, nums: false })
+    tiles += kite({ x, y: y - 10, b, S: 11, color: KITE_COLORS[i % 5], scale: 1, tail: false, shadow: false })
     tiles += `<text x="${x}" y="${y + 66}" text-anchor="middle" font-family="${SANS}" font-size="12" fill="${INK}" opacity="0.7">you said</text>`
     tiles += `<text x="${x}" y="${y + 84}" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="${INK}">${b.r} of 6</text>`
   })
@@ -707,8 +710,8 @@ function screen6() {
     { x: 1020, plan: { b: { inh: 2.6, hold: 0.3, exh: 3.4, rest: 1.1 } }, head: 'a free breath', sub: '2.6 · 0.3 · 3.4 · 1.1' },
   ]
   const rows = [
-    { y: 150, t: 'A · As in Kite 2.0', d: ['Same seconds per pixel on both', 'axes; straight edges.'], o: {} },
-    { y: 290, t: 'B · Billowed sail', d: ['Same tips; edges bow out like', 'cloth. Narrow kites pinch.'], o: { bulge: 0.42 * S } },
+    { y: 150, t: 'A · As in Kite 2.0', d: ['Same seconds per pixel on both', 'axes; straight edges.'], o: { sideK: 1 } },
+    { y: 290, t: 'B · Billowed sail', d: ['Same tips; edges bow out like', 'cloth. Narrow kites pinch.'], o: { bulge: 0.42 * S, sideK: 1 } },
     { y: 430, t: 'C · Pause axis 1.5×', d: ['Pauses drawn 1.5× wider per', 'second; the square is a wide-ish kite.'], o: { sideK: 1.5 } },
     { y: 570, t: 'D · Pause axis 2×', d: ['Pauses drawn 2× wider per', 'second; the square gets very wide.'], o: { sideK: 2 } },
   ]
