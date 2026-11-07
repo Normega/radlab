@@ -140,17 +140,13 @@
     <g transform="translate(996,300)"><g filter="url(#card)"><rect width="260" height="132" rx="12" fill="url(#frost)"/></g>
       <text x="20" y="34" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">KITE 4 OF 6</text>
       <text x="20" y="62" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="20" font-weight="400" fill="#1f2a3d" opacity="1">You said 4 of 6</text>
-      <text x="20" y="90" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.8">Stitches mark the sides that fit.</text><text x="20" y="108" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.8">Next kite when you breathe in.</text></g>
+      <text x="20" y="90" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.8">Stitches mark the sides that fit.</text><text x="20" y="108" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.8">Take your time. Breathe normally.</text></g>
     <g filter="url(#card)"><rect x="280" y="570" width="720" height="40" rx="12" fill="url(#frost)"/></g>
-  <text x="640" y="596" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" fill="#1f2a3d">Here is the kite you just made, drawn over the plan.</text>
-    <g filter="url(#card)">
-      <rect x="376" y="626" width="248" height="68" rx="24" fill="url(#frost)" fill-opacity="1" stroke="#1f2a3d" stroke-opacity="0.35" stroke-width="1"/>
-    </g>
-    <text x="500" y="667" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" font-weight="600" fill="#1f2a3d">↑  breathe in</text><g filter="url(#card)">
-      <rect x="656" y="626" width="248" height="68" rx="24" fill="url(#frost)" fill-opacity="1" stroke="#1f2a3d" stroke-opacity="0.35" stroke-width="1"/>
-    </g>
-    <text x="780" y="667" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" font-weight="600" fill="#1f2a3d">↓  breathe out</text>
-    <g transform="translate(1256,714)"><text text-anchor="end" font-family="'Space Mono', ui-monospace, monospace" font-size="12" fill="#1f2a3d" opacity="0.55">mock-up 3c · after the rating, the kite comes out of the clouds (W5)</text></g>
+  <text x="640" y="596" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" fill="#1f2a3d">Here is the kite you just made. The next one starts with a rest.</text>
+    <g filter="url(#card)"><rect x="380" y="626" width="520" height="68" rx="24" fill="#1f2a3d" fill-opacity="0.88" stroke="#1f2a3d" stroke-width="2.5"/></g>
+    <text x="640" y="655" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="16" font-weight="600" fill="#fff">next kite</text>
+    <text x="640" y="678" text-anchor="middle" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#fff" fill-opacity="0.8">press it as you finish breathing out (space)</text>
+    <g transform="translate(1256,714)"><text text-anchor="end" font-family="'Space Mono', ui-monospace, monospace" font-size="12" fill="#1f2a3d" opacity="0.55">mock-up 3c · after the rating, the kite comes out of the clouds (W5); the pacer waits (W12)</text></g>
 <rect width="1280" height="720" fill="url(#vignette)"/>
   <rect width="1280" height="720" filter="url(#grain)" opacity="1"/>
 </svg>

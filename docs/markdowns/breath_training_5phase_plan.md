@@ -63,6 +63,13 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - **Switching straight from in to out still fits.** Tolerance on a 0.5 s target is ±0.6 s (Kitewright's `tolFor`), so an immediate switch counts as a fit.
   - **The rates change slightly.** Long-tail goes from 10 s to 11 s per cycle and drifter likewise, both about 5.5 breaths a minute instead of 6. The game makes no claim tied to 6 a minute, so this is fine. Anything that later cites one (e.g. Kitewright's drifter card) would need the cycle kept at 10 s instead (e.g. 4.5/0.5/4.5/0.5).
 - **W11 (Norm, 2026-11-07). Pauses get their own axis, drawn 1.5× wider per second than the in- and out-breaths (option C of mock-up 6), in all five phases.** It applies to the player's kite, the plan's ghost, the bead on a pause spar, the stitches and the live kite as it grows. In the code this is `SIDE_K = 1.5` in `build.mjs`. The square sail 3/3/3/3 is now a wide diamond rather than a square, and narrow plans keep enough width to read as kites. Fit is still scored in seconds, so the scale changes only the drawing. (Answers G1. The findings that led to it are kept below.)
+- **W12 (Norm, 2026-11-07). In phases 3–5 the pacer waits while the player rates and looks at the revealed kite. The player restarts it with a "next kite" press made as they finish breathing out (mock-up 3c).** This needs the kite to begin with its rest:
+  - **A kite now runs rest → in → pause → out.** With the Kite 2.0 order (in → pause → out → rest), the rest only ends at the next in-press. So a kite could not be rated until the player had already begun the next in-breath. Moving the rest to the front means the kite is finished when the out key is released, and the rating falls in the natural gap.
+  - **The "next kite" press is the start of the rest.** It goes where an out-breath ends, so the rest is timed from a real breath turn. The bead then runs the rest spar, and the in-breath follows.
+  - **The shape is unchanged.** The rest is still the left spar; only the order the spars are drawn in, and where one kite ends, change.
+  - **The safety copy matters here.** The break is untimed, and the card says to breathe normally, so nobody holds their breath while choosing. The 4 s hold cap applies to holds inside a kite, not to this break.
+  - Still open: whether phases 1–2 use the same kite boundary (P2-3).
+- **W13 (Norm, 2026-11-07). The gate is 4 of the last 5 kites fit, with no minimum or maximum number of rounds.** This is the same rule in every phase from 2 up, scored on hidden kites in 3–5. A consequence: someone who masters a phase quickly can leave it with as few as 5 rated kites, too few for a per-phase metacognition estimate (about 30 needed). Confidence would then have to be pooled across phases 3–5 per person, or modelled hierarchically across people. This is a study-design note, not a reason to change the gate. (Answers S2a.)
 
 ## Open questions
 
@@ -77,7 +84,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 ### Structure (decide first)
 
-- **S2a.** The mastery criterion for each move up. Kitewright's is 4 of the last 5 kites fit. Phases 3–5 have no visible kite: is the criterion still fit (measured but not shown), or does the gate apply only from 2 to 3? Is there a minimum and maximum number of rounds per phase?
+- **S2a (answered by W13).** The mastery criterion for each move up. Kitewright's is 4 of the last 5 kites fit. Phases 3–5 have no visible kite: is the criterion still fit (measured but not shown), or does the gate apply only from 2 to 3? Is there a minimum and maximum number of rounds per phase?
 
 
 ### Phase 1
@@ -89,11 +96,12 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 - **P2-1.** Keep Kitewright's stitches (a mark on each side that fit), or a quieter feedback?
 - **P2-2.** Does the pacer stay identical through phases 3–5 (bead plus bells), or do the bells drop out once sounds arrive in phase 4?
+- **P2-3.** W12 makes a kite in phases 3–5 run rest → in → pause → out. Do phases 1 and 2 use the same boundary? Phase 2 has no break between kites, so the order only changes which spars are scored together as one kite. Using the same boundary keeps phase 2 → 3 a clean step. Phase 1 is Kite 2.0, which ends a kite with its rest.
 
 ### Phase 3
 
 - **P3-1.** Confidence question wording: "how close was that kite to the plan?" (overall), or per side?
-- **P3-4.** Does the pacer pause while the player rates and looks at the revealed kite? If it keeps running, the rating interrupts the rhythm. If it pauses, every kite has a break after it, and the safety copy has to keep people breathing normally (not holding) while they choose.
+- **P3-4 (answered by W12).** Does the pacer pause while the player rates and looks at the revealed kite? If it keeps running, the rating interrupts the rhythm. If it pauses, every kite has a break after it, and the safety copy has to keep people breathing normally (not holding) while they choose.
 - **P3-3.** Do the press pads still light up when pressed? Pressing is felt anyway, but a visible pad is still visual feedback.
 
 ### Phase 4
