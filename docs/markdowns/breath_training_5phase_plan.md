@@ -84,6 +84,12 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
     *From phase 2 on, the bead shows how long each part lasts: follow it instead of the urge.*
   - **Logging:** each kite records the begin time, and the rest is measured from it. Proposed, not decided: a gentle reminder if begin has not been pressed after a while.
   - (Answers P2-3.)
+- **W15 (Norm, 2026-11-07; piloting). One breathe button, and nothing shorter than 0.5 s registers.** This is being explored, not settled. It revises W4's two controls: the parser and log keep room for a two-key mode.
+  - **The button:** after begin, hold it while breathing in, let go at the top (the pause), hold it again while breathing out, and let go when the breath is out. That release ends the kite. Breathe is space and begin is Enter. The button's small line says what holding it means right now ("hold it as you start breathing in", "breathing out · let go when it is all out"). With one button, that line is how a player knows which breath the next press counts as. It shows state, not fit, so it stays on in phases 3–5. (Mock-ups 0b, 1–5.)
+  - **The slip rule:** all four parts (rest, in, pause, out) must last at least 0.5 s. A button change that is undone within 0.5 s is a slip and is ignored: a tap during the rest or pause doesn't start a breath, and a flicker during a breath doesn't end it. Kitewright's parser used 300 ms for both of these (`MIN_HOLD_MS`, `MERGE_GAP_MS`). Here both become 500.
+  - **Every raw press and release is still logged**, with the slip label attached by the parser, so the rule can be re-run later at another threshold. Nothing is dropped (CLAUDE.md data rule 5).
+  - **The rest after begin** is timed from the begin press, which is a different key. A breathe press less than 0.5 s after begin is therefore not a finger slip but a rushed rest: it registers, and the short rest is scored as it is.
+  - **The 0.5 s pause in the plans now sits exactly on the slip threshold (open, P2-4).** Long-tail and drifter plan a 0.5 s pause. A player aiming for it lets go for about 0.5 s, so roughly half their pauses would come out under the threshold. Each of those would be read as a slip: the in-breath would run on into the out-breath, and the kite would come out wrong. The plans need their shortest pause clearly above 0.5 s.
 
 ## Open questions
 
@@ -110,6 +116,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 - **P2-1.** Keep Kitewright's stitches (a mark on each side that fit), or a quieter feedback?
 - **P2-2.** Does the pacer stay identical through phases 3–5 (bead plus bells), or do the bells drop out once sounds arrive in phase 4?
+- **P2-4.** With the 0.5 s slip rule (W15), what is the shortest planned pause? Proposal: 1 s, twice the threshold. Long-tail becomes 4/1/6/1 and drifter 5/1/5/1, both 12 s a cycle (5 breaths a minute). The alternative is 4/1/5/1 and 4/1/4/1 at 10–11 s.
 - **P2-3 (answered by W14).** W12 makes a kite in phases 3–5 run rest → in → pause → out. Do phases 1 and 2 use the same boundary? Phase 2 has no break between kites, so the order only changes which spars are scored together as one kite. Using the same boundary keeps phase 2 → 3 a clean step. Phase 1 is Kite 2.0, which ends a kite with its rest.
 
 ### Phase 3

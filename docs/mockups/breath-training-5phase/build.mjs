@@ -332,18 +332,21 @@ function safety() {
 }
 
 function pads(active = null) {
-  const pad = (x, label, glyph, on) => `<g filter="url(#card)">
-      <rect x="${x}" y="626" width="248" height="68" rx="24" fill="${on ? INK : 'url(#frost)'}" fill-opacity="${on ? 0.88 : 1}" stroke="${INK}" stroke-opacity="${on ? 1 : 0.35}" stroke-width="${on ? 2.5 : 1}"/>
-    </g>
-    <text x="${x + 124}" y="667" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="${on ? '#fff' : INK}">${glyph}  ${label}</text>`
-  return pad(W / 2 - 264, 'breathe in', '↑', active === 'in') + pad(W / 2 + 16, 'breathe out', '↓', active === 'out')
+  // W15: one breathe button. Hold it while breathing in, let go, hold it again while
+  // breathing out. Its small line says what holding it means right now.
+  const on = active === 'in' || active === 'out'
+  const w = 520, x = (W - w) / 2
+  const sub = { in: 'breathing in \u00b7 let go at the top', out: 'breathing out \u00b7 let go when it is all out', pause: 'hold it again as you start breathing out' }[active] || 'hold it as you start breathing in'
+  return `<g filter="url(#card)"><rect x="${x}" y="626" width="${w}" height="68" rx="24" fill="${on ? INK : 'url(#frost)'}" fill-opacity="${on ? 0.88 : 1}" stroke="${INK}" stroke-opacity="${on ? 1 : 0.35}" stroke-width="${on ? 2.5 : 1}"/></g>
+    <text x="${W / 2}" y="655" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="${on ? '#fff' : INK}">breathe <tspan font-weight="400" opacity="0.7">(space)</tspan></text>
+    <text x="${W / 2}" y="678" text-anchor="middle" font-family="${SANS}" font-size="12" fill="${on ? '#fff' : INK}" opacity="0.8">${sub}</text>`
 }
 
 function beginButton() {
   const w = 520, x = (W - w) / 2
   return `<g filter="url(#card)"><rect x="${x}" y="626" width="${w}" height="68" rx="24" fill="${INK}" fill-opacity="0.88" stroke="${INK}" stroke-width="2.5"/></g>
     <text x="${W / 2}" y="655" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="#fff">begin</text>
-    <text x="${W / 2}" y="678" text-anchor="middle" font-family="${SANS}" font-size="12" fill="#fff" fill-opacity="0.8">press it when you have finished breathing out (space)</text>`
+    <text x="${W / 2}" y="678" text-anchor="middle" font-family="${SANS}" font-size="12" fill="#fff" fill-opacity="0.8">press it when you have finished breathing out (Enter)</text>`
 }
 
 function caption(text, y = 596, w = 720) {
@@ -432,9 +435,9 @@ function screenHow() {
   const steps = [
     ['Finish breathing out, then press begin.', 'Every kite starts here, in the still moment after a breath out.'],
     ['Rest.', 'Stay still until you feel the urge to breathe in.'],
-    ['Hold \u2191 breathe in as you start breathing in.', 'Let go when you reach the top of the breath.'],
+    ['Hold the breathe button as you start breathing in.', 'Let go when you reach the top of the breath.'],
     ['Pause.', 'Stay at the top until you want to breathe out.'],
-    ['Hold \u2193 breathe out while you breathe out.', 'Let go when the breath is all the way out. That is one kite.'],
+    ['Hold it again while you breathe out.', 'Let go when the breath is all the way out. That is one kite.'],
   ]
   let list = ''
   steps.forEach(([a, b], i) => {
@@ -451,7 +454,7 @@ function screenHow() {
       ${lines(40, 48, ['YOUR TURN, STEP BY STEP'], { size: 12, op: 0.65, font: MONO })}
       ${list}
       <line x1="40" y1="410" x2="584" y2="410" stroke="${INK}" stroke-opacity="0.12"/>
-      ${lines(40, 438, ['From phase 2 on, the bead shows how long each part lasts:', 'follow it instead of the urge.'], { size: 14, op: 0.8 })}`)}
+      ${lines(40, 438, ['From phase 2 on, follow the bead instead of the urge.', 'Anything shorter than half a second counts as a slip and is ignored.'], { size: 14, op: 0.8 })}`)}
     ${beginButton()}
     ${mockNote('mock-up 0b · how to make a kite · the start rule (W14)')}`
   return svg(sc, body, 'How to make a kite')
@@ -661,7 +664,7 @@ function screen5() {
     ${roundCard(W - 244, 300, 5, 6, ['after each kite: rate it, then see it'])}
     ${listenChip(24, 396, 'Listen: a short story', 'questions about it come after the round')}
     ${caption('Keep building, and listen. You\u2019ll be asked about what you heard.')}
-    ${pads(null)}
+    ${pads('out')}
     ${mockNote('mock-up 5 · messages on the wind · phase 4 + a spoken story · plan: drifter')}`
   return svg(sc, body, 'Phase 5, messages on the wind')
 }
