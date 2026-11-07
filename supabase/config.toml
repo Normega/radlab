@@ -47,6 +47,12 @@ verify_jwt = false
 # The function's own check is that the presented key can read the pitch row.
 verify_jwt = false
 
+[functions.notify_repro]
+# Called from the logged-out checklist page public/repro/check.html. The page's
+# own token (from the passcode in the link) is the credential; repro_notify_claim
+# checks it and allows at most one email per message or step.
+verify_jwt = false
+
 # ── Called from unauthenticated public links ───────────────────────────────
 [functions.handle_unsubscribe]
 verify_jwt = false
