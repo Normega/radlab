@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-label="Overview of the five phases">
+<defs>
+  <style>@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;family=DM+Serif+Display&amp;family=Space+Mono:wght@400;700&amp;display=swap');</style>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#58a5db"/><stop offset="0.38" stop-color="#8cc4e7"/>
+    <stop offset="0.72" stop-color="#c6e3f1"/><stop offset="1" stop-color="#e8f3ef"/>
+  </linearGradient>
+  <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#fffbe8" stop-opacity="0.95"/>
+    <stop offset="0.18" stop-color="#fffbe8" stop-opacity="0.55"/>
+    <stop offset="1" stop-color="#fffbe8" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="hill0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5d4c6"/><stop offset="1" stop-color="#e8f3ef"/></linearGradient>
+  <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(173,210,151)"/><stop offset="1" stop-color="#a2cc89"/></linearGradient>
+  <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#78b063"/><stop offset="1" stop-color="rgb(98,144,81)"/></linearGradient>
+  <linearGradient id="cloudShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe8f0"/></linearGradient>
+  <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.42"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b4320"/><stop offset="0.5" stop-color="#b07d4a"/><stop offset="1" stop-color="#6b4320"/></linearGradient>
+  <linearGradient id="frost" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.74"/></linearGradient>
+  <radialGradient id="beadGlow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="0.35" stop-color="#fff" stop-opacity="0.5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75"><stop offset="0.6" stop-color="#1f2a3d" stop-opacity="0"/><stop offset="1" stop-color="#1f2a3d" stop-opacity="0.16"/></radialGradient>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>
+  <filter id="haze" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="kshadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="5" dy="10" stdDeviation="7" flood-color="#1f2a3d" flood-opacity="0.2"/></filter>
+  <filter id="card" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#1f2a3d" flood-opacity="0.13"/></filter>
+  <filter id="grass" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.32" numOctaves="3" seed="7" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.26  0 0 0 0 0.1  0 0 0 1.4 -0.55" result="st"/>
+    <feComposite in="st" in2="SourceGraphic" operator="in" result="st2"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="st2"/></feMerge>
+  </filter>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.16  0 0 0 0.09 0"/>
+  </filter>
+  <filter id="fabric" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="turbulence" baseFrequency="0.9 0.05" numOctaves="1" seed="2" result="w"/>
+    <feColorMatrix in="w" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.16 0" result="w2"/>
+    <feComposite in="w2" in2="SourceGraphic" operator="in" result="w3"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="w3"/></feMerge>
+  </filter>
+</defs>
+<defs><linearGradient id="journeySky" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#86c0e6"/><stop offset="0.3" stop-color="#9cc8e6"/>
+      <stop offset="0.5" stop-color="#b9cbd9"/><stop offset="0.72" stop-color="#e9c9a4"/><stop offset="1" stop-color="#9a86b5"/></linearGradient>
+    <linearGradient id="journeyFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2a3d" stop-opacity="0.18"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.12"/><stop offset="1" stop-color="#fff" stop-opacity="0.35"/></linearGradient></defs>
+    <rect width="1280" height="720" fill="url(#journeySky)"/>
+    <rect width="1280" height="720" fill="url(#journeyFade)"/>
+    <g transform="translate(120,380) scale(0.6)" opacity="0.6" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g transform="translate(1180,380) scale(0.5)" opacity="0.5" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g>
+    <path d="M0 470 C 200 440 420 455 640 438 S 1060 400 1280 420 V720 H0Z" fill="#b6cdc3" opacity="0.9"/>
+    <path d="M0 540 C 260 500 520 520 780 498 S 1120 450 1280 466 V720 H0Z" fill="#a1c38a"/>
+    <path d="M0 620 C 300 590 640 610 900 590 S 1180 556 1280 560 V720 H0Z" fill="url(#hill2)" filter="url(#grass)"/>
+    <circle cx="831.9" cy="705" r="1.5" fill="#fff6e0" opacity="0.8"/><circle cx="133.2" cy="634" r="2.2" fill="#f7d36b" opacity="0.8"/><circle cx="249.4" cy="644.4" r="2.3" fill="#f2b6c8" opacity="0.8"/><circle cx="433.7" cy="675" r="2.3" fill="#ffffff" opacity="0.8"/><circle cx="1219.5" cy="664.5" r="1.5" fill="#fff6e0" opacity="0.8"/><circle cx="580.1" cy="656.7" r="1.9" fill="#f7d36b" opacity="0.8"/><circle cx="328.9" cy="695.3" r="1.2" fill="#f2b6c8" opacity="0.8"/><circle cx="999.1" cy="614.1" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="564.1" cy="666.8" r="2" fill="#fff6e0" opacity="0.8"/><circle cx="837.3" cy="687.2" r="1.6" fill="#f7d36b" opacity="0.8"/><circle cx="1072" cy="614" r="1.1" fill="#f2b6c8" opacity="0.8"/><circle cx="521.5" cy="701" r="1.1" fill="#ffffff" opacity="0.8"/><circle cx="999.2" cy="676.9" r="2.4" fill="#fff6e0" opacity="0.8"/><circle cx="478.3" cy="690.5" r="2.3" fill="#f7d36b" opacity="0.8"/><circle cx="772.2" cy="680.5" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="1134.3" cy="690.6" r="2.3" fill="#ffffff" opacity="0.8"/><circle cx="817.9" cy="659.7" r="2.2" fill="#fff6e0" opacity="0.8"/><circle cx="356.3" cy="631.5" r="1.8" fill="#f7d36b" opacity="0.8"/><circle cx="282.8" cy="649.7" r="1.8" fill="#f2b6c8" opacity="0.8"/><circle cx="1130.8" cy="653.1" r="1.3" fill="#ffffff" opacity="0.8"/><circle cx="873.7" cy="685.4" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="44.7" cy="685.4" r="1.3" fill="#f7d36b" opacity="0.8"/><circle cx="457.1" cy="696.7" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="84.4" cy="658.3" r="2.3" fill="#ffffff" opacity="0.8"/><circle cx="739.8" cy="613.8" r="1.1" fill="#fff6e0" opacity="0.8"/><circle cx="396.7" cy="712" r="1.8" fill="#f7d36b" opacity="0.8"/><circle cx="868.4" cy="681.6" r="1.8" fill="#f2b6c8" opacity="0.8"/><circle cx="128.3" cy="671.3" r="1.7" fill="#ffffff" opacity="0.8"/><circle cx="1269.7" cy="620" r="2.4" fill="#fff6e0" opacity="0.8"/><circle cx="985.8" cy="676.4" r="1.1" fill="#f7d36b" opacity="0.8"/><circle cx="1090.1" cy="674.1" r="1.9" fill="#f2b6c8" opacity="0.8"/><circle cx="835.9" cy="657.1" r="2.1" fill="#ffffff" opacity="0.8"/><circle cx="756.5" cy="669" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="105.3" cy="648.5" r="2" fill="#f7d36b" opacity="0.8"/><circle cx="695.5" cy="639.5" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="500.6" cy="685.6" r="1.4" fill="#ffffff" opacity="0.8"/><circle cx="53.8" cy="620.7" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="1168.5" cy="698.5" r="2.4" fill="#f7d36b" opacity="0.8"/><circle cx="538" cy="647.6" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="1255.6" cy="617" r="2.2" fill="#ffffff" opacity="0.8"/><circle cx="14.7" cy="650.3" r="2" fill="#fff6e0" opacity="0.8"/><circle cx="1188.7" cy="686.2" r="1.5" fill="#f7d36b" opacity="0.8"/><circle cx="190.8" cy="663.6" r="1.5" fill="#f2b6c8" opacity="0.8"/><circle cx="114.4" cy="626.1" r="2.4" fill="#ffffff" opacity="0.8"/><circle cx="212.7" cy="617.6" r="2" fill="#fff6e0" opacity="0.8"/><circle cx="1019.3" cy="681.7" r="2.3" fill="#f7d36b" opacity="0.8"/><circle cx="507.3" cy="652.3" r="2.4" fill="#f2b6c8" opacity="0.8"/><circle cx="490.1" cy="678" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="221.1" cy="697.6" r="1.8" fill="#fff6e0" opacity="0.8"/><circle cx="233.6" cy="650" r="2.4" fill="#f7d36b" opacity="0.8"/><circle cx="1060.8" cy="683.7" r="2.3" fill="#f2b6c8" opacity="0.8"/><circle cx="676.3" cy="632.7" r="2.2" fill="#ffffff" opacity="0.8"/><circle cx="893.2" cy="645.5" r="1.1" fill="#fff6e0" opacity="0.8"/><circle cx="964.9" cy="661" r="1.4" fill="#f7d36b" opacity="0.8"/><circle cx="144.8" cy="618" r="2.1" fill="#f2b6c8" opacity="0.8"/><circle cx="246.1" cy="665.1" r="2.2" fill="#ffffff" opacity="0.8"/><circle cx="522.3" cy="636.1" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="226.6" cy="679.9" r="2" fill="#f7d36b" opacity="0.8"/><circle cx="1172.4" cy="630" r="1.3" fill="#f2b6c8" opacity="0.8"/><circle cx="53" cy="635.3" r="1.1" fill="#ffffff" opacity="0.8"/><circle cx="1241.7" cy="634.6" r="2.2" fill="#fff6e0" opacity="0.8"/><circle cx="152" cy="671.5" r="1.9" fill="#f7d36b" opacity="0.8"/><circle cx="1157" cy="684.8" r="2.6" fill="#f2b6c8" opacity="0.8"/><circle cx="950.2" cy="613.3" r="1.6" fill="#ffffff" opacity="0.8"/><circle cx="64.9" cy="710.8" r="1.3" fill="#fff6e0" opacity="0.8"/><circle cx="314.4" cy="705.9" r="2.3" fill="#f7d36b" opacity="0.8"/><circle cx="952.1" cy="642.4" r="2.2" fill="#f2b6c8" opacity="0.8"/><circle cx="1231.2" cy="669.1" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="405.1" cy="619.7" r="2.5" fill="#fff6e0" opacity="0.8"/><circle cx="287.2" cy="643" r="1.1" fill="#f7d36b" opacity="0.8"/>
+    <path d="M40 640 C 120 600 120 560 150 566 C 240 606 305 588 395 548 C 485 588 550 570 640 530 C 730 570 795 554 885 514 C 975 554 1040 538 1130 498 C 1200 440 1240 420 1280 410" stroke="#f4ead6" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.9"/>
+    <path d="M40 640 C 120 600 120 560 150 566 C 240 606 305 588 395 548 C 485 588 550 570 640 530 C 730 570 795 554 885 514 C 975 554 1040 538 1130 498 C 1200 440 1240 420 1280 410" stroke="#1f2a3d" stroke-opacity="0.18" stroke-width="1.5" stroke-dasharray="1 9" fill="none" stroke-linecap="round"/>
+    <text x="40" y="64" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="40" font-weight="400" fill="#1f2a3d" opacity="1">Five phases, one change at a time</text>
+    <text x="40" y="94" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="16" font-weight="400" fill="#1f2a3d" opacity="0.8">Each phase keeps the last one’s task and adds exactly one thing.</text>
+    <line x1="150" y1="372" x2="150" y2="546" stroke="#1f2a3d" stroke-opacity="0.25" stroke-dasharray="2 4"/><g transform="translate(42,120)"><g filter="url(#card)"><rect width="216" height="252" rx="12" fill="url(#frost)"/></g>
+      <text x="18" y="30" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">PHASE 1</text>
+      <text x="18" y="58" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="20" font-weight="400" fill="#1f2a3d" opacity="1">Open field</text>
+      <text x="18" y="86" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">NEW</text>
+      <text x="18" y="104" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2a3d" opacity="1">Nothing to match.</text>
+      <text x="18" y="132" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">YOU</text>
+      <text x="18" y="150" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">Breathe freely; see each</text><text x="18" y="170" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">breath become a kite.</text>
+      <text x="18" y="196" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">WE RECORD</text>
+      <text x="18" y="214" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">natural breath shapes</text></g><g transform="translate(150,496) rotate(-6) scale(0.3)" filter="url(#kshadow)">
+    <path d="M0 136 L0.4 145.2 L1.1 154.3 L1.3 163.5 L0.3 172.6 L-1.6 181.8 L-3.3 190.9 L-3.4 200.1 L-1.3 209.2 L2.3 218.4 L5.3 227.5 L5.7 236.7 L2.8 245.8 L-2.3 255 L-6.9 264.1 L-8.2 273.3 L-4.8 282.4" stroke="rgb(192,72,108)" stroke-width="2.2" fill="none" stroke-linecap="round"/><g fill="rgb(233,128,159)" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="0.8" vector-effect="non-scaling-stroke"><path d="M0.3 172.6 l-7 -4 l0 8 Z M0.3 172.6 l7 -4 l0 8 Z" /><path d="M-1.3 209.2 l-7 -4 l0 8 Z M-1.3 209.2 l7 -4 l0 8 Z" /><path d="M2.8 245.8 l-7 -4 l0 8 Z M2.8 245.8 l7 -4 l0 8 Z" /><path d="M-4.8 282.4 l-7 -4 l0 8 Z M-4.8 282.4 l7 -4 l0 8 Z" /></g>
+    <g filter="url(#fabric)">
+      <path d="M0 0 L-44 0 Q-22 -52 0 -104 Z" fill="rgb(238,156,181)"/>
+      <path d="M0 0 L0 136 Q-22 68 -44 0 Z" fill="rgb(231,116,150)"/>
+      <path d="M0 0 L0 -104 Q11 -52 22 0 Z" fill="#e2557f"/>
+      <path d="M0 0 L22 0 Q11 68 0 136 Z" fill="rgb(203,77,114)"/>
+    </g>
+    <path d="M0 -104 Q11 -52 22 0 Q11 68 0 136 Q-22 68 -44 0 Q-22 -52 0 -104 Z" fill="url(#sheen)"/>
+    <path d="M0 -93.6 Q9.9 -46.8 19.8 0 Q9.9 61.2 0 122.4 Q-19.8 61.2 -39.6 0 Q-19.8 -46.8 0 -93.6 Z" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="1.1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+    <path d="M0 -104 Q11 -52 22 0 Q11 68 0 136 Q-22 68 -44 0 Q-22 -52 0 -104 Z" fill="none" stroke="#1f2a3d" stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <line x1="0" y1="-104" x2="0" y2="136" stroke="url(#wood)" stroke-width="3.4" stroke-linecap="round"/>
+    <line x1="-44" y1="0" x2="22" y2="0" stroke="#8a5a2c" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-44" y1="-0.8" x2="22" y2="-0.8" stroke="#d7a875" stroke-opacity="0.7" stroke-width="0.9" stroke-linecap="round"/>
+    <circle r="4" fill="#c8a25a" stroke="#1f2a3d" stroke-opacity="0.5" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    
+  </g><g filter="url(#card)"><circle cx="150" cy="566" r="18" fill="#fff" stroke="#1f2a3d" stroke-width="2"/></g><text x="150" y="572" text-anchor="middle" font-family="'DM Serif Display', Georgia, serif" font-size="18" fill="#1f2a3d">1</text><line x1="395" y1="372" x2="395" y2="528" stroke="#1f2a3d" stroke-opacity="0.25" stroke-dasharray="2 4"/><g transform="translate(287,120)"><g filter="url(#card)"><rect width="216" height="252" rx="12" fill="url(#frost)"/></g>
+      <text x="18" y="30" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">PHASE 2</text>
+      <text x="18" y="58" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="20" font-weight="400" fill="#1f2a3d" opacity="1">Follow the plan</text>
+      <text x="18" y="86" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">NEW</text>
+      <text x="18" y="104" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2a3d" opacity="1">A plan and a pacer.</text>
+      <text x="18" y="132" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">YOU</text>
+      <text x="18" y="150" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">Build the plan’s kite,</text><text x="18" y="170" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">watching your own.</text>
+      <text x="18" y="196" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">WE RECORD</text>
+      <text x="18" y="214" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">fit to the plan, with</text><text x="18" y="230" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">feedback</text></g><g transform="translate(395,474)">
+    <path d="M0 -24 Q12 -12 24 0 Q12 12 0 24 Q-12 12 -24 0 Q-12 -12 0 -24 Z" fill="#fff" fill-opacity="0.2" stroke="#1f2a3d" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>
+    <line x1="0" y1="0" x2="0" y2="-24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="0" y2="24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="-24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/>
+    <line x1="6" y1="-24" x2="-6" y2="-24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="24" y1="-6" x2="24" y2="6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-6" y1="24" x2="6" y2="24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-24" y1="6" x2="-24" y2="-6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/>
+    
+  </g><g transform="translate(395,474) rotate(0) scale(1)" >
+    
+    <g filter="url(#fabric)">
+      <path d="M0 0 L-24 0 Q-12 -12.4 0 -24.8 Z" fill="rgb(134,205,211)"/>
+      <path d="M0 0 L0 24 Q-12 12 -24 0 Z" fill="rgb(84,184,193)"/>
+      <path d="M0 0 L0 -24.8 Q11.2 -12.4 22.4 0 Z" fill="#2fa9b3"/>
+      <path d="M0 0 L22.4 0 Q11.2 12 0 24 Z" fill="rgb(42,152,161)"/>
+    </g>
+    <path d="M0 -24.8 Q11.2 -12.4 22.4 0 Q11.2 12 0 24 Q-12 12 -24 0 Q-12 -12.4 0 -24.8 Z" fill="url(#sheen)"/>
+    <path d="M0 -22.3 Q10.1 -11.2 20.2 0 Q10.1 10.8 0 21.6 Q-10.8 10.8 -21.6 0 Q-10.8 -11.2 0 -22.3 Z" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="1.1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+    <path d="M0 -24.8 Q11.2 -12.4 22.4 0 Q11.2 12 0 24 Q-12 12 -24 0 Q-12 -12.4 0 -24.8 Z" fill="none" stroke="#1f2a3d" stroke-opacity="0.5" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <line x1="0" y1="-24.8" x2="0" y2="24" stroke="url(#wood)" stroke-width="3.4" stroke-linecap="round"/>
+    <line x1="-24" y1="0" x2="22.4" y2="0" stroke="#8a5a2c" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-24" y1="-0.8" x2="22.4" y2="-0.8" stroke="#d7a875" stroke-opacity="0.7" stroke-width="0.9" stroke-linecap="round"/>
+    <circle r="4" fill="#c8a25a" stroke="#1f2a3d" stroke-opacity="0.5" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    
+  </g><g filter="url(#card)"><circle cx="395" cy="548" r="18" fill="#fff" stroke="#1f2a3d" stroke-width="2"/></g><text x="395" y="554" text-anchor="middle" font-family="'DM Serif Display', Georgia, serif" font-size="18" fill="#1f2a3d">2</text><line x1="640" y1="372" x2="640" y2="510" stroke="#1f2a3d" stroke-opacity="0.25" stroke-dasharray="2 4"/><g transform="translate(532,120)"><g filter="url(#card)"><rect width="216" height="252" rx="12" fill="url(#frost)"/></g>
+      <text x="18" y="30" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">PHASE 3</text>
+      <text x="18" y="58" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="20" font-weight="400" fill="#1f2a3d" opacity="1">Into the clouds</text>
+      <text x="18" y="86" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">NEW</text>
+      <text x="18" y="104" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2a3d" opacity="1">Your kite is hidden.</text>
+      <text x="18" y="132" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">YOU</text>
+      <text x="18" y="150" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">Follow the pacer; rate</text><text x="18" y="170" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">each kite 1–6.</text>
+      <text x="18" y="196" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">WE RECORD</text>
+      <text x="18" y="214" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">fit, and confidence</text><text x="18" y="230" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">vs fit (metacognition)</text></g><g transform="translate(640,456)">
+    <path d="M0 -24 Q12 -12 24 0 Q12 12 0 24 Q-12 12 -24 0 Q-12 -12 0 -24 Z" fill="#fff" fill-opacity="0.2" stroke="#1f2a3d" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>
+    <line x1="0" y1="0" x2="0" y2="-24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="0" y2="24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="-24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/>
+    <line x1="6" y1="-24" x2="-6" y2="-24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="24" y1="-6" x2="24" y2="6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-6" y1="24" x2="6" y2="24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-24" y1="6" x2="-24" y2="-6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/>
+    
+  </g><g transform="translate(670,464) scale(0.3)" opacity="0.95" filter="url(#soft)">
+    <ellipse cx="6" cy="22" rx="96" ry="12" fill="#c9d8e6" opacity="0.35"/>
+    <ellipse cx="0" cy="0" rx="60" ry="26" fill="url(#cloudShade)"/><ellipse cx="-46" cy="8" rx="40" ry="20" fill="url(#cloudShade)"/><ellipse cx="48" cy="6" rx="46" ry="22" fill="url(#cloudShade)"/><ellipse cx="-14" cy="-18" rx="38" ry="26" fill="url(#cloudShade)"/><ellipse cx="24" cy="-14" rx="34" ry="22" fill="url(#cloudShade)"/>
+  </g><g filter="url(#card)"><circle cx="640" cy="530" r="18" fill="#fff" stroke="#1f2a3d" stroke-width="2"/></g><text x="640" y="536" text-anchor="middle" font-family="'DM Serif Display', Georgia, serif" font-size="18" fill="#1f2a3d">3</text><line x1="885" y1="372" x2="885" y2="494" stroke="#1f2a3d" stroke-opacity="0.25" stroke-dasharray="2 4"/><g transform="translate(777,120)"><g filter="url(#card)"><rect width="216" height="252" rx="12" fill="url(#frost)"/></g>
+      <text x="18" y="30" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">PHASE 4</text>
+      <text x="18" y="58" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="20" font-weight="400" fill="#1f2a3d" opacity="1">Crosswind</text>
+      <text x="18" y="86" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">NEW</text>
+      <text x="18" y="104" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2a3d" opacity="1">Sounds play.</text>
+      <text x="18" y="132" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">YOU</text>
+      <text x="18" y="150" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">Keep building; ignore</text><text x="18" y="170" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">the sounds.</text>
+      <text x="18" y="196" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">WE RECORD</text>
+      <text x="18" y="214" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">fit and confidence</text><text x="18" y="230" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">by sound valence</text></g><g transform="translate(885,440)">
+    <path d="M0 -24 Q12 -12 24 0 Q12 12 0 24 Q-12 12 -24 0 Q-12 -12 0 -24 Z" fill="#fff" fill-opacity="0.2" stroke="#1f2a3d" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>
+    <line x1="0" y1="0" x2="0" y2="-24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="0" y2="24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="-24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/>
+    <line x1="6" y1="-24" x2="-6" y2="-24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="24" y1="-6" x2="24" y2="6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-6" y1="24" x2="6" y2="24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-24" y1="6" x2="-24" y2="-6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/>
+    
+  </g><path d="M839 422 q 20 -8 40 0 t 40 0" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/><g filter="url(#card)"><circle cx="885" cy="514" r="18" fill="#fff" stroke="#1f2a3d" stroke-width="2"/></g><text x="885" y="520" text-anchor="middle" font-family="'DM Serif Display', Georgia, serif" font-size="18" fill="#1f2a3d">4</text><line x1="1130" y1="372" x2="1130" y2="478" stroke="#1f2a3d" stroke-opacity="0.25" stroke-dasharray="2 4"/><g transform="translate(1022,120)"><g filter="url(#card)"><rect width="216" height="252" rx="12" fill="url(#frost)"/></g>
+      <text x="18" y="30" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.65">PHASE 5</text>
+      <text x="18" y="58" text-anchor="start" font-family="'DM Serif Display', Georgia, serif" font-size="18" font-weight="400" fill="#1f2a3d" opacity="1">Messages on the wind</text>
+      <text x="18" y="86" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">NEW</text>
+      <text x="18" y="104" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2a3d" opacity="1">The sounds matter.</text>
+      <text x="18" y="132" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">YOU</text>
+      <text x="18" y="150" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">Keep building and</text><text x="18" y="170" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="14" font-weight="400" fill="#1f2a3d" opacity="1">listen; answer after.</text>
+      <text x="18" y="196" text-anchor="start" font-family="'Space Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.55">WE RECORD</text>
+      <text x="18" y="214" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">fit, confidence and</text><text x="18" y="230" text-anchor="start" font-family="'DM Sans', system-ui, sans-serif" font-size="12" font-weight="400" fill="#1f2a3d" opacity="0.85">comprehension</text></g><g transform="translate(1130,424)">
+    <path d="M0 -24 Q12 -12 24 0 Q12 12 0 24 Q-12 12 -24 0 Q-12 -12 0 -24 Z" fill="#fff" fill-opacity="0.2" stroke="#1f2a3d" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>
+    <line x1="0" y1="0" x2="0" y2="-24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="0" y2="24" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/><line x1="0" y1="0" x2="-24" y2="0" stroke="#1f2a3d" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="2 4"/>
+    <line x1="6" y1="-24" x2="-6" y2="-24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="24" y1="-6" x2="24" y2="6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-6" y1="24" x2="6" y2="24" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/><line x1="-24" y1="6" x2="-24" y2="-6" stroke="#1f2a3d" stroke-width="2" stroke-opacity="0.8"/>
+    
+  </g><g transform="translate(1160,406)"><rect x="0" y="-3" width="3" height="6" rx="1.5" fill="#1f2a3d" opacity="0.7"/><rect x="5" y="-6" width="3" height="12" rx="1.5" fill="#1f2a3d" opacity="0.7"/><rect x="10" y="-9" width="3" height="18" rx="1.5" fill="#1f2a3d" opacity="0.7"/><rect x="15" y="-5" width="3" height="10" rx="1.5" fill="#1f2a3d" opacity="0.7"/><rect x="20" y="-7" width="3" height="14" rx="1.5" fill="#1f2a3d" opacity="0.7"/></g><g filter="url(#card)"><circle cx="1130" cy="498" r="18" fill="#fff" stroke="#1f2a3d" stroke-width="2"/></g><text x="1130" y="504" text-anchor="middle" font-family="'DM Serif Display', Georgia, serif" font-size="18" fill="#1f2a3d">5</text>
+    <g transform="translate(1256,714)"><text text-anchor="end" font-family="'Space Mono', ui-monospace, monospace" font-size="12" fill="#1f2a3d" opacity="0.55">mock-up 0 · overview · working title Windward</text></g>
+<rect width="1280" height="720" fill="url(#vignette)"/>
+  <rect width="1280" height="720" filter="url(#grain)" opacity="1"/>
+</svg>
