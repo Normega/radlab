@@ -68,8 +68,22 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - **The "next kite" press is the start of the rest.** It goes where an out-breath ends, so the rest is timed from a real breath turn. The bead then runs the rest spar, and the in-breath follows.
   - **The shape is unchanged.** The rest is still the left spar; only the order the spars are drawn in, and where one kite ends, change.
   - **The safety copy matters here.** The break is untimed, and the card says to breathe normally, so nobody holds their breath while choosing. The 4 s hold cap applies to holds inside a kite, not to this break.
-  - Still open: whether phases 1–2 use the same kite boundary (P2-3).
+  - W14 extends this to every phase, and names the press **begin**.
 - **W13 (Norm, 2026-11-07). The gate is 4 of the last 5 kites fit, with no minimum or maximum number of rounds.** This is the same rule in every phase from 2 up, scored on hidden kites in 3–5. A consequence: someone who masters a phase quickly can leave it with as few as 5 rated kites, too few for a per-phase metacognition estimate (about 30 needed). Confidence would then have to be pooled across phases 3–5 per person, or modelled hierarchically across people. This is a study-design note, not a reason to change the gate. (Answers S2a.)
+- **W14 (Norm, 2026-11-07). One start rule for every kite in every phase: the player finishes breathing out and presses begin.** Trials must all start the same way. The start point being tested for now is the end of the out-breath, and it is one rule in one place so it can be swapped if testing argues for another.
+  - **A kite is begin → rest → in → pause → out**, in phases 1 to 5 alike. Begin starts the rest. The in key starts the in-breath, and releasing it starts the pause. The out key starts the out-breath, and releasing it ends the kite.
+  - **Phases 1 and 2 get a begin press too**, even though nothing is rated there. Straight after a kite they have just finished breathing out, so they can press begin at once or take a few easy breaths first. Phase 1 therefore differs from Kite 2.0, which ends each kite with its rest.
+  - **Phase 1 is timed by the player's urges; phases 2–5 by the bead.** The instructions say so explicitly.
+  - **The instructions spell it out (mock-up 0b, "How to make a kite"):**
+    1. *Finish breathing out, then press begin.* Every kite starts here, in the still moment after a breath out.
+    2. *Rest.* Stay still until you feel the urge to breathe in.
+    3. *Hold ↑ breathe in as you start breathing in.* Let go when you reach the top of the breath.
+    4. *Pause.* Stay at the top until you want to breathe out.
+    5. *Hold ↓ breathe out while you breathe out.* Let go when the breath is all the way out. That is one kite.
+
+    *From phase 2 on, the bead shows how long each part lasts: follow it instead of the urge.*
+  - **Logging:** each kite records the begin time, and the rest is measured from it. Proposed, not decided: a gentle reminder if begin has not been pressed after a while.
+  - (Answers P2-3.)
 
 ## Open questions
 
@@ -96,7 +110,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 - **P2-1.** Keep Kitewright's stitches (a mark on each side that fit), or a quieter feedback?
 - **P2-2.** Does the pacer stay identical through phases 3–5 (bead plus bells), or do the bells drop out once sounds arrive in phase 4?
-- **P2-3.** W12 makes a kite in phases 3–5 run rest → in → pause → out. Do phases 1 and 2 use the same boundary? Phase 2 has no break between kites, so the order only changes which spars are scored together as one kite. Using the same boundary keeps phase 2 → 3 a clean step. Phase 1 is Kite 2.0, which ends a kite with its rest.
+- **P2-3 (answered by W14).** W12 makes a kite in phases 3–5 run rest → in → pause → out. Do phases 1 and 2 use the same boundary? Phase 2 has no break between kites, so the order only changes which spars are scored together as one kite. Using the same boundary keeps phase 2 → 3 a clean step. Phase 1 is Kite 2.0, which ends a kite with its rest.
 
 ### Phase 3
 

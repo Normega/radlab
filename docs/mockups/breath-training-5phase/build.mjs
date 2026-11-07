@@ -339,11 +339,11 @@ function pads(active = null) {
   return pad(W / 2 - 264, 'breathe in', '↑', active === 'in') + pad(W / 2 + 16, 'breathe out', '↓', active === 'out')
 }
 
-function nextKiteButton() {
+function beginButton() {
   const w = 520, x = (W - w) / 2
   return `<g filter="url(#card)"><rect x="${x}" y="626" width="${w}" height="68" rx="24" fill="${INK}" fill-opacity="0.88" stroke="${INK}" stroke-width="2.5"/></g>
-    <text x="${W / 2}" y="655" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="#fff">next kite</text>
-    <text x="${W / 2}" y="678" text-anchor="middle" font-family="${SANS}" font-size="12" fill="#fff" fill-opacity="0.8">press it as you finish breathing out (space)</text>`
+    <text x="${W / 2}" y="655" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="#fff">begin</text>
+    <text x="${W / 2}" y="678" text-anchor="middle" font-family="${SANS}" font-size="12" fill="#fff" fill-opacity="0.8">press it when you have finished breathing out (space)</text>`
 }
 
 function caption(text, y = 596, w = 720) {
@@ -395,7 +395,7 @@ function screen1() {
     sky += kiteString(k.x, k.y + 12, stake[0], stake[1], 60, 0.28)
     sky += kite({ x: k.x, y: k.y, b: k.b, color: KITE_COLORS[k.c], scale: k.s, rot: k.r, phase: k.x })
   }
-  const live = liveKite({ x: 640, y: 318, sec: { top: 2.6, right: 0.55, bottom: 2.3, left: null }, growing: 'bottom', color: KITE_COLORS[1] })
+  const live = liveKite({ x: 640, y: 318, sec: { left: 1.0, top: 2.6, right: 0.55, bottom: 2.3 }, growing: 'bottom', color: KITE_COLORS[1] })
   // notebook of kinds
   const note = card(W - 296, 96 + 24, 272, 236, `
     ${lines(24, 34, ['Kites you have made'], { size: 16, weight: 600 })}
@@ -413,6 +413,48 @@ function screen1() {
     ${pads('out')}
     ${mockNote('mock-up 1 · open field · free breathing, no plan (Kite 2.0)')}`
   return svg(sc, body, 'Phase 1, open field')
+}
+
+function screenHow() {
+  const sc = SCENES.morning
+  const kx = 330, ky = 372, S = 40
+  const sp = spars(BOX, S)
+  const badge = (x, y, n) => `<circle cx="${x}" cy="${y}" r="15" fill="${INK}"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-family="${SANS}" font-size="14" font-weight="700" fill="#fff">${n}</text>`
+  const tag = (x, y, n, word, anchor) => badge(x, y, n) +
+    `<text x="${anchor === 'end' ? x - 24 : anchor === 'start' ? x + 24 : x}" y="${anchor === 'middle' ? y - 24 : y + 6}" text-anchor="${anchor}" font-family="${SANS}" font-size="16" font-weight="600" fill="${INK}" stroke="#fff" stroke-opacity="0.8" stroke-width="4" paint-order="stroke">${word}</text>`
+  const diagram = `${kite({ x: kx, y: ky, b: BOX, S, color: KITE_COLORS[0], tail: false, shadow: false })}
+    ${badge(kx, ky, 1)}
+    ${tag(kx - sp.left - 26, ky, 2, 'rest', 'end')}
+    ${tag(kx, ky - sp.top - 26, 3, 'in', 'middle')}
+    ${tag(kx + sp.right + 26, ky, 4, 'pause', 'start')}
+    ${badge(kx, ky + sp.bottom + 26, 5)}
+    <text x="${kx + 24}" y="${ky + sp.bottom + 32}" font-family="${SANS}" font-size="16" font-weight="600" fill="${INK}" stroke="#fff" stroke-opacity="0.8" stroke-width="4" paint-order="stroke">out</text>`
+  const steps = [
+    ['Finish breathing out, then press begin.', 'Every kite starts here, in the still moment after a breath out.'],
+    ['Rest.', 'Stay still until you feel the urge to breathe in.'],
+    ['Hold \u2191 breathe in as you start breathing in.', 'Let go when you reach the top of the breath.'],
+    ['Pause.', 'Stay at the top until you want to breathe out.'],
+    ['Hold \u2193 breathe out while you breathe out.', 'Let go when the breath is all the way out. That is one kite.'],
+  ]
+  let list = ''
+  steps.forEach(([a, b], i) => {
+    const y = 96 + i * 68
+    list += badge(40, y - 5, i + 1)
+    list += lines(72, y, [a], { size: 16, weight: 600 })
+    list += lines(72, y + 22, [b], { size: 14, op: 0.8 })
+  })
+  const body = `${background(sc, { clouds: false })}${cloud(160, 120, 0.6, 0.8)}
+    ${lines(40, 64, ['How to make a kite'], { size: 40, font: SERIF })}
+    ${lines(40, 96, ['One breath is one kite. Every kite starts the same way: at the end of a breath out.'], { size: 16, op: 0.85 })}
+    ${diagram}
+    ${card(620, 136, 624, 476, `
+      ${lines(40, 48, ['YOUR TURN, STEP BY STEP'], { size: 12, op: 0.65, font: MONO })}
+      ${list}
+      <line x1="40" y1="410" x2="584" y2="410" stroke="${INK}" stroke-opacity="0.12"/>
+      ${lines(40, 438, ['From phase 2 on, the bead shows how long each part lasts:', 'follow it instead of the urge.'], { size: 14, op: 0.8 })}`)}
+    ${beginButton()}
+    ${mockNote('mock-up 0b · how to make a kite · the start rule (W14)')}`
+  return svg(sc, body, 'How to make a kite')
 }
 
 function roundCard(x, y, k, of, extra = []) {
@@ -446,8 +488,8 @@ function screen2() {
     ${kite({ x: 960, y: 250, b: { inh: 2.9, hold: 3.3, exh: 2.7, rest: 3.1 }, color: KITE_COLORS[2], scale: 0.32, rot: -4 })}
     ${kiteString(880, 160, 820, 560, 30, 0.25)}${kiteString(960, 260, 820, 560, 30, 0.25)}
     ${ghost({ x: cx, y: cy, b: BOX, bead: { spar: 'bottom', sec: 2.1 }, brighten: 'bottom' })}
-    ${liveKite({ x: cx, y: cy, sec: { top: 3.1, right: 2.8, bottom: 1.5, left: null }, growing: 'bottom', color: KITE_COLORS[1] })}
-    ${stitches(cx, cy, 'top', 3.1)}${stitches(cx, cy, 'right', 2.8)}
+    ${liveKite({ x: cx, y: cy, sec: { left: 3.0, top: 3.1, right: 2.8, bottom: 1.5 }, growing: 'bottom', color: KITE_COLORS[1] })}
+    ${stitches(cx, cy, 'left', 3.0)}${stitches(cx, cy, 'top', 3.1)}${stitches(cx, cy, 'right', 2.8)}
     ${phaseChip(2)}${safety()}
     ${planCard(24, 156)}
     ${roundCard(W - 244, 96 + 24, 3, 6, ['stitches mark a side that fit'])}
@@ -534,8 +576,8 @@ function screen3r() {
       ${lines(20, 62, ['You said 4 of 6'], { size: 20, font: SERIF })}
       ${lines(20, 90, ['Stitches mark the sides that fit.', 'Take your time. Breathe normally.'], { size: 12, op: 0.8, lh: 18 })}`)}
     ${caption('Here is the kite you just made. The next one starts with a rest.')}
-    ${nextKiteButton()}
-    ${mockNote('mock-up 3c · after the rating, the kite comes out of the clouds (W5); the pacer waits (W12)')}`
+    ${beginButton()}
+    ${mockNote('mock-up 3c · after the rating, the kite comes out of the clouds (W5); every kite starts with begin (W14)')}`
   return svg(sc, body, 'Phase 3, kite revealed after rating')
 }
 
@@ -749,6 +791,7 @@ function screen6() {
 // ── Write ──────────────────────────────────────────────────────────────────
 const SCREENS = [
   ['00_overview', screen0, 'Overview: five phases, one change at a time'],
+  ['00b_how_to_make_a_kite', screenHow, 'Instructions · How to make a kite (the start rule)'],
   ['01_open_field', screen1, 'Phase 1 · Open field (free breathing)'],
   ['02_follow_the_plan', screen2, 'Phase 2 · Follow the plan (plan, pacer and your kite)'],
   ['03_into_the_clouds', screen3, 'Phase 3 · Into the clouds (pacer, kite hidden)'],
