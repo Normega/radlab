@@ -339,6 +339,13 @@ function pads(active = null) {
   return pad(W / 2 - 264, 'breathe in', '↑', active === 'in') + pad(W / 2 + 16, 'breathe out', '↓', active === 'out')
 }
 
+function nextKiteButton() {
+  const w = 520, x = (W - w) / 2
+  return `<g filter="url(#card)"><rect x="${x}" y="626" width="${w}" height="68" rx="24" fill="${INK}" fill-opacity="0.88" stroke="${INK}" stroke-width="2.5"/></g>
+    <text x="${W / 2}" y="655" text-anchor="middle" font-family="${SANS}" font-size="16" font-weight="600" fill="#fff">next kite</text>
+    <text x="${W / 2}" y="678" text-anchor="middle" font-family="${SANS}" font-size="12" fill="#fff" fill-opacity="0.8">press it as you finish breathing out (space)</text>`
+}
+
 function caption(text, y = 596, w = 720) {
   return `<g filter="url(#card)"><rect x="${(W - w) / 2}" y="${y - 26}" width="${w}" height="40" rx="12" fill="url(#frost)"/></g>
   <text x="${W / 2}" y="${y}" text-anchor="middle" font-family="${SANS}" font-size="16" fill="${INK}">${esc(text)}</text>`
@@ -525,10 +532,10 @@ function screen3r() {
     ${card(W - 284, 300, 260, 132, `
       ${lines(20, 34, ['KITE 4 OF 6'], { size: 12, op: 0.65, font: MONO })}
       ${lines(20, 62, ['You said 4 of 6'], { size: 20, font: SERIF })}
-      ${lines(20, 90, ['Stitches mark the sides that fit.', 'Next kite when you breathe in.'], { size: 12, op: 0.8, lh: 18 })}`)}
-    ${caption('Here is the kite you just made, drawn over the plan.')}
-    ${pads(null)}
-    ${mockNote('mock-up 3c · after the rating, the kite comes out of the clouds (W5)')}`
+      ${lines(20, 90, ['Stitches mark the sides that fit.', 'Take your time. Breathe normally.'], { size: 12, op: 0.8, lh: 18 })}`)}
+    ${caption('Here is the kite you just made. The next one starts with a rest.')}
+    ${nextKiteButton()}
+    ${mockNote('mock-up 3c · after the rating, the kite comes out of the clouds (W5); the pacer waits (W12)')}`
   return svg(sc, body, 'Phase 3, kite revealed after rating')
 }
 
