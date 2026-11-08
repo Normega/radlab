@@ -158,7 +158,7 @@
   </div>
   <div class="box hidden-until">
     <p>The paradox isn't that the numbers disagree. It's that we casually assume <strong>one number could answer both questions.</strong></p>
-    <p class="small">The repair is structural: model the grouping. <code>(1|Department)</code> is, quite literally, Simpson insurance.</p>
+    <p class="small">The repair is structural: model the grouping. Give each department its own baseline: department as a factor (what you just ran), or <code>(1|Department)</code>.</p>
   </div>
   <aside class="notes"><p>The person-level version matters for psychology's soul: a variable's relationship ACROSS people and WITHIN a person are different facts. Most theories are about the within-person one; most data are between-person.</p></aside>
 </section>
@@ -211,7 +211,7 @@
   <ul>
     <li><strong>Power.</strong> Baseline differences are usually the biggest source of variance; giving them their own term removes them from the noise your effect must shout over. <span class="small">Same magic as the within-subjects design — expressed as a model instead of a procedure.</span></li>
     <li class="hidden-until"><strong>Honesty about repeated measures.</strong> Two measurements from the same person are not two independent people. Treating them as such counts evidence twice and shrinks p-values fraudulently.</li>
-    <li class="hidden-until"><strong>Simpson insurance.</strong> Modelling within-person effects separately from between-person differences is exactly the disaggregation you just watched.</li>
+    <li class="hidden-until"><strong>The Simpson repair.</strong> Modelling within-person effects separately from between-person differences is the disaggregation you just watched.</li>
   </ul>
   <p class="hidden-until small">A paired t-test is secretly a tiny mixed model. So is every "each person is their own control" argument you've met.</p>
 </section>
