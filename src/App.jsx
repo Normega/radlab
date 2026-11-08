@@ -108,6 +108,8 @@ const SocPers2026 = lazy(() => import('./pages/socpers-oct-2026/SocPers2026'))
 const TalkPollPhone = lazy(() => import('./pages/socpers-oct-2026/PollPhone'))
 const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
+const Tanenbaum2026 = lazy(() => import('./pages/tanenbaum-nov-2026/Tanenbaum2026'))
+const TalkLivePhone = lazy(() => import('./pages/tanenbaum-nov-2026/LivePhone'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 const BreathEvidence = lazy(() => import('./pages/breathevidence/BreathEvidence'))
 const Psy240Trial = lazy(() => import('./pages/psy240trial/Psy240Trial'))
@@ -745,6 +747,8 @@ export default function App() {
           <Route path="/demo/pacer-opener" element={<PacerOpenerDemo />} />
           {/* Talk audience poll — public, anonymous; answers via talk_poll_submit() (20261012_talk_polls) */}
           <Route path="/poll/:code" element={<TalkPollPhone />} />
+          {/* Tanenbaum talk phone: mood tap, then a live Toggle practice (20261108_talk_poll_toggles) */}
+          <Route path="/live/:code" element={<TalkLivePhone />} />
           {/* Ember — breath biofeedback campfire; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/ember" element={<Ember />} />
           {/* Mirror — breath-driven avatar + materializing calibration; ?sim=1 beltless */}
@@ -771,6 +775,8 @@ export default function App() {
             <Route path="/iscr-2026" element={<Iscr2026 />} />
             {/* Social-personality group talk, Oct 2026 — room breathing demo with a live phone poll */}
             <Route path="/socpers-oct-2026" element={<SocPers2026 />} />
+            {/* Tanenbaum Symposium, Nov 2026 — aging and attention; live mood + Toggle on phones */}
+            <Route path="/tanenbaum-nov-2026" element={<Tanenbaum2026 />} />
           </Route>
 
           {/*

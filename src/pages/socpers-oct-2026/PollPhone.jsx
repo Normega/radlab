@@ -24,7 +24,7 @@ const PACES = [['faster', 'Faster'], ['slower', 'Slower'], ['same', 'Same']]
 // WheelSVG only takes clicks when activeIds is an array (null = static preview).
 const ALL_EMOTION_IDS = EMOTIONS.map(e => e.id)
 
-function deviceId() {
+export function deviceId() {
   const key = 'talkpoll:device'
   try {
     let id = localStorage.getItem(key)
@@ -146,7 +146,7 @@ export default function PollPhone() {
 // One tap on the mood circle, then Send. Same wheel as the Lecture Lounge mood
 // check-in (MoodTap), but the tap only selects: a mis-tap can be fixed before
 // sending. The neutral centre is an answer like any other.
-function MoodForm({ code, device, onDone }) {
+export function MoodForm({ code, device, onDone }) {
   const [sel, setSel] = useState(null)
   const [hovered, setHovered] = useState(null)
   const [err, setErr] = useState(null)
@@ -232,7 +232,7 @@ function TrialForm({ trial, code, device, onDone }) {
   )
 }
 
-const P = {
+export const P = {
   page: { minHeight: '100vh', background: 'var(--bg, #FCF0F5)', display: 'flex', justifyContent: 'center', padding: '24px 16px', fontFamily: '"DM Sans",system-ui,sans-serif', color: 'var(--tx)' },
   card: { width: '100%', maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 16 },
   kicker: { fontFamily: '"Space Mono",monospace', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pkd)', margin: 0 },
