@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSY240 · L8 · A clinic program</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root { --ink:#141B22; --muted:#5C6773; --accent:#1F5C8B; --ground:#FCFBF8; --line:#DCE2E6; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; line-height:1.55; }
+  main { max-width:560px; margin:0 auto; padding:40px 16px 60px; min-height:100%;
+         display:flex; flex-direction:column; justify-content:center; }
+  .kicker { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:13px; letter-spacing:2px;
+            text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:32px; margin:0 0 16px; }
+  p { margin:0 0 14px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin:0 0 16px; font-size:18px; }
+  .label { font-family:"JetBrains Mono",ui-monospace,monospace; font-weight:600; font-size:14px; letter-spacing:2px; color:var(--accent); margin:0 0 8px; }
+  .steps { background:#EEF3F7; border-radius:12px; padding:14px 16px; margin:0 0 16px; }
+  .steps ol { margin:0; padding-left:20px; }
+  .steps li { margin:0 0 8px; }
+  .steps li:last-child { margin:0; }
+  .go { font-weight:700; font-size:18px; border-radius:24px; padding:14px 28px; text-decoration:none;
+        display:inline-block; background:var(--accent); color:#fff; align-self:flex-start; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">PSY240 · Lecture 8 · A clinic program</p>
+  <h1>Read your card</h1>
+  <div class="card">
+    <p class="label" id="label">CARD</p>
+    <p id="text" style="margin:0"></p>
+  </div>
+  <div class="steps">
+    <ol>
+      <li>Don't show your neighbour yet.</li>
+      <li>Open the Lecture Lounge check-in.</li>
+      <li>Answer with <strong>your card's</strong> options: <strong id="opts"></strong>.</li>
+    </ol>
+  </div>
+  <a class="go" href="https://radlab.zone/class/psy240">Open the Lounge &#8594;</a>
+</main>
+<script>
+(function () {
+  // Each phone gets one card, at random, and keeps it on reload.
+  var KEY = 'psy240-L8-clinic';
+  var CARDS = {
+    A: 'A public clinic pays people up to $20 a week in cash-value vouchers for each drug-free urine test.',
+    B: 'A public clinic rewards people for verified recovery milestones with up to $20 a week in grocery vouchers.'
+  };
+  function read() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function save(c) { try { localStorage.setItem(KEY, c); } catch (e) { /* private window: a reload may redraw */ } }
+  function draw() {
+    var b = new Uint8Array(1);
+    if (window.crypto && crypto.getRandomValues) { crypto.getRandomValues(b); return (b[0] & 1) ? 'A' : 'B'; }
+    return Math.random() < 0.5 ? 'A' : 'B';
+  }
+  var card = read();
+  if (card !== 'A' && card !== 'B') { card = draw(); save(card); }
+  document.getElementById('label').textContent = 'CARD ' + card;
+  document.getElementById('text').textContent = CARDS[card];
+  document.getElementById('opts').textContent = 'Card ' + card + ' · fund it, or Card ' + card + ' · don’t fund it';
+})();
+</script>
+</body>
+</html>
