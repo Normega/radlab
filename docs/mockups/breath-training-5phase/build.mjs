@@ -454,7 +454,7 @@ function screenHow() {
       ${lines(40, 48, ['YOUR TURN, STEP BY STEP'], { size: 12, op: 0.65, font: MONO })}
       ${list}
       <line x1="40" y1="410" x2="584" y2="410" stroke="${INK}" stroke-opacity="0.12"/>
-      ${lines(40, 438, ['From phase 2 on, follow the bead instead of the urge.', 'Anything shorter than half a second counts as a slip and is ignored.'], { size: 14, op: 0.8 })}`)}
+      ${lines(40, 438, ['From phase 2 on, follow the bead instead of the urge.', 'A tap shorter than a third of a second counts as a slip and is ignored.'], { size: 14, op: 0.8 })}`)}
     ${beginButton()}
     ${mockNote('mock-up 0b · how to make a kite · the start rule (W14)')}`
   return svg(sc, body, 'How to make a kite')
