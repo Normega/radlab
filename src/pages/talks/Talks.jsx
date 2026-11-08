@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/tanenbaum-nov-2026',
+    kicker: 'Tanenbaum Symposium · Aging Neuroscience · November 2026',
+    title: 'Aging attentively',
+    sub: 'How what we notice shapes wellbeing over time. Two levers, the senses and attention; the room taps its mood and runs a live two-minute Toggle on phones.',
+    tags: ['Aging', 'Sensory loss', 'Sense foraging'],
+    accent: 'var(--pk)',
+  },
+  {
     to: '/socpers-oct-2026',
     kicker: 'U of T social-personality group · October 2026',
     title: 'What You Miss Won’t Move You',
