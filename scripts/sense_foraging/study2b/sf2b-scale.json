@@ -1,0 +1,643 @@
+{
+  "slug": "sf2b-scale",
+  "name": "How you pay attention",
+  "questionnaire_type": "composable",
+  "instructions": "In general, how much do you agree with each statement? There are no right or wrong answers.",
+  "pages": [
+    {
+      "id": "sf2b_p1",
+      "components": [
+        {
+          "id": "sf2b_01",
+          "type": "likert",
+          "question": "As I go about my day, I notice the light, colours and sounds around me with interest",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_02",
+          "type": "likert",
+          "question": "Moving into the sensing mode is a struggle for me",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_03",
+          "type": "likert",
+          "question": "I enjoy taking a moment just to notice how my body feels, like my breathing, the soles of my feet, or posture",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_04",
+          "type": "likert",
+          "question": "I enjoy exploring the sights, sounds and textures of ordinary moments",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_05",
+          "type": "likert",
+          "question": "When I walk somewhere familiar, I notice very little of what I pass",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_06",
+          "type": "likert",
+          "question": "Even in chores I have done many times, I notice sounds, smells or textures I had missed",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_07",
+          "type": "likert",
+          "question": "Even when I pause to take in what is around me, I react to stress the same way",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "sf2b_p2",
+      "components": [
+        {
+          "id": "sf2b_08",
+          "type": "likert",
+          "question": "I can pay attention to what I’m feeling in my body in new or unfamiliar places",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_09",
+          "type": "likert",
+          "question": "It never seems to be the right time to go into the sensing mode",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_attn_agree",
+          "type": "likert",
+          "question": "To show that you are reading each statement, please select “Agree” for this one.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true
+        },
+        {
+          "id": "sf2b_10",
+          "type": "likert",
+          "question": "During my day, I take a moment to explore what I can see, hear and touch",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_11",
+          "type": "likert",
+          "question": "When I am busy, returning to the sensing mode feels like a low priority",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_12",
+          "type": "likert",
+          "question": "Looking closely at ordinary things around me often gives me a sense of wonder",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "sf2b_13",
+          "type": "likert",
+          "question": "I react to things before I have really taken them in",
+          "scale": [
+            {
+              "value": 1,
+              "label": "Strongly disagree"
+            },
+            {
+              "value": 2,
+              "label": "Disagree"
+            },
+            {
+              "value": 3,
+              "label": "Mildly disagree"
+            },
+            {
+              "value": 4,
+              "label": "Mildly agree"
+            },
+            {
+              "value": 5,
+              "label": "Agree"
+            },
+            {
+              "value": 6,
+              "label": "Strongly agree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "sf2b_01",
+      "source": "N4",
+      "sf2a_id": "sf2a_40",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_02",
+      "source": "sf6_36",
+      "sf2a_id": "sf2a_02",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": true,
+      "study1_item": "sf6_36"
+    },
+    {
+      "id": "sf2b_03",
+      "source": "V10",
+      "sf2a_id": "sf2a_31",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_04",
+      "source": "sf6_27",
+      "sf2a_id": "sf2a_25",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_05",
+      "source": "N6",
+      "sf2a_id": "sf2a_42",
+      "role": "exploratory",
+      "in_8": false,
+      "in_10": false,
+      "reverse_keyed": true
+    },
+    {
+      "id": "sf2b_06",
+      "source": "sfc_36",
+      "sf2a_id": "sf2a_36",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_07",
+      "source": "U4",
+      "sf2a_id": "sf2a_19",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": true
+    },
+    {
+      "id": "sf2b_08",
+      "source": "A9",
+      "sf2a_id": "sf2a_10",
+      "role": "10",
+      "in_8": false,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_09",
+      "source": "sfc_x2",
+      "sf2a_id": "sf2a_37",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": true
+    },
+    {
+      "id": "sf2b_10",
+      "source": "sfc_35",
+      "sf2a_id": "sf2a_39",
+      "role": "8",
+      "in_8": true,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_11",
+      "source": "sf6_44",
+      "sf2a_id": "sf2a_27",
+      "role": "exploratory",
+      "in_8": false,
+      "in_10": false,
+      "reverse_keyed": true,
+      "study1_item": "sf6_44"
+    },
+    {
+      "id": "sf2b_12",
+      "source": "sfc_24",
+      "sf2a_id": "sf2a_28",
+      "role": "10",
+      "in_8": false,
+      "in_10": true,
+      "reverse_keyed": false
+    },
+    {
+      "id": "sf2b_13",
+      "source": "sfc_31",
+      "sf2a_id": "sf2a_56",
+      "role": "exploratory",
+      "in_8": false,
+      "in_10": false,
+      "reverse_keyed": true
+    }
+  ],
+  "attention_checks": {
+    "sf2b_attn_agree": 5
+  },
+  "scoring": {
+    "method": "mean",
+    "reverse": "7 - x",
+    "sf8": [
+      "sf2b_01",
+      "sf2b_02",
+      "sf2b_03",
+      "sf2b_04",
+      "sf2b_06",
+      "sf2b_07",
+      "sf2b_09",
+      "sf2b_10"
+    ],
+    "sf10": [
+      "sf2b_01",
+      "sf2b_02",
+      "sf2b_03",
+      "sf2b_04",
+      "sf2b_06",
+      "sf2b_07",
+      "sf2b_08",
+      "sf2b_09",
+      "sf2b_10",
+      "sf2b_12"
+    ],
+    "reverse_items": [
+      "sf2b_02",
+      "sf2b_05",
+      "sf2b_07",
+      "sf2b_09",
+      "sf2b_11",
+      "sf2b_13"
+    ],
+    "unscored": [
+      "sf2b_05",
+      "sf2b_11",
+      "sf2b_13"
+    ],
+    "note": "The 8 is the primary score, the 10 secondary. \"Prefer not to answer\" is missing."
+  }
+}

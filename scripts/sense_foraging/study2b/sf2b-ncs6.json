@@ -1,0 +1,197 @@
+{
+  "slug": "sf2b-ncs6",
+  "name": "Thinking",
+  "questionnaire_type": "composable",
+  "instructions": "For each statement, please indicate how characteristic it is of you.",
+  "pages": [
+    {
+      "id": "ncs_p1",
+      "components": [
+        {
+          "id": "ncs_01",
+          "type": "likert",
+          "question": "I would prefer complex to simple problems.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Extremely uncharacteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Extremely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ncs_02",
+          "type": "likert",
+          "question": "I like to have the responsibility of handling a situation that requires a lot of thinking.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Extremely uncharacteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Extremely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ncs_03",
+          "type": "likert",
+          "question": "Thinking is not my idea of fun.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Extremely uncharacteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Extremely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ncs_04",
+          "type": "likert",
+          "question": "I would rather do something that requires little thought than something that is sure to challenge my thinking abilities.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Extremely uncharacteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Extremely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ncs_11",
+          "type": "likert",
+          "question": "I really enjoy a task that involves coming up with new solutions to problems.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Extremely uncharacteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Extremely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "ncs_15",
+          "type": "likert",
+          "question": "I would prefer a task that is intellectual, difficult, and important to one that is somewhat important but does not require much thought.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Extremely uncharacteristic of me"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5 Extremely characteristic of me"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "mean",
+    "range": "1-5",
+    "reverse": "6 - x",
+    "reverse_items": [
+      "ncs_03",
+      "ncs_04"
+    ],
+    "source": "Need for Cognition Scale-6: Lins de Holanda Coelho, Hanel & Wolf (2020); ids keep the NCS-18 item numbers. Study 2b discriminant (decision 18)."
+  }
+}

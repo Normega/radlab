@@ -1,0 +1,167 @@
+{
+  "slug": "sf2b-spsq-sd",
+  "name": "Light and sound",
+  "questionnaire_type": "composable",
+  "instructions": "How much does each statement apply to you?",
+  "pages": [
+    {
+      "id": "spsq_p1",
+      "components": [
+        {
+          "id": "spsq_33",
+          "type": "likert",
+          "question": "I find harsh sounds very annoying.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Moderately"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Extremely"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "spsq_07",
+          "type": "likert",
+          "question": "Brightly colored flickering lights are disturbing to me.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Moderately"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Extremely"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "spsq_42",
+          "type": "likert",
+          "question": "I am often bothered by too bright light.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Moderately"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Extremely"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "spsq_25",
+          "type": "likert",
+          "question": "I am easily disturbed by bright light or strong odors.",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4 Moderately"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 Extremely"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "mean",
+    "range": "1-7",
+    "reverse_items": [],
+    "source": "SPSQ-SF Sensory Discomfort subscale (4 items): De Gucht & Woestenburg (2025); English wording from the article's supplement (developed in Dutch); 7-point scale as the SPSQ (1 not at all, 4 moderately, 7 extremely). Ids keep the SPSQ item numbers. Study 2b discriminant (decision 26)."
+  }
+}

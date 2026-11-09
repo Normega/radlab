@@ -1,0 +1,504 @@
+{
+  "slug": "sf2-samd-md",
+  "name": "Meaning in events",
+  "questionnaire_type": "composable",
+  "instructions": "Read carefully each of the following items and indicate the degree to which each of these items best describes you.",
+  "pages": [
+    {
+      "id": "samd_p1",
+      "components": [
+        {
+          "id": "samd_md_01",
+          "type": "likert",
+          "question": "I believe that unexplained events enable new discovery and development",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_02",
+          "type": "likert",
+          "question": "I find signs of inner feelings in the external stimuli in the world around me",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_03",
+          "type": "likert",
+          "question": "I find meaning in unexplained occurrences",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_04",
+          "type": "likert",
+          "question": "I believe that listening to internal and external occurrences enables new discoveries",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_05",
+          "type": "likert",
+          "question": "I sometimes feel that the environment “sends” me signals",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_06",
+          "type": "likert",
+          "question": "Following experiences I’ve had, I have a sense of deep knowing of myself and the world",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_07",
+          "type": "likert",
+          "question": "I am open to experiences that may not necessarily be explained by reason or causality",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    },
+    {
+      "id": "samd_p2",
+      "components": [
+        {
+          "id": "samd_md_08",
+          "type": "likert",
+          "question": "I tend to be attentive to intuition in my everyday life",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_09",
+          "type": "likert",
+          "question": "I am curious about surprising events in my life",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_10",
+          "type": "likert",
+          "question": "I walk around in the world with a sense of awe and wonder from the opportunities and surprises that the world has to offer",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_11",
+          "type": "likert",
+          "question": "It happens that things related to issues I am concerned with suddenly appear more in my everyday life",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_12",
+          "type": "likert",
+          "question": "I believe that there is something to be learned from any event in life",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "samd_md_13",
+          "type": "likert",
+          "question": "I tend to be attentive to physical and bodily sensations (e.g., goosebumps, pain, sense of warmth)",
+          "scale": [
+            {
+              "value": 1,
+              "label": "1 Not at all"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 6,
+              "label": "6"
+            },
+            {
+              "value": 7,
+              "label": "7 To a high degree"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "mean",
+    "note": "Synchronicity Awareness and Meaning-Detecting Scale (SAMD), Meaning-Detecting subscale only (13 items, 1-7, no reverse-keyed items): Russo-Netzer & Icekson (2023), Frontiers in Psychology 13:1053296, Table 1, item wording and instructions as published (English back-translation of the Hebrew original). Article CC BY; authors to be told of the use. Study 2b: discriminant (decision 16).",
+    "reverse_items": []
+  }
+}
