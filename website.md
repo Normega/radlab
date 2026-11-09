@@ -5114,7 +5114,7 @@ $12/h, and offer the separate Borealis deposit consent.
 ### Study 2b: built, inactive (2026-11-09)
 
 "Sense Foraging Study 2b (CFA + validity)" `1864d663-d01c-5d82-91f0-3047462470c3`, public title "Everyday Attention Survey",
-template `SenseForaging_Study2b`, 21 steps, about 22 minutes plus any pause, 500 on Prolific (decisions 1–29 in
+template `SenseForaging_Study2b`, 21 steps, about 22 minutes plus any pause, 700 on Prolific in one posting (decisions 1–36 in
 sense-foraging-scale `study2/decisions_after_2a.md`). **`active = false`**; the REB amendment is approved under #00051180.
 `separate_external_identity`, `questionnaire_layout = 'stacked'`, `ratings_allow_pna = true` (face scale), `max_attempts = 1`.
 
@@ -5139,7 +5139,7 @@ sense-foraging-scale `study2/decisions_after_2a.md`). **`active = false`**; the 
 - **Export:** the pause record exports as named columns (`<prefix>_pause_1_choice`, `_on_page_s`, …;
   `src/lib/sensingPauseColumns.js`, on main 2026-11-09 on Norm's approval), not one JSON cell.
 - **Before launch:** the Prolific completion code in `completion_redirect_url` (null now); Prolific's exclusion of Study 1
-  and 2a participants; the ~60-person pilot; the preregistration.
+  and 2a participants; the ~60-person pilot; filing the preregistration (drafted 2026-11-09 in sense-foraging-scale `study2/preregistration_draft.md`) once the 2b analysis code has run on simulated data.
 
 ### Study 2a: built, inactive (2026-10-29)
 
