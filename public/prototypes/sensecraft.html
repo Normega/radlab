@@ -149,7 +149,7 @@
 
 <div class="panel" id="debrief" hidden>
   <h2>Here is where your senses brought you.</h2>
-  <p>Each part of this place came from something you noticed on the way. Another day you will notice other things, and the path will go somewhere else.</p>
+  <p><span id="bareLine">You started on a grey plain. Everything here is something you noticed.</span> Another day you will notice other things, and the path will go somewhere else.</p>
   <div class="route" id="route"></div>
   <p>On this walk you were sense foraging: shifting your attention from doing to sensing, taking in what is here through your senses, with curiosity.</p>
   <details><summary>Why this?</summary>
@@ -176,9 +176,11 @@
    The walk forks eight times. Each fork asks one sense one
    question, about the screen or about the player's own room,
    and each answer writes exactly ONE layer of a landscape.
-   Atmosphere layers (light, colour, season, weather, and the
-   sounds) change the world live as you walk; objects wait for
-   the destination. Every fork has a faint middle path,
+   The walk starts on a bare grey plain and holds nothing that
+   was not chosen (G1, G2, 2026-11-09): each answer changes the
+   atmosphere or grows its things along the path, arriving from
+   the horizon; set pieces (waterfall, lake, house, hives…) wait
+   for the destination. Every fork has a faint middle path,
    "nothing right now", which leaves its layer empty, so a
    walk where nothing came ends somewhere bare, and that is
    allowed.
@@ -421,21 +423,24 @@ function envNow(){
   const warm = lw('season', 'warm'), cool = lw('season', 'cool');
   const sunny = lw('weather', 'sunny'), grey = lw('weather', 'grey');
   const ps = S.L.palette, pal = ps && ps.opt ? { rgb: PAL[ps.opt], w: ps.w } : null;
-  let top = mix([164, 176, 188], [88, 148, 212], b); top = mix(top, [34, 36, 84], d);
-  let bot = mix([210, 212, 210], [204, 226, 238], b); bot = mix(bot, [232, 148, 120], d);
+  // with no answers yet, sky and ground are nearly one soft grey: a featureless plain
+  let top = mix([186, 187, 190], [88, 148, 212], b); top = mix(top, [34, 36, 84], d);
+  let bot = mix([199, 199, 200], [204, 226, 238], b); bot = mix(bot, [232, 148, 120], d);
   if (grey){ top = mix(top, [116, 122, 134], grey * 0.65); bot = mix(bot, [168, 172, 178], grey * 0.55); }
   if (sunny){ top = mix(top, d > 0.5 ? [20, 26, 78] : [64, 136, 222], sunny * 0.35); }
   if (pal){ bot = mix(bot, pal.rgb, pal.w * 0.22); }
   const nightK = d * 0.52 + grey * 0.1;
   const dark = c => mix(c, NIGHT, nightK);
-  let ground = mix([134, 146, 120], [88, 146, 62], warm); ground = mix(ground, [226, 230, 238], cool);
-  let tree = mix([110, 118, 98], [60, 120, 58], warm); tree = mix(tree, [92, 84, 80], cool);
-  let hillFar = mix([150, 158, 166], [118, 150, 172], b);
+  let ground = mix([178, 178, 176], [88, 146, 62], warm); ground = mix(ground, [226, 230, 238], cool);
+  ground = mix(ground, [196, 172, 104], lw('air', 'golden') * 0.35);
+  let tree = mix([112, 120, 104], [60, 120, 58], warm); tree = mix(tree, [92, 84, 80], cool);
+  let hillFar = mix([176, 178, 182], [118, 150, 172], b);
   hillFar = mix(hillFar, bot, 0.3);
   if (pal) hillFar = mix(hillFar, pal.rgb, pal.w * 0.38);
   let hillNear = mix(ground, hillFar, 0.4);
   if (cool) hillNear = mix(hillNear, [232, 236, 244], cool * 0.6);
-  let path = mix([194, 182, 158], [214, 218, 228], cool); path = mix(path, [150, 142, 124], grey * 0.3);
+  let path = mix([206, 205, 201], [194, 182, 158], warm); path = mix(path, [214, 218, 228], cool);
+  path = mix(path, [166, 162, 156], lw('ground', 'stone') * 0.7); path = mix(path, [150, 142, 124], grey * 0.3);
   const vivid = Math.max(b, d, warm, cool, sunny, grey, pal ? pal.w : 0);
   return { b, d, warm, cool, sunny, grey, pal, top, bot, nightK, dark, vivid,
     ground: dark(ground), tree: dark(tree), hillFar: mix(dark(hillFar), bot, 0.15), hillNear: dark(hillNear), path: dark(path) };
@@ -593,27 +598,46 @@ function makeFork(){
   const mk = (da, style, hw) => { const ray = { ox: fx, oz: fz, ang: r.ang + da, len: 500, hw, style, fade: 0 }; S.rays.push(ray); return ray; };
   S.fork = { L: mk(-T.branch, 'road', 1.0), M: mk(0, 'faint', 0.42), R: mk(T.branch, 'road', 1.0) };
 }
-const OBJ_KINDS = [['tuft', 0.56], ['stone', 0.12], ['bush', 0.16], ['tree', 0.16]];
+// What each answer grows along the walk (G1, 2026-11-09). The walk starts as a bare grey
+// plain and holds nothing that was not chosen (G2): even the grass is the season's. Set
+// pieces (waterfall, lake, spring, house, hives, campfire, mown field, sea) wait for the place.
+const WALK_FORMS = {
+  warm: [['tuft', 6], ['bush', 2], ['tree', 2]], cool: [['tuft', 5], ['bare', 2], ['pine', 1.5]],
+  meadow: [['wild', 3]], flowers: [['wild', 4]], pines: [['pine', 3]],
+  crags: [['crag', 1.5]], stone: [['stone', 3]], moss: [['moss', 3], ['long', 1]],
+  sandstone: [['sand', 1.5]], ferns: [['fern', 3]], golden: [['gold', 4]],
+  blossom: [['blossom', 1.5]], lavender: [['lav', 3]], berries: [['berry', 2]],
+  apple: [['apple', 1]], oak: [['oak', 0.5]], crickets: [['long', 4]], frogs: [['pond', 1]],
+};
+let WALK_MIX = [], WALK_TARGET = 0;
+function walkMix(){ // the season is the biome (60 things); every other answer adds 14
+  WALK_MIX = []; let n = 0, biome = false;
+  for (const k in S.L){ const o = S.L[k].opt; if (!o || !WALK_FORMS[o]) continue; WALK_MIX.push(...WALK_FORMS[o]); if (k === 'season') biome = true; else n++; }
+  WALK_TARGET = Math.min(S.obj.length, (biome ? 60 : 0) + n * 14);
+}
+const EMPTY = () => ({ x: 0, z: 0, kind: null, v: 0, sd: 0 });
 function spawnObj(initial){
+  if (initial || !WALK_MIX.length) return EMPTY();
   for (let tries = 0; tries < 30; tries++){
-    const zz = initial ? 1 + rng() * 74 : 62 + rng() * 16;
+    const zz = 62 + rng() * 16;
     const side = rng() < 0.5 ? -1 : 1, xx = side * (2.4 + Math.pow(rng(), 1.4) * 16);
     const sn = Math.sin(cam.yaw), cs = Math.cos(cam.yaw);
     const x = cam.x + xx * cs + zz * sn, z = cam.z - xx * sn + zz * cs;
     if (S.rays.some(r => distToRay(x, z, r) < r.hw + (r.style === 'faint' ? 0.5 : 0.9))) continue;
-    let u = rng(), kind = 'tuft'; for (const [k, p] of OBJ_KINDS){ if ((u -= p) <= 0){ kind = k; break; } }
+    const tot = WALK_MIX.reduce((a, m) => a + m[1], 0);
+    let u = rng() * tot, kind = WALK_MIX[0][0]; for (const [k, p] of WALK_MIX){ if ((u -= p) <= 0){ kind = k; break; } }
     return { x, z, kind, v: rng(), sd: (rng() * 1e9) | 0 };
   }
-  return { x: 9999, z: -9999, kind: 'tuft', v: 0, sd: 0 };
+  return EMPTY();
 }
 function clearCorridors(){
-  S.obj.forEach((o, i) => { if (S.rays.some(r => distToRay(o.x, o.z, r) < r.hw + 0.9)) S.obj[i] = spawnObj(false); });
+  S.obj.forEach((o, i) => { if (o.kind && S.rays.some(r => distToRay(o.x, o.z, r) < r.hw + 0.9)) S.obj[i] = spawnObj(false); });
 }
 
 function drawSkyAndHills(c, e, t, hy, place){
   c.fillStyle = vgrad(c, 0, hy, e.top, e.bot); c.fillRect(0, 0, W, hy + H * 0.16);
   // sun or moon and stars
-  const sunA = clamp(1 - e.d * 1.4) * (1 - e.grey * 0.85);
+  const sunA = Math.max(e.b, e.sunny) * clamp(1 - e.d * 1.4) * (1 - e.grey * 0.85); // no sun until the light or the window brings it
   if (sunA > 0.01){
     const sx = W * 0.78, sy = H * 0.15, r = Math.min(W, H) * 0.045;
     const g = c.createRadialGradient(sx, sy, 0, sx, sy, r * 5); g.addColorStop(0, `rgba(255,246,214,${0.5 * sunA})`); g.addColorStop(1, 'rgba(255,246,214,0)');
@@ -629,14 +653,16 @@ function drawSkyAndHills(c, e, t, hy, place){
     c.fillStyle = g; c.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
     circ(c, mx, my, mr, [244, 240, 226], e.d);
   }
-  // clouds
-  const big = place && opt('drift') === 'bigclouds';
+  // clouds: only once something brings them (rain, slow breath, or daylight's few)
+  const bigK = lw('drift', 'bigclouds'), cloudK = Math.max(e.grey, bigK, e.b * 0.7);
+  if (cloudK < 0.01) return;
+  const big = bigK > 0.5;
   const n = e.grey > 0.3 ? 9 : big ? 6 : 4, cr = mulberry32(5 + SEED);
   const ccol = mix(mix([250, 250, 250], e.bot, 0.35), [120, 124, 136], e.grey * 0.7);
   for (let i = 0; i < n; i++){
     const w = (big ? 180 : 110) * Math.min(W, H) / 800 * (0.7 + cr() * 0.6), sp = (big ? 3 : 6) * (0.6 + cr() * 0.8);
     const x = ((cr() * (W + 2 * w) + t * sp) % (W + 2 * w)) - w, y = hy * (0.12 + cr() * (e.grey > 0.3 ? 0.4 : 0.55));
-    const a = 0.55 + e.grey * 0.3;
+    const a = (0.55 + e.grey * 0.3) * cloudK;
     for (let k = 0; k < 6; k++) ell(c, x + (k - 2.5) * w * 0.17, y - Math.sin(k / 5 * 3.14) * w * 0.12, w * 0.2, w * 0.13, ccol, a);
   }
 }
@@ -650,14 +676,47 @@ function ridge(c, e, hy, amp, base, col, seed, yawK){
   c.lineTo(W, H); c.closePath(); c.fill();
 }
 
+// a far range with sharp peaks, at the horizon, turning with the view like the ridges
+function mountains(c, e, hy, amp){
+  const col = mix(mix(e.hillFar, [120, 132, 168], 0.35), e.bot, 0.25), peak = u => Math.pow(1 - Math.abs(Math.sin(u)), 1.6);
+  c.fillStyle = css(col); c.beginPath(); c.moveTo(0, hy + 2);
+  for (let x = 0; x <= W + 6; x += 6){ const ang = cam.yaw + Math.atan((x - W / 2) / F) + 4.2;
+    c.lineTo(x, hy - (0.55 * peak(ang * 2.3) + 0.3 * peak(ang * 5.1 + 1) + 0.15 * peak(ang * 11.7 + 2)) * amp); }
+  c.lineTo(W, hy + 2); c.closePath(); c.fill();
+}
+// what the answers put in the walk's sky: birds, a thread of far smoke, thistledown
+function drawSkyLife(c, e, t){
+  const bK = lw('voice', 'birds');
+  if (bK > 0.01) for (let i = 0; i < 5; i++){ const r = mulberry32(hashStr('wb' + i) ^ SEED), sp = 24 + r() * 26, x = ((r() * W + t * sp) % (W + 60)) - 30, y = HY * (0.25 + r() * 0.45) + Math.sin(t * 0.7 + i) * 6, u = Math.min(W, H) * (0.008 + r() * 0.004), f = Math.sin(t * 8 + i * 2) * u * 0.6;
+    c.strokeStyle = css(e.dark([50, 46, 56]), bK); c.lineWidth = 1.4; c.beginPath(); c.moveTo(x - u, y - f); c.quadraticCurveTo(x - u * 0.4, y - u * 0.4, x, y); c.quadraticCurveTo(x + u * 0.4, y - u * 0.4, x + u, y - f); c.stroke(); }
+  const smK = lw('hearth', 'campfire');
+  if (smK > 0.01){
+    // somewhere off to one side of the way ahead; it drifts back into view after a turn
+    if (S.smokeAng === undefined) S.smokeAng = cam.yaw + 0.45;
+    if (Math.abs(S.smokeAng - cam.yaw) > 0.8) S.smokeAng += ((cam.yaw + 0.45) - S.smokeAng) * 0.004;
+    const sx = W / 2 + Math.tan(S.smokeAng - cam.yaw) * F, u = Math.min(W, H) * 0.01;
+    for (let i = 0; i < 10; i++){ const p = (t * 0.06 + i / 10) % 1; circ(c, sx + Math.sin(p * 5 + i) * u * 2 * p + p * u * 3, HY - p * H * 0.14, u * (0.4 + p * 1.6), [200, 200, 204], 0.22 * (1 - p) * smK); }
+  }
+  const thK = lw('horizon', 'thistle');
+  if (thK > 0.01) for (let i = 0; i < 14; i++){ const r = mulberry32(hashStr('wt' + i) ^ SEED), p = (t * (0.012 + r() * 0.01) + r()) % 1, x = W * p * 1.2 - W * 0.1, y = H * (0.7 - p * 0.45 + r() * 0.25) + Math.sin(t + i) * 8, u = Math.min(W, H) * 0.004;
+    for (let k = 0; k < 7; k++){ const a = k / 7 * 6.28 + t * 0.2; line(c, x, y, x + Math.cos(a) * u * 2, y + Math.sin(a) * u * 2, [255, 255, 255], 0.7, 0.6 * thK); } circ(c, x, y, 1.2, [240, 236, 220], thK); }
+}
+
 function drawWalk(c, t){
   const e = envNow();
   const bob = (!REDUCED && S.v > 0.5) ? Math.sin(S.stepPh || 0) * 1.6 : 0;
   HY = H * 0.42 + bob;
   drawSkyAndHills(c, e, t, HY, false);
-  ridge(c, e, HY, H * 0.05, 0, e.hillFar, 0, 1);
-  ridge(c, e, HY, H * 0.028, H * 0.004, mix(e.hillNear, e.hillFar, 0.3), 2.1, 1);
-  c.fillStyle = vgrad(c, HY, H, mix(e.ground, e.bot, 0.45), mix(e.ground, [0, 0, 0], 0.08)); c.fillRect(0, HY, W, H - HY);
+  drawSkyLife(c, e, t);
+  // the plain is flat until a choice raises it
+  const mtnK = lw('horizon', 'mountains'), hillK = lw('trail', 'hill');
+  if (mtnK > 0.005) mountains(c, e, HY, H * 0.12 * mtnK);
+  if (hillK > 0.005){
+    ridge(c, e, HY, H * 0.05 * hillK, 0, e.hillFar, 0, 1);
+    ridge(c, e, HY, H * 0.028 * hillK, H * 0.004, mix(e.hillNear, e.hillFar, 0.3), 2.1, 1);
+  }
+  // on the bare plain the ground meets the sky without a line
+  c.fillStyle = vgrad(c, HY, H, mix(e.ground, e.bot, 0.45 + 0.55 * (1 - e.vivid)), mix(e.ground, [0, 0, 0], 0.08)); c.fillRect(0, HY, W, H - HY);
   if (e.cool > 0.05){ // winter ground sparkle
     const r = mulberry32(31); for (let i = 0; i < 60; i++) circ(c, r() * W, HY + Math.pow(r(), 0.6) * (H - HY), 0.8, [255, 255, 255], 0.5 * e.cool * (0.5 + 0.5 * Math.sin(t * 2 + i)));
   }
@@ -680,19 +739,64 @@ function drawWalk(c, t){
   }
   // side objects, far to near
   const vis = [];
-  for (const o of S.obj){ const [xx, zz] = toCam(o.x, o.z); if (zz > NEAR && zz < 80) vis.push([zz, xx, o]); }
+  for (const o of S.obj){ if (!o.kind) continue; const [xx, zz] = toCam(o.x, o.z); if (zz > NEAR && zz < 80) vis.push([zz, xx, o]); }
   vis.sort((a, b) => b[0] - a[0]);
+  const sway = 0.08 + 0.16 * lw('wind', 'breeze');
+  const blade = (sx, sy, k, hgt, col, o, n = 5) => { c.strokeStyle = css(col); c.lineWidth = Math.max(0.6, k * 0.03); c.beginPath();
+    for (let i = 0; i < n; i++){ const a = (i - (n - 1) / 2) * 0.28 + Math.sin(t * 1.3 + o.sd) * sway; c.moveTo(sx + (i - (n - 1) / 2) * k * 0.04, sy); c.lineTo(sx + Math.sin(a) * hgt, sy - Math.cos(a) * hgt); }
+    c.stroke(); };
   for (const [zz, xx, o] of vis){
     const [sx, sy] = toScr(xx, zz), k = F / zz;
     if (sx < -k * 4 || sx > W + k * 4) continue;
     const fog = clamp((zz - 14) / 62) * 0.85, fadeIn = clamp((78 - zz) / 10);
     c.globalAlpha = fadeIn;
-    const rr = mulberry32(o.sd);
+    const rr = mulberry32(o.sd), F2 = col => mix(e.dark(col), e.bot, fog), snow = e.cool > 0.5;
     if (o.kind === 'tuft'){
-      const col = mix(mix(e.tree, [255, 255, 255], 0.1), e.bot, fog), hgt = 0.32 * k * (0.6 + o.v * 0.7);
-      c.strokeStyle = css(e.cool > 0.5 ? mix([120, 120, 110], e.bot, fog) : col); c.lineWidth = Math.max(0.6, k * 0.03); c.beginPath();
-      for (let i = 0; i < 5; i++){ const a = (i - 2) * 0.28 + Math.sin(t * 1.3 + o.sd) * 0.08; c.moveTo(sx + (i - 2) * k * 0.04, sy); c.lineTo(sx + Math.sin(a) * hgt, sy - Math.cos(a) * hgt); }
-      c.stroke();
+      blade(sx, sy, k, 0.32 * k * (0.6 + o.v * 0.7), snow ? mix([120, 120, 110], e.bot, fog) : mix(mix(e.tree, [255, 255, 255], 0.1), e.bot, fog), o);
+    } else if (o.kind === 'long'){
+      blade(sx, sy, k, 0.75 * k * (0.7 + o.v * 0.6), snow ? F2([140, 140, 124]) : F2([54, 96, 52]), o, 7);
+    } else if (o.kind === 'gold'){
+      const hgt = 0.5 * k * (0.7 + o.v * 0.5); blade(sx, sy, k, hgt, F2([196, 164, 96]), o, 6);
+      ell(c, sx + Math.sin(t * 1.3 + o.sd) * sway * hgt, sy - hgt, k * 0.03, k * 0.07, F2([224, 190, 110]));
+    } else if (o.kind === 'wild'){
+      const cols = e.pal ? [e.pal.rgb, mix(e.pal.rgb, [255, 255, 255], 0.5), [250, 220, 90]] : [[236, 120, 160], [250, 220, 90], [255, 255, 255], [170, 130, 220]];
+      for (let i = 0; i < 3; i++) flower(c, sx + (i - 1) * k * 0.12, sy, k * (0.22 + rr() * 0.16), mix(e.dark(cols[(o.sd + i) % cols.length]), e.bot, fog), e, Math.sin(t * 1.3 + o.sd + i) * sway * k * 0.3);
+    } else if (o.kind === 'lav'){
+      for (let i = 0; i < 6; i++){ const x = sx + (i - 2.5) * k * 0.06, hh = k * (0.3 + rr() * 0.12), sw = Math.sin(t * 1.2 + o.sd + i) * sway * k * 0.3;
+        line(c, x, sy, x + sw, sy - hh, F2([84, 120, 80]), Math.max(0.6, k * 0.02)); ell(c, x + sw, sy - hh, k * 0.025, k * 0.06, F2(snow ? [150, 140, 170] : [150, 112, 206])); }
+    } else if (o.kind === 'fern'){
+      const col = F2(snow ? [96, 110, 96] : [62, 128, 70]); c.strokeStyle = css(col); c.lineWidth = Math.max(0.6, k * 0.025);
+      for (let i = 0; i < 5; i++){ const a = -2.5 + i * 0.45, len = k * (0.4 + (i % 2) * 0.12), ex = sx + Math.cos(a) * len, ey = sy + Math.sin(a) * len * 0.8;
+        c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(sx + Math.cos(a) * len * 0.5, sy - len * 0.55, ex, ey); c.stroke(); }
+    } else if (o.kind === 'moss'){
+      ell(c, sx, sy, k * (0.5 + o.v * 0.5), k * 0.1, F2(snow ? [200, 210, 204] : [70, 126, 60]));
+      ell(c, sx - k * 0.12, sy - k * 0.04, k * 0.22, k * 0.04, [255, 255, 255], 0.1 * (1 - fog));
+    } else if (o.kind === 'pond'){
+      const rx = k * (0.9 + o.v * 0.6); ell(c, sx, sy, rx * 1.05, rx * 0.2, F2([96, 120, 100])); ell(c, sx, sy, rx, rx * 0.17, F2(snow ? [196, 214, 226] : [100, 150, 170]));
+      if (!snow) for (let i = 0; i < 3; i++) ell(c, sx + (rr() - 0.5) * rx * 1.2, sy + (rr() - 0.5) * rx * 0.12, k * 0.1, k * 0.035, F2([70, 140, 70]));
+    } else if (o.kind === 'crag'){
+      const hh = k * (0.9 + o.v * 1.1), ww = k * (0.5 + o.v * 0.3), col = F2([128, 124, 120]);
+      poly(c, [[sx - ww, sy], [sx - ww * 0.6, sy - hh * 0.7], [sx - ww * 0.1, sy - hh], [sx + ww * 0.5, sy - hh * 0.75], [sx + ww, sy]], col);
+      poly(c, [[sx - ww * 0.1, sy - hh], [sx + ww * 0.5, sy - hh * 0.75], [sx + ww * 0.2, sy - hh * 0.3]], mix(col, [255, 255, 255], 0.18));
+      if (snow) poly(c, [[sx - ww * 0.35, sy - hh * 0.82], [sx - ww * 0.1, sy - hh], [sx + ww * 0.3, sy - hh * 0.8]], [244, 246, 252], 0.9 * (1 - fog));
+    } else if (o.kind === 'sand'){
+      const u = k * (0.35 + o.v * 0.25);
+      [[-1, 0, 1.4, 1.1], [0.3, 0, 1.2, 1.6]].forEach(([dx, dy, ww, hh], i) => { const col = F2([212 - i * 10, 148 - i * 6, 96]);
+        c.fillStyle = css(col); c.fillRect(sx + dx * u, sy + dy * u - hh * u, ww * u, hh * u);
+        c.fillStyle = css(mix(col, [255, 236, 200], 0.35)); c.fillRect(sx + dx * u, sy - hh * u, ww * u, hh * u * 0.2); });
+    } else if (o.kind === 'berry'){
+      const s = k * 0.5 * (0.7 + o.v * 0.5), col = F2(snow ? [84, 90, 88] : [48, 98, 60]);
+      circ(c, sx - s * 0.4, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.4, sy - s * 0.4, s * 0.5, col); circ(c, sx, sy - s * 0.7, s * 0.55, mix(col, [255, 255, 255], 0.06));
+      for (let i = 0; i < 8; i++) circ(c, sx + (rr() - 0.5) * s * 1.4, sy - s * (0.25 + rr() * 0.8), s * 0.08, F2(i % 2 ? [200, 40, 60] : [60, 70, 170]));
+    } else if (o.kind === 'blossom'){
+      const h = k * (2.6 + o.v * 1.6); roundTree(c, sx, sy, h, e, rr, fog, snow ? null : e.dark([246, 196, 212]));
+    } else if (o.kind === 'apple'){
+      const h = k * (2.8 + o.v * 1.4); roundTree(c, sx, sy, h, e, rr, fog);
+      if (!snow) for (let i = 0; i < 6; i++) circ(c, sx + (rr() - 0.5) * h * 0.5, sy - h * (0.55 + rr() * 0.3), Math.max(0.8, h * 0.03), F2([204, 40, 40]));
+    } else if (o.kind === 'oak'){
+      roundTree(c, sx, sy, k * (6 + o.v * 2), e, rr, fog);
+    } else if (o.kind === 'pine'){
+      pine(c, sx, sy, k * (3.2 + o.v * 2.4), e, e.cool, fog);
     } else if (o.kind === 'stone'){
       ell(c, sx, sy - k * 0.06, k * 0.28 * (0.6 + o.v), k * 0.14 * (0.6 + o.v), mix(e.dark([140, 138, 134]), e.bot, fog));
       if (e.cool > 0.5) ell(c, sx, sy - k * 0.13, k * 0.2 * (0.6 + o.v), k * 0.06, [244, 246, 250], 0.8 * (1 - fog));
@@ -700,13 +804,20 @@ function drawWalk(c, t){
       const col = mix(e.cool > 0.5 ? e.dark([110, 104, 98]) : mix(e.tree, [0, 0, 0], 0.08), e.bot, fog), s = k * 0.55 * (0.7 + o.v * 0.6);
       circ(c, sx - s * 0.4, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.4, sy - s * 0.4, s * 0.5, col); circ(c, sx, sy - s * 0.7, s * 0.55, mix(col, [255, 255, 255], 0.06));
       if (e.cool > 0.5) ell(c, sx, sy - s * 1.15, s * 0.45, s * 0.14, [244, 246, 250], 0.85 * (1 - fog));
-    } else {
-      const h = k * (3.2 + o.v * 2.4);
-      if (o.v < 0.35 || e.cool > 0.5 && o.v < 0.6) pine(c, sx, sy, h, e, e.cool, fog);
-      else roundTree(c, sx, sy, h, e, rr, fog);
+    } else { // tree (summer) or bare (winter; roundTree draws bare branches in the cold)
+      roundTree(c, sx, sy, k * (3.2 + o.v * 2.4), e, rr, fog);
     }
     c.globalAlpha = 1;
   }
+  // butterflies or fireflies near the path, and low mist over the ground
+  const flK = lw('drift', 'flutter');
+  if (flK > 0.01){ const n = e.d > 0.5 ? 18 : 6;
+    for (let i = 0; i < n; i++){ const r = mulberry32(hashStr('wf' + i) ^ SEED), x = W * (0.08 + r() * 0.84) + Math.sin(t * (0.3 + r() * 0.3) + i) * 40, y = HY + (H - HY) * (0.25 + r() * 0.45) + Math.cos(t * (0.4 + r() * 0.3) + i * 2) * 18, u = (H - HY) * 0.012;
+      if (e.d > 0.5){ circ(c, x, y, u * 2.4, [250, 255, 170], 0.18 * flK); circ(c, x, y, u * 0.5, [255, 255, 220], flK * (0.4 + 0.6 * Math.max(0, Math.sin(t * (1 + r()) + i * 3)))); }
+      else { const fw = Math.abs(Math.sin(t * 9 + i)) * u * 1.6 + u * 0.4, col = e.pal ? e.pal.rgb : [[250, 200, 80], [240, 130, 170], [140, 180, 240]][i % 3];
+        ell(c, x - fw * 0.6, y, fw * 0.6, u, col, flK); ell(c, x + fw * 0.6, y, fw * 0.6, u, col, flK); } } }
+  const mistK = lw('air', 'mist');
+  if (mistK > 0.01){ const g = c.createLinearGradient(0, HY - H * 0.02, 0, HY + (H - HY) * 0.6); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.2, `rgba(255,255,255,${0.38 * mistK})`); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, HY - H * 0.02, W, (H - HY) * 0.62 + H * 0.02); }
   // haze at the horizon
   { const g = c.createLinearGradient(0, HY - H * 0.03, 0, HY + H * 0.09); g.addColorStop(0, css(e.bot, 0)); g.addColorStop(0.35, css(e.bot, 0.4)); g.addColorStop(1, css(e.bot, 0)); c.fillStyle = g; c.fillRect(0, HY - H * 0.03, W, H * 0.12); }
   drawWeather(c, e, t, false);
@@ -794,7 +905,10 @@ function drawPlace(c, w, h, t){
   const hill = (base, amp, f1, f2, col) => { c.fillStyle = css(col); c.beginPath(); c.moveTo(0, h);
     for (let x = 0; x <= w + 6; x += 6){ const u = x / w; c.lineTo(x, hy + base * h - amp * h * (0.6 + 0.4 * Math.sin(u * f1 + 1) + 0.2 * Math.sin(u * f2)) + seaDip * clamp((u - 0.5) / 0.15) * h * 0.06); }
     c.lineTo(w, h); c.closePath(); c.fill(); };
-  hill(0.02, 0.04, 5, 13, e.hillFar);
+  // relief comes from the hills or mountains answers; otherwise the land rolls gently
+  const any = Object.values(S.L).some(l => l.opt), relief = Math.max(lw('trail', 'hill'), lw('horizon', 'mountains') * 0.6, any ? 0.45 : 0);
+  if (!any){ c.fillStyle = vgrad(c, hy, h, e.bot, mix(e.ground, [0, 0, 0], 0.1)); c.fillRect(0, hy, w, h - hy); } // still the grey plain
+  else hill(0.02, 0.04 * relief, 5, 13, e.hillFar);
   // waterfall on the far left hill
   if (O('water')){
     const x = w * 0.13, top = hy - h * 0.07, bot = hy + h * 0.1, cw = 34 * s;
@@ -831,8 +945,10 @@ function drawPlace(c, w, h, t){
     for (let i = -2; i * sw < rx * 2 + ry * 2; i++){ const x0 = fx - rx - ry * 2 + i * sw; poly(c, [[x0, fy + ry], [x0 + sw, fy + ry], [x0 + sw + ry * 2.2, fy - ry], [x0 + ry * 2.2, fy - ry]], e.cool > 0.5 ? (i % 2 ? [236, 240, 246] : [218, 224, 234]) : e.dark(i % 2 ? [128, 182, 92] : [100, 158, 72])); }
     c.restore();
   }
-  hill(0.075, 0.035, 3.2, 9, mix(e.hillNear, e.ground, 0.3));
-  c.fillStyle = vgrad(c, hy + h * 0.1, h, mix(e.ground, e.hillNear, 0.3), mix(e.ground, [0, 0, 0], 0.1)); c.fillRect(0, hy + h * 0.1, w, h);
+  if (any){
+    hill(0.075, 0.035 * relief, 3.2, 9, mix(e.hillNear, e.ground, 0.3));
+    c.fillStyle = vgrad(c, hy + h * 0.1, h, mix(e.ground, e.hillNear, 0.3), mix(e.ground, [0, 0, 0], 0.1)); c.fillRect(0, hy + h * 0.1, w, h);
+  }
   if (O('golden')){ c.fillStyle = 'rgba(214,176,96,0.22)'; c.fillRect(0, hy + h * 0.06, w, h); }
   // the trail
   const trail = opt('trail');
@@ -1132,6 +1248,7 @@ function choose(side){
   for (const k in CARD) if (k !== side) CARD[k].classList.add('gone');
   // the layer
   S.L[card.layer] = { opt: o ? o.k : null, w: 0, card: card.id };
+  walkMix();
   // sound: the chosen voice stays and moves to the middle; the other goes
   const P = AU.preview; AU.preview = null;
   if (P){ for (const sd of ['L', 'R']){ if (sd === side && o){ AU.live[card.layer] = P[sd]; srcPan(P[sd], 0, 3); srcVol(P[sd], P[sd].spec.vol, 2); } else srcStop(P[sd]); }
@@ -1183,8 +1300,8 @@ addEventListener('keydown', ev => {
 // ── walking ─────────────────────────────────────────────────────────────────
 function update(dt){
   S.t += dt;
-  // layer influence grows in over ~2.5 s once chosen
-  for (const k in S.L){ const l = S.L[k]; if (l.opt) l.w = Math.min(1, l.w + dt / 2.5); }
+  // layer influence grows in over ~6 s once chosen: the grey gives way slowly
+  for (const k in S.L){ const l = S.L[k]; if (l.opt) l.w = Math.min(1, l.w + dt / 6); }
   for (const r of S.rays) if (r.fade < 1) r.fade = Math.min(1, r.fade + dt / 1.5);
   if (S.phase === 'walk' || S.phase === 'final'){
     const end = S.phase === 'final' ? T.lastWalk : S.cur.len - T.stop;
@@ -1215,8 +1332,15 @@ function update(dt){
     const [x, z] = rayPoint(S.cur, S.s); cam.x = x; cam.z = z;
     cam.yaw += (S.cur.ang - cam.yaw) * (1 - Math.exp(-dt / 0.7));
   }
-  // recycle scenery that has fallen behind
-  if (S.phase !== 'intro' && S.phase !== 'place') for (let i = 0; i < S.obj.length; i++){ const [xx, zz] = toCam(S.obj[i].x, S.obj[i].z); if (zz < -1 || Math.abs(xx) > zz * 2.2 + 24) S.obj[i] = spawnObj(false); }
+  // recycle scenery that has fallen behind; empty slots fill at the horizon, a few a second,
+  // up to what the answers so far support, so a choice arrives from the distance
+  if (S.phase !== 'intro' && S.phase !== 'place'){
+    S.spawnBudget = Math.min(3, (S.spawnBudget || 0) + dt * 3);
+    let live = 0; for (const o of S.obj) if (o.kind) live++;
+    for (let i = 0; i < S.obj.length; i++){ const o = S.obj[i];
+      if (!o.kind){ if (live < WALK_TARGET && S.spawnBudget >= 1){ S.obj[i] = spawnObj(false); if (S.obj[i].kind){ live++; S.spawnBudget--; } } continue; }
+      const [xx, zz] = toCam(o.x, o.z); if (zz < -1 || Math.abs(xx) > zz * 2.2 + 24) S.obj[i] = spawnObj(false); }
+  }
   // prune rays far behind
   S.rays = S.rays.filter(r => { if (r === S.cur || (S.fork && (r === S.fork.L || r === S.fork.M || r === S.fork.R))) return true;
     const [, z1] = toCam(...rayPoint(r, r.len)), [, z0] = toCam(r.ox, r.oz); return Math.max(z0, z1) > -10; });
@@ -1284,6 +1408,8 @@ document.getElementById('onward').onclick = () => { document.getElementById('onw
 document.getElementById('reflectGo').onclick = () => { document.getElementById('reflect').hidden = true; openDebrief(); };
 function openDebrief(){
   S.phase = 'debrief';
+  if (!Object.values(S.L).some(l => l.opt)) document.getElementById('bareLine').textContent = 'You started on a grey plain, and on this walk it stayed quiet.'; // J7: a walk of "nothing" is fine
+
   const box = document.getElementById('route'); box.innerHTML = '';
   const rows = S.record.forks, rowH = 48, cw = W < 520 ? 72 : 120;
   const cnv = document.createElement('canvas'), d = Math.min(devicePixelRatio || 1, 2), hgt = rows.length * rowH + 8;
