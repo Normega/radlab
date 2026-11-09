@@ -1,0 +1,193 @@
+{
+  "slug": "sf2b-asi3-pc",
+  "name": "Body sensations",
+  "questionnaire_type": "composable",
+  "instructions": "How much do you agree with each statement as a general description of yourself? If a statement describes something you have never experienced, answer for how you think you would feel if you did.",
+  "pages": [
+    {
+      "id": "asi_p1",
+      "components": [
+        {
+          "id": "asi_03",
+          "type": "likert",
+          "question": "It scares me when my heart beats rapidly.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Very little"
+            },
+            {
+              "value": 1,
+              "label": "1 A little"
+            },
+            {
+              "value": 2,
+              "label": "2 Some"
+            },
+            {
+              "value": 3,
+              "label": "3 Much"
+            },
+            {
+              "value": 4,
+              "label": "4 Very much"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "asi_04",
+          "type": "likert",
+          "question": "When my stomach is upset, I worry that I might be seriously ill.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Very little"
+            },
+            {
+              "value": 1,
+              "label": "1 A little"
+            },
+            {
+              "value": 2,
+              "label": "2 Some"
+            },
+            {
+              "value": 3,
+              "label": "3 Much"
+            },
+            {
+              "value": 4,
+              "label": "4 Very much"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "asi_07",
+          "type": "likert",
+          "question": "When my chest feels tight, I get scared that I won't be able to breathe properly.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Very little"
+            },
+            {
+              "value": 1,
+              "label": "1 A little"
+            },
+            {
+              "value": 2,
+              "label": "2 Some"
+            },
+            {
+              "value": 3,
+              "label": "3 Much"
+            },
+            {
+              "value": 4,
+              "label": "4 Very much"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "asi_08",
+          "type": "likert",
+          "question": "When I feel pain in my chest, I worry that I'm going to have a heart attack.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Very little"
+            },
+            {
+              "value": 1,
+              "label": "1 A little"
+            },
+            {
+              "value": 2,
+              "label": "2 Some"
+            },
+            {
+              "value": 3,
+              "label": "3 Much"
+            },
+            {
+              "value": 4,
+              "label": "4 Very much"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "asi_12",
+          "type": "likert",
+          "question": "When I notice my heart skipping a beat, I worry that there is something seriously wrong with me.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Very little"
+            },
+            {
+              "value": 1,
+              "label": "1 A little"
+            },
+            {
+              "value": 2,
+              "label": "2 Some"
+            },
+            {
+              "value": 3,
+              "label": "3 Much"
+            },
+            {
+              "value": 4,
+              "label": "4 Very much"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        },
+        {
+          "id": "asi_15",
+          "type": "likert",
+          "question": "When my throat feels tight, I worry that I could choke to death.",
+          "scale": [
+            {
+              "value": 0,
+              "label": "0 Very little"
+            },
+            {
+              "value": 1,
+              "label": "1 A little"
+            },
+            {
+              "value": 2,
+              "label": "2 Some"
+            },
+            {
+              "value": 3,
+              "label": "3 Much"
+            },
+            {
+              "value": 4,
+              "label": "4 Very much"
+            }
+          ],
+          "required": true,
+          "allow_pna": true
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "sum",
+    "range": "0-24",
+    "reverse_items": [],
+    "source": "ASI-3 Physical Concerns subscale (items 3, 4, 7, 8, 12, 15): Taylor et al. (2007). Study 2b discriminant (decision 26)."
+  }
+}

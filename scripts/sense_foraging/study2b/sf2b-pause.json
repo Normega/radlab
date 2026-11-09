@@ -1,0 +1,23 @@
+{
+  "slug": "sf2b-pause",
+  "name": "A short break",
+  "questionnaire_type": "composable",
+  "instructions": "",
+  "pages": [
+    {
+      "id": "pause_p1",
+      "components": [
+        {
+          "id": "pause_1",
+          "type": "sensing_pause",
+          "slot": 1,
+          "ask_context": true,
+          "question": "Optional break"
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "note": "Behavioural criterion. Engaged pause = choice \"pause\", at least 20 s on the page, and time unfocused + hidden under half the total (decision 22). Where and how tired are asked after the decision."
+  }
+}
