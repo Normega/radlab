@@ -141,6 +141,14 @@ section.wide p, section.wide li { max-width:none; }
 .fig-right .svgwrap svg { height:auto; max-height:66vh; max-width:100%; }
 @media print { .fig-right .svgwrap svg { max-height:11cm; } }
 
+/* ---- short-answer parts ----
+   Practice short answers look like the test: each part A-E in its own box,
+   worth one mark, with room under the prompt for a two-sentence answer. */
+.sa-parts { display:grid; gap:1.1vmin; margin-top:.6vmin; }
+.sa-part { border:1px solid var(--line); background:#fff; border-radius:8px; padding:1vmin 2vmin 3vmin; }
+.sa-part p { margin:0; max-width:none; }
+.sa-part .mark { color:var(--muted); font-size:.85em; white-space:nowrap; }
+
 /* ---- figure / image ---- */
 img.fig { max-width:100%; max-height:56vh; object-fit:contain; border-radius:6px; }
 figcaption { font-size:1.9vmin; color:var(--muted); margin-top:1vmin; }
