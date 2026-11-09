@@ -24,6 +24,17 @@
     enemy. No reminders, no counts, no streaks. Stored in this browser only
     (localStorage); ?demo shows a sample month without saving; ?dev or t opens
     the record a study would keep. window.__hive drives it headlessly.
+
+    Nov 6 additions (Norm's picks from the Oct 19 ideas):
+    - "Noticed, staying in": noticing counts even when you keep doing, because
+      choosing doing on purpose is a full move. It is recorded, never drawn as
+      a cell, so the comb stays a record of trips.
+    - "What tipped you off?": asked on every other noticing (out or staying
+      in). Picks and your own words become your list, most used first; once
+      one tell leads with three or more, the hive hands it back.
+    - Your day: the day's trips and stays on a timeline. Tap where the day got
+      tightest; after three marked days in a week, it names the part of the
+      day that came up most, and how often you went out then.
   */
   :root{
     color-scheme:light;
@@ -70,6 +81,10 @@
   .link{background:none;border:0;padding:8px;color:var(--body);
     font:600 14px/1.2 var(--display);text-decoration:underline;text-underline-offset:3px;}
   .link.tiny{font-size:12px;color:var(--muted);align-self:center;}
+  .pair{display:flex;gap:8px;}
+  .pair .btn{flex:1;padding:0 16px;}
+  .btn.grey{background:transparent;border-color:var(--muted);color:var(--body);}
+  .links{display:flex;justify-content:center;gap:16px;}
 
   /* the hive */
   .bar{display:flex;align-items:center;justify-content:space-between;min-height:40px;}
@@ -115,6 +130,34 @@
   .own input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);
     padding:0 16px;font:16px var(--serif);color:var(--ink);background:var(--surface);}
 
+  /* what tipped you off */
+  .sub{font:600 12px/1.3 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .chip.tell{border-color:var(--line);color:var(--ink);}
+  .chip.tell.mine{border-color:var(--ink);}
+  .chip.tell:active{background:var(--line);}
+
+  /* your day */
+  .daynav{display:flex;align-items:center;justify-content:space-between;margin:8px 0 0;}
+  .daynav b{font:600 16px/1.2 var(--display);}
+  .daynav .link:disabled{visibility:hidden;}
+  .pattern{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:8px 0 0;}
+  .pattern p{margin:0;font-size:14px;}
+  .pattern p+p{margin-top:8px;}
+  .ask{margin:16px 0 8px;font-size:14px;}
+  .tl{position:relative;margin:8px 0 24px 48px;border-left:1.5px solid var(--line);cursor:crosshair;touch-action:manipulation;}
+  .tl .hr{position:absolute;left:-48px;width:40px;text-align:right;font:600 12px/1 var(--display);color:var(--muted);transform:translateY(-50%);pointer-events:none;}
+  .tl .hl{position:absolute;left:0;right:0;border-top:1px dashed var(--line);pointer-events:none;}
+  .tl .ev{position:absolute;height:20px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;
+    font:600 12px/1 var(--display);white-space:nowrap;overflow:hidden;pointer-events:none;}
+  .tl .trip{left:8px;max-width:58%;padding:0 8px;border-radius:10px;}
+  .tl .stay{left:62%;color:var(--body);}
+  .tl .stay i{width:10px;height:10px;border-radius:50%;border:2px solid var(--body);flex:none;}
+  .tl .tight{position:absolute;left:-4px;right:0;height:16px;transform:translateY(-50%);cursor:pointer;}
+  .tl .tight::before{content:'';position:absolute;left:0;right:0;top:7px;border-top:2px solid var(--action);}
+  .tl .tight span{position:absolute;right:0;top:-8px;font:600 12px/1 var(--display);color:var(--action);background:var(--bg);padding:0 0 0 4px;}
+  .tl .nowl{position:absolute;left:-4px;right:0;border-top:1.5px dashed var(--muted);pointer-events:none;}
+  .tl .nowl span{position:absolute;right:0;top:-16px;font:600 12px/1 var(--display);color:var(--muted);background:var(--bg);padding:0 0 0 4px;}
+
   /* the record (prototype only) */
   #record{overflow-y:auto;background:var(--bg);}
   #record .col{height:auto;min-height:100%;}
@@ -140,6 +183,8 @@
       <p class="lead">Keep this open beside whatever you’re doing.</p>
       <p>When you notice you’ve been doing for a while, tap <b>Out</b>. The hive offers one sense. Put the phone down and stay with it for as long as you like.</p>
       <p>Then tap <b>Home</b>, bring back a word if one comes, and go back to what you were doing. Each trip becomes a cell in the comb.</p>
+      <p>If you notice and would rather keep going, tap <b>Noticed, staying in</b>. Choosing to stay is a full move too.</p>
+      <p>Now and then the hive asks what tipped you off. Your answers become your own list. <b>Your day</b> shows where your trips fell.</p>
       <p class="fine">There are no reminders: every trip starts with you noticing. Nothing leaves this phone.</p>
     </div>
     <div class="actions">
@@ -160,8 +205,14 @@
     </div>
     <p class="status" id="status"></p>
     <div class="actions">
-      <button class="btn primary" id="outBtn">Out</button>
-      <button class="link tiny" id="recordBtn">The record (prototype only)</button>
+      <div class="pair">
+        <button class="btn primary" id="outBtn">Out</button>
+        <button class="btn grey" id="stayBtn">Noticed, staying in</button>
+      </div>
+      <div class="links">
+        <button class="link tiny" id="dayBtn">Your day</button>
+        <button class="link tiny" id="recordBtn">The record (prototype only)</button>
+      </div>
     </div>
   </div>
 </section>
@@ -196,6 +247,39 @@
     </div>
     <div class="actions">
       <button class="btn secondary" id="noneBtn">Nothing this time</button>
+    </div>
+  </div>
+</section>
+
+<!-- What tipped you off: after some noticings, out or staying in -->
+<section class="screen" id="tell">
+  <div class="col">
+    <div class="grow scroll">
+      <p class="label accent" id="tLabel"></p>
+      <h2>What tipped you off?</h2>
+      <p class="fine">Whatever made you notice you’d been doing for a while. Pick one, or say it your way.</p>
+      <div id="tMine"></div>
+      <div id="tOthers"></div>
+      <form class="own" id="tellForm" autocomplete="off">
+        <input id="tellOwn" maxlength="32" placeholder="Something else" aria-label="Your own tell" enterkeyhint="done">
+        <button class="btn primary auto" id="tellOwnBtn" disabled>Add it</button>
+      </form>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="tellSkip">Not sure</button>
+    </div>
+  </div>
+</section>
+
+<!-- Your day: trips and stays on a timeline; mark where it got tightest -->
+<section class="screen" id="day">
+  <div class="col">
+    <header class="bar"><span class="brand">Your day</span><button class="link" id="dayClose">Close</button></header>
+    <div class="daynav"><button class="link" id="dayPrev">‹ Earlier</button><b id="dayName"></b><button class="link" id="dayNext">Later ›</button></div>
+    <div class="grow scroll" id="dayScroll">
+      <div id="pattern"></div>
+      <p class="ask" id="dayAsk">Where did the day get tightest? Tap the timeline to mark it. Tap a mark to take it away.</p>
+      <div class="tl" id="tl"></div>
     </div>
   </div>
 </section>
@@ -260,19 +344,46 @@ const Q = new URLSearchParams(location.search);
 const DEMO = Q.has('demo');
 let offset = 0;                                  // debug clock shift (ms)
 const now = () => Math.round(Date.now() + offset);
-let store = { trips: [], current: null, seenIntro: false };
+// stays: noticed and kept doing, on purpose ({ at, gapMs, tellAsked, tell }).
+// tight: by day, the times of day (ms after midnight) marked as tightest.
+const empty = () => ({ trips: [], stays: [], tight: {}, current: null, seenIntro: true });
+let store = { ...empty(), seenIntro: false };
 let busy = false;
 
 function load() {
-  if (DEMO) { store = { trips: sampleMonth(), current: null, seenIntro: true }; return; }
+  if (DEMO) { store = { ...sampleMonth(), current: null, seenIntro: true }; return; }
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && Array.isArray(s.trips)) store = { trips: s.trips, current: s.current || null, seenIntro: !!s.seenIntro };
+    if (s && Array.isArray(s.trips)) store = { trips: s.trips, stays: s.stays || [], tight: s.tight || {}, current: s.current || null, seenIntro: !!s.seenIntro };
   } catch { /* storage blocked: the hive lives in memory for this visit */ }
 }
 function save() {
   if (DEMO) return;
   try { localStorage.setItem(KEY, JSON.stringify(store)); } catch { /* memory only */ }
+}
+
+// A noticing is a trip out or a stay. Every other one asks what tipped you off,
+// starting with the first, so the list has something in it early.
+const TELL_EVERY = 2;
+const noticings = () => store.trips.length + store.stays.length;
+const askTellNext = () => noticings() % TELL_EVERY === 0;
+const STARTER_TELLS = ['shoulders up', 'holding my breath', 'rereading the same line', 'restless',
+  'a natural pause', 'eyes tired', 'jaw tight', 'just remembered'];
+// your list: every tell you have given, most used first
+function tellCounts(src = store) {
+  const m = new Map();
+  [...src.trips, ...src.stays].forEach((x) => { if (x.tell) m.set(x.tell, (m.get(x.tell) || 0) + 1); });
+  return [...m].sort((a, b) => b[1] - a[1]);
+}
+// handed back once one tell leads the list with three or more
+function usualTell() {
+  const c = tellCounts();
+  return c.length && c[0][1] >= 3 && (c.length === 1 || c[0][1] > c[1][1]) ? c[0][0] : null;
+}
+// the latest noticing (trip home or stay) on the same day, for time in doing
+function lastNoticedEnd() {
+  const a = [...store.trips.map((t) => t.end), ...store.stays.map((s) => s.at)];
+  return a.length ? Math.max(...a) : null;
 }
 
 const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -309,7 +420,7 @@ function senseVars(el, s) {
 function goOut(sense, instant) {
   if (busy || store.current) return;
   const s = SENSES[sense] ? sense : pickSense();
-  store.current = { start: now(), sense: s, prompt: pickPrompt(s), changes: 0, hiddenMs: 0, hiddenAt: null, end: null };
+  store.current = { start: now(), sense: s, prompt: pickPrompt(s), changes: 0, hiddenMs: 0, hiddenAt: null, end: null, tellAsked: askTellNext() };
   save();
   closeDetail();
   if (instant || document.hidden) { showOut(); return; }
@@ -342,9 +453,49 @@ function bring(word, kind, instant) {
     word: w || null, wordKind: w ? kind : null,
     // time back in doing since the last trip came home, same day only
     gapMs: prev && dayKey(prev.end) === dayKey(c.start) ? c.start - prev.end : null,
+    tellAsked: !!c.tellAsked, tell: null,
   };
   store.trips.push(trip); store.current = null; save();
+  if (trip.tellAsked && !instant) { askTell(trip, 'trip'); return; }
   showHive(instant ? null : trip);
+}
+
+// ─── Noticed, staying in ────────────────────────────────────────────────────
+function stayIn(instant) {
+  if (busy || store.current) return;
+  const t = now(), prev = lastNoticedEnd();
+  const stay = { at: t, gapMs: prev != null && dayKey(prev) === dayKey(t) ? t - prev : null, tellAsked: askTellNext(), tell: null };
+  store.stays.push(stay); save();
+  closeDetail();
+  if (navigator.vibrate) navigator.vibrate(10);
+  if (stay.tellAsked && !instant) { askTell(stay, 'stay'); return; }
+  stayed(instant);
+}
+function stayed(instant) {
+  showHive(null);
+  setStatus('Staying in, on purpose.', 12000);
+  if (!instant && !document.hidden) hop();
+}
+
+// ─── What tipped you off ────────────────────────────────────────────────────
+let tellFor = null;          // { ref, kind }: the trip or stay being asked about
+function askTell(ref, kind) {
+  tellFor = { ref, kind };
+  const mine = tellCounts().map(([w]) => w);
+  const others = STARTER_TELLS.filter((w) => !mine.includes(w));
+  const chips = (a, cls) => `<div class="chips">${a.map((w) => `<button class="chip tell ${cls}" data-t="${esc(w)}">${esc(w)}</button>`).join('')}</div>`;
+  $('tLabel').textContent = kind === 'trip' ? 'Before you went out' : 'Staying in';
+  $('tMine').innerHTML = mine.length ? `<p class="sub">Yours</p>${chips(mine, 'mine')}` : '';
+  $('tOthers').innerHTML = others.length ? `<p class="sub">${mine.length ? 'Others people notice' : 'Some people notice'}</p>${chips(others, '')}` : '';
+  $('tellOwn').value = ''; $('tellOwnBtn').disabled = true;
+  show('tell');
+}
+function answerTell(word) {
+  if (!tellFor) return;
+  const { ref, kind } = tellFor; tellFor = null;
+  const w = word ? String(word).trim().toLowerCase().slice(0, 32) : '';
+  ref.tell = w || null; save();
+  if (kind === 'trip') showHive(ref); else stayed();
 }
 
 // ─── Out ────────────────────────────────────────────────────────────────────
@@ -496,6 +647,14 @@ function flyIn(trip) {
   // the cell fills in as the bee passes it
   setTimeout(() => popCell(cells.length - 1), 700);
 }
+// staying in: the bee lifts, turns and settles again where it was
+function hop() {
+  const r = geo.rest;
+  busy = true;
+  fly(`M ${r.x} ${r.y} C ${r.x - 6} ${r.y - 34}, ${r.x - 46} ${r.y - 26}, ${r.x - 30} ${r.y - 4} S ${r.x - 4} ${r.y - 10}, ${r.x} ${r.y}`, '#9aa0b3', 900, () => {
+    setBee(r.x, r.y, 0); busy = false;
+  });
+}
 function popCell(i) {
   const g = $('svg').querySelector(`.cell[data-i="${i}"] .pop`); if (!g) return;
   const t0 = performance.now();
@@ -510,9 +669,12 @@ function popCell(i) {
 
 // ─── The hive screen ────────────────────────────────────────────────────────
 let statusTimer = null;
-const idleLine = () => store.trips.length
-  ? 'When you notice you’ve been doing for a while, go out.'
-  : 'The comb starts with your first trip out.';
+const idleLine = () => {
+  const u = usualTell();
+  if (u && noticings() % 2 === 1) return `Your usual tell: ${u}.`;
+  return store.trips.length ? 'When you notice you’ve been doing for a while, go out, or stay in on purpose.'
+    : 'The comb starts with your first trip out.';
+};
 function setStatus(text, revertMs) {
   $('status').textContent = text;
   clearTimeout(statusTimer);
@@ -561,8 +723,9 @@ function fmtDur(ms) {
   const m = Math.round(s / 60);
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
-function summarize(trips) {
+function summarize(trips, stays = [], tight = {}) {
   const n = trips.length;
+  const asked = [...trips, ...stays].filter((x) => x.tellAsked);
   const counts = Object.fromEntries(ORDER.map((s) => [s, 0]));
   trips.forEach((t) => { counts[t.sense] = (counts[t.sense] || 0) + 1; });
   const entropy = n ? -ORDER.reduce((a, s) => { const p = counts[s] / n; return p ? a + p * Math.log(p) : a; }, 0) / Math.log(ORDER.length) : null;
@@ -577,11 +740,17 @@ function summarize(trips) {
     keptOffer: n ? trips.filter((t) => t.keptOffer).length / n : null,
     broughtWord: n ? trips.filter((t) => t.word).length / n : null,
     bySense: counts,
+    stays: stays.length,
+    medianGapToStayMs: median(stays.map((s) => s.gapMs).filter((g) => g != null)),
+    tellsAsked: asked.length,
+    tellsGiven: asked.filter((x) => x.tell).length,
+    tells: Object.fromEntries(tellCounts({ trips, stays })),
+    daysMarkedTight: Object.values(tight).filter((a) => a.length).length,
   };
 }
 const pct = (x) => x == null ? '–' : `${Math.round(x * 100)}%`;
 function showRecord() {
-  const t = store.trips, m = summarize(t);
+  const t = store.trips, m = summarize(t, store.stays, store.tight);
   const stat = (v, k) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`;
   const rows = [...t].reverse().map((x) => {
     const d = new Date(x.start);
@@ -596,7 +765,10 @@ function showRecord() {
     + stat(`${m.sensesVisited} of 7`, 'senses visited') + stat(m.variety == null ? '–' : m.variety.toFixed(2), 'variety across senses (0 to 1)')
     + stat(pct(m.medianAway), 'of a trip with the phone put away (median)') + stat(pct(m.keptOffer), 'kept the first sense offered')
     + stat(pct(m.broughtWord), 'brought back a word') + stat(pct(t.filter((x) => x.changes > 0).length / Math.max(1, t.length)), 'asked for a different sense')
+    + stat(m.stays, 'noticed, stayed in') + stat(fmtDur(m.medianGapToStayMs), 'typical time in doing before staying in')
+    + stat(`${m.tellsGiven} of ${m.tellsAsked}`, 'asked what tipped them off, and answered') + stat(m.daysMarkedTight, 'days with a tightest moment marked')
     + `</div>`
+    + (m.tellsGiven ? `<p class="fine">Their tells: ${Object.entries(m.tells).map(([w, k]) => `${esc(w)} ${k}`).join(' · ')}</p>` : '')
     + `<p class="fine">By sense: ${ORDER.map((s) => `<span class="dot" style="background:${SENSES[s].bright}"></span>${s} ${m.bySense[s]}`).join(' &nbsp; ')}</p>`
     + (t.length ? `<table><thead><tr><th>When</th><th>Sense</th><th>Length</th><th>Put away</th><th>Word</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No trips yet.</p>');
   $('demoLink').hidden = DEMO;
@@ -607,10 +779,97 @@ function closeRecord() {
   if (store.current) { store.current.end ? showBack() : showOut(); } else showHive(null);
 }
 
+// ─── Your day ───────────────────────────────────────────────────────────────
+const HOUR = 3600000, PX = 48;
+const dayStart = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const addDays = (t, k) => { const d = new Date(t); d.setDate(d.getDate() + k); return d.getTime(); };
+const BANDS = [['the early morning', 0, 9], ['the late morning', 9, 12], ['the early afternoon', 12, 14],
+  ['the mid-afternoon', 14, 17], ['the evening', 17, 21], ['the night', 21, 24]];
+const bandOf = (ms) => BANDS.findIndex(([, a, b]) => ms >= a * HOUR && ms < b * HOUR);
+let dayAt = null, dayGeo = null;
+
+function showDay(t = dayAt ?? dayStart(now())) {
+  dayAt = dayStart(t);
+  const k = dayKey(dayAt), today = dayStart(now());
+  const trips = store.trips.filter((x) => dayKey(x.start) === k);
+  const stays = store.stays.filter((x) => dayKey(x.at) === k);
+  const marks = store.tight[k] || [];
+  const times = [...trips.map((x) => x.start - dayAt), ...stays.map((x) => x.at - dayAt), ...marks];
+  if (dayAt === today) times.push(now() - dayAt);
+  const h0 = Math.max(0, Math.min(7, ...times.map((m) => Math.floor(m / HOUR)))), h1 = Math.min(24, Math.max(22, ...times.map((m) => Math.ceil(m / HOUR) + 1)));
+  dayGeo = { h0, h1, k };
+  const y = (ms) => (ms / HOUR - h0) * PX;
+  let html = '';
+  for (let h = h0; h <= h1; h++) {
+    const lbl = new Date(dayAt + h * HOUR).toLocaleTimeString([], { hour: 'numeric' });
+    html += `<div class="hl" style="top:${y(h * HOUR)}px"></div>` + (h < h1 ? `<span class="hr" style="top:${y(h * HOUR)}px">${esc(lbl)}</span>` : '');
+  }
+  let below = -99;                 // keep close trips from overlapping
+  trips.forEach((x) => {
+    const s = SENSES[x.sense], top = Math.max(y(x.start - dayAt), below + 22); below = top;
+    html += `<div class="ev trip" style="top:${top}px;background:${s.soft};color:${s.deep}">${esc(x.sense)}${x.word ? ` · ${esc(x.word)}` : ''} · ${esc(lengthWords(x.end - x.start))}</div>`;
+  });
+  below = -99;
+  stays.forEach((x) => {
+    const top = Math.max(y(x.at - dayAt), below + 22); below = top;
+    html += `<div class="ev stay" style="top:${top}px"><i></i>stayed in</div>`;
+  });
+  marks.forEach((m, i) => { html += `<div class="tight" data-m="${i}" style="top:${y(m)}px"><span>tightest</span></div>`; });
+  if (dayAt === today) html += `<div class="nowl" style="top:${y(now() - dayAt)}px"><span>now</span></div>`;
+  const tl = $('tl');
+  tl.style.height = `${(h1 - h0) * PX}px`;
+  tl.innerHTML = html;
+  $('dayName').textContent = dayAt === today ? 'Today' : dayAt === addDays(today, -1) ? 'Yesterday'
+    : new Date(dayAt).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  $('dayNext').disabled = dayAt >= today;
+  $('dayPrev').disabled = dayAt <= addDays(today, -60);
+  $('pattern').innerHTML = patternHtml(dayAt);
+  if (screen !== 'day') {
+    show('day');
+    // open on the morning, or near now on today
+    const focus = dayAt === today ? y(now() - dayAt) - 160 : y(8 * HOUR);
+    $('dayScroll').scrollTop = Math.max(0, focus);
+  }
+}
+
+// After three marked days in the week ending on this day: the part of the day
+// marked most, and how many of those days had a trip out in it.
+function patternHtml(end) {
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(end, -i), k = dayKey(d), m = store.tight[k];
+    if (m && m.length) days.push({ d, k, bands: new Set(m.map(bandOf)) });
+  }
+  if (!days.length) return '';
+  const span = end === dayStart(now()) ? 'In the last seven days' : 'In the seven days up to this one';
+  if (days.length < 3) return `<div class="pattern"><p>${span}: ${days.length === 1 ? 'one day' : 'two days'} marked. After three, this shows the part of the day that came up most.</p></div>`;
+  const per = BANDS.map((_, b) => days.filter((x) => x.bands.has(b)));
+  const best = per.reduce((bi, a, i) => a.length > per[bi].length ? i : bi, 0), hit = per[best];
+  if (hit.length < 2) return `<div class="pattern"><p>${span}: ${days.length} days marked, each at a different time of day.</p></div>`;
+  const [name, a, b] = BANDS[best];
+  const went = hit.filter((x) => store.trips.some((t) => dayKey(t.start) === x.k && t.start - x.d >= a * HOUR && t.start - x.d < b * HOUR)).length;
+  return `<div class="pattern"><p>${span}, the day got tightest in <b>${name}</b>: ${hit.length} of the ${days.length} days you marked.</p>`
+    + `<p>You went out in ${name} on ${went === 0 ? 'none' : went === hit.length ? `all ${went}` : `${went}`} of those days.</p></div>`;
+}
+
+function markTight(ms) {
+  const { k } = dayGeo, a = store.tight[k] || (store.tight[k] = []);
+  if (a.length >= 3) { $('dayAsk').textContent = 'Three marks is plenty for one day. Tap one to take it away.'; return; }
+  a.push(Math.round(ms)); a.sort((x, y) => x - y); save(); showDay(dayAt);
+}
+function unmarkTight(i) {
+  const a = store.tight[dayGeo.k]; if (!a) return;
+  a.splice(i, 1); if (!a.length) delete store.tight[dayGeo.k];
+  save(); showDay(dayAt);
+}
+
 // A sample month for seeing a fuller comb: seeded, dated back from today.
 function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function sampleMonth() {
-  const rnd = mulberry32(17), out = [];
+  const rnd = mulberry32(17), out = [], stays = [], tight = {};
+  const myTells = ['rereading the same line', 'rereading the same line', 'rereading the same line', 'shoulders up', 'shoulders up', 'a natural pause', 'tea gone cold'];
+  let noticed = 0;
+  const tellOf = () => { const asked = noticed++ % TELL_EVERY === 0; return { tellAsked: asked, tell: asked && rnd() < 0.8 ? myTells[Math.floor(rnd() * myTells.length)] : null }; };
   const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
   const own = ['hum', 'fridge', 'cold mug', 'rain', 'dust', 'toast', 'traffic', 'wool', 'mint', 'radiator', 'pencil', 'birds'];
   const day0 = new Date(); day0.setHours(0, 0, 0, 0);
@@ -628,17 +887,46 @@ function sampleMonth() {
       const word = wr < 0.55 ? SENSES[sense].words[Math.floor(rnd() * 6)] : wr < 0.7 ? own[Math.floor(rnd() * own.length)] : null;
       out.push({ start, end: start + dur, sense, prompt: pickPrompt(sense, rnd, out), keptOffer: kept, changes: kept ? 0 : 1 + Math.floor(rnd() * 2),
         hiddenMs: Math.round(dur * (rnd() < 0.3 ? rnd() * 0.2 : 0.4 + rnd() * 0.6)), word, wordKind: word ? (wr < 0.55 ? 'chip' : 'own') : null,
-        gapMs: prevEnd ? start - prevEnd : null });
+        gapMs: prevEnd ? start - prevEnd : null, ...tellOf() });
       prevEnd = start + dur;
     }
+    // now and then, noticed and stayed in
+    const ks = rnd() < 0.4 ? 0 : 1 + Math.floor(rnd() * 2);
+    for (let j = 0; j < ks; j++) {
+      const at = Math.round(base + (9 + rnd() * 11) * 3600000);
+      if (d === 0 && at > Date.now()) continue;
+      stays.push({ at, gapMs: null, ...tellOf() });
+    }
+    // most days marked, most often mid-afternoon
+    if (rnd() < 0.7 && !(d === 0 && new Date().getHours() < 17)) {
+      const h = rnd() < 0.6 ? 14 + rnd() * 2.5 : 9 + rnd() * 11;
+      tight[dayKey(base)] = [Math.round(h * 3600000)];
+    }
   }
-  return out;
+  stays.sort((a, b) => a.at - b.at);
+  return { trips: out, stays, tight };
 }
 
 // ─── Wiring ─────────────────────────────────────────────────────────────────
 $('startBtn').addEventListener('click', () => { store.seenIntro = true; save(); showHive(null); });
 $('aboutBtn').addEventListener('click', () => { $('startBtn').textContent = 'Back to the hive'; show('intro'); });
 $('outBtn').addEventListener('click', () => goOut());
+$('stayBtn').addEventListener('click', () => stayIn());
+$('tMine').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) answerTell(b.dataset.t); });
+$('tOthers').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) answerTell(b.dataset.t); });
+$('tellOwn').addEventListener('input', () => { $('tellOwnBtn').disabled = !$('tellOwn').value.trim(); });
+$('tellForm').addEventListener('submit', (e) => { e.preventDefault(); if ($('tellOwn').value.trim()) answerTell($('tellOwn').value); });
+$('tellSkip').addEventListener('click', () => answerTell(null));
+$('dayBtn').addEventListener('click', () => { dayAt = null; showDay(); });
+$('dayClose').addEventListener('click', () => showHive(null));
+$('dayPrev').addEventListener('click', () => showDay(addDays(dayAt, -1)));
+$('dayNext').addEventListener('click', () => showDay(addDays(dayAt, 1)));
+$('tl').addEventListener('click', (e) => {
+  const m = e.target.closest('.tight');
+  if (m) { unmarkTight(+m.dataset.m); return; }
+  const r = $('tl').getBoundingClientRect();
+  markTight(((e.clientY - r.top) / PX + dayGeo.h0) * HOUR);
+});
 $('homeBtn').addEventListener('click', comeHome);
 $('rerollBtn').addEventListener('click', reroll);
 $('out').addEventListener('pointerdown', (e) => { if (!e.target.closest('button')) wake(); });
@@ -650,10 +938,10 @@ $('recordBtn').addEventListener('click', showRecord);
 $('recordClose').addEventListener('click', closeRecord);
 $('clearBtn').addEventListener('click', () => {
   if (!confirm('Clear every trip in this browser’s hive?')) return;
-  store = { trips: [], current: null, seenIntro: true }; save(); showHive(null);
+  store = empty(); save(); showHive(null);
 });
 $('dlBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify({ exported: new Date(now()).toISOString(), sample: DEMO, summary: summarize(store.trips), trips: store.trips }, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ exported: new Date(now()).toISOString(), sample: DEMO, summary: summarize(store.trips, store.stays, store.tight), trips: store.trips, stays: store.stays, tight: store.tight }, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `hive-record-${dayKey(now())}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
@@ -666,6 +954,7 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === 't') screen === 'record' ? closeRecord() : showRecord();
   if (e.key === 'Escape' && screen === 'record') closeRecord();
+  if (e.key === 'Escape' && screen === 'day') showHive(null);
 });
 // how much of a trip the phone spent put away (locked, or another app open)
 document.addEventListener('visibilitychange', () => {
@@ -686,9 +975,14 @@ window.__hive = {
   reroll, home: comeHome,
   bring: (word) => bring(word || null, word ? 'own' : null, true),
   advance: (ms) => { offset += ms; },
-  seed: () => { store.trips = sampleMonth(); save(); showHive(null); },
-  clear: () => { store = { trips: [], current: null, seenIntro: true }; save(); showHive(null); },
-  summary: () => summarize(store.trips),
+  stay: () => { stayIn(true); return store.stays[store.stays.length - 1]; },
+  tell: (word) => answerTell(word),
+  day: (k) => showDay(k == null ? undefined : addDays(dayStart(now()), k)),
+  tight: (hours) => { if (screen !== 'day') showDay(); markTight(hours * HOUR); return store.tight; },
+  usual: () => usualTell(),
+  seed: () => { Object.assign(store, sampleMonth()); save(); showHive(null); },
+  clear: () => { store = empty(); save(); showHive(null); },
+  summary: () => summarize(store.trips, store.stays, store.tight),
   detail: openDetail,
 };
 
