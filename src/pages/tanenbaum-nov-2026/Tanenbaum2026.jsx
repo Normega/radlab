@@ -72,6 +72,10 @@ export default function Tanenbaum2026() {
   }, [startedAt])
   const elapsed = startedAt === null ? 0 : Math.max(0, now - startedAt)
 
+  useEffect(() => {
+    for (const a of ART) { const im = new Image(); im.src = artSrc(a) }
+  }, [])
+
   // Presenter window: a same-origin popup we write into directly. Its keys are
   // re-dispatched on this window, so the deck can be driven from it.
   const openPresenter = useCallback(() => {
@@ -269,6 +273,45 @@ function Hypothesis({ children }) {
   return <div style={{ ...K.caveat, borderColor: 'var(--pk)' }}><span style={{ ...K.caveatTag, color: 'var(--pkd)', borderColor: 'var(--pkd)' }}>Hypothesis</span><span>{children}</span></div>
 }
 
+// Illustrations (Midjourney, Norm, Nov 9; prompts in the talk's Drive folder,
+// art/PROMPTS.md). All 16:9, saved as JPG in public/tanenbaum-nov-2026/.
+const ART = ['s01-title', 's03-levers', 's04-dinner', 's07-reconnect', 's08-touch', 's09-walk',
+  's13-dimmed', 's15-rain', 's16-together', 's18-awe', 's21-close']
+const artSrc = name => `/tanenbaum-nov-2026/${name}.jpg`
+
+function Art({ name, alt, style }) {
+  return <img src={artSrc(name)} alt={alt} style={{ ...K.art, ...style }} />
+}
+
+// Image beside text: the picture carries the slide, the text stays short.
+function ArtSplit({ name, alt, kicker, children }) {
+  return (
+    <div style={K.artSplit}>
+      <Art name={name} alt={alt} />
+      <div style={{ ...K.col, alignItems: 'flex-start', textAlign: 'left' }}>
+        {kicker && <div style={K.kicker}>{kicker}</div>}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// The title slide's QR: beside its address, so the image keeps the right half.
+function LiveQrRow({ code }) {
+  const url = `radlab.zone/live/${code}`
+  return (
+    <div style={K.qrRow}>
+      <div style={{ width: 'min(180px, 22vh)' }}>
+        <QRCode value={`https://${url}`} size={180} level="M" style={{ width: '100%', height: 'auto', display: 'block' }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+        <p style={K.qrUrl}>{url}</p>
+        <p style={K.qrHint}>Scan now · anonymous · no login</p>
+      </div>
+    </div>
+  )
+}
+
 function LiveQr({ code, size = 220 }) {
   const url = `radlab.zone/live/${code}`
   return (
@@ -384,22 +427,21 @@ const SLIDES = [
     by: 60,
     note: 'Up during the introduction. Thank Jen, and thank Mrs. Spiro (SPY-ro) and the Tanenbaum family. First words after that: “Before I say anything about the research, please take out your phone and scan this. It’s anonymous: no name, no login. The first thing it asks is how you’re feeling right now. Just tap where you are on the circle and send.” Give it about 30 seconds; read the short URL aloud for anyone without a camera. Then click: the dots arrive live on the next slide.',
     render: (_d, _b, ctx) => (
-      <Frame wide>
-        <div style={K.titleRow}>
-          <div style={K.titleText}>
-            <div style={K.crests}>
-              <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 52 }} />
-              <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 52 }} />
-            </div>
-            <h1 style={K.title}>Aging attentively</h1>
-            <p style={K.subtitle}>How what we notice shapes wellbeing over time</p>
-            <p style={K.author}>Norman Farb</p>
-            <p style={K.affil}>Psychological and Brain Sciences · University of Toronto Mississauga</p>
-            <p style={K.event}>Tanenbaum Symposium 2026 · Aging Neuroscience</p>
+      <div style={K.titleGrid}>
+        <div style={K.titleText}>
+          <div style={K.crests}>
+            <img src="/RADlab_Logo.svg" alt="RADlab" style={{ height: 44 }} />
+            <img src="/UofT_Logo.svg" alt="University of Toronto" style={{ height: 44 }} />
           </div>
-          <LiveQr code={ctx.code} />
+          <h1 style={K.title}>Aging attentively</h1>
+          <p style={K.subtitle}>How what we notice shapes wellbeing over time</p>
+          <p style={K.author}>Norman Farb</p>
+          <p style={K.affil}>Psychological and Brain Sciences · University of Toronto Mississauga</p>
+          <p style={K.event}>Tanenbaum Symposium 2026 · Aging Neuroscience</p>
+          <LiveQrRow code={ctx.code} />
         </div>
-      </Frame>
+        <Art name="s01-title" alt="An older woman by a window, holding a warm mug, noticing the steam and the light" />
+      </div>
     ),
   },
 
@@ -424,8 +466,8 @@ const SLIDES = [
     render: () => (
       <Frame wide kicker="What keeps people well?">
         <H2>Two levers on what we notice</H2>
+        <Art name="s03-levers" alt="Two dials: one marked with an ear and an eye, one with a spotlight" style={{ ...K.artBanner, maxWidth: 'min(720px, 80vw, 48vh)' }} />
         <TwoLevers />
-        <Take>Depression and dementia risk travel together. Both levers are modifiable.</Take>
       </Frame>
     ),
   },
@@ -436,17 +478,14 @@ const SLIDES = [
     by: 300,
     note: '“Start with the input. In the 2024 Lancet Commission on dementia prevention, 14 modifiable risk factors together account for about 45% of dementia cases. Hearing loss is tied for the largest single factor, at 7%, level with high LDL cholesterol. Untreated vision loss was added in 2024, at about 2%.” Then the honest line, because this room will know it: “Those are population attributable fractions. They assume the link is causal, and that’s exactly what we need to look at next.” Reading mode adds how the hearing number was built.',
     render: (density) => (
-      <Frame wide kicker="Lever 1 · the input">
-        <H2>Sensory loss is a leading modifiable risk for dementia</H2>
-        <div style={K.stats}>
-          <Stat big="45%" label="of dementia cases linked to 14 modifiable risk factors" sub="Lancet Commission 2024" />
-          <Stat big="7%" label="hearing loss: tied for the largest single factor" sub="with high LDL cholesterol" color={STORY} />
-          <Stat big="2%" label="untreated vision loss, new in 2024" color={STORY} />
-        </div>
-        <Caveat>These fractions assume each link is causal. That is the question for the next three slides.</Caveat>
-        <Detail density={density}>The hearing estimate pools 6 cohorts with measured hearing (HR 1.37, 95% CI 1.00–1.87, I² = 80%, n = 666,370) and a hearing-loss prevalence of 59%. Measured and self-reported hearing give fractions that differ several-fold (Livingston et al., 2024).</Detail>
-        <Cite>Livingston et al. (2024), Lancet</Cite>
-      </Frame>
+      <ArtSplit name="s04-dinner" alt="A lively family dinner; around one older man, the faces and voices blur" kicker="Lever 1 · the input">
+        <H2>Hearing loss is among the biggest dementia risks we can change</H2>
+        <div style={K.bigLine}><b style={{ ...K.bigNum, color: STORY }}>7%</b><span>of dementia cases are linked to hearing loss, tied for first among 14 changeable risks</span></div>
+        <div style={K.bigLine}><b style={{ ...K.bigNum, color: STORY }}>2%</b><span>to untreated vision loss</span></div>
+        <Caveat>If the link is causal. That is the question.</Caveat>
+        <Cite>Livingston et al. (2024), Lancet Commission</Cite>
+        <Detail density={density}>All 14 factors together: about 45% of cases. Hearing is tied with high LDL cholesterol. The hearing estimate pools 6 cohorts with measured hearing (HR 1.37, 95% CI 1.00–1.87, I² = 80%, n = 666,370) and a hearing-loss prevalence of 59%. Measured and self-reported hearing give fractions that differ several-fold (Livingston et al., 2024).</Detail>
+      </ArtSplit>
     ),
   },
 
@@ -459,12 +498,12 @@ const SLIDES = [
       <Frame wide kicker="Lever 1 · the input">
         <H2>The risks are robust, and they add up</H2>
         <div style={K.stats}>
-          <Stat big="1.37×" label="dementia risk with hearing loss" sub="6 cohorts · n = 666,370" color={STORY} />
-          <Stat big="1.47×" label="dementia risk with vision loss" sub="14 cohorts · 6.2 million people" color={STORY} />
-          <Stat big="1.46–1.63×" label="with both: worse than either alone" sub="four meta-analyses" color={STORY} />
+          <Stat big="+37%" label="dementia risk with hearing loss" color={STORY} />
+          <Stat big="+47%" label="dementia risk with vision loss" color={STORY} />
+          <Stat big="Both" label="worse than either alone" color={STORY} />
         </div>
-        <Lead>Hearing loss also raises the odds of depression by about half (OR 1.47; 35 studies, N = 147,148).</Lead>
-        <Detail density={density}>Vision loss and depression predict each other in both directions (HR 1.33 and 1.37; Frank et al., 2019, n = 7,584). All of these are observational: confounding and reverse causation remain possible.</Detail>
+        <Lead>Hearing loss also raises the odds of depression by about half.</Lead>
+        <Detail density={density}>Hearing: HR 1.37, 6 cohorts, n = 666,370. Vision: RR 1.47, 14 cohorts, 6.2 million people. Both: HR 1.46–1.63 across four meta-analyses. Depression: OR 1.47, 35 studies, N = 147,148. Vision loss and depression predict each other in both directions (HR 1.33 and 1.37; Frank et al., 2019, n = 7,584). All observational: confounding and reverse causation remain possible.</Detail>
         <Cite>Livingston 2024 · Shang 2021 · Yoshida 2025 · Lawrence 2020</Cite>
       </Frame>
     ),
@@ -492,30 +531,14 @@ const SLIDES = [
     by: 560,
     note: '“If the input matters, fixing it should help. The best test is ACHIEVE, a randomized trial of hearing intervention in 977 older adults. Over three years, the primary cognitive outcome was null. In one subgroup at higher risk, decline was 48% slower; that’s worth following but it’s a subgroup. What hearing intervention did do was widen people’s social networks, by about one person.” Then cataract: “Cataract surgery is associated with about 29% lower dementia risk, and here’s what makes that interesting: glaucoma surgery, which doesn’t restore vision, shows no association. It’s still observational.” The message for this room: “Correction reconnects people. Whether it protects cognition is still being tested. That’s reason enough to screen, fit and operate.”',
     render: (density) => (
-      <Frame wide kicker="Lever 1 · the input">
-        <H2>Correction reconnects people; the cognitive payoff is still under test</H2>
-        <div style={K.twoCards}>
-          <div style={K.card}>
-            <span style={K.cardHead}>Hearing · ACHIEVE randomized trial, n = 977</span>
-            <Bullets items={[
-              'Cognition over 3 years: no difference overall (−0.002 SD)',
-              'A higher-risk subgroup (n = 238): 48% slower decline, a lead to follow, not a result',
-              'Social network: about one more person',
-            ]} />
-          </div>
-          <div style={K.card}>
-            <span style={K.cardHead}>Vision · cataract surgery, n = 3,038</span>
-            <Bullets items={[
-              'Dementia risk HR 0.71 after surgery',
-              'Glaucoma surgery, which doesn’t restore sight: HR 1.08, no link',
-              'Observational: no randomized trial yet',
-            ]} />
-          </div>
-        </div>
+      <ArtSplit name="s07-reconnect" alt="A grandfather wearing a hearing aid leans in, laughing with his granddaughter" kicker="Lever 1 · the input">
+        <H2>Correcting the senses reconnects people</H2>
+        <div style={K.plainItem}><b style={K.plainHead}>Hearing aids</b><span>In a large trial, no memory benefit overall. But people’s social circles grew.</span></div>
+        <div style={K.plainItem}><b style={K.plainHead}>Cataract surgery</b><span>Linked to lower dementia risk. Glaucoma surgery, which doesn’t restore sight, isn’t.</span></div>
         <Take>Screen, fit, operate: it gives people back the conversation.</Take>
-        <Detail density={density}>Observational hearing-aid data mislead easily: one reanalysis moved from RR 1.43 (aid users at higher risk) to 0.68 once healthcare use was adjusted for (Mur et al., 2025). The widely quoted UK Biobank hearing-aid paper (2023) was retracted.</Detail>
-        <Cite>Lin et al. 2023, Lancet · Reed et al. 2025, JAMA Intern Med · Lee et al. 2022, JAMA Intern Med</Cite>
-      </Frame>
+        <Detail density={density}>ACHIEVE (Lin et al., 2023), n = 977: cognition over 3 years −0.002 SD, null; a higher-risk subgroup (n = 238) declined 48% more slowly, a lead to follow, not a result; social network +1.05 people (Reed et al., 2025). Cataract surgery (Lee et al., 2022), n = 3,038: dementia HR 0.71; glaucoma surgery HR 1.08; observational, no randomized trial yet. Observational hearing-aid data mislead easily: one reanalysis moved from RR 1.43 (aid users at higher risk) to 0.68 once healthcare use was adjusted for (Mur et al., 2025). The widely quoted UK Biobank hearing-aid paper (2023) was retracted.</Detail>
+        <Cite>Lin 2023 · Reed 2025 · Lee 2022</Cite>
+      </ArtSplit>
     ),
   },
 
@@ -525,22 +548,14 @@ const SLIDES = [
     by: 650,
     note: '“Here is where the two levers meet. Across hearing and smell, how people experience their loss tracks mood more closely than the measured loss does. That could partly be depression colouring the self-report; we should be honest about that. But it points at something beyond the ear and the eye. And aging itself pulls these apart: sharpness falls, but appreciation doesn’t. In one study across the lifespan, gentle touch felt more pleasant with age even as touch sensitivity declined. Older adults also report trusting their body’s signals more.” Bridge: “So the input matters, and so does what we do with it. That’s lever 2.”',
     render: (density) => (
-      <Frame wide kicker="Where the levers meet">
+      <ArtSplit name="s08-touch" alt="An older hand trailing its fingertips through tall grass and wildflowers" kicker="Where the levers meet">
         <H2>What we do with the signal matters as much as the signal</H2>
-        <div style={K.twoCards}>
-          <div style={K.card}>
-            <span style={K.cardHead}>Experienced loss tracks mood</span>
-            <span style={K.cardBody}>For hearing and smell, how people experience their loss tracks mood more closely than measured loss does.</span>
-          </div>
-          <div style={K.card}>
-            <span style={K.cardHead}>Acuity falls; appreciation holds</span>
-            <span style={K.cardBody}>Across the lifespan, gentle touch grows more pleasant as touch sensitivity declines. Older adults report more trust in their body’s signals.</span>
-          </div>
-        </div>
-        <Caveat>Depression lowers how people rate their own senses, so some of the first finding is reverse causation. The second rests on small cross-sectional samples.</Caveat>
-        <Detail density={density}>Self-reported smell loss is linked to depression more strongly than measured smell loss, which loses significance after correcting for publication bias except in adults 65+ (Bode et al., 2026, 23 studies). Touch: Sehlstedt et al. (2016), N = 120, ages 13–82, few over 60.</Detail>
-        <Cite>Bode 2026, JAMA Otolaryngology · Sehlstedt 2016</Cite>
-      </Frame>
+        <div style={K.plainItem}><b style={K.plainHead}>How the loss feels</b><span>How people experience their hearing or smell loss tracks mood better than test scores do.</span></div>
+        <div style={K.plainItem}><b style={K.plainHead}>Sharpness falls; appreciation holds</b><span>With age, gentle touch is felt less sharply, yet feels more pleasant.</span></div>
+        <Caveat>Low mood also lowers how people rate their senses, and the touch study is small.</Caveat>
+        <Detail density={density}>Self-reported smell loss is linked to depression more strongly than measured smell loss, which loses significance after correcting for publication bias except in adults 65+ (Bode et al., 2026, 23 studies). Touch: Sehlstedt et al. (2016), N = 120, ages 13–82, few over 60. Older adults also report more trust in their body’s signals (small sample).</Detail>
+        <Cite>Bode 2026 · Sehlstedt 2016</Cite>
+      </ArtSplit>
     ),
   },
 
@@ -550,8 +565,8 @@ const SLIDES = [
     by: 740,
     note: '“Lever 2 is attention. In 2007 we scanned people while they attended to themselves in two ways. In one, they judged: what does this word say about me? That’s the narrative mode, which I’ll call doing: using what you know to explain, judge and plan. It stretches across past and future. In the other, they sensed what was happening right now, in the body, with no goal. That’s sensing. The brain treats them as distinct: after training, the two networks came apart.” Important: “Neither mode is the villain. Doing is how we plan a life. The question is whether we can move between them.” Then: “Let’s try it. Phones out again.”',
     render: (density) => (
-      <div style={K.twoCol}>
-        <TwoModes />
+      <div style={K.artSplit}>
+        <Art name="s09-walk" alt="One walk, twice: lost in a blue cloud of thoughts, then taking in the pink breeze, birds and leaves" />
         <div style={{ ...K.col, alignItems: 'flex-start', textAlign: 'left' }}>
           <div style={K.kicker}>Lever 2 · the attention</div>
           <H2>Two ways of knowing yourself</H2>
@@ -618,13 +633,9 @@ const SLIDES = [
     render: (density) => (
       <Frame wide kicker="Lever 2 · mood and the senses">
         <H2>Sad mood turns the senses down</H2>
-        <div style={K.stats}>
-          <Stat big="=" label="equally sad, trained or not" sub="sad film clips · n = 36" />
-          <Stat big="↓" label="body-sensing cortex in the untrained: insula, somatosensory" color={SENSE} />
-          <Stat big="r = −.47" label="more depression, more insula shutdown during sadness" color={SENSE} />
-        </div>
-        <Take>Sad mood pulls attention out of the senses and into the story.</Take>
-        <Detail density={density}>Farb et al. (2010): the same 36 as the 2007 study, 16 waitlist and 20 after MBSR. Trained participants showed less of both the midline increase and the sensory decrease. A community sample, not patients.</Detail>
+        <Art name="s13-dimmed" alt="A garden split in two: one half in vivid colour, the other muted and grey" style={K.artBanner} />
+        <Lead>Sad film clips quieted the brain areas that feel the body. The more depressive symptoms people had, the quieter those areas went.</Lead>
+        <Detail density={density}>Farb et al. (2010): the same 36 as the 2007 study, 16 waitlist and 20 after MBSR. Both groups felt equally sad; in untrained participants sadness raised midline (self-referential) activity and lowered right insula and somatosensory cortex. Higher depression scores went with more insula shutdown (r = −.47). Trained participants showed less of both the midline increase and the sensory decrease. A community sample, not patients.</Detail>
         <Cite>Farb et al. 2010, Emotion</Cite>
       </Frame>
     ),
@@ -652,12 +663,12 @@ const SLIDES = [
     by: 1310,
     note: '“So the reframe: feeling sad wasn’t the risk. Everyone gets sad. Turning the senses down while sad was the risk.” Then what we don’t know: “In that trial, neither therapy changed the pattern on average. But in a 2026 analysis of the same people, those whose sensory shutdown did come down with therapy had lower risk. So the open question, and the one for aging, is whether we can train it.”',
     render: (density) => (
-      <Frame wide kicker="The reframe">
+      <ArtSplit name="s15-rain" alt="A woman at an open window in light rain, eyes closed, feeling the air" kicker="The reframe">
         <p style={K.big}>Feeling sad wasn’t the risk.<br /><span style={{ color: 'var(--pkd)' }}>Turning the senses down while sad was.</span></p>
-        <Lead>Can it be trained? On average, neither therapy changed the pattern; people whose shutdown fell with therapy had lower risk.</Lead>
+        <Lead>Can we learn to keep the senses on? That is the open question.</Lead>
         <Detail density={density}>Farb et al. (2022) found the pattern before and after therapy, unchanged by either. Wu et al. (2026), same people, self-judgement task: somatosensory shutdown was the best overall indicator of relapse, and a reduction in it with therapy predicted lower risk.</Detail>
         <Cite>Farb et al. 2022 · Wu et al. 2026, NeuroImage: Clinical</Cite>
-      </Frame>
+      </ArtSplit>
     ),
   },
 
@@ -667,17 +678,17 @@ const SLIDES = [
     by: 1400,
     note: '“Now bring it to aging. Older adults arrive with some advantages. Emotional experience tends to improve with age, and older adults attend more to positive information; Alan will say more about how this shapes memory, so I’ll stay with attention. Two things matter for us. First, the positivity effect depends on attention people can deploy: it helps mood most in older adults with good attentional control. Second, older adults mind-wander less in lab tasks. So attention is not only something aging takes away; it’s a resource older adults use, and one we can support.” Keep it brief; don’t step on Castel.',
     render: (density) => (
-      <Frame wide kicker="Later life">
+      <ArtSplit name="s16-together" alt="Two older friends on a park bench; one points out a bird to the other" kicker="Later life">
         <H2>Older adults use attention well, when they can deploy it</H2>
         <Bullets items={[
-          'Emotional experience tends to improve with age (10 years of experience sampling)',
-          'The positivity effect (100 studies, N = 7,129) lifts mood most when attentional control is good',
-          'Older adults mind-wander less in laboratory tasks',
+          'Day-to-day emotional life tends to improve with age',
+          'Older adults look toward the positive, and it lifts mood most when they can steer attention',
+          'Their minds wander less in lab tasks',
         ]} />
         <Take>Attention isn’t only what aging takes away. It’s a resource to support.</Take>
-        <Detail density={density}>Carstensen et al. (2011); Reed, Chan & Mikels (2014); Isaacowitz & Noh, on gaze and mood repair; Jordão et al. (2019), meta-analysis of age and mind-wandering. Memory and curiosity: see Alan Castel’s talk.</Detail>
+        <Detail density={density}>Carstensen et al. (2011), 10 years of experience sampling; Reed, Chan & Mikels (2014), positivity effect across 100 studies, N = 7,129; Isaacowitz & Noh, on gaze and mood repair; Jordão et al. (2019), meta-analysis of age and mind-wandering. Memory and curiosity: see Alan Castel’s talk.</Detail>
         <Cite>Carstensen 2011 · Reed 2014 · Jordão 2019</Cite>
-      </Frame>
+      </ArtSplit>
     ),
   },
 
@@ -691,23 +702,21 @@ const SLIDES = [
         <H2>Training how older adults attend lifts mood, not memory</H2>
         <div style={K.twoCards}>
           <div style={K.card}>
-            <span style={K.cardHead}>Adapted MBSR, adults 60+ (n = 28)</span>
+            <span style={K.cardHead}>Our course for adults 60+</span>
             <Bullets items={[
-              'Depression scores 15.0 → 9.4 (22 analysed)',
-              'Those who took away present-moment awareness or stepping back improved more',
-              'No control group: a lead',
+              'Depressive symptoms fell by about a third',
+              'Those who learned to notice the present, or step back from thoughts, improved most',
             ]} />
           </div>
           <div style={K.card}>
             <span style={K.cardHead}>The wider evidence</span>
             <Bullets items={[
-              'Lower depressive symptoms in symptomatic older adults',
-              'MBSR reduced loneliness, ages 55–85 (n = 40)',
-              'No cognitive benefit in the largest trial (MEDEX, n = 585)',
+              'Mood improves; one small trial also eased loneliness',
+              'Memory doesn’t: no cognitive benefit in the largest trial',
             ]} />
           </div>
         </div>
-        <Detail density={density}>Farb et al. (2021), Mindfulness. Creswell et al. (2012), Brain Behav Immun. Lenze et al. (2022), JAMA (MEDEX: MBSR, exercise or both, no memory or executive benefit at 6 or 18 months).</Detail>
+        <Detail density={density}>Farb et al. (2021), Mindfulness: adapted MBSR for 28 adults aged 60+ with mild to moderate depressive or anxious symptoms; depression scores 15.0 → 9.4 (22 analysed); no control group, so a lead. Meta-analyses: lower depressive symptoms in symptomatic older adults. Creswell et al. (2012): MBSR reduced loneliness, ages 55–85, n = 40. Creswell et al. (2012), Brain Behav Immun. Lenze et al. (2022), JAMA (MEDEX: MBSR, exercise or both, no memory or executive benefit at 6 or 18 months).</Detail>
         <Cite>Farb 2021 · Creswell 2012 · Lenze 2022</Cite>
       </Frame>
     ),
@@ -719,28 +728,14 @@ const SLIDES = [
     by: 1600,
     note: '“What’s the active ingredient? When the comparisons get tight, it looks like how attention is held, not how much stimulation is added. An awe walk beat a plain walk on daily positive emotion, though the plain walkers walked more. In a trial with all adults, training acceptance alongside monitoring reduced loneliness; monitoring alone did not. Meanwhile adding stimulation does less well under rigorous tests: multisensory rooms in dementia care have no good evidence, and music therapy’s effect on depression in dementia shrinks to small in the Cochrane estimate.” Land: “It’s not more input. It’s how we meet it.”',
     render: (density) => (
-      <Frame wide kicker="The active ingredient">
-        <H2>The clean evidence is about how attention is held</H2>
-        <div style={K.twoCards}>
-          <div style={{ ...K.card, borderColor: SENSE }}>
-            <span style={K.cardHead}>Attentional stance: holds up</span>
-            <Bullets items={[
-              'Awe walks beat plain walks on daily positive emotion (small trial, older adults)',
-              'Acceptance plus monitoring cut loneliness; monitoring alone didn’t (d = 0.44, n = 153)',
-            ]} />
-          </div>
-          <div style={K.card}>
-            <span style={K.cardHead}>Added stimulation: weakens under test</span>
-            <Bullets items={[
-              'Multisensory rooms in dementia care: no evidence of benefit (Cochrane)',
-              'Music therapy and depression in dementia: small (SMD −0.27)',
-            ]} />
-          </div>
-        </div>
+      <ArtSplit name="s18-awe" alt="An older man on a walk stops to look up at enormous trees" kicker="The active ingredient">
+        <H2>It’s how we attend, not how much we take in</H2>
+        <div style={K.plainItem}><b style={K.plainHead}>Holds up</b><span>An “awe walk”, noticing what’s around you, beat an ordinary walk for daily positive feeling.</span></div>
+        <div style={K.plainItem}><b style={K.plainHead}>Weakens under test</b><span>Adding stimulation in dementia care, like multisensory rooms or music, does little once trials are rigorous.</span></div>
         <Take>Not more input. How we meet it.</Take>
-        <Detail density={density}>Sturm et al. (2022), Emotion. Lindsay et al. (2019), PNAS, a community sample, not older adults. Snoezelen: Cochrane CD003152. Music: Cochrane 2018, 11 studies. Dance did no better than other active controls (Prudente 2024).</Detail>
+        <Detail density={density}>Sturm et al. (2022), Emotion: awe walks vs plain walks in older adults (small trial; the plain walkers walked more). Acceptance plus monitoring cut loneliness, monitoring alone did not (d = 0.44, n = 153). Lindsay et al. (2019), PNAS, a community sample, not older adults. Snoezelen: Cochrane CD003152. Music: Cochrane 2018, 11 studies. Dance did no better than other active controls (Prudente 2024).</Detail>
         <Cite>Sturm 2022 · Lindsay 2019 · Cochrane</Cite>
-      </Frame>
+      </ArtSplit>
     ),
   },
 
@@ -753,11 +748,10 @@ const SLIDES = [
       <Frame wide kicker="What we think is going on">
         <H2>Sensing may make room for stepping back</H2>
         <div style={K.stats}>
-          <Stat big="77%" label="lower relapse risk with the most growth in decentering (vs least)" sub="Toronto trial · n = 166" />
-          <Stat big="β .46 → −.27" label="home practice → decentering → staying well" sub="direct path β = .03" />
+          <Stat big="77%" label="lower relapse risk in people who grew most at stepping back from their thoughts" sub="Toronto trial · 166 people" />
         </div>
         <Hypothesis>Moving into the senses loosens the grip of the story, and that is how sensing protects. Cognitive therapy, with no sensory practice, protected as well as MBCT, so this is open.</Hypothesis>
-        <Detail density={density}>Farb et al. (2018): MBCT vs cognitive therapy, relapse 15/75 vs 18/74 (HR 1.16, 0.60–2.25). Segal et al. (2019): post-course practice predicted decentering growth, which predicted lower relapse. Practice was self-reported and not randomized.</Detail>
+        <Detail density={density}>Practice after the course → decentering (β = .46) → lower relapse (β = −.27); direct path β = .03. Farb et al. (2018): MBCT vs cognitive therapy, relapse 15/75 vs 18/74 (HR 1.16, 0.60–2.25). Segal et al. (2019): post-course practice predicted decentering growth, which predicted lower relapse. Practice was self-reported and not randomized.</Detail>
         <Cite>Farb 2018 · Segal 2019</Cite>
       </Frame>
     ),
@@ -790,6 +784,7 @@ const SLIDES = [
     render: () => (
       <Frame wide kicker="Take-home">
         <H2>Two levers on what we notice</H2>
+        <Art name="s21-close" alt="An older couple sitting on a dock at dusk, listening to the lake" style={{ ...K.artBanner, maxWidth: 'min(900px, 88vw, 60vh)' }} />
         <div style={K.levers}>
           <div style={{ ...K.lever, borderColor: STORY }}>
             <span style={{ ...K.leverK, background: STORY }}>1</span>
@@ -903,6 +898,17 @@ const BONUS = [
     ),
   },
   {
+    q: 'Two ways of attending (the diagram)',
+    note: 'The conceptual diagram behind slide 9, redrawn from Farb, Anderson & Segal (2012), Figure 1. Doing (the narrative focus) stretches from the remembered past to the imagined future but takes in a thin slice of now; sensing (the present-moment focus) spans the full range of what is here. A diagram, not data.',
+    render: () => (
+      <Frame wide kicker="Bonus · two ways of attending">
+        <H2>Doing spans time; sensing spans the present</H2>
+        <TwoModes />
+        <Cite>Redrawn from Farb, Anderson & Segal 2012, Can J Psychiatry, Figure 1 · conceptual, not data</Cite>
+      </Frame>
+    ),
+  },
+  {
     q: 'Mindfulness and cognition: MEDEX',
     note: 'MEDEX randomized 585 cognitively unimpaired older adults to MBSR, exercise, both, or a health-education control. No benefit on memory or executive function at 6 or 18 months. The mood evidence and the cognition evidence should not be conflated.',
     render: () => (
@@ -1000,6 +1006,15 @@ const K = {
   arrowLab: { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx2)' },
   chainDirect: { position: 'absolute', left: '12%', right: '12%', bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
 
+  titleGrid: { display: 'grid', gridTemplateColumns: 'minmax(0, 0.85fr) minmax(0, 1.15fr)', gap: 48, alignItems: 'center', width: 'min(1560px, 94vw)' },
+  qrRow: { display: 'flex', alignItems: 'center', gap: 16, background: '#fff', border: '1px solid var(--bd)', borderRadius: 24, padding: 16, marginTop: 8 },
+  bigLine: { display: 'flex', alignItems: 'baseline', gap: 16, fontSize: 'clamp(18px, 2vw, 24px)', color: 'var(--tx)', lineHeight: 1.35 },
+  bigNum: { fontFamily: '"DM Serif Display",Georgia,serif', fontWeight: 400, fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1, flex: '0 0 auto', minWidth: '2.2ch' },
+  plainItem: { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'clamp(17px, 1.9vw, 22px)', color: 'var(--tx)', lineHeight: 1.4, textAlign: 'left' },
+  plainHead: { fontFamily: '"Space Mono",monospace', fontSize: 14, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pkd)', fontWeight: 400 },
+  art: { width: '100%', height: 'auto', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 24, display: 'block' },
+  artSplit: { display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 48, alignItems: 'center', width: 'min(1560px, 94vw)' },
+  artBanner: { maxWidth: 'min(1100px, 92vw, 71vh)' },
   bonusGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, width: '100%', maxWidth: 1000 },
   bonusCard: { display: 'flex', alignItems: 'center', gap: 16, background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', padding: '16px 24px', textAlign: 'left', fontSize: 'clamp(16px, 1.8vw, 19px)', color: 'var(--tx)' },
 
