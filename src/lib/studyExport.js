@@ -28,6 +28,7 @@ import { repeatedSubcatsFromSteps, administrationSuffix, vasRepeats, vasCellValu
 import { splitResubmissions, createRepeatNamer, putCell } from './exportIntegrity.js'
 import { instrumentColumns } from './instrumentColumns'
 import { CREDIT_ONLY, partitionCreditOnly, scheduleIdsForEnrollments, dropExcludedRows } from './creditOnlyExport.js'
+import { isSensingPauseRecord, sensingPauseColumns } from './sensingPauseColumns.js'
 
 const PAGE = 1000
 const IN_CHUNK = 100
@@ -816,6 +817,12 @@ function questionnaireWideByProfile(qRows, ctx, tools) {
         continue
       }
       const cleanKey = rawKey.replace(/^item_/, '')
+      // A sensing-pause offer (Sense Foraging 2b) records one object: one column
+      // per recorded fact, `<prefix>_pause_1_on_page_s`, not a JSON cell.
+      if (isSensingPauseRecord(val)) {
+        for (const [col, v] of sensingPauseColumns(val)) put(byProfile[pid], `${prefix}_${cleanKey}_${col}`, v)
+        continue
+      }
       const m = cleanKey.match(/(\d+)$/)
       const colName = m ? `${prefix}_${m[1]}` : `${prefix}_${cleanKey}`
       put(byProfile[pid], colName, responseScalar(val))
