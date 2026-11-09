@@ -119,6 +119,9 @@ section.dense .lead { font-size:2.9vmin; }
 section.dense p, section.dense li { line-height:1.42; }
 section.dense li { margin-bottom:.9vmin; }
 section.dense .svgwrap { min-height:16vh; }
+/* A text-only slide that needs the full width (a test-style scenario and its
+   parts): lift the reading-measure cap so lines run across the screen. */
+section.wide p, section.wide li { max-width:none; }
 /* Figures inside .cols aren't direct flex children, so they can't shrink
    with the slide — cap them instead. */
 .cols .svgwrap svg { height:auto; max-height:32vh; }
