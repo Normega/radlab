@@ -189,6 +189,8 @@ const VideoLibrary         = lazy(() => import('./pages/admin/VideoLibrary'))
 const VideoUpload          = lazy(() => import('./pages/admin/VideoUpload'))
 const TaskLibrary          = lazy(() => import('./pages/admin/TaskLibrary'))
 const TrainingLibrary      = lazy(() => import('./pages/admin/TrainingLibrary'))
+const GuidesIndex          = lazy(() => import('./pages/admin/guides/GuidesIndex'))
+const GuidePage            = lazy(() => import('./pages/admin/guides/GuidePage'))
 const TrainingUpload       = lazy(() => import('./pages/admin/TrainingUpload'))
 const AudioAdmin    = lazy(() => import('./pages/admin/AudioAdmin'))
 const AudioUpload   = lazy(() => import('./pages/admin/AudioUpload'))
@@ -1067,6 +1069,8 @@ export default function App() {
               <Route path="/admin/audio/new"            element={<AudioUpload />} />
               <Route path="/admin/tasks"                element={<TaskLibrary />} />
               <Route path="/admin/training"             element={<TrainingLibrary />} />
+              <Route path="/admin/guides"               element={<GuidesIndex />} />
+              <Route path="/admin/guides/:slug"         element={<GuidePage />} />
               <Route path="/admin/training/new"         element={<TrainingUpload />} />
               <Route path="/admin/compensation"         element={<CompensationPage />} />
               <Route path="/admin/games"               element={<AdminGamesPage />} />
