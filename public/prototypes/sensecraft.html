@@ -185,10 +185,16 @@
    walk where nothing came ends somewhere bare, and that is
    allowed.
 
+   The first three forks choose the biome (B1, 2026-11-09):
+   colour (a warm hue dries the land, a cool hue waters it),
+   the body's temperature (hot or cold) and texture (rough:
+   rugged, smooth: gentle), eight lands in all. Every later
+   answer takes that land's native form (B2): "trees" are
+   palms on the lagoon shore and pines in the alpine.
+
    Forks are dealt from one deck per sense: one from each deck
    before any deck repeats, never the same sense twice in a
-   row, base layers (light or colour, then the body's
-   temperature) first. A choice card shows the sensation,
+   row, the three biome cards first. A choice card shows the sensation,
    never what it becomes: a room question is answered about
    the room, not for the reward.
 
@@ -237,10 +243,13 @@ const PALETTE_PAIRS = [
 ];
 const PAL = {};
 PALETTE_PAIRS.flat().forEach(([k, , rgb]) => { PAL[k] = rgb; });
+const DRY_HUES = new Set(['rose', 'amber', 'coral', 'gold']); // each pair's warm hue: the dry land (B1)
 
+// Options name generic things (trees, a great tree, soft ground) so the biome's own form of
+// each is still what was chosen (B2); the debrief says which form it took.
 const DECKS = {
   sight: [
-    { id: 'light', base: true, kind: 'screen', layer: 'light',
+    { id: 'light', kind: 'screen', layer: 'light',
       prompt: 'Two ways on. One is bright, one is dim. Which way does your eye lean?',
       opts: [{ k: 'bright', label: 'Bright', becomes: 'daylight', stim: { type: 'light', v: 'bright' } },
              { k: 'dim', label: 'Dim', becomes: 'dusk and the first stars', stim: { type: 'light', v: 'dim' } }] },
@@ -252,7 +261,7 @@ const DECKS = {
              { k: 'grey', label: 'Grey out', becomes: 'gentle rain' }] },
     { id: 'nearfar', kind: 'room', layer: 'landmark',
       prompt: 'Look up from the screen. Where does your eye land first: on something near you, or something far away?',
-      opts: [{ k: 'oak', label: 'Something near', becomes: 'a great old tree close by' },
+      opts: [{ k: 'oak', label: 'Something near', becomes: 'a great tree close by' },
              { k: 'house', label: 'Something far', becomes: 'a small house far off' }] },
   ],
   sound: [
@@ -276,34 +285,34 @@ const DECKS = {
   body: [
     { id: 'temp', base: true, kind: 'body', layer: 'season',
       prompt: 'Notice the temperature of your body right now. Warmer, or cooler?',
-      opts: [{ k: 'warm', label: 'Warmer', becomes: 'summer' },
-             { k: 'cool', label: 'Cooler', becomes: 'winter' }] },
+      opts: [{ k: 'warm', label: 'Warmer', becomes: 'a warm land' },
+             { k: 'cool', label: 'Cooler', becomes: 'a cold land' }] },
     { id: 'gut', kind: 'body', layer: 'trail',
       prompt: 'Look down each path. Does something in your body react more to one than the other: a pull, some warmth, a tingle? Trust your gut.',
       opts: [{ k: 'hill', label: 'Up into the hills', becomes: 'a path climbing into the hills', stim: { type: 'icon', icon: 'hill' } },
-             { k: 'meadow', label: 'Down to the meadow', becomes: 'a path down to an open meadow', stim: { type: 'icon', icon: 'meadow' } }] },
+             { k: 'meadow', label: 'Down into the open', becomes: 'a path down into open country', stim: { type: 'icon', icon: 'meadow' } }] },
     { id: 'breath', kind: 'body', layer: 'drift',
       prompt: 'Notice your breathing for a moment. Is it slow, or quick?',
       opts: [{ k: 'bigclouds', label: 'Slow', becomes: 'big slow clouds' },
              { k: 'flutter', label: 'Quick', becomes: 'butterflies' }] },
   ],
   touch: [
-    { id: 'rough', kind: 'room', layer: 'rock',
+    { id: 'rough', base: true, kind: 'room', layer: 'rock',
       prompt: 'Run a finger over the nearest surface. Is it rough, or smooth?',
-      opts: [{ k: 'crags', label: 'Rough', becomes: 'rocky crags' },
-             { k: 'lake', label: 'Smooth', becomes: 'a still lake' }] },
+      opts: [{ k: 'crags', label: 'Rough', becomes: 'rugged, rocky ground' },
+             { k: 'lake', label: 'Smooth', becomes: 'gentle ground and still water' }] },
     { id: 'hard', kind: 'room', layer: 'ground',
       prompt: 'Press on whatever is under your hand. Is it hard, or soft?',
       opts: [{ k: 'stone', label: 'Hard', becomes: 'stone underfoot' },
-             { k: 'moss', label: 'Soft', becomes: 'moss and long grass' }] },
+             { k: 'moss', label: 'Soft', becomes: 'soft ground underfoot' }] },
     { id: 'heavy', kind: 'room', layer: 'horizon',
       prompt: 'Lift the nearest small object. Is it heavy, or light?',
       opts: [{ k: 'mountains', label: 'Heavy', becomes: 'a mountain range' },
-             { k: 'thistle', label: 'Light', becomes: 'thistledown drifting on the air' }] },
+             { k: 'thistle', label: 'Light', becomes: 'something light drifting on the air' }] },
     { id: 'surface', kind: 'room', layer: 'side',
       prompt: 'Rest a palm on the nearest surface. Is it warm, or cool?',
-      opts: [{ k: 'sandstone', label: 'Warm', becomes: 'sun-warmed sandstone' },
-             { k: 'ferns', label: 'Cool', becomes: 'ferns around a spring' }] },
+      opts: [{ k: 'sandstone', label: 'Warm', becomes: 'sun-warmed rock' },
+             { k: 'ferns', label: 'Cool', becomes: 'a cool, green spring' }] },
     { id: 'skin', kind: 'room', layer: 'air',
       prompt: 'Notice your skin: your lips, your palms. Does it feel more moist, or more dry?',
       opts: [{ k: 'mist', label: 'Moist', becomes: 'mist and dew' },
@@ -311,13 +320,13 @@ const DECKS = {
   ],
   smell: [
     { id: 'flowerpine', kind: 'imagined', layer: 'plants',
-      prompt: 'Flowers on one side, pines on the other. Lean toward each and imagine its smell. Which do you prefer?',
+      prompt: 'Flowers on one side, trees on the other. Lean toward each and imagine its smell. Which do you prefer?',
       opts: [{ k: 'flowers', label: 'Flowers', becomes: 'wildflowers', stim: { type: 'icon', icon: 'flowers' } },
-             { k: 'pines', label: 'Pines', becomes: 'pine trees', stim: { type: 'icon', icon: 'pines' } }] },
+             { k: 'trees', label: 'Trees', becomes: 'trees', stim: { type: 'icon', icon: 'trees' } }] },
     { id: 'air', kind: 'room', layer: 'garden',
       prompt: 'Breathe in gently through your nose. Is there anything in the air? Something sweet, or something fresh and green?',
-      opts: [{ k: 'blossom', label: 'Sweet', becomes: 'trees in blossom' },
-             { k: 'lavender', label: 'Fresh, green', becomes: 'a bed of lavender' }] },
+      opts: [{ k: 'blossom', label: 'Sweet', becomes: 'trees in flower' },
+             { k: 'lavender', label: 'Fresh, green', becomes: 'fragrant herbs' }] },
     { id: 'memory', kind: 'imagined', layer: 'hearth',
       prompt: 'Bring to mind a smell you like. Is it closer to woodsmoke, or to cut grass?',
       opts: [{ k: 'campfire', label: 'Woodsmoke', becomes: 'a campfire', stim: { type: 'icon', icon: 'campfire' } },
@@ -330,7 +339,7 @@ const DECKS = {
              { k: 'berries', label: 'Tart berries', becomes: 'berry bushes', stim: { type: 'icon', icon: 'berries' } }] },
     { id: 'mouth', kind: 'room', layer: 'taste',
       prompt: 'Notice the taste in your mouth right now. Is it more sweet, or more savoury?',
-      opts: [{ k: 'apple', label: 'Sweet', becomes: 'an apple tree heavy with fruit' },
+      opts: [{ k: 'apple', label: 'Sweet', becomes: 'a fruit tree heavy with fruit' },
              { k: 'sea', label: 'Savoury', becomes: 'a glimpse of the sea' }] },
   ],
 };
@@ -357,9 +366,9 @@ function dealOnce(){
     if (i < 0) return null;
     const c = decks[sense].splice(i, 1)[0]; used.add(c.layer); return Object.assign({ sense }, c);
   };
-  // round 1: one from every deck; base layers first (F7)
-  const r1 = [pick('sight', c => c.base), pick('body', c => c.base)];
-  shuffle(['sound', 'touch', 'smell', 'taste']).forEach(s => r1.push(pick(s)));
+  // round 1: one from every deck; the three biome cards first (F7, B1): colour, temperature, texture
+  const r1 = [pick('sight', c => c.base), pick('body', c => c.base), pick('touch', c => c.base)];
+  shuffle(['sound', 'smell', 'taste']).forEach(s => r1.push(pick(s)));
   // later rounds: distinct decks within a round, weighted, never the same sense twice in a row
   const out = r1.filter(Boolean);
   let last = out[out.length - 1].sense;
@@ -378,12 +387,87 @@ function dealOnce(){
     let opts = c.opts;
     if (c.id === 'colour'){
       const pair = PALETTE_PAIRS[(rng() * PALETTE_PAIRS.length) | 0];
-      opts = pair.map(([k, label, rgb]) => ({ k, label, becomes: label.toLowerCase() + ' light on the hills and flowers', stim: { type: 'colour', rgb } }));
+      opts = pair.map(([k, label, rgb]) => ({ k, label, becomes: label.toLowerCase() + (DRY_HUES.has(k) ? ' light on a dry, sun-baked land' : ' light on a green, watered land'), stim: { type: 'colour', rgb } }));
     }
     const sw = rng() < 0.5;
     return Object.assign({}, c, { L: sw ? opts[1] : opts[0], R: sw ? opts[0] : opts[1] });
   });
 }
+
+// ── biomes (B1–B4, 2026-11-09) ──────────────────────────────────────────────
+// Temperature makes the land hot or cold, the colour's hue dry or wet, and texture rugged or
+// gentle: eight biomes. Without a colour answer the land is temperate (the summer meadow or
+// winter plain); without a temperature answer no biome forms, and the other answers grow in
+// summer's forms on the grey. Each climate lists its colours, what the temperature answer
+// grows (flora), the native form of each generic thing, and its two terrains.
+const CLIMATES = {
+  summer: { gnd: [88, 146, 62], leaf: [60, 120, 58], leaf2: [76, 134, 62], grass: [80, 134, 78], path: [194, 182, 158], hill: [118, 150, 172], sky: [204, 226, 238],
+    rock: [128, 124, 120], water: [100, 150, 170], dry: [196, 164, 96], herb: [150, 112, 206], blossom: [246, 196, 212], fern: [62, 128, 70], snow: 0,
+    flowers: [[236, 120, 160], [250, 220, 90], [255, 255, 255], [170, 130, 220]], berry: null, fruit: [204, 40, 40],
+    flora: [['tuft', 6], ['bush', 2], ['tree', 2]], treeK: 'tree', great: ['oak', 1], framerK: 'tree', soft: 'moss',
+    rough: { name: 'a rocky summer upland', forms: [['crag', 1.5]], sky: 'crag' },
+    smooth: { name: 'a summer meadow by a lake', forms: [['pool', 0.6]], sky: 'roll' },
+    flat: 'a summer meadow', words: { trees: 'leafy trees', oak: 'a great oak close by' } },
+  winter: { gnd: [226, 230, 238], leaf: [92, 84, 80], leaf2: [92, 84, 80], grass: [120, 120, 110], path: [214, 218, 228], hill: [150, 164, 190], sky: [214, 224, 236],
+    rock: [128, 124, 120], water: [196, 214, 226], dry: [180, 170, 140], herb: [150, 140, 170], blossom: [244, 226, 232], fern: [96, 110, 96], snow: 1, frozen: true,
+    flowers: [[255, 255, 255], [236, 240, 250], [200, 210, 240]], berry: null, fruit: [204, 40, 40],
+    flora: [['tuft', 5], ['bare', 2], ['pine', 1.5]], treeK: 'pine', great: ['oak', 1], framerK: 'pine', soft: 'drift',
+    rough: { name: 'a rocky winter upland', forms: [['crag', 1.5]], sky: 'crag' },
+    smooth: { name: 'a winter plain by a frozen lake', forms: [['ice', 1]], sky: 'roll' },
+    flat: 'a winter plain', words: { trees: 'pine trees in snow', flowers: 'snowdrops', oak: 'a great bare oak close by', moss: 'deep, soft snow', lake: 'a frozen lake' } },
+  hotdry: { gnd: [212, 168, 110], leaf: [122, 134, 76], leaf2: [146, 148, 86], grass: [196, 166, 100], path: [228, 200, 154], hill: [214, 150, 110], sky: [246, 222, 184],
+    rock: [190, 108, 72], water: [92, 170, 176], dry: [214, 182, 112], herb: [150, 164, 140], blossom: [240, 210, 70], fern: [120, 150, 80], snow: 0,
+    flowers: [[250, 200, 60], [240, 120, 60], [250, 240, 200]], berry: [200, 40, 110], fruit: [120, 64, 30], fruitPalm: true,
+    flora: [['dry', 6], ['scrub', 2], ['cactus', 1.2], ['acacia', 0.8]], treeK: 'acacia', great: ['acacia', 1.8], framerK: 'cactus', soft: 'ripple',
+    rough: { name: 'a red-rock canyon', forms: [['hoodoo', 1.6], ['crag', 0.6]], sky: 'mesa', gnd: [196, 124, 84] },
+    smooth: { name: 'sand dunes', forms: [['dune', 2.2]], sky: 'dune', gnd: [226, 188, 126] },
+    flat: 'a dry, sunlit plain',
+    words: { trees: 'acacia trees', flowers: 'desert flowers', oak: 'a great acacia close by', apple: 'a date palm heavy with fruit', berries: 'prickly pears',
+      blossom: 'palo verde in flower', lavender: 'a bed of sage', ferns: 'reeds around a spring', moss: 'soft sand underfoot', lake: 'an oasis' } },
+  hotwet: { gnd: [58, 136, 72], leaf: [32, 108, 60], leaf2: [58, 138, 62], grass: [74, 160, 72], path: [224, 210, 172], hill: [70, 140, 126], sky: [214, 238, 228],
+    rock: [96, 104, 92], water: [64, 184, 190], dry: [190, 170, 100], herb: [96, 176, 90], blossom: [240, 90, 60], fern: [52, 140, 70], snow: 0,
+    flowers: [[236, 40, 80], [250, 120, 40], [250, 220, 90], [240, 90, 170]], berry: [250, 140, 40], fruit: [246, 150, 40],
+    flora: [['tuft', 4], ['leaf', 3], ['palm', 1.4], ['jtree', 1.4]], treeK: 'palm', great: ['jtree', 1.8], framerK: 'palm', soft: 'moss',
+    rough: { name: 'a jungle ravine', forms: [['boulder', 1.6], ['leaf', 1]], sky: 'karst' },
+    smooth: { name: 'a lagoon shore', forms: [['shallow', 1.6], ['palm', 0.8]], sky: 'sea', gnd: [214, 206, 160] },
+    flat: 'a warm, green lowland',
+    words: { trees: 'palm trees', flowers: 'hibiscus', oak: 'a great kapok tree close by', apple: 'a mango tree heavy with fruit', berries: 'bushes of orange berries',
+      blossom: 'a flame tree in flower', lavender: 'lemongrass', ferns: 'tree ferns around a spring', lake: 'a turquoise lagoon' } },
+  colddry: { gnd: [146, 122, 76], leaf: [214, 150, 52], leaf2: [196, 84, 48], grass: [170, 150, 96], path: [178, 162, 134], hill: [154, 128, 120], sky: [238, 218, 192],
+    rock: [150, 146, 140], water: [80, 108, 120], dry: [190, 160, 100], herb: [150, 96, 150], blossom: [240, 200, 60], fern: [176, 110, 50], snow: 0,
+    flowers: [[160, 110, 200], [200, 140, 220], [250, 220, 120]], berry: [180, 30, 40], fruit: [230, 200, 70],
+    flora: [['tuft', 5], ['litter', 2], ['birch', 2], ['maple', 1.2]], treeK: 'birch', great: ['maple', 1.8], framerK: 'birch', soft: 'litter',
+    rough: { name: 'a heather moor', forms: [['tor', 1.2], ['heather', 2.5], ['wall', 0.5]], sky: 'tor', gnd: [128, 100, 104] },
+    smooth: { name: 'an autumn wood', forms: [['litter', 1.5], ['birch', 1]], sky: 'roll' },
+    flat: 'an autumn plain',
+    words: { trees: 'birches in autumn gold', flowers: 'autumn asters', oak: 'a great maple close by', apple: 'an apple tree, its fruit gone yellow', berries: 'lingonberries',
+      blossom: 'witch hazel in flower', lavender: 'heather', ferns: 'bracken around a spring', moss: 'leaf litter underfoot', thistle: 'falling leaves' } },
+  coldwet: { gnd: [230, 236, 246], leaf: [40, 78, 68], leaf2: [60, 96, 84], grass: [150, 160, 140], path: [216, 224, 236], hill: [140, 164, 204], sky: [214, 228, 244],
+    rock: [118, 126, 140], water: [180, 206, 226], dry: [180, 170, 140], herb: [110, 150, 150], blossom: [244, 226, 232], fern: [96, 120, 100], snow: 1, frozen: true,
+    flowers: [[120, 140, 230], [250, 250, 255], [190, 150, 230]], berry: [250, 150, 40], fruit: [204, 40, 40],
+    flora: [['tuft', 3], ['drift', 2], ['pine', 2.6], ['bare', 0.8]], treeK: 'pine', great: ['pine', 1.8], framerK: 'pine', soft: 'drift',
+    rough: { name: 'alpine heights', forms: [['scree', 2], ['crag', 1.2]], sky: 'peak' },
+    smooth: { name: 'a snowfield', forms: [['drift', 2], ['ice', 0.8]], sky: 'roll' },
+    flat: 'a snowy plain',
+    words: { trees: 'dark pines in snow', flowers: 'gentians', oak: 'a great spruce close by', berries: 'cloudberries', lavender: 'juniper',
+      ferns: 'moss around an icy spring', moss: 'deep, soft snow', lake: 'a frozen tarn' } },
+};
+function climateKey(){
+  const t = opt('season'); if (!t) return null;
+  const p = opt('palette'); if (!p) return t === 'warm' ? 'summer' : 'winter';
+  return (t === 'warm' ? 'hot' : 'cold') + (DRY_HUES.has(p) ? 'dry' : 'wet');
+}
+function terrainKey(){ const r = opt('rock'); return r === 'crags' ? 'rough' : r === 'lake' ? 'smooth' : null; }
+const CL = () => CLIMATES[climateKey()] || CLIMATES.summer;
+function biomeName(){ const ck = climateKey(), tk = terrainKey(); return ck ? (tk ? CLIMATES[ck][tk].name : CLIMATES[ck].flat) : null; }
+// ?biome= starts the walk already in one land, for checking: its three cards are skipped
+const PRESETS = { canyon: ['warm', 'rose', 'crags'], dunes: ['warm', 'gold', 'lake'], dryplain: ['warm', 'amber', null],
+  jungle: ['warm', 'seagreen', 'crags'], lagoon: ['warm', 'teal', 'lake'], lowland: ['warm', 'skyblue', null],
+  moor: ['cool', 'coral', 'crags'], autumn: ['cool', 'amber', 'lake'], autumnplain: ['cool', 'gold', null],
+  alpine: ['cool', 'violet', 'crags'], snowfield: ['cool', 'skyblue', 'lake'], snowplain: ['cool', 'teal', null],
+  summer: ['warm', null, null], summerrock: ['warm', null, 'crags'], summerlake: ['warm', null, 'lake'],
+  winter: ['cool', null, null], winterrock: ['cool', null, 'crags'], winterlake: ['cool', null, 'lake'] };
+const PRESET = PRESETS[QS.get('biome')] || null;
 
 // ── state ───────────────────────────────────────────────────────────────────
 const S = {
@@ -396,6 +480,10 @@ const S = {
   forkT0: 0, ready: false, obj: [], t: 0, placeT0: 0,
   record: { v: 1, seed: SEED, started: null, forks: [], ended: null },
 };
+if (PRESET){
+  ['season', 'palette', 'rock'].forEach((layer, i) => { S.L[layer] = { opt: PRESET[i], w: PRESET[i] ? 1 : 0, card: 'preset' }; });
+  S.cards = S.cards.filter(c => !(c.layer in S.L));
+}
 document.getElementById('nForks').textContent = ['six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'][S.cards.length - 6] || S.cards.length;
 const LIVE_LAYERS = new Set(['light', 'palette', 'season', 'weather']);
 
@@ -420,30 +508,37 @@ function opt(layer){ const s = S.L[layer]; return s ? s.opt : undefined; }
 const NIGHT = [22, 26, 58];
 function envNow(){
   const b = lw('light', 'bright'), d = lw('light', 'dim');
-  const warm = lw('season', 'warm'), cool = lw('season', 'cool');
+  // the biome comes in with the temperature answer's weight, its terrain with the texture's
+  const ck = climateKey(), C = CL(), wC = ck ? lw('season', opt('season')) : 0;
+  const tk = terrainKey(), TR = tk ? C[tk] : null, wR = tk ? lw('rock', opt('rock')) : 0;
+  const warm = opt('season') === 'warm' ? wC : 0, cool = C.snow * wC; // cool: how snowy the land is
   const sunny = lw('weather', 'sunny'), grey = lw('weather', 'grey');
   const ps = S.L.palette, pal = ps && ps.opt ? { rgb: PAL[ps.opt], w: ps.w } : null;
   // with no answers yet, sky and ground are nearly one soft grey: a featureless plain
   let top = mix([186, 187, 190], [88, 148, 212], b); top = mix(top, [34, 36, 84], d);
   let bot = mix([199, 199, 200], [204, 226, 238], b); bot = mix(bot, [232, 148, 120], d);
+  if (ck) bot = mix(bot, C.sky, wC * 0.35 * (1 - d));
   if (grey){ top = mix(top, [116, 122, 134], grey * 0.65); bot = mix(bot, [168, 172, 178], grey * 0.55); }
   if (sunny){ top = mix(top, d > 0.5 ? [20, 26, 78] : [64, 136, 222], sunny * 0.35); }
   if (pal){ bot = mix(bot, pal.rgb, pal.w * 0.22); }
   const nightK = d * 0.52 + grey * 0.1;
   const dark = c => mix(c, NIGHT, nightK);
-  let ground = mix([178, 178, 176], [88, 146, 62], warm); ground = mix(ground, [226, 230, 238], cool);
-  ground = mix(ground, [196, 172, 104], lw('air', 'golden') * 0.35);
-  let tree = mix([112, 120, 104], [60, 120, 58], warm); tree = mix(tree, [92, 84, 80], cool);
+  let ground = mix([178, 178, 176], C.gnd, wC);
+  if (pal) ground = mix(ground, DRY_HUES.has(ps.opt) ? [198, 184, 152] : [152, 170, 152], pal.w * 0.3 * (1 - wC)); // before the biome, the colour alone hints at dry or wet ground
+  if (TR && TR.gnd) ground = mix(ground, TR.gnd, wR * 0.55 * wC);
+  ground = mix(ground, C.dry, lw('air', 'golden') * 0.35);
+  const tree = mix([112, 120, 104], C.leaf, wC), tree2 = mix([112, 120, 104], C.leaf2, wC), grass = mix([150, 156, 140], C.grass, wC);
   let hillFar = mix([176, 178, 182], [118, 150, 172], b);
+  if (ck) hillFar = mix(hillFar, C.hill, wC * 0.45);
   hillFar = mix(hillFar, bot, 0.3);
   if (pal) hillFar = mix(hillFar, pal.rgb, pal.w * 0.38);
   let hillNear = mix(ground, hillFar, 0.4);
   if (cool) hillNear = mix(hillNear, [232, 236, 244], cool * 0.6);
-  let path = mix([206, 205, 201], [194, 182, 158], warm); path = mix(path, [214, 218, 228], cool);
+  let path = mix([206, 205, 201], C.path, wC);
   path = mix(path, [166, 162, 156], lw('ground', 'stone') * 0.7); path = mix(path, [150, 142, 124], grey * 0.3);
-  const vivid = Math.max(b, d, warm, cool, sunny, grey, pal ? pal.w : 0);
-  return { b, d, warm, cool, sunny, grey, pal, top, bot, nightK, dark, vivid,
-    ground: dark(ground), tree: dark(tree), hillFar: mix(dark(hillFar), bot, 0.15), hillNear: dark(hillNear), path: dark(path) };
+  const vivid = Math.max(b, d, wC, sunny, grey, pal ? pal.w : 0);
+  return { b, d, warm, cool, sunny, grey, pal, top, bot, nightK, dark, vivid, C, ck, tk, TR, wC, wR,
+    ground: dark(ground), tree: dark(tree), tree2: dark(tree2), grass: dark(grass), hillFar: mix(dark(hillFar), bot, 0.15), hillNear: dark(hillNear), path: dark(path) };
 }
 
 // ── drawing primitives ──────────────────────────────────────────────────────
@@ -491,10 +586,10 @@ function pine(c, x, y, h, e, snow, fog = 0){
     if (snow > 0.05) poly(c, [[x - w * 0.45, yy - h * 0.22], [x + w * 0.45, yy - h * 0.22], [x, yy - h * 0.42]], [240, 244, 250], snow * 0.9);
   }
 }
-function roundTree(c, x, y, h, e, rr, fog = 0, canopyCol = null){
+function roundTree(c, x, y, h, e, rr, fog = 0, canopyCol = null, keepLeaves = false){
   const trunk = mix(e.dark([96, 74, 58]), e.bot, fog);
   line(c, x, y, x, y - h * 0.55, trunk, Math.max(1, h * 0.07));
-  if (e.cool > 0.5){
+  if (e.cool > 0.5 && !keepLeaves){
     c.strokeStyle = css(trunk); c.lineWidth = Math.max(0.8, h * 0.025); c.beginPath();
     for (let i = 0; i < 5; i++){ const a = -1.2 - (rr() - 0.5) * 1.6 + (i - 2) * 0.35, l = h * (0.25 + rr() * 0.2), y0 = y - h * (0.45 + rr() * 0.2);
       c.moveTo(x, y0); c.lineTo(x + Math.cos(a) * l * (i < 2 ? -1 : 1) * 0.8, y0 + Math.sin(a) * l); }
@@ -502,8 +597,51 @@ function roundTree(c, x, y, h, e, rr, fog = 0, canopyCol = null){
     ell(c, x, y - h * 0.62, h * 0.2, h * 0.05, [240, 244, 250], 0.6 * (1 - fog));
     return;
   }
-  const col = canopyCol ? mix(canopyCol, e.bot, fog) : mix(e.tree, e.bot, fog);
-  for (let i = 0; i < 4; i++) circ(c, x + (rr() - 0.5) * h * 0.4, y - h * (0.62 + rr() * 0.25), h * (0.2 + rr() * 0.1), mix(col, [255, 255, 255], i === 3 ? 0.12 : 0));
+  const col = canopyCol ? mix(canopyCol, e.bot, fog) : mix(e.tree, e.bot, fog), col2 = canopyCol ? col : mix(e.tree2 || e.tree, e.bot, fog);
+  for (let i = 0; i < 4; i++) circ(c, x + (rr() - 0.5) * h * 0.4, y - h * (0.62 + rr() * 0.25), h * (0.2 + rr() * 0.1), mix(i % 2 ? col2 : col, [255, 255, 255], i === 3 ? 0.12 : 0));
+}
+function palm(c, x, y, h, e, rr, fog = 0, t = 0, sway = 0, fruitCol = null){
+  const lean = (rr() < 0.5 ? -1 : 1) * h * (0.12 + rr() * 0.14), tx = x + lean, ty = y - h;
+  c.strokeStyle = css(mix(e.dark([150, 120, 84]), e.bot, fog)); c.lineWidth = Math.max(1, h * 0.04); c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + lean * 0.1, y - h * 0.6, tx, ty); c.stroke();
+  const fc = mix(mix(e.tree, [255, 255, 255], 0.06), e.bot, fog), s = Math.sin(t * 1.1 + x * 0.01) * sway * h * 0.15;
+  c.strokeStyle = css(fc); c.lineWidth = Math.max(1, h * 0.035);
+  for (let i = 0; i < 7; i++){ const a = -Math.PI / 2 + (i - 3) * 0.5, l = h * (0.34 + rr() * 0.08);
+    c.beginPath(); c.moveTo(tx, ty); c.quadraticCurveTo(tx + Math.cos(a) * l * 0.6, ty + Math.sin(a) * l * 0.6 - h * 0.08, tx + Math.cos(a) * l + s, ty + Math.sin(a) * l * 0.4 + h * 0.14); c.stroke(); }
+  c.lineCap = 'butt';
+  if (fruitCol) for (let i = 0; i < 5; i++) circ(c, tx + (rr() - 0.5) * h * 0.1, ty + h * 0.03 + rr() * h * 0.05, Math.max(0.8, h * 0.022), mix(e.dark(fruitCol), e.bot, fog));
+}
+function cactus(c, x, y, h, e, rr, fog = 0){
+  const col = mix(e.dark([86, 128, 80]), e.bot, fog), w = Math.max(1.5, h * 0.11);
+  c.strokeStyle = css(col); c.lineCap = 'round'; c.lineWidth = w;
+  c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - h); c.stroke();
+  c.lineWidth = w * 0.75;
+  [[-1, 0.42 + rr() * 0.1], [1, 0.55 + rr() * 0.1]].forEach(([sd, v]) => { if (rr() < 0.2) return; const ax = x + sd * h * 0.2;
+    c.beginPath(); c.moveTo(x, y - h * v); c.lineTo(ax, y - h * v); c.lineTo(ax, y - h * (v + 0.25)); c.stroke(); });
+  line(c, x - w * 0.18, y - h * 0.05, x - w * 0.18, y - h * 0.95, mix(col, [255, 255, 255], 0.18), Math.max(0.6, w * 0.16));
+  c.lineCap = 'butt';
+}
+function acacia(c, x, y, h, e, rr, fog = 0){
+  const trunk = mix(e.dark([104, 82, 62]), e.bot, fog), col = mix(e.tree, e.bot, fog);
+  line(c, x, y, x + h * 0.04, y - h * 0.55, trunk, Math.max(1, h * 0.05));
+  line(c, x + h * 0.04, y - h * 0.55, x - h * 0.22, y - h * 0.78, trunk, Math.max(0.8, h * 0.03));
+  line(c, x + h * 0.04, y - h * 0.55, x + h * 0.26, y - h * 0.8, trunk, Math.max(0.8, h * 0.03));
+  ell(c, x, y - h * 0.84, h * 0.5, h * 0.09, col); ell(c, x + h * 0.06, y - h * 0.9, h * 0.32, h * 0.06, mix(col, [255, 255, 255], 0.1));
+}
+function birch(c, x, y, h, e, rr, fog = 0){
+  const bark = mix(e.dark([236, 232, 222]), e.bot, fog);
+  line(c, x, y, x, y - h * 0.82, bark, Math.max(1, h * 0.045));
+  for (let i = 0; i < 4; i++){ const yy = y - h * (0.12 + i * 0.17 + rr() * 0.05); line(c, x - h * 0.02, yy, x + h * 0.012, yy, mix(e.dark([50, 46, 44]), e.bot, fog), Math.max(0.6, h * 0.012)); }
+  if (e.cool > 0.5){ c.strokeStyle = css(bark); c.lineWidth = Math.max(0.6, h * 0.015); c.beginPath();
+    for (let i = 0; i < 4; i++){ const y0 = y - h * (0.5 + i * 0.1), sd = i % 2 ? 1 : -1; c.moveTo(x, y0); c.lineTo(x + sd * h * 0.18, y0 - h * 0.12); } c.stroke(); return; }
+  const col = mix(e.tree, e.bot, fog), col2 = mix(e.tree2 || e.tree, e.bot, fog);
+  for (let i = 0; i < 6; i++) circ(c, x + (rr() - 0.5) * h * 0.34, y - h * (0.58 + rr() * 0.34), h * (0.1 + rr() * 0.06), i % 3 === 2 ? col2 : col);
+}
+function hoodoo(c, x, y, h, w, e, rr, fog = 0){
+  const base = e.C ? e.C.rock : [190, 108, 72];
+  for (let i = 0; i < 4; i++){ const y0 = y - h * i / 4, y1 = y - h * (i + 1) / 4, w0 = w * (1 - i * 0.14), w1 = w * (1 - (i + 1) * 0.14) * (0.8 + rr() * 0.3);
+    poly(c, [[x - w0, y0], [x + w0, y0], [x + w1, y1], [x - w1, y1]], mix(e.dark(mix(base, [255, 230, 200], i % 2 ? 0.16 : 0)), e.bot, fog)); }
+  ell(c, x, y - h, w * 0.75, w * 0.22, mix(e.dark(mix(base, [60, 40, 30], 0.3)), e.bot, fog));
 }
 function flower(c, x, y, h, col, e, sway){
   const stem = e.dark([70, 120, 60]);
@@ -516,12 +654,6 @@ function skep(c, x, y, s, e){
   for (let i = 0; i < 4; i++){ const w = s * (1 - i * 0.2), yy = y - i * s * 0.28; ell(c, x, yy - s * 0.12, w, s * 0.2, i % 2 ? dark : straw); }
   circ(c, x, y - s * 1.05, s * 0.18, straw);
   ell(c, x, y - s * 0.08, s * 0.16, s * 0.12, [40, 30, 20]);
-}
-function bush(c, x, y, s, e, berry){
-  const g = e.cool > 0.5 ? e.dark([84, 90, 88]) : e.dark([48, 98, 60]);
-  circ(c, x - s * 0.45, y - s * 0.4, s * 0.5, g); circ(c, x + s * 0.4, y - s * 0.45, s * 0.52, g); circ(c, x, y - s * 0.75, s * 0.55, mix(g, [255, 255, 255], 0.08));
-  const r = mulberry32(hashStr('b' + x.toFixed(0)));
-  for (let i = 0; i < 12; i++) circ(c, x + (r() - 0.5) * s * 1.6, y - s * (0.25 + r() * 0.9), s * 0.08, e.dark(berry ? [200, 40, 60] : [60, 70, 170]));
 }
 function fire(c, x, y, s, e, t){
   for (let i = 0; i < 7; i++){ const a = i / 7 * 6.28; ell(c, x + Math.cos(a) * s * 0.7, y + Math.sin(a) * s * 0.18, s * 0.16, s * 0.1, e.dark([120, 116, 110])); }
@@ -537,24 +669,173 @@ function fire(c, x, y, s, e, t){
   for (let i = 0; i < 6; i++){ const p = ((t * 0.25 + i / 6) % 1); circ(c, x + Math.sin(p * 6 + i) * s * 0.4 * p, y - s * (1.2 + p * 4), s * (0.2 + p * 0.5), [190, 190, 196], 0.25 * (1 - p)); }
 }
 
-// sign icons (imagined and gut forks): the sensation's object, small
+// one thing in the land, standing at (sx, sy) with k pixels to the metre. The walk's scenery,
+// the foreground fringe, the sign icons and the place all draw through here, so a thing looks
+// the same wherever it appears, in its biome's own form (B2).
+function bladeFan(c, sx, sy, k, hgt, col, o, t, sway, n = 5){
+  c.strokeStyle = css(col); c.lineWidth = Math.max(0.6, k * 0.03 * (o.thin || 1)); c.beginPath();
+  for (let i = 0; i < n; i++){ const a = (i - (n - 1) / 2) * 0.28 + Math.sin(t * 1.3 + o.sd) * sway; c.moveTo(sx + (i - (n - 1) / 2) * k * 0.04, sy); c.lineTo(sx + Math.sin(a) * hgt, sy - Math.cos(a) * hgt); }
+  c.stroke();
+}
+function flowerCols(e){ const C = e.C || CLIMATES.summer; return e.pal ? [e.pal.rgb, ...C.flowers.slice(0, 2)] : C.flowers; }
+function drawKind(c, o, sx, sy, k, e, t, fog = 0, sway = 0.08){
+  const rr = mulberry32(o.sd), F2 = col => mix(e.dark(col), e.bot, fog), snow = e.cool > 0.5, C = e.C || CLIMATES.summer, kind = o.kind;
+  if (kind === 'tuft'){
+    bladeFan(c, sx, sy, k, 0.32 * k * (0.6 + o.v * 0.7), snow ? mix([120, 120, 110], e.bot, fog) : mix(e.grass, e.bot, fog), o, t, sway);
+  } else if (kind === 'long'){
+    bladeFan(c, sx, sy, k, 0.75 * k * (0.7 + o.v * 0.6), snow ? F2([140, 140, 124]) : F2(mix(C.grass, [0, 0, 0], 0.32)), o, t, sway, 7);
+  } else if (kind === 'gold' || kind === 'dry'){
+    const hgt = (kind === 'dry' ? 0.42 : 0.5) * k * (0.7 + o.v * 0.5); bladeFan(c, sx, sy, k, hgt, F2(C.dry), o, t, sway, kind === 'dry' ? 8 : 6);
+    if (kind === 'gold') ell(c, sx + Math.sin(t * 1.3 + o.sd) * sway * hgt, sy - hgt, k * 0.03, k * 0.07, F2(mix(C.dry, [255, 255, 255], 0.15)));
+  } else if (kind === 'wild'){
+    const cols = flowerCols(e), fs = C === CLIMATES.hotwet ? 1.4 : C.snow ? 0.75 : 1;
+    for (let i = 0; i < 3; i++) flower(c, sx + (i - 1) * k * 0.12 * fs, sy, k * (0.22 + rr() * 0.16) * fs, mix(e.dark(cols[(o.sd + i) % cols.length]), e.bot, fog), e, Math.sin(t * 1.3 + o.sd + i) * sway * k * 0.3);
+  } else if (kind === 'lav'){
+    for (let i = 0; i < 6; i++){ const x = sx + (i - 2.5) * k * 0.06, hh = k * (0.3 + rr() * 0.12), sw = Math.sin(t * 1.2 + o.sd + i) * sway * k * 0.3;
+      line(c, x, sy, x + sw, sy - hh, F2([84, 120, 80]), Math.max(0.6, k * 0.02)); ell(c, x + sw, sy - hh, k * 0.025, k * 0.06, F2(C.herb)); }
+  } else if (kind === 'heather'){
+    for (let i = 0; i < 5; i++){ const x = sx + (i - 2) * k * 0.14, r = k * (0.1 + rr() * 0.06); circ(c, x, sy - r * 0.5, r, F2(mix(C.herb, [70, 50, 50], 0.3))); circ(c, x, sy - r * 0.9, r * 0.75, F2(C.herb)); }
+  } else if (kind === 'fern'){
+    const fs = C === CLIMATES.hotwet ? 1.6 : 1, col = F2(C.fern); c.strokeStyle = css(col); c.lineWidth = Math.max(0.6, k * 0.025 * fs);
+    for (let i = 0; i < 5; i++){ const a = -2.5 + i * 0.45, len = k * (0.4 + (i % 2) * 0.12) * fs, ex = sx + Math.cos(a) * len, ey = sy + Math.sin(a) * len * 0.8;
+      c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(sx + Math.cos(a) * len * 0.5, sy - len * 0.55, ex, ey); c.stroke(); }
+  } else if (kind === 'leaf'){ // big tropical leaves on short stems
+    const col = F2(mix(C.leaf2, [255, 255, 255], 0.04)), rib = F2(mix(C.leaf2, [255, 255, 255], 0.3));
+    for (let i = 0; i < 5; i++){ const a = -Math.PI / 2 + (i - 2) * 0.5 + Math.sin(t * 1.1 + o.sd + i) * sway * 0.5, L = k * (0.55 + rr() * 0.3), cx = sx + Math.cos(a) * L * 0.55, cy = sy + Math.sin(a) * L * 0.55;
+      c.fillStyle = css(i % 2 ? col : mix(col, [0, 0, 0], 0.1)); c.beginPath(); c.ellipse(cx, cy, L * 0.5, L * 0.2, a, 0, 6.2832); c.fill();
+      line(c, sx, sy, cx + Math.cos(a) * L * 0.45, cy + Math.sin(a) * L * 0.45, rib, Math.max(0.5, k * 0.012)); }
+  } else if (kind === 'moss'){
+    ell(c, sx, sy, k * (0.5 + o.v * 0.5), k * 0.1, F2(snow ? [200, 210, 204] : [70, 126, 60]));
+    ell(c, sx - k * 0.12, sy - k * 0.04, k * 0.22, k * 0.04, [255, 255, 255], 0.1 * (1 - fog));
+  } else if (kind === 'ripple'){ // soft sand: a smooth patch with wind ripples
+    const rx = k * (0.7 + o.v * 0.6); ell(c, sx, sy, rx, rx * 0.14, F2(mix(C.gnd, [255, 240, 214], 0.25)));
+    for (let i = 0; i < 3; i++) line(c, sx - rx * 0.6, sy - rx * 0.06 + i * rx * 0.05, sx + rx * 0.5, sy - rx * 0.08 + i * rx * 0.05, F2(mix(C.gnd, [140, 100, 60], 0.25)), Math.max(0.5, k * 0.012));
+  } else if (kind === 'litter'){ // fallen leaves
+    const cols = [C.leaf, C.leaf2, [150, 96, 50]];
+    for (let i = 0; i < 9; i++) ell(c, sx + (rr() - 0.5) * k * 0.9, sy + (rr() - 0.5) * k * 0.08, k * 0.05, k * 0.022, F2(cols[i % 3]));
+  } else if (kind === 'drift'){ // a snowdrift
+    const rx = k * (0.6 + o.v * 0.7); c.fillStyle = css(F2([246, 248, 252])); c.beginPath(); c.ellipse(sx, sy, rx, rx * 0.3, 0, Math.PI, 0); c.closePath(); c.fill();
+    c.fillStyle = css(F2([206, 216, 232])); c.beginPath(); c.ellipse(sx + rx * 0.35, sy, rx * 0.55, rx * 0.14, 0, Math.PI, 0); c.closePath(); c.fill();
+  } else if (kind === 'pond' || kind === 'pool'){
+    const frozen = C.frozen && snow, rx = k * (kind === 'pool' ? 0.6 + o.v * 0.5 : 0.9 + o.v * 0.6);
+    ell(c, sx, sy, rx * 1.05, rx * 0.2, F2(frozen ? [230, 236, 244] : [96, 120, 100])); ell(c, sx, sy, rx, rx * 0.17, F2(frozen ? [204, 222, 236] : C.water));
+    line(c, sx - rx * 0.4, sy - rx * 0.05, sx + rx * 0.1, sy - rx * 0.05, [255, 255, 255], Math.max(0.5, k * 0.012), 0.35 * (1 - fog));
+    if (kind === 'pond' && !frozen) for (let i = 0; i < 3; i++) ell(c, sx + (rr() - 0.5) * rx * 1.2, sy + (rr() - 0.5) * rx * 0.12, k * 0.1, k * 0.035, F2([70, 140, 70]));
+  } else if (kind === 'ice'){
+    const rx = k * (0.8 + o.v * 0.8); ell(c, sx, sy, rx, rx * 0.15, F2([212, 228, 240]));
+    line(c, sx - rx * 0.5, sy - rx * 0.03, sx + rx * 0.3, sy - rx * 0.05, [255, 255, 255], Math.max(0.5, k * 0.015), 0.6 * (1 - fog));
+  } else if (kind === 'shallow'){ // clear lagoon water over pale sand
+    const rx = k * (1 + o.v * 0.8); ell(c, sx, sy, rx * 1.1, rx * 0.21, F2([234, 224, 186])); ell(c, sx, sy, rx, rx * 0.16, F2(C.water));
+    ell(c, sx - rx * 0.2, sy - rx * 0.03, rx * 0.5, rx * 0.05, F2(mix(C.water, [255, 255, 255], 0.35)));
+  } else if (kind === 'dune'){ // a long windward slope up to a sharp crest, and a shaded slip face
+    const rx = k * (2.2 + o.v * 1.6), ry = k * (0.45 + o.v * 0.35), sand = mix(C.gnd, TRsand(e), 0.5), cx = sx + rx * 0.25, cy = sy - ry;
+    c.fillStyle = css(F2(mix(sand, [255, 244, 220], 0.14))); c.beginPath(); c.moveTo(sx - rx, sy); c.quadraticCurveTo(sx - rx * 0.25, sy - ry * 1.1, cx, cy);
+    c.quadraticCurveTo(sx + rx * 0.55, sy - ry * 0.35, sx + rx, sy); c.closePath(); c.fill();
+    c.fillStyle = css(F2(mix(sand, [150, 100, 60], 0.2))); c.beginPath(); c.moveTo(cx, cy); c.quadraticCurveTo(sx + rx * 0.55, sy - ry * 0.35, sx + rx, sy); c.quadraticCurveTo(sx + rx * 0.45, sy - ry * 0.1, cx, cy); c.closePath(); c.fill();
+    for (let i = 1; i < 3; i++){ const q = i / 3; c.strokeStyle = css(F2(mix(sand, [150, 100, 60], 0.12))); c.lineWidth = Math.max(0.5, k * 0.012); c.beginPath();
+      c.moveTo(sx - rx * (1 - q * 0.6), sy - ry * q * 0.4); c.quadraticCurveTo(sx - rx * 0.3, sy - ry * (q * 0.6 + 0.05), sx + rx * 0.05, sy - ry * (q * 0.55 + 0.1)); c.stroke(); }
+  } else if (kind === 'crag'){
+    const hh = k * (0.9 + o.v * 1.1), ww = k * (0.5 + o.v * 0.3), col = F2(C.rock);
+    poly(c, [[sx - ww, sy], [sx - ww * 0.6, sy - hh * 0.7], [sx - ww * 0.1, sy - hh], [sx + ww * 0.5, sy - hh * 0.75], [sx + ww, sy]], col);
+    poly(c, [[sx - ww * 0.1, sy - hh], [sx + ww * 0.5, sy - hh * 0.75], [sx + ww * 0.2, sy - hh * 0.3]], mix(col, [255, 255, 255], 0.18));
+    if (snow) poly(c, [[sx - ww * 0.35, sy - hh * 0.82], [sx - ww * 0.1, sy - hh], [sx + ww * 0.3, sy - hh * 0.8]], [244, 246, 252], 0.9 * (1 - fog));
+  } else if (kind === 'hoodoo'){
+    hoodoo(c, sx, sy, k * (1.6 + o.v * 1.8), k * (0.3 + o.v * 0.2), e, rr, fog);
+  } else if (kind === 'boulder'){ // a mossy jungle boulder
+    const r = k * (0.5 + o.v * 0.5); ell(c, sx, sy - r * 0.6, r, r * 0.72, F2(C.rock)); ell(c, sx - r * 0.25, sy - r * 0.9, r * 0.4, r * 0.2, F2(mix(C.rock, [255, 255, 255], 0.12)));
+    ell(c, sx - r * 0.05, sy - r * 1.18, r * 0.75, r * 0.22, F2([62, 128, 62]));
+  } else if (kind === 'tor'){ // stacked granite
+    const u = k * (0.45 + o.v * 0.3), col = F2(C.rock);
+    [[0, 0, 1.3, 0.55], [-0.15, -0.95, 1, 0.45], [0.1, -1.7, 0.75, 0.38], [-0.05, -2.3, 0.5, 0.28]].forEach(([dx, dy, rx, ry], i) => { if (i === 3 && o.v < 0.4) return;
+      ell(c, sx + dx * u, sy + dy * u - ry * u, rx * u, ry * u * 1.15, i % 2 ? mix(col, [255, 255, 255], 0.1) : col); });
+  } else if (kind === 'wall'){ // a run of dry-stone wall
+    const ww = k * (1.4 + o.v * 1.2), hh = k * 0.42, col = F2([138, 132, 124]);
+    c.fillStyle = css(col); c.fillRect(sx - ww, sy - hh, ww * 2, hh);
+    for (let r = 1; r < 3; r++) for (let i = 0; i < 6; i++){ const x = sx - ww + (i + (r % 2) * 0.5) * ww / 3; line(c, x, sy - hh * r / 3, x + ww / 4, sy - hh * r / 3, mix(col, [0, 0, 0], 0.22), Math.max(0.5, k * 0.012)); }
+    c.fillStyle = css(mix(col, [255, 255, 255], 0.15)); c.fillRect(sx - ww, sy - hh, ww * 2, hh * 0.14);
+  } else if (kind === 'scree'){
+    for (let i = 0; i < 8; i++){ const x = sx + (rr() - 0.5) * k * 1.4, y = sy + (rr() - 0.5) * k * 0.12, s = k * (0.06 + rr() * 0.08);
+      poly(c, [[x - s, y], [x - s * 0.3, y - s * 0.9], [x + s * 0.8, y - s * 0.5], [x + s, y]], F2(mix(C.rock, [255, 255, 255], rr() * 0.2))); }
+  } else if (kind === 'sand'){ // sun-warmed rock
+    const u = k * (0.35 + o.v * 0.25), base = mix([212, 148, 96], C.rock, 0.35);
+    [[-1, 0, 1.4, 1.1], [0.3, 0, 1.2, 1.6]].forEach(([dx, dy, ww, hh], i) => { const col = F2(mix(base, [0, 0, 0], i * 0.05));
+      c.fillStyle = css(col); c.fillRect(sx + dx * u, sy + dy * u - hh * u, ww * u, hh * u);
+      c.fillStyle = css(mix(col, [255, 236, 200], 0.35)); c.fillRect(sx + dx * u, sy - hh * u, ww * u, hh * u * 0.2); });
+  } else if (kind === 'berry'){
+    const s = k * 0.5 * (0.7 + o.v * 0.5);
+    if (C === CLIMATES.hotdry){ // prickly pear: pads with fruit along their rims
+      const col = F2([96, 140, 90]); [[0, 0.55, 0.42], [-0.45, 0.95, 0.32], [0.4, 1.0, 0.3]].forEach(([dx, dy, r]) => ell(c, sx + dx * s, sy - dy * s, r * s * 0.8, r * s, col));
+      for (let i = 0; i < 6; i++) circ(c, sx + (rr() - 0.5) * s * 1.2, sy - s * (1 + rr() * 0.4), s * 0.08, F2(C.berry));
+    } else {
+      const col = F2(snow ? [84, 90, 88] : [48, 98, 60]);
+      circ(c, sx - s * 0.4, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.4, sy - s * 0.4, s * 0.5, col); circ(c, sx, sy - s * 0.7, s * 0.55, mix(col, [255, 255, 255], 0.06));
+      for (let i = 0; i < 8; i++) circ(c, sx + (rr() - 0.5) * s * 1.4, sy - s * (0.25 + rr() * 0.8), s * 0.08, F2(C.berry || (i % 2 ? [200, 40, 60] : [60, 70, 170])));
+    }
+  } else if (kind === 'scrub'){ // sage
+    const s = k * 0.32 * (0.7 + o.v * 0.6), col = F2([140, 152, 118]);
+    circ(c, sx - s * 0.5, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.45, sy - s * 0.38, s * 0.48, col); circ(c, sx, sy - s * 0.62, s * 0.5, mix(col, [255, 255, 255], 0.1));
+  } else if (kind === 'blossom'){
+    roundTree(c, sx, sy, k * (2.6 + o.v * 1.6), e, rr, fog, e.dark(C.blossom), true);
+  } else if (kind === 'apple'){
+    const h = k * (2.8 + o.v * 1.4);
+    if (C.fruitPalm) palm(c, sx, sy, h * 1.2, e, rr, fog, t, sway, C.fruit);
+    else { roundTree(c, sx, sy, h, e, rr, fog); for (let i = 0; i < 6; i++) circ(c, sx + (rr() - 0.5) * h * 0.5, sy - h * (0.55 + rr() * 0.3), Math.max(0.8, h * 0.03), F2(C.fruit)); }
+  } else if (kind === 'oak'){
+    roundTree(c, sx, sy, k * (6 + o.v * 2), e, rr, fog);
+  } else if (kind === 'pine'){
+    pine(c, sx, sy, k * (3.2 + o.v * 2.4), e, e.cool, fog);
+  } else if (kind === 'palm'){
+    palm(c, sx, sy, k * (3.4 + o.v * 2), e, rr, fog, t, sway);
+  } else if (kind === 'acacia'){
+    acacia(c, sx, sy, k * (3.2 + o.v * 1.6), e, rr, fog);
+  } else if (kind === 'cactus'){
+    cactus(c, sx, sy, k * (2.2 + o.v * 1.4), e, rr, fog);
+  } else if (kind === 'birch'){
+    birch(c, sx, sy, k * (3.4 + o.v * 1.8), e, rr, fog);
+  } else if (kind === 'maple'){
+    roundTree(c, sx, sy, k * (3.4 + o.v * 2), e, rr, fog, mix(e.tree2, e.tree, rr() * 0.4));
+  } else if (kind === 'jtree'){ // a broad jungle tree hung with vines
+    const h = k * (4 + o.v * 2.4); roundTree(c, sx, sy, h, e, rr, fog);
+    for (let i = 0; i < 3; i++){ const dx = (rr() - 0.5) * h * 0.4; line(c, sx + dx, sy - h * 0.68, sx + dx + Math.sin(t + i) * sway * h * 0.05, sy - h * (0.3 + rr() * 0.15), F2([46, 96, 48]), Math.max(0.5, h * 0.008)); }
+  } else if (kind === 'stone'){
+    ell(c, sx, sy - k * 0.06, k * 0.28 * (0.6 + o.v), k * 0.14 * (0.6 + o.v), mix(e.dark([140, 138, 134]), e.bot, fog));
+    if (snow) ell(c, sx, sy - k * 0.13, k * 0.2 * (0.6 + o.v), k * 0.06, [244, 246, 250], 0.8 * (1 - fog));
+  } else if (kind === 'bush'){
+    const col = mix(snow ? e.dark([110, 104, 98]) : mix(e.tree, [0, 0, 0], 0.08), e.bot, fog), s = k * 0.55 * (0.7 + o.v * 0.6);
+    circ(c, sx - s * 0.4, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.4, sy - s * 0.4, s * 0.5, col); circ(c, sx, sy - s * 0.7, s * 0.55, mix(col, [255, 255, 255], 0.06));
+    if (snow) ell(c, sx, sy - s * 1.15, s * 0.45, s * 0.14, [244, 246, 250], 0.85 * (1 - fog));
+  } else { // tree (summer) or bare (winter; roundTree draws bare branches in the cold)
+    roundTree(c, sx, sy, k * (3.2 + o.v * 2.4), e, rr, fog);
+  }
+}
+const TRsand = e => (e.TR && e.TR.gnd) || [226, 188, 126];
+// the height of each tree kind in metres (v = 0.5), for drawing one to a size in pixels
+const KH = { tree: 4.4, bare: 4.4, pine: 4.4, palm: 4.4, acacia: 4, cactus: 2.9, birch: 4.3, maple: 4.4, jtree: 5.2, oak: 7, apple: 3.5, blossom: 3.4 };
+const drawTree = (c, kind, x, y, hPx, e, t, sd, fog = 0) => drawKind(c, { kind, v: 0.5, sd }, x, y, hPx / (KH[kind] || 4.4), e, t, fog, 0.06);
+
+// sign icons (imagined and gut forks): the sensation's object, small, in the biome's own form
+function iconEnv(){
+  const C = CL(), ck = climateKey();
+  return { b: 1, d: 0, cool: ck ? C.snow : 0, sunny: 0, grey: 0, pal: null, top: [150, 196, 230], bot: [222, 236, 240], nightK: 0, dark: x => x, C,
+    tree: ck ? C.leaf : [64, 126, 62], tree2: ck ? C.leaf2 : [64, 126, 62], grass: C.grass, ground: ck ? C.gnd : [120, 168, 90] };
+}
 function drawIcon(cnv, icon){
   const c = cnv.getContext('2d'), w = 112, h = 64, d = 2;
   cnv.width = w * d; cnv.height = h * d; cnv.style.width = w + 'px'; cnv.style.height = h + 'px';
   c.setTransform(d, 0, 0, d, 0, 0);
-  const e = { b: 1, d: 0, warm: 1, cool: 0, sunny: 0, grey: 0, pal: null, top: [150, 196, 230], bot: [222, 236, 240], nightK: 0, dark: x => x, tree: [64, 126, 62], ground: [120, 168, 90] };
+  const e = iconEnv(), C = e.C;
   c.fillStyle = vgrad(c, 0, h, e.top, e.bot); c.fillRect(0, 0, w, h);
-  c.fillStyle = css([118, 166, 92]); c.fillRect(0, h * 0.66, w, h);
+  c.fillStyle = css(e.ground); c.fillRect(0, h * 0.66, w, h);
   const rr = mulberry32(hashStr(icon));
-  if (icon === 'flowers'){ for (let i = 0; i < 9; i++) flower(c, 16 + i * 10 + rr() * 4, h - 4, 14 + rr() * 12, [[236, 120, 160], [250, 220, 90], [255, 255, 255], [170, 130, 220]][i % 4], e, 0); }
-  if (icon === 'pines'){ pine(c, 34, h - 6, 44, e, 0); pine(c, 58, h - 4, 54, e, 0); pine(c, 80, h - 7, 40, e, 0); }
+  if (icon === 'flowers'){ const cols = flowerCols(e); for (let i = 0; i < 9; i++) flower(c, 16 + i * 10 + rr() * 4, h - 4, 14 + rr() * 12, cols[i % cols.length], e, 0); }
+  if (icon === 'trees'){ drawTree(c, C.treeK, 34, h - 6, 44, e, 1.3, 11); drawTree(c, C.treeK, 58, h - 4, 54, e, 1.3, 12); drawTree(c, C.treeK, 80, h - 7, 40, e, 1.3, 13); }
   if (icon === 'hives'){ skep(c, 42, h - 8, 14, e); skep(c, 72, h - 8, 12, e); for (let i = 0; i < 5; i++) circ(c, 30 + rr() * 60, 14 + rr() * 22, 1.6, [60, 40, 10]); }
-  if (icon === 'berries'){ bush(c, 38, h - 6, 16, e, true); bush(c, 74, h - 6, 14, e, false); }
+  if (icon === 'berries'){ drawKind(c, { kind: 'berry', v: 0.5, sd: 21 }, 38, h - 6, 34, e, 1.3); drawKind(c, { kind: 'berry', v: 0.5, sd: 22 }, 74, h - 6, 30, e, 1.3); }
   if (icon === 'campfire'){ fire(c, 56, h - 12, 12, e, 1.3); }
   if (icon === 'mown'){ for (let i = 0; i < 7; i++) poly(c, [[i * 18 - 10, h], [i * 18 + 2, h], [i * 18 + 40, h * 0.4], [i * 18 + 30, h * 0.4]], i % 2 ? [128, 184, 96] : [96, 156, 72]); c.fillStyle = css(e.bot); c.fillRect(0, 0, w, h * 0.4); }
-  if (icon === 'hill'){ ell(c, 74, h * 0.72, 46, 34, [96, 150, 76]); roundTree(c, 66, h * 0.36, 22, e, rr); roundTree(c, 84, h * 0.4, 18, e, rr);
+  if (icon === 'hill'){ ell(c, 74, h * 0.72, 46, 34, mix(e.ground, [0, 0, 0], 0.15)); drawTree(c, C.treeK, 66, h * 0.36, 22, e, 1.3, 31); drawTree(c, C.treeK, 84, h * 0.4, 18, e, 1.3, 32);
     c.strokeStyle = css([212, 196, 160]); c.lineWidth = 4; c.beginPath(); c.moveTo(30, h); c.quadraticCurveTo(54, h * 0.75, 72, h * 0.45); c.stroke(); }
-  if (icon === 'meadow'){ ell(c, 56, h * 0.82, 60, 14, [150, 196, 104]);
+  if (icon === 'meadow'){ ell(c, 56, h * 0.82, 60, 14, mix(e.ground, [255, 255, 255], 0.15));
     for (let i = 0; i < 8; i++) circ(c, 12 + rr() * 90, h * 0.74 + rr() * 16, 1.6, [[250, 220, 90], [255, 255, 255]][i % 2]);
     c.strokeStyle = css([212, 196, 160]); c.lineWidth = 4; c.beginPath(); c.moveTo(80, h); c.quadraticCurveTo(64, h * 0.8, 40, h * 0.72); c.stroke(); }
 }
@@ -591,7 +872,10 @@ function initRoad(){
   S.rays.push(road); S.cur = road; S.s = 50;
   makeFork();
   cam.x = 0; cam.z = 0; cam.yaw = 0;
-  S.obj = []; for (let i = 0; i < 120; i++) S.obj.push(spawnObj(true));
+  S.obj = []; for (let i = 0; i < 120; i++) S.obj.push(EMPTY());
+  walkMix(); // empty unless ?biome= chose the land already; then it stands from the start
+  for (let i = 0; i < WALK_TARGET; i++) S.obj[i] = spawnObj(true);
+  if (PRESET){ FR.forEach(f => { f.p += 1; }); fringeTick(0); }
 }
 function makeFork(){
   const r = S.cur, [fx, fz] = rayPoint(r, r.len);
@@ -599,39 +883,74 @@ function makeFork(){
   S.fork = { L: mk(-T.branch, 'road', 1.0), M: mk(0, 'faint', 0.42), R: mk(T.branch, 'road', 1.0) };
 }
 // What each answer grows along the walk (G1, 2026-11-09). The walk starts as a bare grey
-// plain and holds nothing that was not chosen (G2): even the grass is the season's. Set
+// plain and holds nothing that was not chosen (G2): even the grass is the biome's. Set
 // pieces (waterfall, lake, spring, house, hives, campfire, mown field, sea) wait for the place.
+// '@' forms resolve through the biome (B2): '@tree' is its own tree, '@great' its great tree,
+// '@soft' its soft ground; the texture answer grows the terrain's forms.
 const WALK_FORMS = {
-  warm: [['tuft', 6], ['bush', 2], ['tree', 2]], cool: [['tuft', 5], ['bare', 2], ['pine', 1.5]],
-  meadow: [['wild', 3]], flowers: [['wild', 4]], pines: [['pine', 3]],
-  crags: [['crag', 1.5]], stone: [['stone', 3]], moss: [['moss', 3], ['long', 1]],
-  sandstone: [['sand', 1.5]], ferns: [['fern', 3]], golden: [['gold', 4]],
+  meadow: [['wild', 3]], flowers: [['wild', 4]], trees: [['@tree', 3]],
+  stone: [['stone', 3]], moss: [['@soft', 3]], sandstone: [['sand', 1.5]], ferns: [['fern', 3]], golden: [['gold', 4]],
   blossom: [['blossom', 1.5]], lavender: [['lav', 3]], berries: [['berry', 2]],
-  apple: [['apple', 1]], oak: [['oak', 0.5]], crickets: [['long', 4]], frogs: [['pond', 1]],
+  apple: [['apple', 1]], oak: [['@great', 0.5]], crickets: [['long', 4]], frogs: [['pond', 1]],
 };
+const NEAR_OK = new Set(['tuft', 'long', 'gold', 'dry', 'wild', 'lav', 'heather', 'fern', 'leaf', 'stone', 'moss', 'ripple', 'litter', 'scree', 'scrub']);
+const FRINGE_OK = new Set(['tuft', 'long', 'gold', 'dry', 'wild', 'lav', 'fern', 'leaf']);
 let WALK_MIX = [], WALK_TARGET = 0;
-function walkMix(){ // the season is the biome (60 things); every other answer adds 14
-  WALK_MIX = []; let n = 0, biome = false;
-  for (const k in S.L){ const o = S.L[k].opt; if (!o || !WALK_FORMS[o]) continue; WALK_MIX.push(...WALK_FORMS[o]); if (k === 'season') biome = true; else n++; }
-  WALK_TARGET = Math.min(S.obj.length, (biome ? 60 : 0) + n * 14);
+function walkMix(){ // the biome is 60 things; every other answer adds 14
+  WALK_MIX = []; let n = 0;
+  const ck = climateKey(), C = CL(), tk = terrainKey();
+  if (ck) C.flora.forEach(([k, p]) => WALK_MIX.push([k, p, 1]));
+  for (const layer in S.L){
+    const o = S.L[layer].opt; if (!o || layer === 'season') continue;
+    const forms = layer === 'rock' ? C[tk].forms : WALK_FORMS[o]; if (!forms) continue;
+    forms.forEach(([k, p]) => WALK_MIX.push(k === '@tree' ? [C.treeK, p, 1] : k === '@great' ? [C.great[0], p, C.great[1]] : k === '@soft' ? [C.soft, p, 1] : [k, p, 1]));
+    n++;
+  }
+  WALK_TARGET = Math.min(S.obj.length, (ck ? 60 : 0) + n * 14);
 }
 const EMPTY = () => ({ x: 0, z: 0, kind: null, v: 0, sd: 0 });
 function spawnObj(initial){
-  if (initial || !WALK_MIX.length) return EMPTY();
+  if (!WALK_MIX.length || (initial && !PRESET)) return EMPTY();
+  // F2: now and then the biome's tallest thing passes close beside the path
+  const framer = climateKey() && rng() < 0.03;
+  let kind = CL().framerK, big = 1.25;
+  if (!framer){ const tot = WALK_MIX.reduce((a, m) => a + m[1], 0); let u = rng() * tot; [kind, , big] = WALK_MIX[0];
+    for (const [k, p, b] of WALK_MIX){ if ((u -= p) <= 0){ kind = k; big = b; break; } } }
+  // F1: a third of the small things land in a near band beside the path
+  const small = NEAR_OK.has(kind), near = small && rng() < 0.38, clear = small ? 0.35 : 0.9;
   for (let tries = 0; tries < 30; tries++){
-    const zz = 62 + rng() * 16;
-    const side = rng() < 0.5 ? -1 : 1, xx = side * (2.4 + Math.pow(rng(), 1.4) * 16);
+    const zz = initial ? 1 + rng() * 74 : 62 + rng() * 16;
+    const side = rng() < 0.5 ? -1 : 1, xx = side * (framer ? 2.4 + rng() * 1.2 : near ? 1.5 + rng() * 2 : 2.4 + Math.pow(rng(), 1.4) * 16);
     const sn = Math.sin(cam.yaw), cs = Math.cos(cam.yaw);
     const x = cam.x + xx * cs + zz * sn, z = cam.z - xx * sn + zz * cs;
-    if (S.rays.some(r => distToRay(x, z, r) < r.hw + (r.style === 'faint' ? 0.5 : 0.9))) continue;
-    const tot = WALK_MIX.reduce((a, m) => a + m[1], 0);
-    let u = rng() * tot, kind = WALK_MIX[0][0]; for (const [k, p] of WALK_MIX){ if ((u -= p) <= 0){ kind = k; break; } }
-    return { x, z, kind, v: rng(), sd: (rng() * 1e9) | 0 };
+    if (S.rays.some(r => distToRay(x, z, r) < r.hw + (r.style === 'faint' ? Math.min(0.5, clear) : clear))) continue;
+    return { x, z, kind, v: rng(), sd: (rng() * 1e9) | 0, big, small };
   }
   return EMPTY();
 }
 function clearCorridors(){
-  S.obj.forEach((o, i) => { if (o.kind && S.rays.some(r => distToRay(o.x, o.z, r) < r.hw + 0.9)) S.obj[i] = spawnObj(false); });
+  S.obj.forEach((o, i) => { if (o.kind && S.rays.some(r => distToRay(o.x, o.z, r) < r.hw + (o.small ? 0.35 : 0.9))) S.obj[i] = spawnObj(false); });
+}
+// F3: the foreground fringe, plants at the walker's feet in the bottom corners, from the
+// same answers as the walk. They slide outward while the walker moves and rest at a fork.
+const FR = []; for (let i = 0; i < 16; i++) FR.push({ side: i % 2 ? 1 : -1, p: (i >> 1) / 8, kind: null, v: 0, sd: 0, thin: 0.5 });
+function fringeTick(dt){
+  const kinds = WALK_MIX.filter(m => FRINGE_OK.has(m[0])), tot = kinds.reduce((a, m) => a + m[1], 0);
+  const n = kinds.length ? Math.round(FR.length * clamp(WALK_TARGET / 90, 0.35, 1)) : 0;
+  FR.forEach((f, i) => { f.p += S.v * dt * 0.08; if (f.p < 1) return; f.p -= 1; f.kind = null;
+    if (i >= n) return;
+    let u = rng() * tot; for (const [k, p] of kinds){ if ((u -= p) <= 0){ f.kind = k; break; } }
+    f.v = rng(); f.sd = (rng() * 1e9) | 0; });
+}
+const FH = { tuft: 0.4, long: 0.9, gold: 0.55, dry: 0.45, wild: 0.4, lav: 0.42, heather: 0.32, fern: 0.4, leaf: 0.75 };
+function drawFringe(c, e, t, sway, bob){
+  if (REDUCED) return;
+  const turn = (S.cur ? cam.yaw - S.cur.ang : 0) * W * 0.5;
+  for (const f of FR){ if (!f.kind) continue;
+    const q = Math.pow(f.p, 1.4), x = W / 2 + f.side * W * (0.25 + 0.32 * q) + turn, y = H * (1.0 + 0.04 * q) + bob * 2;
+    const k = H * (0.15 + 0.16 * q) / FH[f.kind];
+    c.globalAlpha = clamp(f.p / 0.18); drawKind(c, f, x, y, k, e, t, 0, sway); }
+  c.globalAlpha = 1;
 }
 
 function drawSkyAndHills(c, e, t, hy, place){
@@ -684,6 +1003,33 @@ function mountains(c, e, hy, amp){
     c.lineTo(x, hy - (0.55 * peak(ang * 2.3) + 0.3 * peak(ang * 5.1 + 1) + 0.15 * peak(ang * 11.7 + 2)) * amp); }
   c.lineTo(W, hy + 2); c.closePath(); c.fill();
 }
+// the far skyline a texture answer raises, in the biome's own form: mesas, karst towers,
+// granite tors, snowy peaks, crags, dunes, a sea horizon or gentle rolls. u maps a screen x to
+// the angle the skyline is drawn at, so it turns with the view on the walk and holds still at the place.
+function skyline(c, e, hy, kind, amp, u){
+  const C = e.C, k = kind;
+  if (k === 'sea'){ c.fillStyle = vgrad(c, hy - 2, hy + H * 0.04, mix(e.dark(C.water), e.bot, 0.35), e.dark(C.water)); c.fillRect(0, hy - 2, W, H * 0.04); return; }
+  const prof = a => {
+    if (k === 'mesa'){ const s = Math.sin(a * 2.1 + 0.3) * 0.5 + Math.sin(a * 4.7) * 0.3 + Math.sin(a * 9.1) * 0.08; return clamp((s - 0.02) * 7) * (0.7 + 0.3 * Math.sin(a * 1.3 + 2)); }
+    if (k === 'karst'){ const s = Math.sin(a * 8 + Math.sin(a * 3) * 1.5); return Math.pow(Math.max(0, s), 0.45) * (0.55 + 0.45 * Math.sin(a * 2.3 + 1)) + 0.12; }
+    if (k === 'tor'){ return 0.28 + 0.12 * Math.sin(a * 3 + 1) + (Math.sin(a * 11) > 0.75 ? 0.2 : 0) + (Math.sin(a * 17 + 1) > 0.85 ? 0.12 : 0); }
+    if (k === 'peak'){ const p = v => Math.pow(1 - Math.abs(Math.sin(v)), 1.6); return 0.55 * p(a * 2.3) + 0.3 * p(a * 5.1 + 1) + 0.15 * p(a * 11.7 + 2); }
+    if (k === 'crag'){ return 0.35 + 0.25 * Math.abs(Math.sin(a * 6.3 + 1)) + 0.15 * Math.abs(Math.sin(a * 15.7)) + 0.1 * Math.sin(a * 2); }
+    if (k === 'dune'){ return 0.45 + 0.3 * Math.sin(a * 2.2 + 1) + 0.15 * Math.sin(a * 5.3); }
+    return 0.4 + 0.2 * Math.sin(a * 2.7 + 1) + 0.1 * Math.sin(a * 6.1); // roll
+  };
+  const col = k === 'dune' || k === 'roll' ? mix(mix(e.ground, e.hillFar, 0.5), e.bot, 0.3) : mix(e.dark(C.rock), e.bot, k === 'mesa' ? 0.28 : 0.42);
+  const pts = []; for (let x = 0; x <= W + 6; x += 6) pts.push([x, hy - prof(u(x)) * amp]);
+  c.fillStyle = css(col); c.beginPath(); c.moveTo(0, hy + 2); pts.forEach(p => c.lineTo(p[0], p[1])); c.lineTo(W, hy + 2); c.closePath(); c.fill();
+  if (k === 'mesa' || k === 'dune'){ // a sunlit band along the tops
+    c.strokeStyle = css(mix(col, [255, 240, 214], 0.25)); c.lineWidth = Math.max(1, amp * 0.06); c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p[0], p[1] + amp * 0.03) : c.moveTo(p[0], p[1] + amp * 0.03)); c.stroke(); }
+  if (k === 'peak' || (k === 'crag' && e.cool > 0.5)){ // snow on what stands high
+    c.fillStyle = css([244, 246, 252], 0.9); let seg = [];
+    const flush = () => { if (seg.length > 1){ c.beginPath(); seg.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
+      for (let i = seg.length - 1; i >= 0; i--){ const [x, y] = seg[i]; c.lineTo(x, y + Math.min(amp * 0.16, hy - y - amp * 0.5)); } c.closePath(); c.fill(); } seg = []; };
+    pts.forEach(p => { if (hy - p[1] > amp * 0.5) seg.push(p); else flush(); }); flush();
+  }
+}
 // what the answers put in the walk's sky: birds, a thread of far smoke, thistledown
 function drawSkyLife(c, e, t){
   const bK = lw('voice', 'birds');
@@ -698,8 +1044,15 @@ function drawSkyLife(c, e, t){
     for (let i = 0; i < 10; i++){ const p = (t * 0.06 + i / 10) % 1; circ(c, sx + Math.sin(p * 5 + i) * u * 2 * p + p * u * 3, HY - p * H * 0.14, u * (0.4 + p * 1.6), [200, 200, 204], 0.22 * (1 - p) * smK); }
   }
   const thK = lw('horizon', 'thistle');
-  if (thK > 0.01) for (let i = 0; i < 14; i++){ const r = mulberry32(hashStr('wt' + i) ^ SEED), p = (t * (0.012 + r() * 0.01) + r()) % 1, x = W * p * 1.2 - W * 0.1, y = H * (0.7 - p * 0.45 + r() * 0.25) + Math.sin(t + i) * 8, u = Math.min(W, H) * 0.004;
-    for (let k = 0; k < 7; k++){ const a = k / 7 * 6.28 + t * 0.2; line(c, x, y, x + Math.cos(a) * u * 2, y + Math.sin(a) * u * 2, [255, 255, 255], 0.7, 0.6 * thK); } circ(c, x, y, 1.2, [240, 236, 220], thK); }
+  if (thK > 0.01) drawDrifters(c, e, t, thK, 14, Math.min(W, H) * 0.004, 'wt');
+}
+// "something light drifting on the air": thistledown, or falling leaves in the autumn lands
+function drawDrifters(c, e, t, a, n, u, seed){
+  const leaves = e.ck === 'colddry';
+  for (let i = 0; i < n; i++){ const r = mulberry32(hashStr(seed + i) ^ SEED), p = (t * (0.012 + r() * 0.01) + r()) % 1, x = W * p * 1.2 - W * 0.1, y = H * (0.7 - p * 0.45 + r() * 0.25) + Math.sin(t + i) * 8;
+    if (leaves){ const y2 = H * (0.05 + ((t * (0.03 + r() * 0.02) + r()) % 1) * 0.9), x2 = W * r() + Math.sin(t * 0.8 + i) * u * 12;
+      c.fillStyle = css(e.dark(i % 2 ? e.C.leaf : e.C.leaf2), a); c.beginPath(); c.ellipse(x2, y2, u * 2.2, u * 1.1 * Math.abs(Math.sin(t * 2 + i)) + u * 0.3, t + i, 0, 6.2832); c.fill(); continue; }
+    for (let k = 0; k < 7; k++){ const ang = k / 7 * 6.28 + t * 0.2; line(c, x, y, x + Math.cos(ang) * u * 2, y + Math.sin(ang) * u * 2, [255, 255, 255], 0.7, 0.6 * a); } circ(c, x, y, 1.2, [240, 236, 220], a); }
 }
 
 function drawWalk(c, t){
@@ -711,6 +1064,8 @@ function drawWalk(c, t){
   // the plain is flat until a choice raises it
   const mtnK = lw('horizon', 'mountains'), hillK = lw('trail', 'hill');
   if (mtnK > 0.005) mountains(c, e, HY, H * 0.12 * mtnK);
+  if (e.TR && e.wR > 0.005){ const sk = e.ck ? e.TR.sky : (e.tk === 'rough' ? 'crag' : 'roll'), amp = { mesa: 0.09, karst: 0.09, tor: 0.035, peak: 0.13, crag: 0.05, dune: 0.04, roll: 0.025, sea: 0 }[sk];
+    skyline(c, e, HY, sk, H * amp * e.wR, x => cam.yaw + Math.atan((x - W / 2) / F) + 1.7); }
   if (hillK > 0.005){
     ridge(c, e, HY, H * 0.05 * hillK, 0, e.hillFar, 0, 1);
     ridge(c, e, HY, H * 0.028 * hillK, H * 0.004, mix(e.hillNear, e.hillFar, 0.3), 2.1, 1);
@@ -737,89 +1092,34 @@ function drawWalk(c, t){
       if (st.type === 'light') drawRay(c, sub, st.v === 'bright' ? [255, 248, 220] : [14, 18, 44], 0.42 * k * fade, 2.2);
     }
   }
+  // haze at the horizon, under the scenery so a tall thing close by is not banded by it
+  { const g = c.createLinearGradient(0, HY - H * 0.03, 0, HY + H * 0.09); g.addColorStop(0, css(e.bot, 0)); g.addColorStop(0.35, css(e.bot, 0.4)); g.addColorStop(1, css(e.bot, 0)); c.fillStyle = g; c.fillRect(0, HY - H * 0.03, W, H * 0.12); }
   // side objects, far to near
   const vis = [];
   for (const o of S.obj){ if (!o.kind) continue; const [xx, zz] = toCam(o.x, o.z); if (zz > NEAR && zz < 80) vis.push([zz, xx, o]); }
   vis.sort((a, b) => b[0] - a[0]);
   const sway = 0.08 + 0.16 * lw('wind', 'breeze');
-  const blade = (sx, sy, k, hgt, col, o, n = 5) => { c.strokeStyle = css(col); c.lineWidth = Math.max(0.6, k * 0.03); c.beginPath();
-    for (let i = 0; i < n; i++){ const a = (i - (n - 1) / 2) * 0.28 + Math.sin(t * 1.3 + o.sd) * sway; c.moveTo(sx + (i - (n - 1) / 2) * k * 0.04, sy); c.lineTo(sx + Math.sin(a) * hgt, sy - Math.cos(a) * hgt); }
-    c.stroke(); };
   for (const [zz, xx, o] of vis){
-    const [sx, sy] = toScr(xx, zz), k = F / zz;
+    const [sx, sy] = toScr(xx, zz), k = F / zz * (o.big || 1);
     if (sx < -k * 4 || sx > W + k * 4) continue;
     const fog = clamp((zz - 14) / 62) * 0.85, fadeIn = clamp((78 - zz) / 10);
     c.globalAlpha = fadeIn;
-    const rr = mulberry32(o.sd), F2 = col => mix(e.dark(col), e.bot, fog), snow = e.cool > 0.5;
-    if (o.kind === 'tuft'){
-      blade(sx, sy, k, 0.32 * k * (0.6 + o.v * 0.7), snow ? mix([120, 120, 110], e.bot, fog) : mix(mix(e.tree, [255, 255, 255], 0.1), e.bot, fog), o);
-    } else if (o.kind === 'long'){
-      blade(sx, sy, k, 0.75 * k * (0.7 + o.v * 0.6), snow ? F2([140, 140, 124]) : F2([54, 96, 52]), o, 7);
-    } else if (o.kind === 'gold'){
-      const hgt = 0.5 * k * (0.7 + o.v * 0.5); blade(sx, sy, k, hgt, F2([196, 164, 96]), o, 6);
-      ell(c, sx + Math.sin(t * 1.3 + o.sd) * sway * hgt, sy - hgt, k * 0.03, k * 0.07, F2([224, 190, 110]));
-    } else if (o.kind === 'wild'){
-      const cols = e.pal ? [e.pal.rgb, mix(e.pal.rgb, [255, 255, 255], 0.5), [250, 220, 90]] : [[236, 120, 160], [250, 220, 90], [255, 255, 255], [170, 130, 220]];
-      for (let i = 0; i < 3; i++) flower(c, sx + (i - 1) * k * 0.12, sy, k * (0.22 + rr() * 0.16), mix(e.dark(cols[(o.sd + i) % cols.length]), e.bot, fog), e, Math.sin(t * 1.3 + o.sd + i) * sway * k * 0.3);
-    } else if (o.kind === 'lav'){
-      for (let i = 0; i < 6; i++){ const x = sx + (i - 2.5) * k * 0.06, hh = k * (0.3 + rr() * 0.12), sw = Math.sin(t * 1.2 + o.sd + i) * sway * k * 0.3;
-        line(c, x, sy, x + sw, sy - hh, F2([84, 120, 80]), Math.max(0.6, k * 0.02)); ell(c, x + sw, sy - hh, k * 0.025, k * 0.06, F2(snow ? [150, 140, 170] : [150, 112, 206])); }
-    } else if (o.kind === 'fern'){
-      const col = F2(snow ? [96, 110, 96] : [62, 128, 70]); c.strokeStyle = css(col); c.lineWidth = Math.max(0.6, k * 0.025);
-      for (let i = 0; i < 5; i++){ const a = -2.5 + i * 0.45, len = k * (0.4 + (i % 2) * 0.12), ex = sx + Math.cos(a) * len, ey = sy + Math.sin(a) * len * 0.8;
-        c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(sx + Math.cos(a) * len * 0.5, sy - len * 0.55, ex, ey); c.stroke(); }
-    } else if (o.kind === 'moss'){
-      ell(c, sx, sy, k * (0.5 + o.v * 0.5), k * 0.1, F2(snow ? [200, 210, 204] : [70, 126, 60]));
-      ell(c, sx - k * 0.12, sy - k * 0.04, k * 0.22, k * 0.04, [255, 255, 255], 0.1 * (1 - fog));
-    } else if (o.kind === 'pond'){
-      const rx = k * (0.9 + o.v * 0.6); ell(c, sx, sy, rx * 1.05, rx * 0.2, F2([96, 120, 100])); ell(c, sx, sy, rx, rx * 0.17, F2(snow ? [196, 214, 226] : [100, 150, 170]));
-      if (!snow) for (let i = 0; i < 3; i++) ell(c, sx + (rr() - 0.5) * rx * 1.2, sy + (rr() - 0.5) * rx * 0.12, k * 0.1, k * 0.035, F2([70, 140, 70]));
-    } else if (o.kind === 'crag'){
-      const hh = k * (0.9 + o.v * 1.1), ww = k * (0.5 + o.v * 0.3), col = F2([128, 124, 120]);
-      poly(c, [[sx - ww, sy], [sx - ww * 0.6, sy - hh * 0.7], [sx - ww * 0.1, sy - hh], [sx + ww * 0.5, sy - hh * 0.75], [sx + ww, sy]], col);
-      poly(c, [[sx - ww * 0.1, sy - hh], [sx + ww * 0.5, sy - hh * 0.75], [sx + ww * 0.2, sy - hh * 0.3]], mix(col, [255, 255, 255], 0.18));
-      if (snow) poly(c, [[sx - ww * 0.35, sy - hh * 0.82], [sx - ww * 0.1, sy - hh], [sx + ww * 0.3, sy - hh * 0.8]], [244, 246, 252], 0.9 * (1 - fog));
-    } else if (o.kind === 'sand'){
-      const u = k * (0.35 + o.v * 0.25);
-      [[-1, 0, 1.4, 1.1], [0.3, 0, 1.2, 1.6]].forEach(([dx, dy, ww, hh], i) => { const col = F2([212 - i * 10, 148 - i * 6, 96]);
-        c.fillStyle = css(col); c.fillRect(sx + dx * u, sy + dy * u - hh * u, ww * u, hh * u);
-        c.fillStyle = css(mix(col, [255, 236, 200], 0.35)); c.fillRect(sx + dx * u, sy - hh * u, ww * u, hh * u * 0.2); });
-    } else if (o.kind === 'berry'){
-      const s = k * 0.5 * (0.7 + o.v * 0.5), col = F2(snow ? [84, 90, 88] : [48, 98, 60]);
-      circ(c, sx - s * 0.4, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.4, sy - s * 0.4, s * 0.5, col); circ(c, sx, sy - s * 0.7, s * 0.55, mix(col, [255, 255, 255], 0.06));
-      for (let i = 0; i < 8; i++) circ(c, sx + (rr() - 0.5) * s * 1.4, sy - s * (0.25 + rr() * 0.8), s * 0.08, F2(i % 2 ? [200, 40, 60] : [60, 70, 170]));
-    } else if (o.kind === 'blossom'){
-      const h = k * (2.6 + o.v * 1.6); roundTree(c, sx, sy, h, e, rr, fog, snow ? null : e.dark([246, 196, 212]));
-    } else if (o.kind === 'apple'){
-      const h = k * (2.8 + o.v * 1.4); roundTree(c, sx, sy, h, e, rr, fog);
-      if (!snow) for (let i = 0; i < 6; i++) circ(c, sx + (rr() - 0.5) * h * 0.5, sy - h * (0.55 + rr() * 0.3), Math.max(0.8, h * 0.03), F2([204, 40, 40]));
-    } else if (o.kind === 'oak'){
-      roundTree(c, sx, sy, k * (6 + o.v * 2), e, rr, fog);
-    } else if (o.kind === 'pine'){
-      pine(c, sx, sy, k * (3.2 + o.v * 2.4), e, e.cool, fog);
-    } else if (o.kind === 'stone'){
-      ell(c, sx, sy - k * 0.06, k * 0.28 * (0.6 + o.v), k * 0.14 * (0.6 + o.v), mix(e.dark([140, 138, 134]), e.bot, fog));
-      if (e.cool > 0.5) ell(c, sx, sy - k * 0.13, k * 0.2 * (0.6 + o.v), k * 0.06, [244, 246, 250], 0.8 * (1 - fog));
-    } else if (o.kind === 'bush'){
-      const col = mix(e.cool > 0.5 ? e.dark([110, 104, 98]) : mix(e.tree, [0, 0, 0], 0.08), e.bot, fog), s = k * 0.55 * (0.7 + o.v * 0.6);
-      circ(c, sx - s * 0.4, sy - s * 0.35, s * 0.45, col); circ(c, sx + s * 0.4, sy - s * 0.4, s * 0.5, col); circ(c, sx, sy - s * 0.7, s * 0.55, mix(col, [255, 255, 255], 0.06));
-      if (e.cool > 0.5) ell(c, sx, sy - s * 1.15, s * 0.45, s * 0.14, [244, 246, 250], 0.85 * (1 - fog));
-    } else { // tree (summer) or bare (winter; roundTree draws bare branches in the cold)
-      roundTree(c, sx, sy, k * (3.2 + o.v * 2.4), e, rr, fog);
-    }
+    drawKind(c, o, sx, sy, k, e, t, fog, sway);
     c.globalAlpha = 1;
   }
-  // butterflies or fireflies near the path, and low mist over the ground
+  if (e.ck === 'colddry') drawDrifters(c, e, t, e.wC * 0.8, 5, Math.min(W, H) * 0.004, 'wl'); // a few leaves always falling in autumn
+  // butterflies or fireflies near the path (small birds in the snow), and low mist over the ground
   const flK = lw('drift', 'flutter');
   if (flK > 0.01){ const n = e.d > 0.5 ? 18 : 6;
     for (let i = 0; i < n; i++){ const r = mulberry32(hashStr('wf' + i) ^ SEED), x = W * (0.08 + r() * 0.84) + Math.sin(t * (0.3 + r() * 0.3) + i) * 40, y = HY + (H - HY) * (0.25 + r() * 0.45) + Math.cos(t * (0.4 + r() * 0.3) + i * 2) * 18, u = (H - HY) * 0.012;
-      if (e.d > 0.5){ circ(c, x, y, u * 2.4, [250, 255, 170], 0.18 * flK); circ(c, x, y, u * 0.5, [255, 255, 220], flK * (0.4 + 0.6 * Math.max(0, Math.sin(t * (1 + r()) + i * 3)))); }
+      if (e.cool > 0.5){ const f = Math.sin(t * 14 + i * 2) * u * 0.9; c.strokeStyle = css(e.dark([60, 52, 50]), flK); c.lineWidth = 1.4; c.beginPath();
+        c.moveTo(x - u * 1.2, y - f); c.quadraticCurveTo(x - u * 0.5, y - u * 0.5, x, y); c.quadraticCurveTo(x + u * 0.5, y - u * 0.5, x + u * 1.2, y - f); c.stroke(); }
+      else if (e.d > 0.5){ circ(c, x, y, u * 2.4, [250, 255, 170], 0.18 * flK); circ(c, x, y, u * 0.5, [255, 255, 220], flK * (0.4 + 0.6 * Math.max(0, Math.sin(t * (1 + r()) + i * 3)))); }
       else { const fw = Math.abs(Math.sin(t * 9 + i)) * u * 1.6 + u * 0.4, col = e.pal ? e.pal.rgb : [[250, 200, 80], [240, 130, 170], [140, 180, 240]][i % 3];
         ell(c, x - fw * 0.6, y, fw * 0.6, u, col, flK); ell(c, x + fw * 0.6, y, fw * 0.6, u, col, flK); } } }
   const mistK = lw('air', 'mist');
   if (mistK > 0.01){ const g = c.createLinearGradient(0, HY - H * 0.02, 0, HY + (H - HY) * 0.6); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.2, `rgba(255,255,255,${0.38 * mistK})`); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, HY - H * 0.02, W, (H - HY) * 0.62 + H * 0.02); }
-  // haze at the horizon
-  { const g = c.createLinearGradient(0, HY - H * 0.03, 0, HY + H * 0.09); g.addColorStop(0, css(e.bot, 0)); g.addColorStop(0.35, css(e.bot, 0.4)); g.addColorStop(1, css(e.bot, 0)); c.fillStyle = g; c.fillRect(0, HY - H * 0.03, W, H * 0.12); }
+  drawFringe(c, e, t, sway, bob);
   drawWeather(c, e, t, false);
   drawWords(c, t, false);
   if (S.fork && atFork) drawLeaders(c);
@@ -895,6 +1195,10 @@ function drawPlace(c, w, h, t){
     pts.push([w, hy + 4]); poly(c, pts, col);
     for (let i = 2; i < pts.length - 1; i += 2){ const [px, py] = pts[i]; if (py < hy - h * 0.15) poly(c, [[px - w * 0.02, py + h * 0.035], [px + w * 0.02, py + h * 0.035], [px, py]], [244, 246, 252], 0.6 + e.cool * 0.35); }
   }
+  // the biome's own forms (B2): Cl is the climate, its terrain's skyline stands on the horizon
+  const Cl = e.C;
+  if (e.tk){ const sk = e.ck ? e.TR.sky : (e.tk === 'rough' ? 'crag' : 'roll'), amp = { mesa: 0.1, karst: 0.11, tor: 0.04, peak: 0.13, crag: 0.06, dune: 0.05, roll: 0.03, sea: 0 }[sk];
+    skyline(c, e, hy, sk, h * amp, x => (x / w - 0.5) * 1.6 + 1.7); }
   if (O('sea')){
     // full width at the horizon line: the hills hide it except where they dip
     c.fillStyle = vgrad(c, hy - h * 0.004, hy + h * 0.07, mix(e.dark([70, 130, 170]), e.bot, 0.3), e.dark([50, 104, 150])); c.fillRect(0, hy - h * 0.004, w, h * 0.08);
@@ -929,34 +1233,41 @@ function drawPlace(c, w, h, t){
   if (O('house')){
     const x = w * 0.74, y = hy + h * 0.025, u = 18 * s;
     c.fillStyle = css(e.dark([214, 200, 180])); c.fillRect(x - u, y - u * 1.2, u * 2, u * 1.2);
-    poly(c, [[x - u * 1.25, y - u * 1.2], [x + u * 1.25, y - u * 1.2], [x, y - u * 2.2]], e.dark([150, 82, 70]));
+    poly(c, [[x - u * 1.25, y - u * 1.2], [x + u * 1.25, y - u * 1.2], [x, y - u * 2.2]], e.dark(e.ck && e.ck.startsWith('hot') ? [196, 128, 88] : [150, 82, 70]));
     c.fillStyle = css(e.dark([120, 90, 80])); c.fillRect(x + u * 0.5, y - u * 2.1, u * 0.3, u * 0.6);
     const lit = 0.25 + e.d * 0.75;
     c.fillStyle = css(mix([60, 60, 70], [255, 214, 120], lit)); c.fillRect(x - u * 0.6, y - u * 0.85, u * 0.45, u * 0.4); c.fillRect(x + u * 0.15, y - u * 0.85, u * 0.45, u * 0.4);
     if (e.d > 0.3){ const g = c.createRadialGradient(x, y - u * 0.6, 0, x, y - u * 0.6, u * 4); g.addColorStop(0, `rgba(255,200,110,${0.3 * e.d})`); g.addColorStop(1, 'rgba(255,200,110,0)'); c.fillStyle = g; c.fillRect(x - u * 4, y - u * 4.6, u * 8, u * 8); }
     if (e.cool > 0.5) poly(c, [[x - u * 1.1, y - u * 1.35], [x + u * 1.1, y - u * 1.35], [x, y - u * 2.1]], [244, 246, 252], 0.85);
   }
-  if (O('pines')){ const r = R('pf'); for (let i = 0; i < 7; i++) pine(c, w * (0.84 + i * 0.022) + r() * 6, hy + h * 0.035 + r() * h * 0.01, (40 + r() * 34) * s, e, e.cool, 0.25); }
+  if (O('trees')){ const r = R('pf'); for (let i = 0; i < 7; i++) drawTree(c, Cl.treeK, w * (0.84 + i * 0.022) + r() * 6, hy + h * 0.035 + r() * h * 0.01, (40 + r() * 34) * s, e, t, 40 + i, 0.25); }
   if (O('mown')){
     // a rounded field on the right, mown in diagonal stripes
     const fx = w * 0.88, fy = hy + h * 0.1, rx = w * 0.22, ry = h * 0.085;
     c.save(); c.beginPath(); c.ellipse(fx, fy, rx, ry, 0, Math.PI, 0); c.lineTo(fx + rx, fy + ry); c.lineTo(fx - rx, fy + ry); c.closePath(); c.clip();
     const sw = Math.max(10, 22 * s);
-    for (let i = -2; i * sw < rx * 2 + ry * 2; i++){ const x0 = fx - rx - ry * 2 + i * sw; poly(c, [[x0, fy + ry], [x0 + sw, fy + ry], [x0 + sw + ry * 2.2, fy - ry], [x0 + ry * 2.2, fy - ry]], e.cool > 0.5 ? (i % 2 ? [236, 240, 246] : [218, 224, 234]) : e.dark(i % 2 ? [128, 182, 92] : [100, 158, 72])); }
+    for (let i = -2; i * sw < rx * 2 + ry * 2; i++){ const x0 = fx - rx - ry * 2 + i * sw; poly(c, [[x0, fy + ry], [x0 + sw, fy + ry], [x0 + sw + ry * 2.2, fy - ry], [x0 + ry * 2.2, fy - ry]], e.cool > 0.5 ? (i % 2 ? [236, 240, 246] : [218, 224, 234]) : e.ck === 'hotdry' || e.ck === 'colddry' ? e.dark(i % 2 ? Cl.dry : mix(Cl.dry, [0, 0, 0], 0.12)) : e.dark(i % 2 ? [128, 182, 92] : [100, 158, 72])); }
     c.restore();
   }
   if (any){
     hill(0.075, 0.035 * relief, 3.2, 9, mix(e.hillNear, e.ground, 0.3));
     c.fillStyle = vgrad(c, hy + h * 0.1, h, mix(e.ground, e.hillNear, 0.3), mix(e.ground, [0, 0, 0], 0.1)); c.fillRect(0, hy + h * 0.1, w, h);
   }
+  // the biome itself, as the walk grew it: its plants, trees and terrain spread over the land
+  if (e.ck){ const r = R('scatter'), forms = Cl.flora.concat(e.TR ? e.TR.forms : []), tot = forms.reduce((a, m) => a + m[1], 0), items = [];
+    for (let i = 0; i < 34; i++){ const u = Math.pow(r(), 0.8), x = r() * w, y = hy + h * (0.015 + 0.2 * u * u), v = r(); let q = r() * tot, kind = forms[0][0];
+      for (const [kk, p] of forms){ if ((q -= p) <= 0){ kind = kk; break; } }
+      if (Math.abs(x / w - 0.5) > 0.05 + 0.12 * u) items.push([y, x, kind, u, v, i]); }
+    items.sort((a, b) => a[0] - b[0]).forEach(([y, x, kind, u, v, i]) => drawKind(c, { kind, v, sd: 300 + i }, x, y, h * (0.012 + 0.05 * u * u), e, t, 0.35 * (1 - u), 0.06));
+  }
   if (O('golden')){ c.fillStyle = 'rgba(214,176,96,0.22)'; c.fillRect(0, hy + h * 0.06, w, h); }
   // the trail
   const trail = opt('trail');
   if (trail === 'hill'){
     ell(c, w * 0.68, hy + h * 0.12, w * 0.2, h * 0.11, mix(e.hillNear, e.ground, 0.5));
-    const r = R('ht'); for (let i = 0; i < 6; i++) roundTree(c, w * (0.58 + i * 0.035), hy + h * (0.03 + r() * 0.02), (44 + r() * 26) * s, e, r);
+    const r = R('ht'); for (let i = 0; i < 6; i++) drawTree(c, Cl.treeK, w * (0.58 + i * 0.035), hy + h * (0.03 + r() * 0.02), (44 + r() * 26) * s, e, t, 50 + i);
   }
-  if (trail === 'meadow') ell(c, w * 0.32, h * 0.66, w * 0.24, h * 0.06, e.dark(e.cool > 0.5 ? [238, 242, 248] : [154, 198, 108]), 0.7);
+  if (trail === 'meadow') ell(c, w * 0.32, h * 0.66, w * 0.24, h * 0.06, e.cool > 0.5 ? e.dark([238, 242, 248]) : mix(e.ground, [255, 255, 255], 0.14), 0.7);
   const tp = trail === 'hill' ? [[0.5, 1], [0.6, 0.78], [0.66, 0.55]] : trail === 'meadow' ? [[0.5, 1], [0.44, 0.76], [0.3, 0.64]] : [[0.5, 1], [0.53, 0.74], [0.49, 0.565]];
   { const pts = [], N = 24, A = tp[0], B = tp[1], C = tp[2];
     for (let i = 0; i <= N; i++){ const u = i / N, x = (1 - u) * (1 - u) * A[0] + 2 * u * (1 - u) * B[0] + u * u * C[0], y = (1 - u) * (1 - u) * A[1] + 2 * u * (1 - u) * B[1] + u * u * C[1]; pts.push([x * w, y * h, lerp(64, 6, u) * s]); }
@@ -964,62 +1275,60 @@ function drawPlace(c, w, h, t){
     poly(c, L.concat(Rr), e.path);
     if (opt('ground') === 'stone'){ const r = R('flag'); for (let i = 2; i < N - 4; i += 1) { const p = pts[i]; ell(c, p[0] + (r() - 0.5) * p[2], p[1], p[2] * 0.42, p[2] * 0.16, e.dark([150, 146, 140]), 0.9); } }
   }
-  if (O('lake')){
-    const x = w * 0.4, y = h * 0.6, rx = w * 0.15, ry = h * 0.042;
-    ell(c, x, y, rx * 1.04, ry * 1.2, mix(e.ground, [0, 0, 0], 0.15));
-    const g = c.createLinearGradient(0, y - ry, 0, y + ry); g.addColorStop(0, css(mix(e.bot, [255, 255, 255], 0.1))); g.addColorStop(1, css(e.e2 || e.top));
+  if (O('lake')){ // still water in the land's own form: an oasis, a lagoon, a frozen lake or tarn
+    const x = w * 0.4, y = h * 0.6, lagoon = e.ck === 'hotwet', rx = w * (lagoon ? 0.19 : 0.15), ry = h * (lagoon ? 0.05 : 0.042), frozen = Cl.frozen && e.cool > 0.5;
+    ell(c, x, y, rx * 1.05, ry * (lagoon ? 1.5 : 1.2), lagoon ? e.dark([236, 226, 190]) : mix(e.ground, [0, 0, 0], 0.15));
+    const g = c.createLinearGradient(0, y - ry, 0, y + ry);
+    if (frozen){ g.addColorStop(0, css(e.dark([232, 240, 248]))); g.addColorStop(1, css(e.dark([194, 212, 230]))); }
+    else if (e.ck && e.ck.startsWith('hot')){ g.addColorStop(0, css(mix(e.dark(Cl.water), [255, 255, 255], 0.3))); g.addColorStop(1, css(e.dark(Cl.water))); }
+    else { g.addColorStop(0, css(mix(e.bot, [255, 255, 255], 0.1))); g.addColorStop(1, css(e.top)); }
     c.fillStyle = g; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 6.29); c.fill();
-    for (let i = 0; i < 7; i++){ const yy = y - ry * 0.6 + i * ry * 0.2, ww = rx * (0.3 + 0.2 * Math.sin(i * 1.7)); line(c, x - ww + Math.sin(t * 0.5 + i) * 8, yy, x + ww + Math.sin(t * 0.5 + i) * 8, yy, [255, 255, 255], 1, 0.25); }
+    if (frozen){ for (let i = 0; i < 5; i++){ const r = R('ice' + i), x0 = x + (r() - 0.5) * rx * 1.2, y0 = y + (r() - 0.5) * ry; line(c, x0, y0, x0 + (r() - 0.3) * rx * 0.5, y0 + (r() - 0.5) * ry * 0.6, [255, 255, 255], 1, 0.5); } }
+    else for (let i = 0; i < 7; i++){ const yy = y - ry * 0.6 + i * ry * 0.2, ww = rx * (0.3 + 0.2 * Math.sin(i * 1.7)); line(c, x - ww + Math.sin(t * 0.5 + i) * 8, yy, x + ww + Math.sin(t * 0.5 + i) * 8, yy, [255, 255, 255], 1, 0.25); }
+    if (e.ck === 'hotdry'){ drawTree(c, 'palm', x - rx * 0.95, y - ry * 0.2, 120 * s, e, t, 71); drawTree(c, 'palm', x + rx * 0.9, y + ry * 0.2, 96 * s, e, t, 72); }
+    if (lagoon) drawTree(c, 'palm', x + rx * 1.05, y + ry * 0.4, 130 * s, e, t, 73);
   }
-  if (O('crags')){
-    const r = R('cr'), bx = w * 0.72, by = h * 0.6;
-    for (let i = 0; i < 4; i++){ const x = bx + (i - 1.5) * 46 * s, hh = (60 + r() * 60) * s, ww = (40 + r() * 20) * s;
-      const col = e.dark([128 + i * 6, 124 + i * 4, 120]);
-      poly(c, [[x - ww, by], [x - ww * 0.6, by - hh * 0.7], [x - ww * 0.1, by - hh], [x + ww * 0.5, by - hh * 0.75], [x + ww, by]], col);
-      poly(c, [[x - ww * 0.1, by - hh], [x + ww * 0.5, by - hh * 0.75], [x + ww * 0.2, by - hh * 0.3]], mix(col, [255, 255, 255], 0.18));
-      if (e.cool > 0.5) poly(c, [[x - ww * 0.35, by - hh * 0.82], [x - ww * 0.1, by - hh], [x + ww * 0.3, by - hh * 0.8]], [244, 246, 252], 0.9);
-    }
+  if (O('crags')){ // the rugged answer's own rocks: crags, hoodoos, mossy boulders or granite tors
+    const r = R('cr'), bx = w * 0.72, by = h * 0.6, forms = e.ck ? e.TR.forms : [['crag', 1]];
+    const main = (forms.find(f => ['crag', 'hoodoo', 'boulder', 'tor'].includes(f[0])) || ['crag'])[0], rest = forms.filter(f => f[0] !== main);
+    for (let i = 0; i < 4; i++) drawKind(c, { kind: main, v: r(), sd: 90 + i }, bx + (i - 1.5) * 46 * s, by, 60 * s, e, t);
+    rest.forEach(([kind], j) => { for (let i = 0; i < 3; i++) drawKind(c, { kind, v: r(), sd: 95 + j * 3 + i }, bx + (r() - 0.5) * 260 * s, by + (6 + r() * 26) * s, 46 * s, e, t); });
   }
   if (O('lavender')){
     const r = R('lv');
     for (let row = 0; row < 4; row++) for (let i = 0; i < 14; i++){ const x = w * (0.03 + i * 0.014) + row * 6 * s, y = h * (0.64 + row * 0.022), hh = (12 + r() * 6) * s * (1 + row * 0.15), sw = Math.sin(t * 1.2 + i) * 2 * s;
-      line(c, x, y, x + sw, y - hh, e.dark([84, 120, 80]), 1.4 * s); ell(c, x + sw, y - hh, 2.4 * s, 5 * s, e.dark(e.cool > 0.5 ? [150, 140, 170] : [150, 112, 206])); }
+      line(c, x, y, x + sw, y - hh, e.dark([84, 120, 80]), 1.4 * s); ell(c, x + sw, y - hh, 2.4 * s, 5 * s, e.dark(Cl.herb)); }
   }
   if (O('blossom')){
-    const r = R('bl');
+    const r = R('bl'), bc = [Cl.blossom, mix(Cl.blossom, [255, 255, 255], 0.4), mix(Cl.blossom, [0, 0, 0], 0.08)];
     [[0.07, 0.66, 96], [0.19, 0.64, 80]].forEach(([u, v, hh]) => { const x = w * u, y = h * v, H2 = hh * s;
       line(c, x, y, x, y - H2 * 0.5, e.dark([110, 80, 70]), 5 * s);
-      if (e.cool > 0.5) { roundTree(c, x, y, H2, e, r); return; }
-      for (let i = 0; i < 6; i++) circ(c, x + (r() - 0.5) * H2 * 0.6, y - H2 * (0.6 + r() * 0.3), H2 * (0.18 + r() * 0.1), e.dark([[246, 196, 212], [252, 226, 234], [236, 170, 196]][i % 3]));
-      for (let i = 0; i < 4; i++){ const p = (t * 0.07 + i / 4 + u) % 1; circ(c, x + Math.sin(p * 9 + i) * 30 * s + p * 60 * s, y - H2 * 0.6 + p * H2 * 0.7, 2 * s, [252, 220, 230], 1 - p); }
+      for (let i = 0; i < 6; i++) circ(c, x + (r() - 0.5) * H2 * 0.6, y - H2 * (0.6 + r() * 0.3), H2 * (0.18 + r() * 0.1), e.dark(bc[i % 3]));
+      for (let i = 0; i < 4; i++){ const p = (t * 0.07 + i / 4 + u) % 1; circ(c, x + Math.sin(p * 9 + i) * 30 * s + p * 60 * s, y - H2 * 0.6 + p * H2 * 0.7, 2 * s, bc[1], 1 - p); }
     });
   }
   if (O('sandstone')){
-    const x = w * 0.1, y = h * 0.72, u = 30 * s;
-    [[-1.2, 0, 1.6, 1.2], [0.2, -0.3, 1.8, 1.7], [1.4, 0.1, 1.2, 0.9]].forEach(([dx, dy, ww, hh], i) => { const col = e.dark([212 - i * 10, 148 - i * 6, 96]);
+    const x = w * 0.1, y = h * 0.72, u = 30 * s, base = mix([212, 148, 96], Cl.rock, 0.35);
+    [[-1.2, 0, 1.6, 1.2], [0.2, -0.3, 1.8, 1.7], [1.4, 0.1, 1.2, 0.9]].forEach(([dx, dy, ww, hh], i) => { const col = e.dark(mix(base, [0, 0, 0], i * 0.05));
       c.fillStyle = css(col); c.fillRect(x + dx * u, y + dy * u - hh * u, ww * u, hh * u);
       c.fillStyle = css(mix(col, [255, 236, 200], 0.35)); c.fillRect(x + dx * u, y + dy * u - hh * u, ww * u, hh * u * 0.2);
       if (e.cool > 0.5){ c.fillStyle = 'rgba(244,246,252,0.9)'; c.fillRect(x + dx * u, y + dy * u - hh * u - 3 * s, ww * u, 5 * s); } });
   }
   if (O('ferns')){
-    const x = w * 0.89, y = h * 0.74, u = 30 * s;
-    ell(c, x, y, u * 1.6, u * 0.4, e.dark([120, 176, 206])); ell(c, x - u * 0.3, y - u * 0.08, u * 0.6, u * 0.1, [255, 255, 255], 0.3 + 0.1 * Math.sin(t * 2));
+    const x = w * 0.89, y = h * 0.74, u = 30 * s * (e.ck === 'hotwet' ? 1.4 : 1), frozen = Cl.frozen && e.cool > 0.5;
+    ell(c, x, y, u * 1.6, u * 0.4, e.dark(frozen ? [214, 228, 240] : mix([120, 176, 206], Cl.water, 0.4))); ell(c, x - u * 0.3, y - u * 0.08, u * 0.6, u * 0.1, [255, 255, 255], 0.3 + 0.1 * Math.sin(t * 2));
     for (let i = 0; i < 7; i++){ const a = -2.6 + i * 0.36, len = u * (1.2 + (i % 3) * 0.3), bx = x + (i - 3) * u * 0.45, by = y - u * 0.15;
-      c.strokeStyle = css(e.dark(e.cool > 0.5 ? [96, 110, 96] : [62, 128, 70])); c.lineWidth = 1.4 * s; c.beginPath(); c.moveTo(bx, by);
+      c.strokeStyle = css(e.dark(Cl.fern)); c.lineWidth = 1.4 * s; c.beginPath(); c.moveTo(bx, by);
       const ex = bx + Math.cos(a) * len, ey = by + Math.sin(a) * len; c.quadraticCurveTo(bx + Math.cos(a) * len * 0.5, by - len * 0.6, ex, ey); c.stroke();
-      for (let k = 1; k < 6; k++){ const q = k / 6, px = lerp(bx, ex, q), py = lerp(by, ey, q) - Math.sin(q * 3.14) * len * 0.3; line(c, px, py, px - 6 * s * (1 - q), py - 4 * s, e.dark([70, 140, 76]), 1.2 * s); line(c, px, py, px + 6 * s * (1 - q), py - 4 * s, e.dark([70, 140, 76]), 1.2 * s); }
+      const lf = e.dark(mix(Cl.fern, [255, 255, 255], 0.1));
+      for (let k = 1; k < 6; k++){ const q = k / 6, px = lerp(bx, ex, q), py = lerp(by, ey, q) - Math.sin(q * 3.14) * len * 0.3; line(c, px, py, px - 6 * s * (1 - q), py - 4 * s, lf, 1.2 * s); line(c, px, py, px + 6 * s * (1 - q), py - 4 * s, lf, 1.2 * s); }
     }
   }
-  if (O('apple')){
-    const x = w * 0.77, y = h * 0.71, hh = 120 * s, r = R('ap');
-    line(c, x, y, x, y - hh * 0.5, e.dark([104, 76, 58]), 7 * s);
-    if (e.cool > 0.5) roundTree(c, x, y, hh, e, r);
-    else for (let i = 0; i < 5; i++) circ(c, x + (r() - 0.5) * hh * 0.6, y - hh * (0.62 + r() * 0.24), hh * (0.2 + r() * 0.08), e.dark([70, 132, 62]));
-    for (let i = 0; i < 12; i++) circ(c, x + (r() - 0.5) * hh * 0.8, y - hh * (0.5 + r() * 0.42), 4 * s, e.dark([204, 40, 40]));
-  }
+  if (O('apple')) drawTree(c, 'apple', w * 0.77, h * 0.71, 120 * s, e, t, 5);
   if (O('hives')){ const x = w * 0.3, y = h * 0.77; skep(c, x, y, 22 * s, e); skep(c, x + 50 * s, y + 4 * s, 18 * s, e);
     for (let i = 0; i < 9; i++){ const a = t * (1 + i * 0.13) + i; circ(c, x + 25 * s + Math.cos(a) * (30 + i * 4) * s, y - 30 * s + Math.sin(a * 1.3) * 16 * s, 1.8 * s, [50, 34, 10]); } }
-  if (O('berries')){ const x = w * 0.28, y = h * 0.79; bush(c, x, y, 28 * s, e, true); bush(c, x + 54 * s, y + 6 * s, 24 * s, e, false); bush(c, x - 46 * s, y + 8 * s, 20 * s, e, true); }
+  if (O('berries')){ const x = w * 0.28, y = h * 0.79, bk = px => px / 0.475;
+    drawKind(c, { kind: 'berry', v: 0.5, sd: 61 }, x, y, bk(28 * s), e, t); drawKind(c, { kind: 'berry', v: 0.5, sd: 62 }, x + 54 * s, y + 6 * s, bk(24 * s), e, t); drawKind(c, { kind: 'berry', v: 0.5, sd: 63 }, x - 46 * s, y + 8 * s, bk(20 * s), e, t); }
   if (O('campfire')) fire(c, w * 0.6, h * 0.79, 22 * s, e, t);
   if (O('frogs')){
     const x = w * 0.43, y = h * 0.86, rx = 80 * s;
@@ -1028,23 +1337,25 @@ function drawPlace(c, w, h, t){
     [[-0.3, 0], [0.35, 0.05]].forEach(([dx, dy], i) => { const px = x + dx * rx, py = y + dy * rx - Math.max(0, Math.sin(t * 1.4 + i * 3)) * 3 * s;
       ell(c, px, py, 9 * s, 6 * s, e.dark([90, 150, 60])); circ(c, px - 4 * s, py - 5 * s, 2.6 * s, e.dark([110, 170, 70])); circ(c, px + 4 * s, py - 5 * s, 2.6 * s, e.dark([110, 170, 70])); circ(c, px - 4 * s, py - 5.5 * s, 1.1 * s, [20, 20, 20]); circ(c, px + 4 * s, py - 5.5 * s, 1.1 * s, [20, 20, 20]); });
   }
-  if (O('moss')){ const r = R('ms');
+  if (O('moss') && Cl.soft !== 'moss'){ const r = R('ms'); // soft ground in its own form: sand, leaf litter or snow
+    for (let i = 0; i < 9; i++){ const x = w * (i < 5 ? r() * 0.3 : 0.7 + r() * 0.3), y = h * (0.84 + r() * 0.14); drawKind(c, { kind: Cl.soft, v: r(), sd: 80 + i }, x, y, 70 * s * (0.8 + (y / h - 0.84) * 3), e, t); } }
+  else if (O('moss')){ const r = R('ms');
     for (let i = 0; i < 9; i++){ const x = w * (i < 5 ? r() * 0.3 : 0.7 + r() * 0.3), y = h * (0.86 + r() * 0.12); ell(c, x, y, (30 + r() * 30) * s, (12 + r() * 8) * s, e.dark(e.cool > 0.5 ? [200, 210, 204] : [70, 126, 60])); ell(c, x - 6 * s, y - 5 * s, 16 * s, 4 * s, [255, 255, 255], 0.1); }
     for (let i = 0; i < 60; i++){ const x = r() * w, y = h * (0.82 + r() * 0.18); if (Math.abs(x / w - 0.5) < 0.1) continue; const hh = (24 + r() * 26) * s, sw = Math.sin(t * 1.1 + i) * 4 * s; line(c, x, y, x + sw, y - hh, e.dark(e.cool > 0.5 ? [150, 150, 130] : [84, 140, 66]), 1.4 * s); } }
   if (opt('ground') === 'stone'){ const r = R('bd'); [[0.18, 0.9, 40], [0.84, 0.92, 52], [0.66, 0.84, 28]].forEach(([u, v, rr]) => { ell(c, w * u, h * v, rr * s, rr * 0.55 * s, e.dark([140, 136, 130])); ell(c, w * u - rr * 0.3 * s, h * v - rr * 0.25 * s, rr * 0.5 * s, rr * 0.18 * s, [255, 255, 255], 0.15); if (e.cool > 0.5) ell(c, w * u, h * v - rr * 0.4 * s, rr * 0.7 * s, rr * 0.18 * s, [244, 246, 252], 0.9); }); }
-  if (O('pines')){ const r = R('pn'); [[0.22, 0.66], [0.27, 0.68], [0.93, 0.66]].forEach(([u, v]) => pine(c, w * u + r() * 8, h * v, (90 + r() * 50) * s, e, e.cool)); }
+  if (O('trees')){ const r = R('pn'); [[0.22, 0.66], [0.27, 0.68], [0.93, 0.66]].forEach(([u, v], i) => drawTree(c, Cl.treeK, w * u + r() * 8, h * v, (90 + r() * 50) * s, e, t, 60 + i)); }
   if (O('flowers')){
-    const r = R('fl'), cols = e.pal ? [e.pal.rgb, mix(e.pal.rgb, [255, 255, 255], 0.5), [250, 220, 90]] : [[236, 120, 160], [250, 220, 90], [255, 255, 255], [170, 130, 220]];
+    const r = R('fl'), cols = flowerCols(e), fs = e.ck === 'hotwet' ? 1.4 : 1;
     const n = e.cool > 0.5 ? 14 : 60;
-    for (let i = 0; i < n; i++){ const x = r() * w, y = h * (0.8 + r() * 0.2); if (Math.abs(x / w - 0.5) < 0.09) continue; flower(c, x, y, (12 + r() * 16) * s * (0.7 + (y / h - 0.8) * 2), e.dark(cols[i % cols.length]), e, Math.sin(t * 1.3 + i) * 2 * s); }
+    for (let i = 0; i < n; i++){ const x = r() * w, y = h * (0.8 + r() * 0.2); if (Math.abs(x / w - 0.5) < 0.09) continue; flower(c, x, y, (12 + r() * 16) * s * fs * (0.7 + (y / h - 0.8) * 2), e.dark(cols[i % cols.length]), e, Math.sin(t * 1.3 + i) * 2 * s); }
   }
   if (O('golden')){ const r = R('gd'); for (let i = 0; i < 70; i++){ const x = r() * w, y = h * (0.78 + r() * 0.22); if (Math.abs(x / w - 0.5) < 0.08) continue; const hh = (26 + r() * 28) * s, sw = Math.sin(t * 0.9 + i * 0.7) * 5 * s;
-    line(c, x, y, x + sw, y - hh, e.dark([196, 164, 96]), 1.3 * s); ell(c, x + sw, y - hh, 2.4 * s, 6 * s, e.dark([224, 190, 110])); } }
+    line(c, x, y, x + sw, y - hh, e.dark(Cl.dry), 1.3 * s); ell(c, x + sw, y - hh, 2.4 * s, 6 * s, e.dark(mix(Cl.dry, [255, 255, 255], 0.15))); } }
   if (O('crickets')){ const r = R('ck');
-    for (let i = 0; i < 80; i++){ const left = i < 40, x = left ? r() * w * 0.24 : w - r() * w * 0.24, y = h; const hh = (60 + r() * 80) * s, sw = Math.sin(t * 0.8 + i) * 6 * s; line(c, x, y, x + sw + (left ? 8 : -8) * s, y - hh, e.dark([54, 92, 52]), 2 * s); }
+    for (let i = 0; i < 80; i++){ const left = i < 40, x = left ? r() * w * 0.24 : w - r() * w * 0.24, y = h; const hh = (60 + r() * 80) * s, sw = Math.sin(t * 0.8 + i) * 6 * s; line(c, x, y, x + sw + (left ? 8 : -8) * s, y - hh, e.dark(mix(Cl.grass, [0, 0, 0], 0.32)), 2 * s); }
     for (let i = 0; i < 10; i++){ const left = i % 2 === 0, x = left ? r() * w * 0.2 : w - r() * w * 0.2, y = h * (0.82 + r() * 0.14); circ(c, x, y, 1.6 * s, [255, 250, 210], (0.3 + e.d * 0.6) * (0.5 + 0.5 * Math.sin(t * 9 + i * 5))); } }
   if (O('breeze')){ const r = R('wb');
-    for (let i = 0; i < 90; i++){ const x = r() * w, y = h * (0.84 + r() * 0.16); if (Math.abs(x / w - 0.5) < 0.08) continue; const hh = (30 + r() * 30) * s, sw = (8 + Math.sin(t * 1.8 + x * 0.01) * 10) * s; line(c, x, y, x + sw, y - hh, e.dark(e.cool > 0.5 ? [160, 160, 140] : [96, 150, 74]), 1.4 * s); }
+    for (let i = 0; i < 90; i++){ const x = r() * w, y = h * (0.84 + r() * 0.16); if (Math.abs(x / w - 0.5) < 0.08) continue; const hh = (30 + r() * 30) * s, sw = (8 + Math.sin(t * 1.8 + x * 0.01) * 10) * s; line(c, x, y, x + sw, y - hh, e.dark(e.cool > 0.5 ? [160, 160, 140] : Cl.grass), 1.4 * s); }
     for (let i = 0; i < 5; i++){ const y = h * (0.52 + i * 0.07), p = ((t * 0.12 + i * 0.29) % 1.4) - 0.2; line(c, w * p, y, w * p + 90 * s, y - 4 * s, [255, 255, 255], 1.2 * s, 0.22); } }
   if (O('chimes')){ const x = w * 0.84, y = h * 0.9, u = 30 * s;
     line(c, x, y, x, y - u * 4, e.dark([110, 84, 60]), 5 * s); line(c, x - u * 1.2, y - u * 3.8, x + u * 0.3, y - u * 3.8, e.dark([110, 84, 60]), 4 * s);
@@ -1056,8 +1367,15 @@ function drawPlace(c, w, h, t){
     poly(c, [[x - 36 * s, base], [x - 16 * s, top], [x + 18 * s, top], [x + 46 * s, base]], e.dark([88, 66, 52]));
     const br = e.dark([88, 66, 52]); c.strokeStyle = css(br); c.lineCap = 'round';
     [[0.38, 0.22, 0.18, 14], [0.33, 0.12, 0.3, 10], [0.4, 0.3, 0.12, 8]].forEach(([v0, u1, v1, wd]) => { c.lineWidth = wd * s; c.beginPath(); c.moveTo(x, h * v0); c.quadraticCurveTo(w * u1 * 0.6, h * (v0 - 0.06), w * u1, h * v1); c.stroke(); });
-    if (e.cool > 0.5){ for (let i = 0; i < 6; i++) ell(c, w * (0.04 + r() * 0.24), h * (0.12 + r() * 0.2), 30 * s, 6 * s, [244, 246, 252], 0.8); }
-    else for (let i = 0; i < 16; i++) circ(c, w * (r() * 0.32 - 0.03), h * (r() * 0.34 - 0.04), (50 + r() * 50) * s, e.dark(mix([56, 108, 52], [92, 140, 70], r())));
+    // the great tree in the land's own form: an oak, a flat-topped acacia, a kapok hung with vines, a maple, a spruce
+    const leafCol = () => e.dark(e.ck ? mix(Cl.leaf, Cl.leaf2, r()) : mix([56, 108, 52], [92, 140, 70], r()));
+    if (e.ck === 'coldwet'){ for (let i = 0; i < 8; i++){ const y = h * (0.02 + i * 0.07), reach = w * (0.1 + i * 0.022);
+      poly(c, [[x, y], [x + reach, y + h * 0.09], [x - w * 0.02, y + h * 0.08]], e.dark(mix(Cl.leaf, Cl.leaf2, i % 2 ? 0.5 : 0)));
+      poly(c, [[x, y + h * 0.005], [x + reach * 0.9, y + h * 0.085], [x + reach * 0.7, y + h * 0.075]], [244, 246, 252], 0.85); } }
+    else if (e.cool > 0.5){ for (let i = 0; i < 6; i++) ell(c, w * (0.04 + r() * 0.24), h * (0.12 + r() * 0.2), 30 * s, 6 * s, [244, 246, 252], 0.8); }
+    else if (e.ck === 'hotdry'){ for (let i = 0; i < 12; i++){ const rad = (50 + r() * 40) * s; ell(c, w * (r() * 0.36 - 0.03), h * (0.06 + r() * 0.1), rad * 1.8, rad * 0.45, leafCol()); } }
+    else { for (let i = 0; i < 16; i++) circ(c, w * (r() * 0.32 - 0.03), h * (r() * 0.34 - 0.04), (50 + r() * 50) * s, leafCol());
+      if (e.ck === 'hotwet') for (let i = 0; i < 7; i++){ const vx = w * (0.04 + r() * 0.26), vy = h * (0.2 + r() * 0.1); line(c, vx, vy, vx + Math.sin(t * 0.6 + i) * 3 * s, vy + h * (0.12 + r() * 0.16), e.dark([46, 96, 48]), 2 * s); } }
   }
   if (O('birds')){
     for (let i = 0; i < 6; i++){ const r = R('bd' + i), sp = 30 + r() * 30, x = ((r() * w + t * sp) % (w + 60)) - 30, y = h * (0.1 + r() * 0.22) + Math.sin(t * 0.7 + i) * 8, f = Math.sin(t * 8 + i * 2) * 5 * s, u = (7 + r() * 4) * s;
@@ -1066,14 +1384,14 @@ function drawPlace(c, w, h, t){
   if (O('flutter')){
     const n = e.d > 0.5 ? 34 : 9;
     for (let i = 0; i < n; i++){ const r = R('fl' + i), x = w * (0.1 + r() * 0.8) + Math.sin(t * (0.3 + r() * 0.3) + i) * 60 * s, y = h * (0.62 + r() * 0.3) + Math.cos(t * (0.4 + r() * 0.3) + i * 2) * 30 * s;
-      if (e.d > 0.5){ const a = 0.4 + 0.6 * Math.max(0, Math.sin(t * (1 + r()) + i * 3)); const g = c.createRadialGradient(x, y, 0, x, y, 10 * s); g.addColorStop(0, `rgba(250,255,170,${a})`); g.addColorStop(1, 'rgba(250,255,170,0)'); c.fillStyle = g; c.fillRect(x - 10 * s, y - 10 * s, 20 * s, 20 * s); circ(c, x, y, 1.6 * s, [255, 255, 220], a); }
+      if (e.cool > 0.5){ const f = Math.sin(t * 14 + i * 2) * 5 * s, u = 8 * s; c.strokeStyle = css(e.dark([60, 52, 50])); c.lineWidth = 1.8 * s; c.beginPath(); // small birds in the snow
+        c.moveTo(x - u, y - f); c.quadraticCurveTo(x - u * 0.4, y - u * 0.4, x, y); c.quadraticCurveTo(x + u * 0.4, y - u * 0.4, x + u, y - f); c.stroke(); }
+      else if (e.d > 0.5){ const a = 0.4 + 0.6 * Math.max(0, Math.sin(t * (1 + r()) + i * 3)); const g = c.createRadialGradient(x, y, 0, x, y, 10 * s); g.addColorStop(0, `rgba(250,255,170,${a})`); g.addColorStop(1, 'rgba(250,255,170,0)'); c.fillStyle = g; c.fillRect(x - 10 * s, y - 10 * s, 20 * s, 20 * s); circ(c, x, y, 1.6 * s, [255, 255, 220], a); }
       else { const fw = Math.abs(Math.sin(t * 9 + i)) * 7 * s + 2 * s, col = e.pal ? e.pal.rgb : [[250, 200, 80], [240, 130, 170], [140, 180, 240]][i % 3];
         ell(c, x - fw * 0.6, y, fw * 0.6, 5 * s, col); ell(c, x + fw * 0.6, y, fw * 0.6, 5 * s, col); line(c, x, y - 4 * s, x, y + 4 * s, [40, 30, 30], 1.2 * s); } }
   }
-  if (O('thistle')){
-    for (let i = 0; i < 26; i++){ const r = R('th' + i), p = (t * (0.012 + r() * 0.01) + r()) % 1, x = w * p * 1.2 - w * 0.1, y = h * (0.75 - p * 0.5 + r() * 0.3) + Math.sin(t + i) * 10, u = (3 + r() * 2) * s;
-      for (let k = 0; k < 7; k++){ const a = k / 7 * 6.28 + t * 0.2; line(c, x, y, x + Math.cos(a) * u * 2, y + Math.sin(a) * u * 2, [255, 255, 255], 0.7 * s, 0.6); } circ(c, x, y, 1.2 * s, [240, 236, 220]); }
-  }
+  if (O('thistle')) drawDrifters(c, e, t, 1, 26, 4 * s, 'th');
+  else if (e.ck === 'colddry') drawDrifters(c, e, t, 0.8, 8, 4 * s, 'pl');
   if (O('mist')){
     // one low, soft bank of mist hugging the ground, thickest at the far hills
     { const g = c.createLinearGradient(0, hy, 0, h * 0.8); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.25, `rgba(255,255,255,${0.3 + 0.04 * Math.sin(t * 0.3)})`); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, hy, w, h * 0.8 - hy); }
@@ -1340,6 +1658,7 @@ function update(dt){
     for (let i = 0; i < S.obj.length; i++){ const o = S.obj[i];
       if (!o.kind){ if (live < WALK_TARGET && S.spawnBudget >= 1){ S.obj[i] = spawnObj(false); if (S.obj[i].kind){ live++; S.spawnBudget--; } } continue; }
       const [xx, zz] = toCam(o.x, o.z); if (zz < -1 || Math.abs(xx) > zz * 2.2 + 24) S.obj[i] = spawnObj(false); }
+    fringeTick(dt);
   }
   // prune rays far behind
   S.rays = S.rays.filter(r => { if (r === S.cur || (S.fork && (r === S.fork.L || r === S.fork.M || r === S.fork.R))) return true;
@@ -1408,7 +1727,9 @@ document.getElementById('onward').onclick = () => { document.getElementById('onw
 document.getElementById('reflectGo').onclick = () => { document.getElementById('reflect').hidden = true; openDebrief(); };
 function openDebrief(){
   S.phase = 'debrief';
+  const land = biomeName();
   if (!Object.values(S.L).some(l => l.opt)) document.getElementById('bareLine').textContent = 'You started on a grey plain, and on this walk it stayed quiet.'; // J7: a walk of "nothing" is fine
+  else if (land) document.getElementById('bareLine').textContent = `You started on a grey plain and walked into ${land}. Everything here is something you noticed.`;
 
   const box = document.getElementById('route'); box.innerHTML = '';
   const rows = S.record.forks, rowH = 48, cw = W < 520 ? 72 : 120;
@@ -1417,8 +1738,10 @@ function openDebrief(){
   box.appendChild(cnv);
   rows.slice().reverse().forEach(f => {
     const card = S.cards.find(c => c.id === f.id), o = f.side === 'M' ? null : card[f.side], div = document.createElement('div'); div.className = 'r';
-    let becomes = o ? o.becomes : 'left as it was';
-    if (o && o.k === 'flutter' && opt('light') === 'dim') becomes = 'fireflies';
+    // what it became here, in the land's own form (B2)
+    let becomes = o ? (CL().words[o.k] || o.becomes) : 'left as it was';
+    if (o && card.layer === 'rock' && land) becomes = land;
+    if (o && o.k === 'flutter') becomes = envNow().cool > 0.5 ? 'small birds' : opt('light') === 'dim' ? 'fireflies' : o.becomes;
     div.innerHTML = `<b></b><span></span>`;
     div.querySelector('b').textContent = o ? `${SENSE_WORD[f.sense]}: ${o.label.toLowerCase()}` : `${SENSE_WORD[f.sense]}: nothing right now`;
     div.querySelector('span').textContent = (f.word ? `“${f.word}” · ` : '') + becomes;
@@ -1473,7 +1796,7 @@ resize(); initRoad();
 requestAnimationFrame(frame);
 
 // debug handle for headless checks (no tuning panel: this one has nothing to tune live yet)
-window.__sc = { S, T, AU, HOVER, get record(){ return S.record; }, choose, jumpToPlace, envNow, deal,
+window.__sc = { S, T, AU, HOVER, FR, CLIMATES, PRESET, climateKey, terrainKey, biomeName, get record(){ return S.record; }, get walk(){ return { mix: WALK_MIX, target: WALK_TARGET }; }, choose, jumpToPlace, envNow, deal,
   step(n = 1, dt = 1 / 30){ for (let i = 0; i < n; i++){ update(dt); } } };
 </script>
 </body>
