@@ -103,7 +103,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - files hosted by us (as Tune is), with the voice service's licence checked for research and commercial use.
 
   Emotional prosody can come back later as a separate crossed factor if wanted.
-- **Still open for phases 4–5:** passage length relative to an 11–12 s breath; how many per round and the gaps between them; onsets locked to a breath phase or random (P4-2); the on-screen indicator (P4-3, mock-up 4 shows one).
+- **Still open for phases 4–5:** passage length relative to an 11–12 s breath; how many per round and the gaps between them; onsets locked to a breath phase or random (P4-2); the on-screen indicator (P4-3, mock-up 4 shows one). **Proposal (2026-11-10):** `breath_training_passages.md` works out the timing, the size of the set for six sessions (108 frames, 324 passages with three voiced kites per round), the counterbalancing, and nine sample triplets.
 
 ## Open questions
 
