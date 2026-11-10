@@ -9,6 +9,8 @@ const NAV_SECTIONS = [
     items: [
       { to: '/admin/sessions',        label: 'Sessions'       },
       { to: '/admin/studies',         label: 'Studies'        },
+      // How-to pages for RAs, read before a shift (2026-11-10).
+      { to: '/admin/guides',          label: 'Lab Guides'     },
     ],
   },
   // 'Elements' split into Instruments and Media (Norm, 2026-08-19). The three
