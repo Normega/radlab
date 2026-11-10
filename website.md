@@ -4004,6 +4004,12 @@ before consent; `open_join_ip_max_per_hour 400`). Consent titled "Consent: our c
     Fact-checked against the Guide pages; CBT-I is given as stimulus control, as the insomnia page has it.
     Promoted from `dev` 2026-10-30. Still owed on the morning: the reading-week figure on slide 2, and Quiz 7
     (`docs/markdowns/psy240_term_todo.md`).
+  - **L9 (Nov 11), externalizing**, `public/psy240/L9.html`: trial lines as it ends (day 28 Fri Nov 13, final
+    survey Nov 14-16, results Nov 18); ODD and conduct disorder a slide each from their Guide pages; phone
+    check-ins 8, 10, 14 (guess first), 22 (split-room clinic demo: `L9-clinic.html` draws card A or B per phone,
+    the same contingency-management program framed two ways), 42 (keyed ODD/CD/IED/ADHD sorting) and 45 ("Draw
+    the line"); a practice short answer in the final's format with its marking guide (public, never an exam
+    item); and a divider slide for the 11:00 Remembrance Day silence before Break 2. Quiz 8 loaded for 11:45.
 
 ### Interactive breath practice (`breath_practice`) — short-form prototype
 
