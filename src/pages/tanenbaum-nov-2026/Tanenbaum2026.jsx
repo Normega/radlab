@@ -476,13 +476,13 @@ const SLIDES = [
   {
     label: 'Lever 1: Lancet Commission',
     by: 300,
-    note: '“Start with the input. In the 2024 Lancet Commission on dementia prevention, 14 modifiable risk factors together account for about 45% of dementia cases. Hearing loss is tied for the largest single factor, at 7%, level with high LDL cholesterol. Untreated vision loss was added in 2024, at about 2%.” Then the honest line, because this room will know it: “Those are population attributable fractions. They assume the link is causal, and that’s exactly what we need to look at next.” Reading mode adds how the hearing number was built.',
+    note: '“Start with the input. In the 2024 Lancet Commission on dementia prevention, 14 modifiable risk factors together account for about 45% of dementia cases. Hearing loss is tied for the largest single factor, at 7%, level with high LDL cholesterol. Untreated vision loss was added in 2024, at about 2%.” Then the honest line, because this room will know it: “That 7% is the share we could prevent if hearing loss causes dementia, not the share of patients who have it. Those are population attributable fractions. They assume the link is causal, and that’s exactly what we need to look at next.” Reading mode adds how the hearing number was built.',
     render: (density) => (
       <ArtSplit name="s04-dinner" alt="A lively family dinner; around one older man, the faces and voices blur" kicker="Lever 1 · the input">
         <H2>Hearing loss is among the biggest dementia risks we can change</H2>
-        <div style={K.bigLine}><b style={{ ...K.bigNum, color: STORY }}>7%</b><span>of dementia cases are linked to hearing loss, tied for first among 14 changeable risks</span></div>
-        <div style={K.bigLine}><b style={{ ...K.bigNum, color: STORY }}>2%</b><span>to untreated vision loss</span></div>
-        <Caveat>If the link is causal. That is the question.</Caveat>
+        <div style={K.bigLine}><b style={{ ...K.bigNum, color: STORY }}>7%</b><span>of dementia cases could be prevented by preventing hearing loss, if it is a cause. Tied for first among 14 changeable risks.</span></div>
+        <div style={K.bigLine}><b style={{ ...K.bigNum, color: STORY }}>2%</b><span>for untreated vision loss</span></div>
+        <Caveat>The share we might prevent, not the share of patients who have it. Whether it is a cause is the question.</Caveat>
         <Cite>Livingston et al. (2024), Lancet Commission</Cite>
         <Detail density={density}>All 14 factors together: about 45% of cases. Hearing is tied with high LDL cholesterol. The hearing estimate pools 6 cohorts with measured hearing (HR 1.37, 95% CI 1.00–1.87, I² = 80%, n = 666,370) and a hearing-loss prevalence of 59%. Measured and self-reported hearing give fractions that differ several-fold (Livingston et al., 2024).</Detail>
       </ArtSplit>
@@ -529,13 +529,13 @@ const SLIDES = [
   {
     label: 'Correcting the input',
     by: 560,
-    note: '“If the input matters, fixing it should help. The best test is ACHIEVE, a randomized trial of hearing intervention in 977 older adults. Over three years, the primary cognitive outcome was null. In one subgroup at higher risk, decline was 48% slower; that’s worth following but it’s a subgroup. What hearing intervention did do was widen people’s social networks, by about one person.” Then cataract: “Cataract surgery is associated with about 29% lower dementia risk, and here’s what makes that interesting: glaucoma surgery, which doesn’t restore vision, shows no association. It’s still observational.” The message for this room: “Correction reconnects people. Whether it protects cognition is still being tested. That’s reason enough to screen, fit and operate.”',
+    note: '“If the input matters, fixing it should help. The best test is ACHIEVE, a randomized trial of hearing intervention in 977 older adults. Over three years, the primary cognitive outcome was null. In one subgroup at higher risk, decline was 48% slower; that’s worth following but it’s a subgroup. What hearing intervention did do was widen people’s social networks, by about one person.” Then cataract: “Cataract surgery is associated with about 29% lower dementia risk, and here’s what makes that interesting: glaucoma surgery, which doesn’t restore vision, shows no association. It’s still observational.” The message for this room: “Correction reconnects people. Whether it protects cognition is still being tested. That’s reason enough to check hearing and vision, fit the aids and treat the cataracts.”',
     render: (density) => (
       <ArtSplit name="s07-reconnect" alt="A grandfather wearing a hearing aid leans in, laughing with his granddaughter" kicker="Lever 1 · the input">
         <H2>Correcting the senses reconnects people</H2>
         <div style={K.plainItem}><b style={K.plainHead}>Hearing aids</b><span>In a large trial, no memory benefit overall. But people’s social circles grew.</span></div>
         <div style={K.plainItem}><b style={K.plainHead}>Cataract surgery</b><span>Linked to lower dementia risk. Glaucoma surgery, which doesn’t restore sight, isn’t.</span></div>
-        <Take>Screen, fit, operate: it gives people back the conversation.</Take>
+        <Take>Check hearing and vision, fit hearing aids, treat cataracts. It gives people back the conversation.</Take>
         <Detail density={density}>ACHIEVE (Lin et al., 2023), n = 977: cognition over 3 years −0.002 SD, null; a higher-risk subgroup (n = 238) declined 48% more slowly, a lead to follow, not a result; social network +1.05 people (Reed et al., 2025). Cataract surgery (Lee et al., 2022), n = 3,038: dementia HR 0.71; glaucoma surgery HR 1.08; observational, no randomized trial yet. Observational hearing-aid data mislead easily: one reanalysis moved from RR 1.43 (aid users at higher risk) to 0.68 once healthcare use was adjusted for (Mur et al., 2025). The widely quoted UK Biobank hearing-aid paper (2023) was retracted.</Detail>
         <Cite>Lin 2023 · Reed 2025 · Lee 2022</Cite>
       </ArtSplit>
@@ -546,12 +546,12 @@ const SLIDES = [
   {
     label: 'Engagement over acuity',
     by: 650,
-    note: '“Here is where the two levers meet. Across hearing and smell, how people experience their loss tracks mood more closely than the measured loss does. That could partly be depression colouring the self-report; we should be honest about that. But it points at something beyond the ear and the eye. And aging itself pulls these apart: sharpness falls, but appreciation doesn’t. In one study across the lifespan, gentle touch felt more pleasant with age even as touch sensitivity declined. Older adults also report trusting their body’s signals more.” Bridge: “So the input matters, and so does what we do with it. That’s lever 2.”',
+    note: '“Here is where the two levers meet. Across hearing and smell, how people experience their loss tracks mood more closely than the measured loss does. That could partly be depression colouring the self-report; we should be honest about that. But it points at something beyond the ear and the eye. And aging itself pulls these apart: the signal fades, but appreciation doesn’t. In one study across the lifespan, gentle touch felt more pleasant with age even as it felt less intense. Older adults also report trusting their body’s signals more.” Bridge: “So the input matters, and so does what we do with it. That’s lever 2.”',
     render: (density) => (
       <ArtSplit name="s08-touch" alt="An older hand trailing its fingertips through tall grass and wildflowers" kicker="Where the levers meet">
         <H2>What we do with the signal matters as much as the signal</H2>
         <div style={K.plainItem}><b style={K.plainHead}>How the loss feels</b><span>How people experience their hearing or smell loss tracks mood better than test scores do.</span></div>
-        <div style={K.plainItem}><b style={K.plainHead}>Sharpness falls; appreciation holds</b><span>With age, gentle touch is felt less sharply, yet feels more pleasant.</span></div>
+        <div style={K.plainItem}><b style={K.plainHead}>The signal fades; appreciation holds</b><span>With age, gentle touch is felt less intensely, yet feels more pleasant.</span></div>
         <Caveat>Low mood also lowers how people rate their senses, and the touch study is small.</Caveat>
         <Detail density={density}>Self-reported smell loss is linked to depression more strongly than measured smell loss, which loses significance after correcting for publication bias except in adults 65+ (Bode et al., 2026, 23 studies). Touch: Sehlstedt et al. (2016), N = 120, ages 13–82, few over 60. Older adults also report more trust in their body’s signals (small sample).</Detail>
         <Cite>Bode 2026 · Sehlstedt 2016</Cite>
@@ -784,12 +784,12 @@ const SLIDES = [
     render: () => (
       <Frame wide kicker="Take-home">
         <H2>Two levers on what we notice</H2>
-        <Art name="s21-close" alt="An older couple sitting on a dock at dusk, listening to the lake" style={{ ...K.artBanner, maxWidth: 'min(900px, 88vw, 60vh)' }} />
+        <Art name="s21-close" alt="An older couple sitting on a dock at dusk, listening to the lake" style={{ ...K.artBanner, maxWidth: 'min(900px, 88vw, 54vh)' }} />
         <div style={K.levers}>
           <div style={{ ...K.lever, borderColor: STORY }}>
             <span style={{ ...K.leverK, background: STORY }}>1</span>
             <span style={K.leverT}>Correct the senses</span>
-            <span style={K.leverS}>Screen, fit, operate. It gives people back the conversation.</span>
+            <span style={K.leverS}>Check hearing and vision, fit hearing aids, treat cataracts. It gives people back the conversation.</span>
           </div>
           <div style={{ ...K.lever, borderColor: SENSE }}>
             <span style={{ ...K.leverK, background: SENSE }}>2</span>
