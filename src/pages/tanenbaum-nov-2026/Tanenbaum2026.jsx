@@ -438,14 +438,34 @@ const SLIDES = [
           <p style={K.author}>Norman Farb</p>
           <p style={K.affil}>Psychological and Brain Sciences · University of Toronto Mississauga</p>
           <p style={K.event}>Tanenbaum Symposium 2026 · Aging Neuroscience</p>
+        </div>
+        <div style={K.titleRight}>
+          <Art name="s01-title" alt="An older woman by a window, holding a warm mug, noticing the steam and the light" style={{ maxWidth: '96vh' }} />
           <LiveQrRow code={ctx.code} />
         </div>
-        <Art name="s01-title" alt="An older woman by a window, holding a warm mug, noticing the steam and the light" />
       </div>
     ),
   },
 
-  // 2 — The room's mood, live
+  // 2 — The same QR, as big as the screen allows (a rippled or distant screen still scans)
+  {
+    label: 'Big QR',
+    by: 75,
+    note: 'Leave this up while people scan; it is the same link as the title slide, just huge, so it works from the back and the hallway even on a rippled screen. Read the address aloud for anyone without a camera: “radlab dot zone slash live slash tanenbaum.” Click on once most phones are up.',
+    render: (_d, _b, ctx) => {
+      const url = `radlab.zone/live/${ctx.code}`
+      return (
+        <div style={K.bigQrWrap}>
+          <div style={K.bigQrBox}>
+            <QRCode value={`https://${url}`} size={512} level="M" style={{ width: '100%', height: 'auto', display: 'block' }} />
+          </div>
+          <p style={K.bigQrUrl}>{url}</p>
+        </div>
+      )
+    },
+  },
+
+  // 3 — The room's mood, live
   {
     label: 'The room’s mood (live)',
     by: 140,
@@ -1007,6 +1027,10 @@ const K = {
   chainDirect: { position: 'absolute', left: '12%', right: '12%', bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
 
   titleGrid: { display: 'grid', gridTemplateColumns: 'minmax(0, 0.85fr) minmax(0, 1.15fr)', gap: 48, alignItems: 'center', width: 'min(1560px, 94vw)' },
+  bigQrWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 },
+  bigQrBox: { background: '#fff', padding: 'min(32px, 3vh)', borderRadius: 12, width: 'min(74vh, 86vw)' },
+  bigQrUrl: { fontFamily: '"Space Mono",monospace', fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 700, color: 'var(--pkd)', margin: 0 },
+  titleRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16 },
   qrRow: { display: 'flex', alignItems: 'center', gap: 16, background: '#fff', border: '1px solid var(--bd)', borderRadius: 24, padding: 16, marginTop: 8 },
   bigLine: { display: 'flex', alignItems: 'baseline', gap: 16, fontSize: 'clamp(18px, 2vw, 24px)', color: 'var(--tx)', lineHeight: 1.35 },
   bigNum: { fontFamily: '"DM Serif Display",Georgia,serif', fontWeight: 400, fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1, flex: '0 0 auto', minWidth: '2.2ch' },
