@@ -191,6 +191,11 @@
    rugged, smooth: gentle), eight lands in all. Every later
    answer takes that land's native form (B2): "trees" are
    palms on the lagoon shore and pines in the alpine.
+   Animals too: birdsong, a chorus of small voices and one far
+   call are each the land's own species (a stag roaring in the
+   autumn wood, a coyote in the canyon), and the chosen animal
+   turns up now and then in the middle distance and calls from
+   where it stands.
 
    Forks are dealt from one deck per sense: one from each deck
    before any deck repeats, never the same sense twice in a
@@ -267,7 +272,7 @@ const DECKS = {
   sound: [
     { id: 'birdwater', kind: 'screen', layer: 'voice',
       prompt: 'Listen. Birdsong on one side, running water on the other.',
-      opts: [{ k: 'birds', label: 'Birdsong', becomes: 'birds in the sky', stim: { type: 'sound' } },
+      opts: [{ k: 'birds', label: 'Birdsong', becomes: 'birdsong', stim: { type: 'sound' } },
              { k: 'water', label: 'Running water', becomes: 'a waterfall', stim: { type: 'sound' } }] },
     { id: 'music', kind: 'screen', layer: 'music',
       prompt: 'Two instruments are playing. A flute on one side, strings on the other.',
@@ -278,9 +283,9 @@ const DECKS = {
       opts: [{ k: 'breeze', label: 'Steady', becomes: 'wind moving through the grass' },
              { k: 'chimes', label: 'Comes and goes', becomes: 'wind chimes' }] },
     { id: 'chorus', kind: 'screen', layer: 'chorus',
-      prompt: 'Evening voices. Crickets on one side, frogs on the other.',
-      opts: [{ k: 'crickets', label: 'Crickets', becomes: 'crickets in the long grass', stim: { type: 'sound' } },
-             { k: 'frogs', label: 'Frogs', becomes: 'frogs in a lily pond', stim: { type: 'sound' } }] },
+      prompt: 'Listen. Many small voices on one side, one voice calling from far off on the other.',
+      opts: [{ k: 'chorus', label: 'Many small voices', becomes: 'a chorus of small voices', stim: { type: 'sound' } },
+             { k: 'call', label: 'One far call', becomes: 'one voice calling from far off', stim: { type: 'sound' } }] },
   ],
   body: [
     { id: 'temp', base: true, kind: 'body', layer: 'season',
@@ -460,6 +465,33 @@ function climateKey(){
 function terrainKey(){ const r = opt('rock'); return r === 'crags' ? 'rough' : r === 'lake' ? 'smooth' : null; }
 const CL = () => CLIMATES[climateKey()] || CLIMATES.summer;
 function biomeName(){ const ck = climateKey(), tk = terrainKey(); return ck ? (tk ? CLIMATES[ck][tk].name : CLIMATES[ck].flat) : null; }
+// The animals each land answers with (2026-11-09): birdsong, a chorus of small voices and one
+// far call, in the land's own species. clips are fired as separate calls, a bed plays under
+// everything; sprite is how the animal looks when it turns up beside the path.
+const ANIMALS = {
+  summer: { birds: { clips: ['NHU05096015', 'NHU05085203'], sprite: 'blackbird', word: 'blackbirds and wrens singing' },
+    chorus: { bed: 'NHU05072033', sprite: 'cricket', word: 'crickets in the long grass', forms: [['long', 4]] },
+    chorusLake: { bed: 'NHU05006134', sprite: 'frog', word: 'frogs in a lily pond', forms: [['pond', 1]], vol: 0.28 },
+    call: { clips: ['NHU05084193'], slice: 2.6, sprite: 'cuckoo', word: 'a cuckoo calling' } },
+  winter: { birds: { clips: ['NHU05050235', 'NHU05085203'], sprite: 'robin', word: 'a robin and a wren singing in the cold' },
+    chorus: { clips: ['NHU05082204'], slice: 3, every: [1.5, 4], sprite: 'flock', word: 'a flock of small birds' },
+    call: { clips: ['NHU05085238'], slice: 4.5, sprite: 'owl', word: 'an owl calling' } },
+  hotdry: { birds: { clips: ['NHU05059156', 'NHU05098083'], sprite: 'lark', word: 'larks and doves' },
+    chorus: { bed: 'NHU05080056', sprite: 'cicada', word: 'cicadas in the heat', forms: [['dry', 3]], vol: 0.22 },
+    call: { clips: ['NHU05102197'], slice: 6, sprite: 'coyote', word: 'a coyote howling' } },
+  hotwet: { birds: { clips: ['NHU05005151', 'NHU05069096'], sprite: 'toucan', word: 'toucans and hornbills' },
+    chorus: { bed: 'NHU05012180', sprite: 'treefrog', word: 'tree frogs', forms: [['leaf', 3]] },
+    call: { clips: ['NHU05072171'], slice: 6, sprite: 'gibbon', word: 'a gibbon calling' } },
+  colddry: { birds: { clips: ['NHU05073017', 'NHU05090105'], sprite: 'curlew', word: 'curlews and skylarks', vol: 0.46 },
+    chorus: { bed: 'NHU05072033', sprite: 'cricket', word: 'crickets in the dry grass', forms: [['long', 3]] },
+    call: { clips: ['NHU05100229'], slice: 5, sprite: 'stag', word: 'a stag roaring' } },
+  coldwet: { birds: { clips: ['NHU05017161', 'NHU05011138'], sprite: 'ptarmigan', word: 'snow buntings and ptarmigan' },
+    chorus: { clips: ['NHU05082204'], slice: 3, every: [1.5, 4], sprite: 'flock', word: 'a flock of snow buntings' },
+    call: { clips: ['NHU05081095'], slice: 7, sprite: 'wolf', word: 'a wolf howling' } },
+};
+const ANIMAL_KEYS = new Set(['birds', 'chorus', 'call']);
+function animalFor(k){ const A = ANIMALS[climateKey()] || ANIMALS.summer; return k === 'chorus' && A.chorusLake && terrainKey() === 'smooth' ? A.chorusLake : A[k]; }
+const animalLayer = k => k === 'birds' ? 'voice' : 'chorus';
 // ?biome= starts the walk already in one land, for checking: its three cards are skipped
 const PRESETS = { canyon: ['warm', 'rose', 'crags'], dunes: ['warm', 'gold', 'lake'], dryplain: ['warm', 'amber', null],
   jungle: ['warm', 'seagreen', 'crags'], lagoon: ['warm', 'teal', 'lake'], lowland: ['warm', 'skyblue', null],
@@ -680,6 +712,7 @@ function bladeFan(c, sx, sy, k, hgt, col, o, t, sway, n = 5){
 function flowerCols(e){ const C = e.C || CLIMATES.summer; return e.pal ? [e.pal.rgb, ...C.flowers.slice(0, 2)] : C.flowers; }
 function drawKind(c, o, sx, sy, k, e, t, fog = 0, sway = 0.08){
   const rr = mulberry32(o.sd), F2 = col => mix(e.dark(col), e.bot, fog), snow = e.cool > 0.5, C = e.C || CLIMATES.summer, kind = o.kind;
+  if (kind === 'animal'){ drawAnimal(c, o, sx, sy, k, e, t, fog); return; }
   if (kind === 'tuft'){
     bladeFan(c, sx, sy, k, 0.32 * k * (0.6 + o.v * 0.7), snow ? mix([120, 120, 110], e.bot, fog) : mix(e.grass, e.bot, fog), o, t, sway);
   } else if (kind === 'long'){
@@ -808,6 +841,143 @@ function drawKind(c, o, sx, sy, k, e, t, fog = 0, sway = 0.08){
     roundTree(c, sx, sy, k * (3.2 + o.v * 2.4), e, rr, fog);
   }
 }
+// an animal standing at (sx, sy), k pixels to the metre, facing o.dir; o.callT is when its
+// call began, and while it calls it sings, hoots, howls or roars
+function drawAnimal(c, o, sx, sy, k, e, t, fog){
+  const F2 = col => mix(e.dark(col), e.bot, fog), d = o.dir || 1, sp = o.sprite, snow = e.cool > 0.5, C = e.C || CLIMATES.summer;
+  const since = o.callT == null ? 99 : S.t - o.callT, len = o.callLen || 3, call = since < len ? clamp(Math.min(since * 4, (len - since) * 3)) : 0;
+  const post = hm => { line(c, sx, sy, sx, sy - hm * k, F2([110, 86, 62]), Math.max(1, 0.09 * k)); if (snow) ell(c, sx, sy - hm * k, 0.07 * k, 0.025 * k, [244, 246, 252], 0.9 * (1 - fog)); return sy - hm * k; };
+  // a perching bird, u px long, its feet at (x, y)
+  const bird = (x, y, u, body, belly, beak, q = {}) => {
+    const tl = q.tail || 0.85;
+    poly(c, [[x - d * u * 0.28, y - u * 0.36], [x - d * u * tl, y - u * (0.1 + call * (q.tailUp || 0))], [x - d * u * (tl - 0.08), y + u * 0.02]], F2(q.tailCol || body));
+    ell(c, x, y - u * 0.28, u * 0.42, u * 0.26, F2(body));
+    if (belly) ell(c, x + d * u * 0.14, y - u * 0.22, u * 0.24, u * 0.18, F2(belly));
+    if (q.barred) for (let i = 0; i < 3; i++) line(c, x + d * u * 0.02, y - u * (0.12 + i * 0.08), x + d * u * 0.28, y - u * (0.1 + i * 0.08), F2([90, 90, 96]), Math.max(0.5, u * 0.03));
+    const hx = x + d * u * 0.34, hy = y - u * (0.56 + call * 0.08);
+    circ(c, hx, hy, u * 0.19, F2(q.head || body));
+    if (q.crest) poly(c, [[hx - d * u * 0.1, hy - u * 0.14], [hx - d * u * 0.32, hy - u * 0.3], [hx + d * u * 0.02, hy - u * 0.18]], F2(q.head || body));
+    const bl = u * (q.beak || 0.22), bh = u * (q.beakH || 0.05), b0 = hx + d * u * 0.13;
+    poly(c, [[b0, hy - bh], [b0 + d * bl, hy - call * u * 0.06], [b0, hy + bh * 0.4]], F2(beak));
+    if (call) poly(c, [[b0, hy + bh * 0.4], [b0 + d * bl * 0.9, hy + call * u * 0.1], [b0, hy + bh]], F2(q.beakLow || beak));
+    circ(c, hx + d * u * 0.06, hy - u * 0.05, Math.max(0.6, u * 0.04), F2([20, 18, 20]));
+  };
+  // a dog-like animal, shoulder u px; it lifts its head to howl
+  const canine = (u, col, belly) => {
+    const legW = Math.max(1, u * 0.1), far = F2(mix(col, [0, 0, 0], 0.25));
+    [0.36, -0.34].forEach(fx => line(c, sx + d * (fx + 0.06) * u, sy - u * 0.62, sx + d * (fx + 0.08) * u, sy, far, legW));
+    c.strokeStyle = css(F2(col)); c.lineWidth = Math.max(1, u * 0.14); c.lineCap = 'round'; c.beginPath();
+    c.moveTo(sx - d * u * 0.5, sy - u * 0.78); c.quadraticCurveTo(sx - d * u * 0.8, sy - u * 0.72, sx - d * u * 0.82, sy - u * 0.34); c.stroke();
+    ell(c, sx, sy - u * 0.75, u * 0.56, u * 0.2, F2(col)); ell(c, sx + d * u * 0.05, sy - u * 0.64, u * 0.4, u * 0.09, F2(belly));
+    ell(c, sx + d * u * 0.42, sy - u * 0.8, u * 0.2, u * 0.24, F2(col));
+    [0.38, -0.36].forEach(fx => line(c, sx + d * fx * u, sy - u * 0.65, sx + d * fx * u, sy, F2(col), legW));
+    const hx = sx + d * u * lerp(0.74, 0.62, call), hy = sy - u * lerp(1.02, 1.34, call);
+    line(c, sx + d * u * 0.42, sy - u * 0.85, hx, hy, F2(col), u * 0.24);
+    circ(c, hx, hy, u * 0.15, F2(col));
+    const ma = lerp(0.3, -1.15, call); line(c, hx, hy, hx + Math.cos(ma) * d * u * 0.27, hy + Math.sin(ma) * u * 0.27, F2(col), u * 0.11);
+    poly(c, [[hx - d * u * 0.1, hy - u * 0.08], [hx - d * u * 0.04, hy - u * 0.3], [hx + d * u * 0.04, hy - u * 0.1]], F2(mix(col, [0, 0, 0], 0.15)));
+    c.lineCap = 'butt';
+  };
+  if (sp === 'blackbird') bird(sx, post(1), 0.26 * k, [30, 28, 32], null, [240, 170, 40]);
+  else if (sp === 'robin') bird(sx, post(1), 0.24 * k, [126, 100, 74], [226, 112, 52], [60, 50, 40], { head: [126, 100, 74] });
+  else if (sp === 'lark'){ ell(c, sx, sy - 0.16 * k, 0.36 * k, 0.2 * k, F2(mix(C.rock, [0, 0, 0], 0.1))); ell(c, sx - 0.06 * k, sy - 0.25 * k, 0.2 * k, 0.08 * k, F2(mix(C.rock, [255, 240, 220], 0.22)));
+    bird(sx, sy - 0.34 * k, 0.24 * k, [176, 146, 104], [224, 206, 172], [90, 76, 60], { crest: true }); }
+  else if (sp === 'toucan') bird(sx, post(1.1), 0.34 * k, [24, 22, 26], [250, 232, 160], [250, 140, 30], { beak: 0.6, beakH: 0.13, beakLow: [230, 70, 40] });
+  else if (sp === 'cuckoo') bird(sx, post(1), 0.32 * k, [118, 122, 130], [214, 212, 204], [60, 56, 44], { tail: 1.25, tailUp: 0.25, barred: true });
+  else if (sp === 'curlew' || sp === 'ptarmigan'){
+    const curlew = sp === 'curlew', u = (curlew ? 0.34 : 0.3) * k, y = sy - u * (curlew ? 0.5 : 0.08);
+    if (curlew){ line(c, sx - u * 0.06, sy, sx, y - u * 0.1, F2([90, 90, 96]), Math.max(0.6, u * 0.04)); line(c, sx + u * 0.1, sy, sx + d * u * 0.04, y - u * 0.1, F2([90, 90, 96]), Math.max(0.6, u * 0.04)); }
+    const body = curlew ? [150, 120, 84] : [244, 244, 240];
+    poly(c, [[sx - d * u * 0.3, y - u * 0.3], [sx - d * u * 0.62, y - u * 0.2], [sx - d * u * 0.5, y - u * 0.06]], F2(curlew ? body : [40, 36, 36]));
+    ell(c, sx, y - u * 0.28, u * 0.42, u * (curlew ? 0.22 : 0.3), F2(body));
+    if (curlew) for (let i = 0; i < 4; i++) line(c, sx + (i - 1.5) * u * 0.16, y - u * 0.36, sx + (i - 1.5) * u * 0.16 + u * 0.06, y - u * 0.26, F2([96, 72, 50]), Math.max(0.5, u * 0.03));
+    const hx = sx + d * u * 0.36, hy = y - u * (curlew ? 0.52 : 0.58) - call * u * 0.08;
+    circ(c, hx, hy, u * 0.15, F2(body));
+    if (curlew){ c.strokeStyle = css(F2([60, 46, 36])); c.lineWidth = Math.max(0.6, u * 0.05); c.beginPath(); c.moveTo(hx + d * u * 0.12, hy); c.quadraticCurveTo(hx + d * u * 0.45, hy - u * 0.04, hx + d * u * 0.62, hy + u * 0.26); c.stroke(); }
+    else { poly(c, [[hx + d * u * 0.12, hy - u * 0.04], [hx + d * u * 0.24, hy + u * 0.01], [hx + d * u * 0.12, hy + u * 0.04]], F2([30, 28, 28])); ell(c, hx + d * u * 0.03, hy - u * 0.1, u * 0.07, u * 0.03, F2([220, 50, 40])); }
+    circ(c, hx + d * u * 0.05, hy - u * 0.03, Math.max(0.6, u * 0.035), F2([20, 18, 20]));
+  }
+  else if (sp === 'owl'){
+    const y = post(1.05), u = 0.42 * k, body = [132, 98, 68];
+    ell(c, sx, y - u * 0.42, u * 0.3, u * 0.44, F2(body));
+    ell(c, sx, y - u * 0.3 + call * u * 0.04, u * (0.18 + call * 0.06), u * (0.2 + call * 0.05), F2(mix(body, [230, 214, 190], 0.5))); // the throat swells as it hoots
+    ell(c, sx + d * u * 0.04, y - u * 0.74, u * 0.27, u * 0.22, F2(mix(body, [214, 190, 160], 0.45)));
+    [-1, 1].forEach(q => { circ(c, sx + d * u * 0.04 + q * u * 0.1, y - u * 0.76, u * 0.065, F2([24, 20, 18])); });
+    poly(c, [[sx + d * u * 0.02, y - u * 0.7], [sx + d * u * 0.08, y - u * 0.7], [sx + d * u * 0.05, y - u * 0.62]], F2([200, 170, 90]));
+  }
+  else if (sp === 'coyote') canine(0.55 * k, [176, 140, 98], [226, 208, 176]);
+  else if (sp === 'wolf') canine(0.78 * k, [128, 128, 132], [214, 214, 210]);
+  else if (sp === 'stag'){
+    const u = 1.2 * k, col = [134, 92, 60], legW = Math.max(1, u * 0.07), far = F2([100, 68, 46]);
+    [0.38, -0.38].forEach(fx => line(c, sx + d * (fx + 0.07) * u, sy - u * 0.7, sx + d * (fx + 0.09) * u, sy, far, legW));
+    ell(c, sx, sy - u * 0.88, u * 0.6, u * 0.24, F2(col));
+    ell(c, sx - d * u * 0.5, sy - u * 0.9, u * 0.12, u * 0.12, F2([220, 200, 170]));
+    [0.4, -0.4].forEach(fx => line(c, sx + d * fx * u, sy - u * 0.75, sx + d * fx * u, sy, F2(col), legW));
+    // roaring, the head stretches forward and the mouth opens
+    const hx = sx + d * u * lerp(0.7, 0.92, call), hy = sy - u * lerp(1.42, 1.2, call);
+    line(c, sx + d * u * 0.4, sy - u * 0.95, hx, hy, F2(mix(col, [60, 40, 30], 0.3)), u * 0.24);
+    const mx = hx + d * u * 0.3, my = hy + u * lerp(0.12, 0.02, call);
+    line(c, hx, hy, mx, my, F2(col), u * 0.12);
+    if (call > 0.2) line(c, mx - d * u * 0.12, my + u * 0.02, mx, my + u * 0.06 * call, F2([40, 26, 20]), Math.max(0.6, u * 0.03));
+    c.strokeStyle = css(F2([92, 72, 54])); c.lineWidth = Math.max(0.8, u * 0.035); c.lineCap = 'round'; c.beginPath();
+    [-1, 1].forEach(q => { const bx = hx + q * u * 0.04, by = hy - u * 0.08, tx = bx - d * u * 0.26 + q * u * 0.12, ty = by - u * 0.62;
+      c.moveTo(bx, by); c.quadraticCurveTo(bx - d * u * 0.2, by - u * 0.32, tx, ty);
+      for (let i = 1; i <= 3; i++){ const f = i / 4, px = lerp(bx, tx, f) - d * u * 0.06 * (1 - f), py = lerp(by, ty, f) - u * 0.04; c.moveTo(px, py); c.lineTo(px + d * u * 0.14, py - u * 0.12); } });
+    c.stroke(); c.lineCap = 'butt';
+    if (call && (e.ck === 'colddry' || snow)) for (let i = 0; i < 3; i++) circ(c, mx + d * u * (0.1 + i * 0.12 + since * 0.04), my - i * u * 0.04, u * (0.05 + i * 0.03), [255, 255, 255], 0.3 * call * (1 - fog)); // breath in the cold
+  }
+  else if (sp === 'gibbon'){
+    const trunk = F2([92, 76, 60]), by = sy - 3.4 * k;
+    line(c, sx, sy, sx, sy - 4.2 * k, trunk, Math.max(1, 0.22 * k)); line(c, sx, by, sx + d * 2 * k, by - 0.25 * k, trunk, Math.max(1, 0.1 * k));
+    for (let i = 0; i < 5; i++) circ(c, sx + d * (i * 0.5 - 0.3) * k, sy - (4.1 + (i % 2) * 0.3) * k, (0.7 + (i % 3) * 0.15) * k, mix(i % 2 ? e.tree2 || e.tree : e.tree, e.bot, fog));
+    // it hangs by its long arms and swings; calling, it opens its mouth
+    const sw = REDUCED ? 0 : Math.sin(t * 1.6 + (o.sd % 7)) * 0.14, hx = sx + d * 1.3 * k, hy = by - 0.16 * k, fur = F2([62, 50, 42]);
+    const bx = hx + Math.sin(sw) * 0.9 * k, byy = hy + Math.cos(sw) * 0.9 * k;
+    line(c, hx - 0.06 * k, hy, bx - 0.1 * k, byy - 0.08 * k, fur, Math.max(1, 0.07 * k)); line(c, hx + 0.1 * k, hy, bx + 0.06 * k, byy - 0.08 * k, fur, Math.max(1, 0.07 * k));
+    ell(c, bx, byy + 0.12 * k, 0.15 * k, 0.24 * k, fur);
+    line(c, bx, byy + 0.3 * k, bx + d * 0.16 * k, byy + 0.5 * k, fur, Math.max(1, 0.06 * k)); line(c, bx - 0.05 * k, byy + 0.3 * k, bx + d * 0.04 * k, byy + 0.55 * k, fur, Math.max(1, 0.06 * k));
+    circ(c, bx, byy - 0.14 * k, 0.12 * k, fur); ell(c, bx + d * 0.03 * k, byy - 0.13 * k, 0.07 * k, 0.075 * k, F2([156, 136, 116]));
+    circ(c, bx + d * 0.05 * k, byy - 0.09 * k, (0.008 + 0.03 * call) * k, F2([30, 20, 20]));
+  }
+  else if (sp === 'flock'){
+    const rr = mulberry32(o.sd), white = e.ck === 'coldwet', body = white ? [240, 240, 236] : [134, 104, 76], wing = white ? [40, 36, 36] : [96, 72, 54];
+    for (let i = 0; i < 7; i++){ const ox = (rr() - 0.5) * 3 * k, oy = (rr() - 0.5) * 0.3 * k, u = 0.22 * k, dd = rr() < 0.5 ? -1 : 1, ph = rr() * 6;
+      const up = call * (i % 3 === 0 ? 0.6 + rr() * 0.8 : 0) * k, hop = REDUCED ? 0 : Math.max(0, Math.sin(t * 4 + ph) - 0.85) * 0.6 * k, x = sx + ox, y = sy + oy - up - hop;
+      if (up > 0.05 * k){ const f = Math.sin(t * 16 + ph) * u * 0.5; c.strokeStyle = css(F2(wing)); c.lineWidth = Math.max(1, u * 0.14); c.beginPath();
+        c.moveTo(x - u * 0.6, y - f); c.quadraticCurveTo(x - u * 0.2, y - u * 0.25, x, y); c.quadraticCurveTo(x + u * 0.2, y - u * 0.25, x + u * 0.6, y - f); c.stroke(); continue; }
+      ell(c, x, y - u * 0.25, u * 0.4, u * 0.24, F2(body)); ell(c, x - dd * u * 0.06, y - u * 0.3, u * 0.24, u * 0.12, F2(wing));
+      circ(c, x + dd * u * 0.32, y - u * 0.42, u * 0.15, F2(body)); poly(c, [[x + dd * u * 0.44, y - u * 0.45], [x + dd * u * 0.58, y - u * 0.42], [x + dd * u * 0.44, y - u * 0.38]], F2([60, 50, 40]));
+      poly(c, [[x - dd * u * 0.3, y - u * 0.3], [x - dd * u * 0.6, y - u * 0.34], [x - dd * u * 0.55, y - u * 0.2]], F2(wing)); }
+  }
+  else if (sp === 'cricket' || sp === 'cicada'){
+    const cic = sp === 'cicada', sw = Math.sin(t * 1.3 + o.sd) * 0.05 * k, tx = sx + sw, ty = sy - 0.6 * k;
+    c.strokeStyle = css(F2(cic ? C.dry : mix(C.grass, [0, 0, 0], 0.2))); c.lineWidth = Math.max(0.8, 0.03 * k); c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(sx, sy - 0.3 * k, tx, ty); c.stroke();
+    const ix = sx + sw * 0.55, iy = sy - 0.36 * k, L = 0.14 * k, sing = REDUCED ? 0.5 : 0.5 + 0.5 * Math.sin(t * 38 + o.sd);
+    if (cic){ ell(c, ix - L * 0.34, iy, L * 0.26, L * 0.62, F2([200, 220, 220]), 0.45 + 0.25 * sing); ell(c, ix + L * 0.34, iy, L * 0.26, L * 0.62, F2([200, 220, 220]), 0.45 + 0.25 * sing);
+      ell(c, ix, iy, L * 0.24, L * 0.5, F2([74, 64, 44])); circ(c, ix - L * 0.18, iy - L * 0.48, L * 0.09, F2([150, 60, 40])); circ(c, ix + L * 0.18, iy - L * 0.48, L * 0.09, F2([150, 60, 40])); }
+    else { const body = [110, 96, 56];
+      line(c, ix - L * 0.1, iy + L * 0.1, ix - L * 0.45, iy - L * 0.2, F2(body), Math.max(0.6, L * 0.12)); line(c, ix - L * 0.45, iy - L * 0.2, ix - L * 0.5, iy + L * 0.5, F2(body), Math.max(0.5, L * 0.07));
+      ell(c, ix, iy, L * 0.2, L * 0.55, F2(body)); ell(c, ix + L * 0.06, iy - L * 0.05, L * 0.16, L * 0.4, F2(mix(body, [200, 190, 140], 0.25 * sing)));
+      circ(c, ix, iy - L * 0.6, L * 0.16, F2(body));
+      c.strokeStyle = css(F2(body)); c.lineWidth = Math.max(0.5, L * 0.04); c.beginPath(); c.moveTo(ix - L * 0.05, iy - L * 0.7); c.quadraticCurveTo(ix - L * 0.5, iy - L * 1.4, ix - L * 1.1, iy - L * 1.2);
+      c.moveTo(ix + L * 0.05, iy - L * 0.7); c.quadraticCurveTo(ix + L * 0.4, iy - L * 1.5, ix + L * 0.9, iy - L * 1.5); c.stroke(); }
+  }
+  else if (sp === 'frog' || sp === 'treefrog'){
+    const tree = sp === 'treefrog', u = 0.22 * k, puff = REDUCED ? 0.5 : 0.5 + 0.5 * Math.sin(t * 5 + (o.sd % 11));
+    let fx = sx, fy = sy;
+    if (tree){ fy = sy - 0.5 * k; c.save(); c.translate(sx, fy); c.rotate(-0.25 * d); ell(c, 0, 0, 0.6 * k, 0.2 * k, F2(mix(C.fern || [52, 140, 70], [0, 0, 0], 0.05))); line(c, -0.55 * k, 0, 0.55 * k, 0, F2(mix(C.fern || [52, 140, 70], [255, 255, 255], 0.2)), Math.max(0.5, 0.02 * k)); c.restore();
+      line(c, sx - d * 0.5 * k, sy, sx - d * 0.3 * k, fy + 0.05 * k, F2([60, 110, 60]), Math.max(0.8, 0.03 * k)); fy -= 0.08 * k; }
+    else { const rx = 0.85 * k; ell(c, sx, sy, rx, rx * 0.26, F2(mix(C.water, [40, 90, 80], 0.3)));
+      [[-0.45, 0.02], [0.4, -0.04], [0.05, 0.06]].forEach(([dx, dy]) => ell(c, sx + dx * rx, sy + dy * rx, 0.2 * k, 0.07 * k, F2([70, 140, 70])));
+      fx = sx + d * 0.05 * k; fy = sy + 0.04 * k; }
+    const skin = tree ? [90, 196, 84] : [90, 150, 60];
+    ell(c, fx - d * u * 0.35, fy - u * 0.12, u * 0.3, u * 0.14, F2(mix(skin, [0, 0, 0], 0.12)));
+    ell(c, fx, fy - u * 0.3, u * 0.55, u * 0.34, F2(skin));
+    ell(c, fx + d * u * 0.3, fy - u * 0.12, u * 0.22 * (0.6 + 0.4 * puff), u * 0.16 * (0.6 + 0.4 * puff), F2(tree ? [230, 236, 190] : [210, 220, 150])); // the throat sac as it calls
+    [0.12, 0.36].forEach(dx => { circ(c, fx + d * u * dx, fy - u * 0.6, u * 0.13, F2(skin)); circ(c, fx + d * u * dx, fy - u * 0.62, u * 0.07, F2(tree ? [220, 40, 40] : [24, 22, 20])); });
+    if (tree) [[-0.3, 0.02], [0.45, 0.02]].forEach(([dx, dy]) => circ(c, fx + d * u * dx, fy + u * dy, u * 0.06, F2([250, 140, 40])));
+  }
+}
 const TRsand = e => (e.TR && e.TR.gnd) || [226, 188, 126];
 // the height of each tree kind in metres (v = 0.5), for drawing one to a size in pixels
 const KH = { tree: 4.4, bare: 4.4, pine: 4.4, palm: 4.4, acacia: 4, cactus: 2.9, birch: 4.3, maple: 4.4, jtree: 5.2, oak: 7, apple: 3.5, blossom: 3.4 };
@@ -891,7 +1061,7 @@ const WALK_FORMS = {
   meadow: [['wild', 3]], flowers: [['wild', 4]], trees: [['@tree', 3]],
   stone: [['stone', 3]], moss: [['@soft', 3]], sandstone: [['sand', 1.5]], ferns: [['fern', 3]], golden: [['gold', 4]],
   blossom: [['blossom', 1.5]], lavender: [['lav', 3]], berries: [['berry', 2]],
-  apple: [['apple', 1]], oak: [['@great', 0.5]], crickets: [['long', 4]], frogs: [['pond', 1]],
+  apple: [['apple', 1]], oak: [['@great', 0.5]],
 };
 const NEAR_OK = new Set(['tuft', 'long', 'gold', 'dry', 'wild', 'lav', 'heather', 'fern', 'leaf', 'stone', 'moss', 'ripple', 'litter', 'scree', 'scrub']);
 const FRINGE_OK = new Set(['tuft', 'long', 'gold', 'dry', 'wild', 'lav', 'fern', 'leaf']);
@@ -902,7 +1072,7 @@ function walkMix(){ // the biome is 60 things; every other answer adds 14
   if (ck) C.flora.forEach(([k, p]) => WALK_MIX.push([k, p, 1]));
   for (const layer in S.L){
     const o = S.L[layer].opt; if (!o || layer === 'season') continue;
-    const forms = layer === 'rock' ? C[tk].forms : WALK_FORMS[o]; if (!forms) continue;
+    const forms = layer === 'rock' ? C[tk].forms : o === 'chorus' ? animalFor('chorus').forms : WALK_FORMS[o]; if (!forms) continue;
     forms.forEach(([k, p]) => WALK_MIX.push(k === '@tree' ? [C.treeK, p, 1] : k === '@great' ? [C.great[0], p, C.great[1]] : k === '@soft' ? [C.soft, p, 1] : [k, p, 1]));
     n++;
   }
@@ -929,7 +1099,45 @@ function spawnObj(initial){
   return EMPTY();
 }
 function clearCorridors(){
-  S.obj.forEach((o, i) => { if (o.kind && S.rays.some(r => distToRay(o.x, o.z, r) < r.hw + (o.small ? 0.35 : 0.9))) S.obj[i] = spawnObj(false); });
+  S.obj.forEach((o, i) => { if (o.kind && S.rays.some(r => distToRay(o.x, o.z, r) < r.hw + (o.small ? 0.35 : 0.9))) S.obj[i] = o.kind === 'animal' ? EMPTY() : spawnObj(false); });
+}
+// The chosen animal turns up now and then in the middle distance (2026-11-09): one every
+// 9-16 s of walking, beside the way ahead, and it calls once as it comes near, from
+// where it stands. [nearest, farthest metres from the path, drawing scale]: animals are
+// drawn larger than life so that a bird on a post can be seen at twenty metres.
+const SPRITE = { blackbird: [3, 6, 1.6], robin: [3, 6, 1.6], lark: [3, 6, 1.6], toucan: [3, 6, 1.5], curlew: [3, 7, 1.6], ptarmigan: [3, 7, 1.6],
+  cuckoo: [3.5, 7, 1.5], owl: [3.5, 7, 1.5], coyote: [4, 9, 1.5], wolf: [4.5, 9, 1.35], stag: [5, 10, 1.2], gibbon: [5, 9, 1],
+  flock: [4, 9, 1.4], cricket: [1.6, 2.6, 1.8], cicada: [1.6, 2.6, 1.8], frog: [3, 6, 1.7], treefrog: [1.8, 3, 1.6] };
+function spawnAnimal(key){
+  const a = animalFor(key), [n0, n1, big] = SPRITE[a.sprite];
+  for (let tries = 0; tries < 20; tries++){
+    const zz = 48 + rng() * 14, side = rng() < 0.5 ? -1 : 1, xx = side * (n0 + rng() * (n1 - n0));
+    const sn = Math.sin(cam.yaw), cs = Math.cos(cam.yaw), x = cam.x + xx * cs + zz * sn, z = cam.z - xx * sn + zz * cs;
+    if (S.rays.some(r => distToRay(x, z, r) < r.hw + 1)) continue;
+    // nothing tall stands just in front of it, so it can be seen as the walker comes up
+    S.obj.forEach((q, j) => { if (!q.kind || q.small || q.kind === 'animal') return; const [qx, qz] = toCam(q.x, q.z);
+      if (Math.sign(qx) === side && Math.abs(qx - xx) < 3.5 && qz > zz - 25 && qz < zz + 3) S.obj[j] = EMPTY(); });
+    const o = { x, z, kind: 'animal', sprite: a.sprite, key, dir: -side, v: rng(), sd: (rng() * 1e9) | 0, big, small: false };
+    const i = S.obj.findIndex(q => !q.kind); if (i >= 0) S.obj[i] = o; else S.obj.push(o);
+    return true;
+  }
+  return false;
+}
+function animalTick(){
+  if (S.phase === 'intro' || S.phase === 'toPlace' || S.phase === 'place') return;
+  const keys = []; if (opt('voice') === 'birds') keys.push('birds'); if (opt('chorus')) keys.push(opt('chorus'));
+  if (!keys.length) return;
+  if (S.animKeys !== keys.join()){ S.animKeys = keys.join(); S.animNext = S.t + 3; }
+  if ((S.phase === 'walk' || S.phase === 'final') && S.v > 1 && S.t >= S.animNext) S.animNext = S.t + (spawnAnimal(keys[(rng() * keys.length) | 0]) ? 9 + rng() * 7 : 1);
+  const now = AU.ctx ? AU.ctx.currentTime : 0;
+  for (const o of S.obj){ if (o.kind !== 'animal') continue;
+    const [xx, zz] = toCam(o.x, o.z), src = AU.live[animalLayer(o.key)], seen = zz > 3 && zz < 30 && Math.abs(xx) < zz * 0.8;
+    if (o.callT != null && S.t - o.callT > 14) o.called = false; // standing at a fork beside it, it calls again
+    if (seen && !o.called && src && src.shot && !AU.muted){ o.called = true; src.hold(5);
+      src.shot().then(h => { if (!h) return; o.snd = h; o.callT = S.t; o.callLen = h.len; }); }
+    if (o.snd && now){ o.snd.pn && o.snd.pn.pan.setTargetAtTime(clamp(xx / Math.max(4, Math.abs(zz)) * 0.8, -1, 1), now, 0.1);
+      o.snd.dg.gain.setTargetAtTime(clamp(16 / Math.max(4, Math.hypot(xx, zz)), 0.3, 1.5), now, 0.1); }
+  }
 }
 // F3: the foreground fringe, plants at the walker's feet in the bottom corners, from the
 // same answers as the walk. They slide outward while the walker moves and rest at a fork.
@@ -1294,6 +1502,14 @@ function drawPlace(c, w, h, t){
     for (let i = 0; i < 4; i++) drawKind(c, { kind: main, v: r(), sd: 90 + i }, bx + (i - 1.5) * 46 * s, by, 60 * s, e, t);
     rest.forEach(([kind], j) => { for (let i = 0; i < 3; i++) drawKind(c, { kind, v: r(), sd: 95 + j * 3 + i }, bx + (r() - 0.5) * 260 * s, by + (6 + r() * 26) * s, 46 * s, e, t); });
   }
+  // the chosen animals stand in the middle ground; each call pans to where it stands
+  const pa = (key, sprite, x, y, k, dir) => { const src = AU.live[animalLayer(key)];
+    if (src) src.placePan = clamp((x / w * 2 - 1) * 0.7, -1, 1);
+    drawAnimal(c, { sprite, dir, sd: hashStr(sprite) ^ SEED, callT: src && src.lastShot ? src.lastShot.t : null, callLen: src && src.lastShot ? src.lastShot.len : 0 }, x, y, k, e, t, 0); };
+  const chA = O('chorus') ? animalFor('chorus') : null, chS = chA ? chA.sprite : null;
+  if (O('call')){ const sp = animalFor('call').sprite; if (sp === 'gibbon') pa('call', sp, w * 0.86, h * 0.67, 36 * s, -1); else pa('call', sp, w * 0.6, h * 0.59, 38 * s * SPRITE[sp][2], -1); }
+  if (chS === 'flock') pa('chorus', chS, w * 0.58, h * 0.7, 64 * s, 1);
+  if (O('birds')) pa('birds', animalFor('birds').sprite, w * 0.35, h * 0.75, 100 * s, 1);
   if (O('lavender')){
     const r = R('lv');
     for (let row = 0; row < 4; row++) for (let i = 0; i < 14; i++){ const x = w * (0.03 + i * 0.014) + row * 6 * s, y = h * (0.64 + row * 0.022), hh = (12 + r() * 6) * s * (1 + row * 0.15), sw = Math.sin(t * 1.2 + i) * 2 * s;
@@ -1330,7 +1546,7 @@ function drawPlace(c, w, h, t){
   if (O('berries')){ const x = w * 0.28, y = h * 0.79, bk = px => px / 0.475;
     drawKind(c, { kind: 'berry', v: 0.5, sd: 61 }, x, y, bk(28 * s), e, t); drawKind(c, { kind: 'berry', v: 0.5, sd: 62 }, x + 54 * s, y + 6 * s, bk(24 * s), e, t); drawKind(c, { kind: 'berry', v: 0.5, sd: 63 }, x - 46 * s, y + 8 * s, bk(20 * s), e, t); }
   if (O('campfire')) fire(c, w * 0.6, h * 0.79, 22 * s, e, t);
-  if (O('frogs')){
+  if (chS === 'frog'){
     const x = w * 0.43, y = h * 0.86, rx = 80 * s;
     ell(c, x, y, rx, rx * 0.26, e.dark([84, 140, 150]));
     const r = R('lily'); for (let i = 0; i < 6; i++){ const px = x + (r() - 0.5) * rx * 1.5, py = y + (r() - 0.5) * rx * 0.3; ell(c, px, py, 12 * s, 5 * s, e.dark([70, 140, 70])); if (i % 2) circ(c, px, py - 2 * s, 3 * s, [250, 240, 250]); }
@@ -1351,9 +1567,11 @@ function drawPlace(c, w, h, t){
   }
   if (O('golden')){ const r = R('gd'); for (let i = 0; i < 70; i++){ const x = r() * w, y = h * (0.78 + r() * 0.22); if (Math.abs(x / w - 0.5) < 0.08) continue; const hh = (26 + r() * 28) * s, sw = Math.sin(t * 0.9 + i * 0.7) * 5 * s;
     line(c, x, y, x + sw, y - hh, e.dark(Cl.dry), 1.3 * s); ell(c, x + sw, y - hh, 2.4 * s, 6 * s, e.dark(mix(Cl.dry, [255, 255, 255], 0.15))); } }
-  if (O('crickets')){ const r = R('ck');
+  if (chS === 'treefrog') pa('chorus', chS, w * 0.8, h * 0.97, 150 * s, -1);
+  if (chS === 'cricket' || chS === 'cicada'){ const r = R('ck');
     for (let i = 0; i < 80; i++){ const left = i < 40, x = left ? r() * w * 0.24 : w - r() * w * 0.24, y = h; const hh = (60 + r() * 80) * s, sw = Math.sin(t * 0.8 + i) * 6 * s; line(c, x, y, x + sw + (left ? 8 : -8) * s, y - hh, e.dark(mix(Cl.grass, [0, 0, 0], 0.32)), 2 * s); }
-    for (let i = 0; i < 10; i++){ const left = i % 2 === 0, x = left ? r() * w * 0.2 : w - r() * w * 0.2, y = h * (0.82 + r() * 0.14); circ(c, x, y, 1.6 * s, [255, 250, 210], (0.3 + e.d * 0.6) * (0.5 + 0.5 * Math.sin(t * 9 + i * 5))); } }
+    for (let i = 0; i < 10; i++){ const left = i % 2 === 0, x = left ? r() * w * 0.2 : w - r() * w * 0.2, y = h * (0.82 + r() * 0.14); circ(c, x, y, 1.6 * s, [255, 250, 210], (0.3 + e.d * 0.6) * (0.5 + 0.5 * Math.sin(t * 9 + i * 5))); }
+    pa('chorus', chS, w * 0.2, h * 1.0, 150 * s, 1); }
   if (O('breeze')){ const r = R('wb');
     for (let i = 0; i < 90; i++){ const x = r() * w, y = h * (0.84 + r() * 0.16); if (Math.abs(x / w - 0.5) < 0.08) continue; const hh = (30 + r() * 30) * s, sw = (8 + Math.sin(t * 1.8 + x * 0.01) * 10) * s; line(c, x, y, x + sw, y - hh, e.dark(e.cool > 0.5 ? [160, 160, 140] : Cl.grass), 1.4 * s); }
     for (let i = 0; i < 5; i++){ const y = h * (0.52 + i * 0.07), p = ((t * 0.12 + i * 0.29) % 1.4) - 0.2; line(c, w * p, y, w * p + 90 * s, y - 4 * s, [255, 255, 255], 1.2 * s, 0.22); } }
@@ -1409,17 +1627,16 @@ function drawPlace(c, w, h, t){
 // Clips are BBC Sound Effects (RemArc licence). Most are Tune's, already loudness-matched
 // in the public-assets bucket; LOCAL ones are 120 s excerpts at -20 LUFS beside this page
 // (sensecraft-audio/), chosen for a clean bed: the old cricket clip had a dog in it, and
-// the old frog was one animal on a short loop. Instruments, chimes, fire and bees are synthesised.
-const LOCAL_CLIPS = new Set(['NHU05072033', 'NHU05006134']);
+// the old frog was one animal on a short loop. The land's own animals (ANIMALS) are 45-60 s
+// excerpts, the tree frogs 120 s, mono for single calls. Instruments, chimes, fire and bees are synthesised.
+const LOCAL_CLIPS = new Set(['NHU05072033', 'NHU05006134', 'NHU05050235', 'NHU05059156', 'NHU05098083', 'NHU05090105', 'NHU05017161',
+  'NHU05011138', 'NHU05082204', 'NHU05012180', 'NHU05102197', 'NHU05100229']);
 const CLIP = id => LOCAL_CLIPS.has(id) ? `sensecraft-audio/${id}.mp3`
   : `https://qajrlfqoicfcfhthsfay.supabase.co/storage/v1/object/public/public-assets/tune-audio/${id}.mp3`;
 const SND = {
-  birds:    { type: 'events', clips: ['NHU05096015', 'NHU05085203'], every: [2.5, 6], slice: 3.2, vol: 0.4 },
   water:    { type: 'bed', clip: 'NHU05075046', vol: 0.32 },
   flute:    { type: 'flute', vol: 0.14 },
   strings:  { type: 'strings', vol: 0.1 },
-  crickets: { type: 'bed', clip: 'NHU05072033', vol: 0.26 },  // night cricket chorus, slight wind in trees
-  frogs:    { type: 'bed', clip: 'NHU05006134', vol: 0.28 },  // several frogs honking in a pond
   breeze:   { type: 'bed', clip: '07005205', vol: 0.24 },
   chimes:   { type: 'chimes', vol: 0.12 },
   grey:     { type: 'bed', clip: 'NHU05032131', vol: 0.24 },
@@ -1427,6 +1644,24 @@ const SND = {
   campfire: { type: 'crackle', vol: 0.16 },
   hives:    { type: 'bees', vol: 0.05 },
 };
+// birdsong, the chorus and the far call are the land's own animals (ANIMALS)
+function sndSpec(k){
+  const a = ANIMAL_KEYS.has(k) && animalFor(k); if (!a) return SND[k];
+  if (!a.spec) a.spec = a.bed ? { type: 'bed', clip: a.bed, vol: a.vol || 0.26 }
+    : { type: 'events', clips: a.clips, every: a.every || (k === 'call' ? [12, 22] : [2.5, 6]), slice: a.slice || 3.2, vol: a.vol || (k === 'call' ? 0.44 : 0.4) };
+  return a.spec;
+}
+function prefetch(k){ const sp = sndSpec(k); if (!sp || !AU.ctx) return; if (sp.clip) loadClip(sp.clip).catch(() => {}); (sp.clips || []).forEach(id => loadClip(id).catch(() => {})); }
+// where the calls are in a clip, so a call starts on a call and not in the quiet between two
+const STARTS = new WeakMap();
+function callStarts(buf){
+  if (STARTS.has(buf)) return STARTS.get(buf);
+  const dd = buf.getChannelData(0), hop = Math.round(buf.sampleRate * 0.02), env = [];
+  for (let i = 0; i + hop <= dd.length; i += hop){ let a = 0; for (let j = i; j < i + hop; j += 4) a += dd[j] * dd[j]; env.push(Math.sqrt(a / (hop / 4))); }
+  const sorted = env.slice().sort((a, b) => a - b), lo = sorted[(sorted.length * 0.3) | 0], hi = sorted[(sorted.length * 0.98) | 0], th = lo + (hi - lo) * 0.3, out = [];
+  let quiet = 0; env.forEach((v, i) => { if (v < th) quiet++; else { if (quiet >= 10) out.push(Math.max(0, i * 0.02 - 0.08)); quiet = 0; } });
+  STARTS.set(buf, out); return out;
+}
 const LIVE_SOUND_LAYERS = new Set(['voice', 'music', 'wind', 'chorus', 'weather']);
 const AU = { ctx: null, master: null, buf: {}, live: {}, preview: null, noise: null, muted: false };
 function auInit(){
@@ -1436,16 +1671,19 @@ function auInit(){
   AU.master = c.createGain(); AU.master.gain.value = 0.9; AU.master.connect(comp); comp.connect(c.destination);
   const n = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; AU.noise = n;
   document.getElementById('snd').hidden = false;
-  // fetch the clips this walk will offer, so a sign plays the moment it is pointed at
-  S.cards.forEach(cd => ['L', 'R'].forEach(sd => { const sp = SND[cd[sd].k]; if (!sp) return; if (sp.clip) loadClip(sp.clip).catch(() => {}); (sp.clips || []).forEach(id => loadClip(id).catch(() => {})); }));
+  // fetch the clips this walk will offer, so a sign plays the moment it is pointed at; the
+  // animals wait for the land (prefetchAnimals), since their species depend on it
+  S.cards.forEach(cd => ['L', 'R'].forEach(sd => { if (!ANIMAL_KEYS.has(cd[sd].k)) prefetch(cd[sd].k); }));
+  prefetchAnimals();
 }
+function prefetchAnimals(){ if (['season', 'palette', 'rock'].every(l => S.L[l])) S.cards.forEach(cd => ['L', 'R'].forEach(sd => { if (ANIMAL_KEYS.has(cd[sd].k)) prefetch(cd[sd].k); })); }
 function loadClip(id){
   if (!AU.buf[id]) AU.buf[id] = fetch(CLIP(id)).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(b => AU.ctx.decodeAudioData(b));
   return AU.buf[id];
 }
 function makeSource(key, vol, pan){
   const c = AU.ctx; if (!c) return null;
-  const spec = SND[key]; if (!spec) return null;
+  const spec = sndSpec(key); if (!spec) return null;
   const out = c.createGain(), p = c.createStereoPanner ? c.createStereoPanner() : null;
   out.gain.value = 0;
   if (p){ p.pan.value = pan; out.connect(p); p.connect(AU.master); } else out.connect(AU.master);
@@ -1465,11 +1703,17 @@ function makeSource(key, vol, pan){
       stretch(); src.timers.push(setInterval(() => { if (src.alive && at < now() + 1) stretch(); }, 250));
     }).catch(() => {});
   } else if (spec.type === 'events'){
+    // one call, starting where a call starts; its own pan and level (dg) let an animal in
+    // view carry it from where it stands
     let next = now() + 0.3;
-    src.timers.push(setInterval(() => { if (now() < next) return; next = now() + spec.every[0] + Math.random() * (spec.every[1] - spec.every[0]);
-      loadClip(spec.clips[(Math.random() * spec.clips.length) | 0]).then(buf => { if (!src.alive) return; const s = c.createBufferSource(), g = c.createGain(); s.buffer = buf; s.connect(g); g.connect(out);
-        const st = Math.random() * Math.max(0, buf.duration - spec.slice), t0 = now(); g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + 0.05); g.gain.setValueAtTime(1, t0 + spec.slice - 0.4); g.gain.linearRampToValueAtTime(0, t0 + spec.slice);
-        s.start(t0, st, spec.slice); }).catch(() => {}); }, 150));
+    src.shot = () => loadClip(spec.clips[(Math.random() * spec.clips.length) | 0]).then(buf => { if (!src.alive) return null;
+      const s = c.createBufferSource(), g = c.createGain(), dg = c.createGain(), pn = c.createStereoPanner ? c.createStereoPanner() : null;
+      s.buffer = buf; s.connect(g); g.connect(dg); if (pn){ dg.connect(pn); pn.connect(out); if (S.phase === 'place' && src.placePan != null) pn.pan.value = src.placePan; } else dg.connect(out);
+      const starts = callStarts(buf).filter(x => x < buf.duration - spec.slice), st = starts.length ? starts[(Math.random() * starts.length) | 0] : Math.random() * Math.max(0, buf.duration - spec.slice), t0 = now();
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + 0.05); g.gain.setValueAtTime(1, t0 + spec.slice - 0.4); g.gain.linearRampToValueAtTime(0, t0 + spec.slice);
+      s.start(t0, st, spec.slice); src.lastShot = { t: S.t, len: spec.slice }; return { dg, pn, len: spec.slice }; }).catch(() => null);
+    src.hold = sec => { next = Math.max(next, now() + sec); };
+    src.timers.push(setInterval(() => { if (now() < next) return; next = now() + spec.every[0] + Math.random() * (spec.every[1] - spec.every[0]); src.shot(); }, 150));
   } else if (spec.type === 'flute'){
     const scale = [587.3, 659.3, 740, 880, 987.8, 1174.7]; let at = now() + 0.2, idx = 2;
     src.timers.push(setInterval(() => { while (at < now() + 0.6){ if (Math.random() < 0.18){ at += 0.5 + Math.random() * 0.8; continue; }
@@ -1552,9 +1796,10 @@ function showFork(){
 function previewTick(){
   const P = AU.preview; if (!P || S.phase !== 'fork') return;
   let lead = P.hover;
-  if (P.mode === 'turns'){ if (S.t >= P.next){ P.lead = P.lead === 'L' ? 'R' : 'L'; P.next = S.t + 3.5; } lead = P.hover || P.lead; }
+  if (P.mode === 'turns'){ if (S.t >= P.next){ P.lead = P.lead === 'L' ? 'R' : 'L'; P.next = S.t + Math.max(3.5, (P[P.lead] && P[P.lead].spec.slice || 0) + 0.8); } lead = P.hover || P.lead; }
   for (const side of ['L', 'R']){ const src = P[side]; if (!src) continue; const want = side === lead ? src.spec.vol * 1.3 : 0;
-    if (src.want !== want){ src.want = want; srcVol(src, want, want ? 0.3 : 0.5); }
+    if (src.want !== want){ src.want = want; srcVol(src, want, want ? 0.3 : 0.5);
+      if (want && src.shot && !(src.lastShot && S.t - src.lastShot.t < src.spec.slice)){ src.hold(src.spec.slice + 1); src.shot(); } } // a call is heard as soon as its sign leads
     CARD[side].classList.toggle('playing', side === lead); }
 }
 function choose(side){
@@ -1566,12 +1811,12 @@ function choose(side){
   for (const k in CARD) if (k !== side) CARD[k].classList.add('gone');
   // the layer
   S.L[card.layer] = { opt: o ? o.k : null, w: 0, card: card.id };
-  walkMix();
+  walkMix(); prefetchAnimals();
   // sound: the chosen voice stays and moves to the middle; the other goes
   const P = AU.preview; AU.preview = null;
   if (P){ for (const sd of ['L', 'R']){ if (sd === side && o){ AU.live[card.layer] = P[sd]; srcPan(P[sd], 0, 3); srcVol(P[sd], P[sd].spec.vol, 2); } else srcStop(P[sd]); }
     CARD.L.classList.remove('playing'); CARD.R.classList.remove('playing'); }
-  else if (o && LIVE_SOUND_LAYERS.has(card.layer) && SND[o.k] && AU.ctx){ AU.live[card.layer] = makeSource(o.k, SND[o.k].vol, 0); }
+  else if (o && LIVE_SOUND_LAYERS.has(card.layer) && sndSpec(o.k) && AU.ctx){ AU.live[card.layer] = makeSource(o.k, sndSpec(o.k).vol, 0); }
   // the fork closes at once: a second tap or key press must not choose again
   if (o && card.kind === 'room'){ S.phase = 'word'; setTimeout(openWord, 700); }
   else { S.phase = 'chosen'; setTimeout(goOn, 900); }
@@ -1641,6 +1886,7 @@ function update(dt){
     // footsteps
     if (S.v > 0.5){ S.stepPh = (S.stepPh || 0) + S.v * dt * 2.4; S.stepAcc = (S.stepAcc || 0) + S.v * dt; if (S.stepAcc > 2.7){ S.stepAcc = 0; step(); } }
   }
+  animalTick();
   if (S.phase === 'fork'){
     if (!S.ready && S.t - S.forkT0 >= T.pause){ S.ready = true; for (const k in CARD) CARD[k].classList.add('ready'); S.record.forks[S.record.forks.length - 1].tReady = +S.t.toFixed(2); }
     previewTick();
@@ -1657,7 +1903,7 @@ function update(dt){
     let live = 0; for (const o of S.obj) if (o.kind) live++;
     for (let i = 0; i < S.obj.length; i++){ const o = S.obj[i];
       if (!o.kind){ if (live < WALK_TARGET && S.spawnBudget >= 1){ S.obj[i] = spawnObj(false); if (S.obj[i].kind){ live++; S.spawnBudget--; } } continue; }
-      const [xx, zz] = toCam(o.x, o.z); if (zz < -1 || Math.abs(xx) > zz * 2.2 + 24) S.obj[i] = spawnObj(false); }
+      const [xx, zz] = toCam(o.x, o.z); if (zz < -1 || Math.abs(xx) > zz * 2.2 + 24) S.obj[i] = o.kind === 'animal' ? EMPTY() : spawnObj(false); }
     fringeTick(dt);
   }
   // prune rays far behind
@@ -1709,7 +1955,7 @@ function toPlace(){
     S.phase = 'place'; S.placeT0 = S.t; S.record.ended = new Date().toISOString();
     for (const k in S.L) if (S.L[k].opt) S.L[k].w = 1;
     // destination-only sounds join the live ones
-    if (AU.ctx) ['taste', 'hearth', 'harvest'].forEach(layer => { const k = opt(layer); if (k && SND[k] && !AU.live[layer]) AU.live[layer] = makeSource(k, SND[k].vol, 0); });
+    if (AU.ctx) ['taste', 'hearth', 'harvest'].forEach(layer => { const k = opt(layer); if (k && sndSpec(k) && !AU.live[layer]) AU.live[layer] = makeSource(k, sndSpec(k).vol, 0); });
     fade.classList.remove('on');
     setTimeout(() => document.getElementById('looknote').classList.add('on'), 2500);
     setTimeout(() => document.getElementById('looknote').classList.remove('on'), 8500);
@@ -1739,7 +1985,7 @@ function openDebrief(){
   rows.slice().reverse().forEach(f => {
     const card = S.cards.find(c => c.id === f.id), o = f.side === 'M' ? null : card[f.side], div = document.createElement('div'); div.className = 'r';
     // what it became here, in the land's own form (B2)
-    let becomes = o ? (CL().words[o.k] || o.becomes) : 'left as it was';
+    let becomes = o ? ((ANIMAL_KEYS.has(o.k) && animalFor(o.k).word) || CL().words[o.k] || o.becomes) : 'left as it was';
     if (o && card.layer === 'rock' && land) becomes = land;
     if (o && o.k === 'flutter') becomes = envNow().cool > 0.5 ? 'small birds' : opt('light') === 'dim' ? 'fireflies' : o.becomes;
     div.innerHTML = `<b></b><span></span>`;
@@ -1796,7 +2042,7 @@ resize(); initRoad();
 requestAnimationFrame(frame);
 
 // debug handle for headless checks (no tuning panel: this one has nothing to tune live yet)
-window.__sc = { S, T, AU, HOVER, FR, CLIMATES, PRESET, climateKey, terrainKey, biomeName, get record(){ return S.record; }, get walk(){ return { mix: WALK_MIX, target: WALK_TARGET }; }, choose, jumpToPlace, envNow, deal,
+window.__sc = { S, T, AU, HOVER, FR, CLIMATES, ANIMALS, animalFor, sndSpec, callStarts, spawnAnimal, cam, CLIPURL: CLIP, PRESET, climateKey, terrainKey, biomeName, get record(){ return S.record; }, get walk(){ return { mix: WALK_MIX, target: WALK_TARGET }; }, choose, jumpToPlace, envNow, deal,
   step(n = 1, dt = 1 / 30){ for (let i = 0; i < n; i++){ update(dt); } } };
 </script>
 </body>
