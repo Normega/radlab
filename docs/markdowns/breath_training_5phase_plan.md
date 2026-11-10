@@ -11,8 +11,8 @@ The same skill, making a kite with your breath, is carried through five phases. 
 | 1 | **Open field** | nothing to match | breathes freely and watches each breath become a kite; is invited to try different breaths | natural breath shapes; how much the shapes vary (exploration) |
 | 2 | **Follow the plan** | a plan (ghost kite) and a pacer (bead) | builds the plan's kite while seeing their own kite grow over it | fit to the plan, with full visual feedback (learning curve) |
 | 3 | **Into the clouds** | their own kite is hidden | follows the pacer without seeing their kite; after each kite, rates how close it was (1–6) | fit; confidence; how well confidence tracks fit (metacognitive sensitivity) |
-| 4 | **Crosswind** | sounds play: neutral, pleasant, unpleasant | keeps doing phase 3; is told the sounds need nothing from them | fit and confidence, by sound valence and by where in the breath a sound landed |
-| 5 | **Messages on the wind** | the sounds carry content they must take in | keeps doing phase 4's task and listens; answers comprehension questions after the round | fit, confidence and comprehension (dual-task cost on both sides) |
+| 4 | **Crosswind** | spoken passages play: neutral, pleasant, unpleasant (W16) | keeps doing phase 3; is told the voices need nothing from them | fit and confidence, by passage valence and by where in the breath a passage started |
+| 5 | **Messages on the wind** | the same kind of passages, now to be listened to | keeps doing phase 4's task and listens; answers comprehension questions after the round | fit, confidence and comprehension (dual-task cost on both sides) |
 
 The ladder only works if phases 3–5 hold everything else fixed: same plan, same pacer, kite hidden, confidence after every kite. Norm adopted this as W1.
 
@@ -35,7 +35,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 - **Fit per kite.** Signed and absolute error per phase (in, pause, out, rest) against the plan, from the same parser. Kitewright's `fit` / `fast` / `short still` statuses come for free.
 - **Confidence (phases 3–5).** 1–6 after each kite, no midpoint. Analysed as metacognitive sensitivity: how well confidence separates good kites from poor ones (type-2 AUROC, or meta-d′ if we binarise fit). That needs enough kites per person: roughly 30+ rated kites per phase for a stable per-person estimate, which is 5+ rounds of 6.
-- **Sound effects (phase 4).** Fit and confidence for kites overlapping a sound, by valence, against kites with no sound. A sound's onset relative to breath phase is logged, so timing effects can be tested.
+- **Passage effects (phase 4).** Fit and confidence for kites overlapping a passage, by valence, against kites with none. A passage's onset relative to breath phase is logged, so timing effects can be tested.
 - **Dual-task cost (phase 5).** Fit and confidence relative to phase 4, and comprehension relative to a listen-only baseline (if we include one, question P5-2).
 
 ## Look and feel
@@ -90,6 +90,20 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - **Every raw press and release is still logged**, with the slip label attached by the parser, so the rule can be re-run later at another threshold. Nothing is dropped (CLAUDE.md data rule 5).
   - **The rest after begin** is timed from the begin press, which is a different key. A breathe press less than 300 ms after begin is therefore not a finger slip but a rushed rest: it registers, and the short rest is scored as it is.
   - **The 0.5 s planned pauses stay (P2-4).** With a 300 ms threshold, a player aiming for 0.5 s has to undershoot by 0.2 s before the pause is lost as a slip. **The pilot should check this:** count the pauses that get merged as slips on the 0.5 s plans. If it happens often, the threshold or the shortest planned pause needs to move.
+- **W16 (Norm, 2026-11-09). Phases 4 and 5 use the same kind of material: short spoken passages, neutral, pleasant and unpleasant.** In phase 4 they play with nothing to do. In phase 5 the player listens and answers questions after the round. The step from 4 to 5 therefore changes only the instruction to listen, and the phase 5 passages carry the same three valences (answers P5-4). This replaces the nonverbal affective sounds first planned for phase 4. Mock-ups 0 and 4 updated.
+  - **Why not an existing set:** no validated English sentence set is matched on everything but valence. ANET (Bradley & Lang, 2007; 120 brief texts rated on the same valence and arousal scales as the picture and sound sets) is the closest, but its texts vary in length, topic and person, many are extreme, and it is academic request only. EmoBank (about 10,000 rated sentences, open licence) is unmatched and could serve as a source pool. The Warriner et al. (2013) word norms (about 14,000 lemmas, free) are for checking.
+  - **How the set is built:**
+    1. *Matched triplets.* The same scene, length and sentence frame, with a few words changed so the outcome is pleasant, neutral or unpleasant (e.g. the results came back *clear / unchanged / worse*). An LLM drafts them.
+    2. *Matched on paper* for word count, syllables, word frequency (SUBTLEX) and concreteness. Pleasant and unpleasant are also matched on arousal. Neutral passages will be calmer by nature, so arousal is a covariate, not something we pretend is equal.
+    3. *Normed:* about 30 raters per passage (e.g. Prolific) on ANET's valence and arousal scales. This is what makes the set validated. Passages that miss their target are rewritten or dropped.
+- **W17 (Norm, 2026-11-09). One synthetic voice, one neutral delivery for every passage.** Affect is carried by the words only. Current voices can be told how to sound (ElevenLabs bracket tags such as [sad]; OpenAI gpt-4o-mini-tts's free-text `instructions`), but an emotional reading changes pitch, loudness and speech rate. Speech rate can entrain the listener's breathing, which would confound valence with acoustics in the main measure. So:
+  - the same voice and the same calm instruction for every passage;
+  - each passage rendered once and the file frozen, because these voices vary from one request to the next;
+  - the audio matched on duration, syllables per second and loudness (LUFS), and checked for valence differences in pitch;
+  - files hosted by us (as Tune is), with the voice service's licence checked for research and commercial use.
+
+  Emotional prosody can come back later as a separate crossed factor if wanted.
+- **Still open for phases 4–5:** passage length relative to an 11–12 s breath; how many per round and the gaps between them; onsets locked to a breath phase or random (P4-2); the on-screen indicator (P4-3, mock-up 4 shows one).
 
 ## Open questions
 
@@ -127,7 +141,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 ### Phase 4
 
-- **P4-1.** Sound source: a validated affective set (IADS-2/IADS-E; licensing to check), or curated clips (BBC sound effects are licensed under RemArc, so commercial use needs per-clip clearance)?
+- **P4-1 (answered by W16 and W17).** Sound source: a validated affective set (IADS-2/IADS-E; licensing to check), or curated clips (BBC sound effects are licensed under RemArc, so commercial use needs per-clip clearance)?
 - **P4-2.** How many sounds per round, how long, how loud, and the valence mix (equal thirds)? Are onsets locked to breath phases or random?
 - **P4-3.** Does anything on screen show a sound is playing?
 
@@ -135,7 +149,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 
 - **P5-2.** Is there a listen-only baseline for comprehension?
 - **P5-3.** When are questions asked (after each round, or at the end), how many, and is confidence asked for them too?
-- **P5-4.** Does the spoken content carry valence (continuing phase 4), or is it neutral?
+- **P5-4 (answered by W16: yes, the same three valences).** Does the spoken content carry valence (continuing phase 4), or is it neutral?
 
 ### Later
 

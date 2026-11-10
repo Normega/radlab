@@ -300,7 +300,7 @@ const PHASES = [
   { n: 1, key: 'open', title: 'Open field', sub: 'Breathe freely and see your kites' },
   { n: 2, key: 'trace', title: 'Follow the plan', sub: 'Match the plan, watching your kite' },
   { n: 3, key: 'cloud', title: 'Into the clouds', sub: 'Follow the plan without seeing your kite' },
-  { n: 4, key: 'crosswind', title: 'Crosswind', sub: 'Keep building while sounds play' },
+  { n: 4, key: 'crosswind', title: 'Crosswind', sub: 'Keep building while voices talk' },
   { n: 5, key: 'messages', title: 'Messages on the wind', sub: 'Keep building and listen' },
 ]
 
@@ -644,10 +644,10 @@ function screen4() {
     ${phaseChip(4)}${safety()}
     ${planCard(24, 156, PLANS.longtail, 'This round\u2019s plan')}
     ${roundCard(W - 244, 300, 2, 6, ['after each kite: rate it, then see it'])}
-    ${listenChip(24, 396, 'Sounds are playing', 'nothing to do with them, just keep building')}
-    ${caption('Sounds will come and go. Let them, and keep following the plan.')}
+    ${listenChip(24, 396, 'Someone is talking', 'nothing to do with it, just keep building')}
+    ${caption('Voices will come and go. Let them, and keep following the plan.')}
     ${pads('in')}
-    ${mockNote('mock-up 4 · crosswind · phase 3 + background sounds · plan: long-tail')}`
+    ${mockNote('mock-up 4 · crosswind · phase 3 + spoken passages to ignore (W16) · plan: long-tail')}`
   return svg(sc, body, 'Phase 4, crosswind')
 }
 
@@ -703,8 +703,8 @@ function screen0() {
     { x: 150, y: 566, n: 1, t: 'Open field', newL: ['Nothing to match.'], doL: ['Breathe freely; see each', 'breath become a kite.'], recL: ['natural breath shapes'] },
     { x: 395, y: 548, n: 2, t: 'Follow the plan', newL: ['A plan and a pacer.'], doL: ['Build the plan\u2019s kite,', 'watching your own.'], recL: ['fit to the plan, with', 'feedback'] },
     { x: 640, y: 530, n: 3, t: 'Into the clouds', newL: ['Your kite is hidden.'], doL: ['Follow the pacer; rate', 'each kite 1\u20136.'], recL: ['fit, and confidence', 'vs fit (metacognition)'] },
-    { x: 885, y: 514, n: 4, t: 'Crosswind', newL: ['Sounds play.'], doL: ['Keep building; ignore', 'the sounds.'], recL: ['fit and confidence', 'by sound valence'] },
-    { x: 1130, y: 498, n: 5, t: 'Messages on the wind', newL: ['The sounds matter.'], doL: ['Keep building and', 'listen; answer after.'], recL: ['fit, confidence and', 'comprehension'] },
+    { x: 885, y: 514, n: 4, t: 'Crosswind', newL: ['Voices talk.'], doL: ['Keep building; let', 'them pass.'], recL: ['fit and confidence', 'by passage valence'] },
+    { x: 1130, y: 498, n: 5, t: 'Messages on the wind', newL: ['Now listen to them.'], doL: ['Keep building and', 'listen; answer after.'], recL: ['fit, confidence and', 'comprehension'] },
   ]
   let path = `M40 640 C 120 600 120 560 ${stations[0].x} ${stations[0].y}`
   for (let i = 1; i < stations.length; i++) {
@@ -801,7 +801,7 @@ const SCREENS = [
   ['03b_confidence', screen3b, 'Phase 3 · Confidence rating after each kite'],
   ['03c_after_rating', screen3r, 'Phase 3 · The kite comes out of the clouds after the rating'],
   ['03d_round_recap', screen3c, 'Phase 3 · End-of-round recap'],
-  ['04_crosswind', screen4, 'Phase 4 · Crosswind (background sounds)'],
+  ['04_crosswind', screen4, 'Phase 4 · Crosswind (spoken passages, ignored)'],
   ['05_messages', screen5, 'Phase 5 · Messages on the wind (listen while building)'],
   ['05b_comprehension', screen5b, 'Phase 5 · Comprehension question'],
   ['06_narrow_kites', screen6, 'Design sheet · Narrow kites, four ways to draw them'],
