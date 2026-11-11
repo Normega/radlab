@@ -130,7 +130,7 @@ export default function LivePhone() {
 }
 
 // Two minutes of STORY / SENSE. The screen never waits on the network.
-function Practice({ code, device, onDone }) {
+export function Practice({ code, device, onDone, anchor = 'the breath' }) {
   const send = useTapQueue(code, device)
   const t0 = useRef(0)
   const taps = useRef([])
@@ -185,7 +185,7 @@ function Practice({ code, device, onDone }) {
       </button>
       <Strip segs={segs} />
       <button style={{ ...L.half, background: mode === 'sense' ? SENSE : '#fde8f2', color: mode === 'sense' ? '#fff' : '#c04a82' }} onClick={() => tap('sense')}>
-        <span style={L.word}>Sense</span><span style={L.hint}>I’m back with the breath</span>
+        <span style={L.word}>Sense</span><span style={L.hint}>I’m back with {anchor}</span>
       </button>
     </div>
   )
@@ -202,7 +202,7 @@ function Strip({ segs, height = 14, radius = 0 }) {
   )
 }
 
-function Timeline({ taps }) {
+export function Timeline({ taps, anchor = 'the breath' }) {
   const end = taps.find(t => t.mode === 'end')?.t_ms ?? PRACTICE_S * 1000
   const { segs } = segmentsOf(taps, end)
   const s = personStats(segs)
@@ -214,10 +214,10 @@ function Timeline({ taps }) {
       <Strip segs={segs} height={34} radius={8} />
       <div style={L.axis}><span>0:00</span><span>{fmtClock(PRACTICE_S)}</span></div>
       <div style={L.stats}>
-        <div style={L.stat}><b style={L.statBig}>{pct}</b><span>of the time with the breath</span></div>
+        <div style={L.stat}><b style={L.statBig}>{pct}</b><span>of the time with {anchor}</span></div>
         <div style={L.stat}><b style={L.statBig}>{s.noticed}</b><span>{s.noticed === 1 ? 'drift you noticed' : 'drifts you noticed'}</span></div>
-        <div style={L.stat}><b style={L.statBig}>{s.returns}</b><span>{s.returns === 1 ? 'return to the breath' : 'returns to the breath'}</span></div>
-        <div style={L.stat}><b style={L.statBig}>{Math.round(longest / 1000)} s</b><span>longest stay with the breath</span></div>
+        <div style={L.stat}><b style={L.statBig}>{s.returns}</b><span>{s.returns === 1 ? `return to ${anchor}` : `returns to ${anchor}`}</span></div>
+        <div style={L.stat}><b style={L.statBig}>{Math.round(longest / 1000)} s</b><span>longest stay with {anchor}</span></div>
       </div>
       <p style={P.sub}>Drifting isn’t a mistake; it’s what minds do. Each time you noticed and came back is the skill. Look up: the room’s two minutes are on the screen.</p>
     </div>

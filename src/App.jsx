@@ -110,6 +110,8 @@ const Cuny2026 = lazy(() => import('./pages/cuny-2026/Cuny2026'))
 const BpmhSep2026 = lazy(() => import('./pages/bpmh-sep-2026/BpmhSep2026'))
 const Tanenbaum2026 = lazy(() => import('./pages/tanenbaum-nov-2026/Tanenbaum2026'))
 const TalkLivePhone = lazy(() => import('./pages/tanenbaum-nov-2026/LivePhone'))
+const Mcc2026 = lazy(() => import('./pages/mcc-nov-2026/Mcc2026'))
+const MccPhone = lazy(() => import('./pages/mcc-nov-2026/MccPhone'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 const BreathEvidence = lazy(() => import('./pages/breathevidence/BreathEvidence'))
 const Psy240Trial = lazy(() => import('./pages/psy240trial/Psy240Trial'))
@@ -751,6 +753,9 @@ export default function App() {
           <Route path="/poll/:code" element={<TalkPollPhone />} />
           {/* Tanenbaum talk phone: mood tap, then a live Toggle practice (20261108_talk_poll_toggles) */}
           <Route path="/live/:code" element={<TalkLivePhone />} />
+          {/* MCC Summit talk phone: eight statements, then a Toggle on sounds (20261111_talk_poll_scale) */}
+          <Route path="/mcc" element={<MccPhone />} />
+          <Route path="/mcc/:code" element={<MccPhone />} />
           {/* Ember — breath biofeedback campfire; ?sim=1 for beltless rehearsal */}
           <Route path="/demo/ember" element={<Ember />} />
           {/* Mirror — breath-driven avatar + materializing calibration; ?sim=1 beltless */}
@@ -779,6 +784,8 @@ export default function App() {
             <Route path="/socpers-oct-2026" element={<SocPers2026 />} />
             {/* Tanenbaum Symposium, Nov 2026 — aging and attention; live mood + Toggle on phones */}
             <Route path="/tanenbaum-nov-2026" element={<Tanenbaum2026 />} />
+            {/* MCC Summit, Nov 15 2026 (Zoom): doing and sensing; phone questionnaire + Toggle */}
+            <Route path="/mcc-nov-2026" element={<Mcc2026 />} />
           </Route>
 
           {/*
