@@ -13,7 +13,7 @@ function useRoom(code, active) {
   return { s: roomSummary(rows), status }
 }
 
-export function RoomToggleLive({ code, active = true }) {
+export function RoomToggleLive({ code, active = true, anchor = 'the breath' }) {
   const { s, status } = useRoom(code, active)
   const now = s.sensingNow + s.thinkingNow
   return (
@@ -24,22 +24,22 @@ export function RoomToggleLive({ code, active = true }) {
         {status === 'error' && <span style={R.warn}>reconnecting…</span>}
       </div>
       <div style={R.nowRow}>
-        <NowBar label="With the breath" n={s.sensingNow} of={now} color={SENSE} />
+        <NowBar label={`With ${anchor}`} n={s.sensingNow} of={now} color={SENSE} />
         <NowBar label="Noticed thinking" n={s.thinkingNow} of={now} color={STORY} />
       </div>
-      <Timeline bins={s.bins} />
+      <Timeline bins={s.bins} anchor={anchor} />
     </div>
   )
 }
 
-export function RoomToggleResults({ code, active = true }) {
+export function RoomToggleResults({ code, active = true, anchor = 'the breath' }) {
   const { s } = useRoom(code, active)
   const drift = s.medianDriftS == null ? '—' : `${Math.round(s.medianDriftS)} s`
   return (
     <div style={R.wrap}>
-      <Timeline bins={s.bins} />
+      <Timeline bins={s.bins} anchor={anchor} />
       <div style={R.statRow}>
-        <Stat big={drift} label="with the breath before a drift was noticed" sub={`median of ${s.drifts} noticed drifts`} color={STORY} />
+        <Stat big={drift} label={`with ${anchor} before a drift was noticed`} sub={`median of ${s.drifts} noticed drifts`} color={STORY} />
         <Stat big={s.cameBack} label={`of ${s.n} came back at least once`} sub={`${s.returnsTotal} returns in all`} color={SENSE} />
         <Stat big={s.noDrift} label="noticed no drift at all" sub="lucky, or not looking?" color="var(--tx2)" />
       </div>
@@ -63,10 +63,10 @@ function NowBar({ label, n, of, color }) {
 
 // Share of the room with the breath, 5 s bins across the two minutes. Each bar is
 // split: pink with the breath, blue thinking; empty where no one has reached it yet.
-function Timeline({ bins }) {
+function Timeline({ bins, anchor }) {
   const W = 960, H = 240, x0 = 48, y0 = 16, ph = H - 52, bw = (W - x0 - 8) / bins.length
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto' }} role="img" aria-label="The room's share with the breath over two minutes">
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto' }} role="img" aria-label={`The room's share with ${anchor} over two minutes`}>
       {[0, 0.5, 1].map(v => (
         <g key={v}>
           <line x1={x0} x2={W - 8} y1={y0 + ph * (1 - v)} y2={y0 + ph * (1 - v)} stroke="#e4dfe2" />

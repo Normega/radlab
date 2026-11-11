@@ -5,6 +5,14 @@ import { Link } from 'react-router-dom'
 
 const TALKS = [
   {
+    to: '/mcc-nov-2026',
+    kicker: 'MCC Summit · on Zoom · November 2026',
+    title: 'Two ways of paying attention',
+    sub: 'Moving between doing and sensing. The room answers the 8-statement Sense Foraging Scale on phones (radlab.zone/mcc), runs a Toggle on sounds, and sees itself beside Study 2a.',
+    tags: ['Sense foraging', 'Mindfulness teachers', 'Zoom'],
+    accent: 'var(--pk)',
+  },
+  {
     to: '/tanenbaum-nov-2026',
     kicker: 'Tanenbaum Symposium · Aging Neuroscience · November 2026',
     title: 'Aging attentively',
