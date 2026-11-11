@@ -1,6 +1,7 @@
 # Preregistration — Langerian Mindfulness and Its Therapeutic Promise in Alleviating Mild Depression
 
-> **Status: DRAFT v3.2 for review by Zerin Mahfuz and Norman Farb — not yet filed.**
+> **Status: v3.3, final for filing on OSF (2026-11-11).**
+> v3.3 (2026-11-11) brings the record up to the filing date. §3.1 gives the state at filing: wave 1 complete, with post data for 84 of 92 randomized. It extends the record of what was looked at to 2026-11-11. §3.3 replaces the wave-1 projection with the actual figures. §3.2 corrects the credit rule. §6 logs the 2026-10-27 email delay as a deviation. §7 records the decisions as resolved.
 > v3.2 (2026-10-05), after review by the Harvard team: H3 and H4 now use the H2a contrast throughout; §3.4 is rebuilt in post-SD units, drops an overstated efficiency gain, and reports power honestly for each pattern of benefit.
 > v3.1 (2026-10-05) updates §3.1 for the situation now that the 2026-10-03 deadline has passed:
 > post-intervention data exist, and the data have been exported from the server.
@@ -21,10 +22,11 @@
 > reproducible with `scripts/analysis/zerin_power.py`, which will be posted with the registration on OSF.
 >
 > **This registration is being filed after data collection began** (first randomization
-> 2026-09-11) **and after the first post-intervention outcomes were collected** (from
-> 2026-10-03). Platform data have also been exported. §3.1 states exactly what had been
-> collected, exported and seen when the registration was filed.
-> **[DECISION]** markers are choices the investigators must confirm; they are listed in §7.
+> 2026-09-11) **and after most of wave 1's post-intervention outcomes were collected** (84 of 92
+> randomized, 2026-10-03 to 2026-11-11). Platform data have also been exported. §3.1 states
+> exactly what had been collected, exported and seen when the registration was filed. Wave 2
+> (winter 2027) has not begun.
+> **[DECISION]** markers show where the investigators made a choice; §7 lists each one and how it was resolved.
 
 ---
 
@@ -159,30 +161,29 @@ are excluded from analysis (§5.4).
 
 ### 3.1 Existing data — what exists and what has been seen
 
-**Registration is prior to analysis, but after the start of data collection and after the
-first post-intervention outcomes were collected.** The study team intended to file before the
-first post sessions opened on 2026-10-03, and missed that date.
+**Registration is prior to analysis, but after the start of data collection and after most of
+wave 1's post-intervention outcomes were collected.** The study team intended to file before the
+first post sessions opened on 2026-10-03. It missed that date, and drafting continued through
+wave 1.
 
-State on 2026-10-05:
+State on 2026-11-11 (the filing date):
 
-- **79 randomized** (26 neutral, 27 mood comparison, 26 reflection; first randomized
-  2026-09-11). Recruitment for wave 1 continues.
+- **92 randomized in wave 1** (30 neutral, 31 mood comparison, 31 reflection). They were
+  randomized from 2026-09-11 to 2026-11-02, and no one has been randomized since.
 - Baseline PHQ-8, LMS-14 and Pond Watch exist for everyone randomized.
-- **Post-intervention data exist for 3 participants** (post sessions completed 2026-10-03).
-  About 33 more post sessions open between 2026-10-06 and 2026-10-08, and further ones will
-  follow before filing.
-- **[CONFIRM before filing]** Platform data were downloaded from the server. Record here:
-  - who downloaded them;
-  - when;
-  - which tables;
-  - whether any post-intervention value (PHQ-8, LMS-14 or Pond Watch) was opened, summarized or
-    analysed, by arm or pooled.
+- **Post-intervention data exist for 84 participants** (28 per arm), from post sessions
+  completed 2026-10-03 to 2026-11-11.
+  - 4 are still in the protocol; the last post session is due 2026-11-24.
+  - 2 missed their post window.
+  - 2 withdrew.
+- Wave 2 has not begun.
+- **Data export.** Norman Farb downloaded the platform data from the server on or before
+  2026-10-05 (**[DECISION D12]**). No post-intervention PHQ-8, LMS-14 or Pond Watch value was
+  opened, summarized or analysed from that download, by arm or pooled.
 
-  The claim that registration precedes analysis holds only if no outcome was opened, summarized
-  or analysed. If anything was, it must be described here exactly.
-
-**What has been looked at, as far as the drafting record shows.** Data-integrity and recruitment
-reviews (Claude Code, at Norman Farb's request, on 2026-09-24, 09-29, 10-01 and 10-05) produced:
+**What has been looked at, as far as the drafting record shows.** Data-integrity, recruitment and
+credit reviews were run by Claude Code at Norman Farb's request. The query log for that working
+session is kept. Up to 2026-10-05 (reviews on 2026-09-24, 09-29, 10-01 and 10-05) they produced:
 - counts of sign-ups, screener outcomes by category, and arm sizes;
 - completed check-ins per arm, and the per-arm distribution of check-in completion (adherence);
 - counts of post sessions completed, with no values;
@@ -198,6 +199,18 @@ reviews (Claude Code, at Norman Farb's request, on 2026-09-24, 09-29, 10-01 and 
 
   Findings: §4.2.
 
+From 2026-10-06 to 2026-11-11 (reviews on 2026-10-19, 10-23, 10-27, 11-09 and 11-11) they
+produced:
+- the same recruitment counts;
+- linkage checks: for each completed session, whether its check-in, questionnaire and Pond
+  Watch rows exist (counts only), and the count of flagged duplicate submissions;
+- per-participant counts of completed check-ins and whether the post session was completed,
+  used to compute SONA credit;
+- pooled adherence among completers;
+- email delivery times, used to diagnose the 2026-10-27 delay (§6).
+
+Participants' arms were visible in some of these listings.
+
 None of these reviews computed a mean, distribution or comparison of any PHQ-8, LMS-14, Pond
 Watch or daily-mood value by arm, and none opened a post-intervention value. The power analysis
 (§3.4) uses no study data. Adherence by arm has been seen, so any analysis involving adherence is
@@ -208,8 +221,14 @@ final sample is complete (end of wave 2; §3.3).
 
 ### 3.2 Data collection procedures
 
-Participants are recruited through the UTM PSY100 SONA pool and receive SONA credit pro-rated
-at 0.5 credit per 30 minutes (2.5 for full completion). All data are collected on the RADlab
+Participants are recruited through the UTM PSY100 SONA pool. They receive SONA credit pro-rated at 0.5
+credit per 30 minutes, rounded up. Time is counted as:
+- 10 minutes for screening;
+- 15 minutes for each assessment;
+- 3 minutes for each completed check-in.
+
+The maximum is 3.0 credits, reached with 37 or more check-ins and both assessments. Credit
+depends only on participation, never on responses. All data are collected on the RADlab
 platform. Every response row records the schedule slot it answers (`schedule_id`), so each
 response's timepoint comes from recorded facts, not from the order responses arrived.
 
@@ -217,9 +236,8 @@ response's timepoint comes from recorded facts, not from the order responses arr
 
 **Two waves.** Recruitment is slowing (≈ 6 randomized per day at launch, ≈ 2 per day by late
 September), so the study recruits in two waves from the same PSY100 SONA pool:
-- **Wave 1 (fall 2026):** randomization from 2026-09-11 until the last date on which a
-  participant can finish the 23-day protocol and receive fall-term credit
-  (**[DECISION D6]** provisionally 2026-10-31).
+- **Wave 1 (fall 2026):** everyone randomized from 2026-09-11 to 2026-11-02, 92 in all
+  (**[DECISION D6]**). Fall enrollment closes at filing, so no one else is randomized in wave 1.
 - **Wave 2 (winter 2027):** opens when the winter-term SONA pool opens, and continues until the
   total target is reached or the winter credit deadline passes, whichever comes first.
 
@@ -227,10 +245,10 @@ September), so the study recruits in two waves from the same PSY100 SONA pool:
 leaves 56 per arm with a post assessment. At a medium effect (*d* = 0.5), that gives H2a about
 .89 power if both rating arms help equally. If the benefit is graded across arms (mood comparison
 half as effective as reflection), power falls to about .67. Reaching .80 in the graded case would
-need about 77 per arm with post data, roughly 86 randomized per arm (258 in total) (§3.4). At the current rate wave 1 will end with about 105–115
-randomized, so wave 2 needs about 70–80 more. The approved protocol states N = 111, so the new
-target needs an **REB amendment**. The approval itself runs to 2027-06-29, which covers a
-winter wave.
+need about 77 per arm with post data, roughly 86 randomized per arm (258 in total) (§3.4).
+Wave 1 ended with 92 randomized, so wave 2 needs 94 more. In wave 1 about one sign-up in three
+was randomized, so that means about 300 winter sign-ups. The REB approval (U of T REB #65268,
+approved 2026-07-02) runs to 2027-06-29, which covers a winter wave.
 
 **Conditions that keep the two waves a single registered study:**
 - Procedures, materials, platform code paths and email timing are frozen between waves. Any
@@ -313,7 +331,9 @@ the effect on LMS-14 is graded. Like H4, it sits in the Holm family, not as the 
 small-to-medium effects on depressive symptoms. That is why the target is set for *d* = 0.5,
 not the larger effects that 111 participants could detect. **If the final sample falls short of
 the target, a null H2a must be reported as inconclusive for effects below the minimum
-detectable effect at the achieved N, not as evidence of no effect.**
+detectable effect at the achieved N, not as evidence of no effect.** For scale: wave 1 alone has
+about 29 per arm with post data. At that size the minimum detectable effect is *d* = 0.61 for
+H2a and 0.71 for the reflection-vs-neutral contrast, against 0.44 and 0.51 at the target.
 
 ---
 
@@ -352,7 +372,7 @@ be submitted (`MoodCheckinStep.jsx`). This will be reported as a protocol deviat
   Engagement items fit the published finding that Engagement is the least related of the three
   factors. **The confirmatory mediator is the 14-item total.** Subscales are exploratory
   (§5.7), and Engagement in particular should be read with its low reliability in mind.
-  **[DECISION D7]** Langer or Phillips still to confirm the published key.
+  **[DECISION D7]** Scored with the published key (Pirson, Langer & Zilcha, 2018).
 - **PHQ-8 scoring check.** All item responses are 0–3, and every baseline total lies in 5–9,
   matching the screener's pass rule. Item–rest correlations are negative, as they must be when
   the sample is selected on a narrow band of the total itself. That is a selection artifact, not
@@ -552,33 +572,38 @@ change" and biases every arm toward the null.
 - Data are collected on the RADlab platform, not Qualtrics.
 - The reflection arm's reason is required rather than optional.
 - The screener's PHQ-8 doubles as the baseline measure.
+- **Email timing, 2026-10-27.** Another study on the platform queued about 1,400 emails at
+  20:00. The sender is rate-limited, so the 20:00 check-in emails for this study went out
+  between 20:15 and about 23:00. Each check-in window runs 4 hours from when its email is sent,
+  so every participant could still complete that check-in, and no check-in was lost to the
+  delay. It is reported because email timing is meant to be frozen (§3.3).
 
-**[DECISION D10]** Confirm that an amendment covers the platform change. The protocol's consent
-section also says screening retains no identifiable data and only aggregate pass/fail counts.
-The platform keeps every screener's answers, including those of people who screened out, keyed
-to their SONA-linked id.
+**Ethics [DECISION D10].** Approved by the University of Toronto REB, protocol #65268 (RIS 50533),
+on 2026-07-02.
 
 **Data sharing.** De-identified data and analysis code will be posted to OSF, as the consent
 form states.
 
 ---
 
-## 7. Decisions needed before filing
+## 7. Decisions made for filing
 
-| # | Decision | Draft's proposal |
+Each row is filed as written unless the investigators changed it before submission.
+
+| # | Decision | As filed |
 |---|---|---|
 | D1 | Model | Constrained-baseline multilevel model (nlme/glmmTMB, unstructured time covariance); mixed ANOVA as the descriptive frame |
 | D3 | One- vs two-sided | Two-sided |
 | D4 | H2 tests | Nested contrasts: H2a rating vs neutral (primary), H2b reflection vs mood; H3 and H4 use the H2a contrast |
-| **D5** | **Sample size** | **186 randomized (62/arm) over two waves: H2a power .89 if both rating arms help equally, .67 if graded. 258 (86/arm) would cover the graded case. REB amendment for N either way.** |
-| D6 | Wave-1 stopping date | Last date a participant can finish and receive fall-term credit |
-| D7 | LMS-14 reverse key | Data consistent with items 2, 4, 5, 9, 12, 14; Langer or Phillips to confirm |
+| **D5** | **Sample size** | **186 randomized (62/arm) over two waves: H2a power .89 if both rating arms help equally, .67 if graded. 258 (86/arm) would cover the graded case. Wave 2 needs 94 more randomized.** |
+| D6 | Wave-1 stopping date | Wave 1 = the 92 randomized 2026-09-11 to 2026-11-02; fall enrollment closes at filing |
+| D7 | LMS-14 reverse key | Published key: items 2, 4, 5, 9, 12, 14 reversed; baseline data consistent with it |
 | D7b | Pond Watch validity | Hit rate < .50, false alarms > .50, or median RT < 150 ms excludes a run |
 | D8 | Required reflection reason | Report as a deviation |
 | D9 | Blinded analysis | Optional: scramble arm labels until code is frozen |
-| D10 | REB coverage | Confirm amendment for the platform, screener-data retention, and the larger N |
+| D10 | REB | U of T REB #65268, approved 2026-07-02 |
 | D11 | Between-wave freeze | No by-arm outcome analysis until wave 2 completes; integrity checks only |
-| D12 | Data export disclosure | Complete the §3.1 [CONFIRM] item: who exported what, when, and whether any outcome was viewed |
+| D12 | Data export disclosure | Norman Farb, on or before 2026-10-05; no post-intervention outcome opened (§3.1) |
 
 ---
 
