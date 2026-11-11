@@ -157,7 +157,7 @@ function CheckinForm({ initial, onSave, onCancel }) {
       config: {
         activities: form.activities,
         ...(form.activities.includes('prompt') ? { prompt_text: form.promptText } : {}),
-        ...(isQuiz ? { quiz_items: form.quizItems.map(({ id, text, options }) => ({ id, text, options })) } : {}),
+        ...(isQuiz ? { quiz_items: form.quizItems.map(({ id, text, options, cards }) => ({ id, text, options, ...(cards ? { cards } : {}) })) } : {}),
       },
       auto_close_seconds: form.autoCloseSeconds === '' ? null : Number(form.autoCloseSeconds),
       ...(isQuiz ? { quizAnswerKey: Object.fromEntries(form.quizItems.map((qi) => [qi.id, qi.correct])) } : {}),
