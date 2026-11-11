@@ -1,7 +1,7 @@
 # Preregistration — Langerian Mindfulness and Its Therapeutic Promise in Alleviating Mild Depression
 
 > **Status: v3.3, final for filing on OSF (2026-11-11).**
-> v3.3 (2026-11-11) brings the record up to the filing date. §3.1 gives the state at filing: wave 1 complete, with post data for 84 of 92 randomized. It extends the record of what was looked at to 2026-11-11. §3.3 replaces the wave-1 projection with the actual figures. §3.2 corrects the credit rule. §6 logs the 2026-10-27 email delay as a deviation. §2.2 commits to blinded analysis, with Zerin Mahfuz holding the key. A new §4.4 defines every index and derived variable. §7 records the decisions as resolved.
+> v3.3 (2026-11-11) brings the record up to the filing date. §3.1 gives the state at filing: wave 1 complete, with post data for 84 of 92 randomized. It extends the record of what was looked at to 2026-11-11. §3.3 replaces the wave-1 projection with the actual figures. §3.2 corrects the credit rule. §6 logs the 2026-10-27 email delay as a deviation. §2.2 commits to blinded analysis, with Zerin Mahfuz holding the key. A new §3.5 sets the starting and stopping rules, and a new §4.4 defines every index and derived variable. §7 records the decisions as resolved.
 > v3.2 (2026-10-05), after review by the Harvard team: H3 and H4 now use the H2a contrast throughout; §3.4 is rebuilt in post-SD units, drops an overstated efficiency gain, and reports power honestly for each pattern of benefit.
 > v3.1 (2026-10-05) updates §3.1 for the situation now that the 2026-10-03 deadline has passed:
 > post-intervention data exist, and the data have been exported from the server.
@@ -257,7 +257,7 @@ September), so the study recruits in two waves from the same PSY100 SONA pool:
 - **Wave 1 (fall 2026):** everyone randomized from 2026-09-11 to 2026-11-02, 92 in all
   (**[DECISION D6]**). Fall enrollment closes at filing, so no one else is randomized in wave 1.
 - **Wave 2 (winter 2027):** opens when the winter-term SONA pool opens, and continues until the
-  total target is reached or the winter credit deadline passes, whichever comes first.
+  total target is reached or the winter credit deadline passes, whichever comes first (§3.5).
 
 **Target: 186 randomized (62 per arm)** **[DECISION D5]**. That allows for 10% attrition and
 leaves 56 per arm with a post assessment. At a medium effect (*d* = 0.5), that gives H2a about
@@ -352,6 +352,36 @@ the target, a null H2a must be reported as inconclusive for effects below the mi
 detectable effect at the achieved N, not as evidence of no effect.** For scale: wave 1 alone has
 about 29 per arm with post data. At that size the minimum detectable effect is *d* = 0.61 for
 H2a and 0.71 for the reflection-vs-neutral contrast, against 0.44 and 0.51 at the target.
+
+### 3.5 Starting and stopping rules
+
+**Wave 1** began on 2026-09-11 and ended with the 92 randomized by 2026-11-02 (§3.3, D6). Fall
+enrollment closes at filing.
+
+**Wave 2 starts** in January 2027, when the winter-term UTM PSY100 SONA pool opens. It recruits
+from that pool under the same listing, eligibility rules, platform, materials and email
+schedule as wave 1. Randomization continues wave 1's sequence (§2.4).
+
+**Recruitment stops at the first of:**
+1. **186 randomized across both waves** (the target, D5), which is the stopping rule. The
+   platform enforces it with the study's enrollment cap. Once 186 non-test participants have
+   completed baseline, no one else can start baseline. Anyone who had already begun baseline
+   when the cap was reached may finish it, and is randomized and analysed. The final N can
+   therefore exceed 186 by those few, and the exact count is reported.
+2. **The winter-term SONA credit deadline**, the last date on which a newly randomized
+   participant could finish the 23-day protocol and still receive winter credit. If the target
+   has not been reached by then, recruitment stops there. The achieved N is reported, and H2a
+   is interpreted against the minimum detectable effect at that N (§3.4). There is no third
+   wave.
+
+**Data collection ends** when the last randomized participant's post window (§2.3) has closed.
+Everyone randomized follows the full protocol whatever their adherence. The only exception is
+withdrawal, under the protocol's withdrawal procedure.
+
+**No outcome data inform these rules.** Starting and stopping depend only on the randomized
+count and the calendar. No interim analysis is run, and there is no early stopping for benefit,
+harm or futility. Until the final sample is complete, the only checks allowed are integrity
+checks pooled across arms (§3.1, §3.3).
 
 ---
 
