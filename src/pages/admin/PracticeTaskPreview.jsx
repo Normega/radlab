@@ -35,11 +35,11 @@ export default function PracticeTaskPreview() {
             <button type="button" className="pt-btn-quiet" aria-pressed={arm === 'reading'} onClick={() => pick('reading')}>Reading task</button>
             <label className="pt-muted" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input type="checkbox" checked={short} onChange={e => { setShort(e.target.checked); setRun(r => r + 1) }} />
-              Short breathing practice (30 seconds)
+              Short breathing practice (30 seconds, preview only; the study runs 4 minutes)
             </label>
             <label className="pt-muted" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input type="checkbox" checked={hold} onChange={e => { setHold(e.target.checked); setRun(r => r + 1) }} />
-              Hold while breathing in (adherence check)
+              Hold the spacebar while breathing in (adherence check; always on in Study 4)
             </label>
           </div>
         </div>
