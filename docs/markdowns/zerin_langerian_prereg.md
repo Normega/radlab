@@ -1,7 +1,7 @@
 # Preregistration — Langerian Mindfulness and Its Therapeutic Promise in Alleviating Mild Depression
 
 > **Status: v3.3, final for filing on OSF (2026-11-11).**
-> v3.3 (2026-11-11) brings the record up to the filing date. §3.1 gives the state at filing: wave 1 complete, with post data for 84 of 92 randomized. It extends the record of what was looked at to 2026-11-11. §3.3 replaces the wave-1 projection with the actual figures. §3.2 corrects the credit rule. §6 logs the 2026-10-27 email delay as a deviation. §7 records the decisions as resolved.
+> v3.3 (2026-11-11) brings the record up to the filing date. §3.1 gives the state at filing: wave 1 complete, with post data for 84 of 92 randomized. It extends the record of what was looked at to 2026-11-11. §3.3 replaces the wave-1 projection with the actual figures. §3.2 corrects the credit rule. §6 logs the 2026-10-27 email delay as a deviation. §2.2 commits to blinded analysis, with Zerin Mahfuz holding the key. A new §4.4 defines every index and derived variable. §7 records the decisions as resolved.
 > v3.2 (2026-10-05), after review by the Harvard team: H3 and H4 now use the H2a contrast throughout; §3.4 is rebuilt in post-SD units, drops an overstated efficiency gain, and reports power honestly for each pattern of benefit.
 > v3.1 (2026-10-05) updates §3.1 for the situation now that the 2026-10-03 deadline has passed:
 > post-intervention data exist, and the data have been exported from the server.
@@ -114,9 +114,27 @@ links to. The consent form says the study examines "whether deeper reflection" m
 participants are not blind to the general question.
 
 Assignment is automatic (§2.4). No researcher enrolls, assigns or contacts participants
-individually. Outcomes are self-report questionnaires and a computer task, all scored by code.
-Analysis is not blinded to arm. **[DECISION D9]** Optionally, run the confirmatory models with
-arm labels scrambled until the analysis code is frozen.
+individually, so there is no experimenter contact to blind. Outcomes are self-report
+questionnaires and a computer task, all scored by code.
+
+**Analysis is blinded to arm [DECISION D9].** This goes beyond the registration itself, which
+already fixes the analysis plan and inference criteria (§5) before any outcome has been examined.
+1. **Coding.** Zerin Mahfuz, who holds the key, runs a script that replaces each participant's
+   arm with an arbitrary code (A, B or C) assigned by a random permutation. She keeps the key
+   and does not run the analysis.
+2. **What the coded dataset holds.** The PHQ-8, LMS-14 and Pond Watch indices (§4.4), wave and
+   adherence. It does not hold check-in content (ratings, Better/Worse/Same responses, reasons
+   or tips), because that content reveals the arm.
+3. **Writing and freezing the code.** The analysts write and run the confirmatory analysis code
+   (H1–H4, §5.1) and the complete-case and per-protocol sensitivity analyses (§5.6) on the
+   coded dataset. The arm-to-code mapping is the code's only unblinded input. When it runs end
+   to end, the code is frozen, and its commit hash is posted to OSF.
+4. **Unblinding.** Only then is the key applied. The registered results are those the frozen
+   code produces.
+
+Analyses that need check-in content run after unblinding: the H3 imputation model (§5.6), which
+uses the mean daily rating, and the exploratory analyses in §5.7. Any change to the frozen code
+after unblinding is reported as a deviation.
 
 ### 2.3 Study design
 
@@ -390,7 +408,33 @@ be submitted (`MoodCheckinStep.jsx`). This will be reported as a protocol deviat
 
 One row per completed check-in: arm, study day (1–21) and slot. The two mood arms also record
 the 1–7 rating and the Better/Worse/Same response. The reflection arm adds the reason text, and
-the neutral arm records which tip was shown. **Adherence** = completed check-ins ÷ 63.
+the neutral arm records which tip was shown. Adherence is defined in §4.4.
+
+### 4.4 Indices
+
+Every index is computed by the analysis script from item- or trial-level rows. Rows flagged
+`resubmission_of` are dropped first (§5.4), and each timepoint uses the first complete
+response in its window. All indices are computed separately for pre and post.
+
+| Index | Definition |
+|---|---|
+| **PHQ-8 total** | Sum of the 8 items, each scored 0–3 (range 0–24). A total is computed only when all 8 items are answered. Baseline is the screener administration (§2.3). |
+| **LMS-14 total** (H3 mediator) | Reverse-score items 2, 4, 5, 9, 12 and 14 (8 − *x* on the 1–7 scale). The total is the mean of all 14 items, computed only when all 14 are answered. |
+| LMS-14 subscales (exploratory) | Means of their items after reverse-scoring: Novelty Seeking 1, 7, 8, 10, 13; Novelty Producing 2, 3, 6, 11, 14; Engagement 4, 5, 9, 12. |
+| **Median hit RT** (H4) | The median, in ms, of response times on target trials that received a response (hits). RT runs from stimulus onset to the response, inside the 1,000 ms window. With an even number of hits the median is the mean of the two middle values. It is recomputed from the stored trial-level data, not taken from the platform's summary field, which takes the upper middle value. |
+| Hit rate | Hits ÷ target trials (30). Uncorrected; used for the validity rule (§5.4). |
+| False-alarm rate | Responses on non-target trials ÷ non-target trials (30). Uncorrected; used for the validity rule. |
+| *d′* (speed–accuracy check) | *z*(H′) − *z*(F′), with the log-linear correction H′ = (hits + 0.5) ÷ (targets + 1) and F′ = (false alarms + 0.5) ÷ (non-targets + 1) (Hautus, 1995). |
+| Valid Pond Watch run | Hit rate ≥ .50, false-alarm rate ≤ .50 and median hit RT ≥ 150 ms (§5.4). |
+| **Adherence** | Completed check-ins ÷ 63 (0–1). A check-in counts when its row exists and is not a flagged resubmission. Per-protocol: ≥ 32 of 63 (§5.6). |
+| Mean daily rating (mood arms; §5.6 imputation, §5.7) | Mean of a participant's 1–7 check-in ratings over days 1–21. |
+| Post PHQ-8 < 5 (exploratory) | 1 if the post PHQ-8 total is below 5, else 0. |
+| Contrast codes | C1 (H2a): neutral −2/3, mood +1/3, reflection +1/3. C2 (H2b): neutral 0, mood −1/2, reflection +1/2 (§5.1). |
+| Wave | Fall 2026 = 0, winter 2027 = 1. |
+| Effect size *d* | Model-adjusted difference ÷ pooled post-intervention SD (§5.2). |
+
+No other composite is formed. Change scores appear only in the descriptive mixed ANOVA. The
+confirmatory models use the pre and post scores directly (§5.1).
 
 ---
 
@@ -600,7 +644,7 @@ Each row is filed as written unless the investigators changed it before submissi
 | D7 | LMS-14 reverse key | Published key: items 2, 4, 5, 9, 12, 14 reversed; baseline data consistent with it |
 | D7b | Pond Watch validity | Hit rate < .50, false alarms > .50, or median RT < 150 ms excludes a run |
 | D8 | Required reflection reason | Report as a deviation |
-| D9 | Blinded analysis | Optional: scramble arm labels until code is frozen |
+| D9 | Blinded analysis | Code frozen on scrambled arm labels before unblinding; Zerin Mahfuz holds the key and does not run the analysis (§2.2) |
 | D10 | REB | U of T REB #65268, approved 2026-07-02 |
 | D11 | Between-wave freeze | No by-arm outcome analysis until wave 2 completes; integrity checks only |
 | D12 | Data export disclosure | Norman Farb, on or before 2026-10-05; no post-intervention outcome opened (§3.1) |
