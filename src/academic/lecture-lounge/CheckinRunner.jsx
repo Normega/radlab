@@ -75,17 +75,43 @@ function QuestionBoxTap({ checkinId, userId, intro, onSubmit, preview }) {
   )
 }
 
-function QuizTap({ items, onSubmit }) {
+// A quiz item may carry `cards`: [{ label, text, options: [optionIndex, …] }].
+// Each student is shown ONE card, drawn from a hash of (check-in, student,
+// item) so a reload or a remount shows the same card, and only that card's
+// options. Answers keep the item's original option indices, so the results
+// bars are the card-by-answer crosstab (L9's clinic framing check, where the
+// card had lived on a separate QR page and never reached the phones).
+function drawCard(cards, seed) {
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return cards[(h >>> 0) % cards.length]
+}
+
+function QuizTap({ items, onSubmit, checkinId, userId }) {
   const [answers, setAnswers] = useState({})
+  // No signed-in user (a preview without a session): draw once per mount.
+  const [fallbackSeed] = useState(() => String(Math.random()))
   const allAnswered = items.length > 0 && items.every((q) => q.id in answers)
   return (
     <div style={S.stepWrap}>
       <p style={S.eyebrow}>Quiz</p>
       <h2 style={S.title}>Quick check</h2>
-      {items.map((q) => (
+      {items.map((q) => {
+        const card = Array.isArray(q.cards) && q.cards.length > 0
+          ? drawCard(q.cards, `${checkinId}:${userId ?? fallbackSeed}:${q.id}`)
+          : null
+        const shown = q.options.map((opt, i) => [opt, i])
+          .filter(([, i]) => !card || !Array.isArray(card.options) || card.options.includes(i))
+        return (
         <div key={q.id} style={S.quizQuestion}>
+          {card && (
+            <div style={S.quizCard}>
+              {card.label && <p style={S.quizCardLabel}>{card.label}</p>}
+              <p style={S.quizCardText}>{card.text}</p>
+            </div>
+          )}
           <p style={S.quizQuestionText}>{q.text}</p>
-          {q.options.map((opt, i) => (
+          {shown.map(([opt, i]) => (
             <label key={i} style={S.quizOptionLabel(answers[q.id] === i)}>
               <input
                 type="radio" name={q.id} checked={answers[q.id] === i}
@@ -96,7 +122,8 @@ function QuizTap({ items, onSubmit }) {
             </label>
           ))}
         </div>
-      ))}
+        )
+      })}
       <button style={S.primaryBtn} onClick={() => onSubmit({ quiz_answers: answers })} disabled={!allAnswered}>
         Submit →
       </button>
@@ -261,7 +288,7 @@ export default function CheckinRunner({ checkinId, config, session, onComplete, 
     // prompt step to claim it (the closers) — with a prompt in the sequence
     // it already appeared one step earlier, so repeating it would be noise.
     case 'question_box':  return <QuestionBoxTap checkinId={checkinId} userId={session?.user?.id} intro={activities.includes('prompt') ? null : config?.prompt_text} onSubmit={handleStepSubmit} preview={!!preview} />
-    case 'quiz':           return <QuizTap items={config?.quiz_items ?? []} onSubmit={handleStepSubmit} />
+    case 'quiz':           return <QuizTap items={config?.quiz_items ?? []} onSubmit={handleStepSubmit} checkinId={checkinId} userId={session?.user?.id} />
     default:
       return null // handled by the effect above
   }
@@ -297,6 +324,9 @@ const S = {
   pvStem: { fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 4px', lineHeight: 1.4 },
   pvLine: { fontSize: 14, color: 'var(--tx)', margin: '2px 0', lineHeight: 1.45 },
   quizQuestion: { width: '100%', textAlign: 'left', marginBottom: 20 },
+  quizCard: { background: 'var(--bgc)', border: '1px solid var(--bds)', borderRadius: 12, padding: 16, marginBottom: 16 },
+  quizCardLabel: { fontFamily: MONO, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--pkd)', margin: '0 0 8px' },
+  quizCardText: { fontSize: 16, color: 'var(--tx)', lineHeight: 1.5, margin: 0 },
   quizQuestionText: { fontSize: 15, color: 'var(--tx)', fontWeight: 600, marginBottom: 10 },
   quizOptionLabel: (active) => ({
     display: 'flex', alignItems: 'center', padding: '10px 12px', borderRadius: 10, fontSize: 14, marginBottom: 6, cursor: 'pointer',
