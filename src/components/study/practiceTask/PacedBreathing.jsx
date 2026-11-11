@@ -25,8 +25,10 @@ import { useScrollToTopOn } from '../../../lib/scrollToTop'
 // is shown in demos, never to participants.
 //
 // Adherence check (config `hold_to_inhale`, off unless a step sets it). The
-// participant holds a button under the circle, or the space bar, while
-// breathing in, and lets go while breathing out. Presses are timed on the
+// participant holds the spacebar while breathing in, and lets go while
+// breathing out. It is the keyboard only (Sandy, 2026-11-11): the box under
+// the circle shows whether the key is held and is not itself pressable, so
+// Study 4 needs a computer with a keyboard. Presses are timed on the
 // pacer's visible clock, so they line up with the phase on screen, and are
 // scored by breathHold.js. Leaving the page or the window lets go of the press.
 // Nothing tells the participant whether they are in time.
@@ -145,7 +147,7 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
     return () => { clearInterval(timer); away.stop() }
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // The space bar, and letting go when the page or the window loses focus
+  // The spacebar, and letting go when the page or the window loses focus
   useEffect(() => {
     if (stage !== 'practice' || !holdOn) return
     const isSpace = e => e.code === 'Space' || e.key === ' '
@@ -176,7 +178,7 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
       <div className="pt-card">
         <h2>Next: a breathing practice</h2>
         <p>It takes about {length}. You will breathe slowly along with a circle that grows and shrinks. Please sit comfortably. Please stay on this page during the task, and do not switch tabs. Press Start to begin the task.</p>
-        {holdOn && <p>While you breathe in, press and hold the button under the circle, or the space bar if you are using a keyboard. Let go as you breathe out.</p>}
+        {holdOn && <p>While you breathe in, press and hold the spacebar on your keyboard. Let go as you breathe out.</p>}
         <div className="pt-actions"><button type="button" className="pt-btn" onClick={start}>Start</button></div>
       </div>
     )
@@ -202,20 +204,9 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
       </div>
       {holdOn && (
         <div className="pt-hold-wrap">
-          <button
-            type="button"
-            tabIndex={-1}
-            className={`pt-hold${held ? ' on' : ''}`}
-            aria-pressed={held}
-            onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId); press(e.pointerType || 'pointer') }}
-            onPointerUp={() => letGo()}
-            onPointerCancel={() => letGo()}
-            onLostPointerCapture={() => letGo()}
-            onContextMenu={e => e.preventDefault()}
-          >
-            {held ? 'Breathing in' : 'Hold while you breathe in'}
-          </button>
-          <span className="pt-muted pt-hold-key">or hold the space bar</span>
+          <div className={`pt-hold${held ? ' on' : ''}`}>
+            {held ? 'Breathing in' : 'Hold the spacebar while you breathe in'}
+          </div>
         </div>
       )}
       <div className="pt-bar">
