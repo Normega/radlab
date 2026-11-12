@@ -29,6 +29,23 @@ export function richParts(text) {
 
 const cap = label => `[[${label}]]`
 
+// The sentences of each arm's instruction page that say what to do while the circle pulses. Defined once and
+// used twice: in the instruction page below (unchanged wording) and, word for word, in the compliance
+// reminders (armReminderPage, complianceLine). No reminder has wording of its own.
+function doSentences(arm, keys) {
+  const K = cap(keys.grow.label), Ks = cap(keys.shrink.label)
+  return {
+    vision: ['Please just watch the circle. Do not press any keys while the circle is pulsing.'],
+    breath: [
+      'As the circle pulses, please breathe along with the circle. Please breathe in when the circle expands, and breathe out when the circle shrinks.',
+      `As you breathe in, hold down the ${K} key. As you breathe out, hold down the ${Ks} key. Use your left hand.`,
+    ],
+    touch: [
+      `As the circle pulses, please tap along with the circle: hold down the ${K} key while the circle expands, and hold down the ${Ks} key while the circle shrinks. Use your left hand.`,
+    ],
+  }[arm]
+}
+
 /**
  * The three instruction pages of an arm: [{ heading?, paragraphs }].
  * @param {'vision'|'touch'|'breath'} arm
@@ -36,33 +53,34 @@ const cap = label => `[[${label}]]`
  * @param {{ grow: { label }, shrink: { label } }} keys  config.keys
  */
 export function instructionPages(arm, n, keys) {
-  const K = cap(keys.grow.label), Ks = cap(keys.shrink.label)
   const welcome = {
     heading: 'Welcome to the Sensory Attention Task',
     paragraphs: [
       `In this task you will see a circle grow and shrink ${n} times in a row. You will be judging whether things are speeding up, slowing down, or staying the same.`,
     ],
   }
+  if (!['vision', 'breath', 'touch'].includes(arm)) throw new Error(`instructionPages: unknown arm ${JSON.stringify(arm)}`)
+  const doing = doSentences(arm, keys)
+  const pulses = `In the task, you will see a circle that “pulses”: it will grow and shrink ${n} times in a row.`
   const arms = {
     vision: [
-      `In the task, you will see a circle that “pulses”: it will grow and shrink ${n} times in a row.`,
+      pulses,
       `We would like you to watch the circle and judge whether it changes speed as it pulses. You should be judging only over those ${n} pulses, not what happened on previous rounds.`,
       'The circle could: (i) speed up, (ii) slow down, or (iii) stay the same speed.',
-      'Please just watch the circle. Do not press any keys while the circle is pulsing.',
+      doing[0],
     ],
     breath: [
-      `In the task, you will see a circle that “pulses”: it will grow and shrink ${n} times in a row. As the circle pulses, please breathe along with the circle. Please breathe in when the circle expands, and breathe out when the circle shrinks.`,
-      `As you breathe in, hold down the ${K} key. As you breathe out, hold down the ${Ks} key. Use your left hand.`,
+      `${pulses} ${doing[0]}`,
+      doing[1],
       `We would like you to notice your breath and judge whether it changes speed as it pulses. You should be judging only over those ${n} breaths, not what happened on previous rounds.`,
       'Your breath could: (i) speed up, (ii) slow down, or (iii) stay the same speed.',
     ],
     touch: [
-      `In the task, you will see a circle that “pulses”: it will grow and shrink ${n} times in a row. As the circle pulses, please tap along with the circle: hold down the ${K} key while the circle expands, and hold down the ${Ks} key while the circle shrinks. Use your left hand.`,
+      `${pulses} ${doing[0]}`,
       `We would like you to notice your finger tapping and judge whether it changes speed as it pulses. You should be judging only over those ${n} pulses, not what happened on previous rounds.`,
       'Your tapping could: (i) speed up, (ii) slow down, or (iii) stay the same speed.',
     ],
   }
-  if (!arms[arm]) throw new Error(`instructionPages: unknown arm ${JSON.stringify(arm)}`)
   const responses = {
     paragraphs: [
       `After each set of circles, you will be asked if things: slowed down (${cap('left arrow')}), stayed the same (${cap('up arrow')}), or sped up (${cap('right arrow')}). There will be a picture to remind you.`,
@@ -92,6 +110,29 @@ export function pacerReminder(arm, keys) {
   return arm === 'breath'
     ? `Hold ${K} as you breathe in, ${Ks} as you breathe out`
     : `Hold ${K} while the circle grows, ${Ks} while the circle shrinks`
+}
+
+// ── Compliance reminders (compliance.js decides when). Wording only from the texts above. ──
+
+/**
+ * The line shown during the fixation of the trial after a non-compliant one (gone when the circle starts to
+ * move). Touch and breath: the practice cue, pacerReminder. Vision: the vision instruction page's last
+ * paragraph, "Please just watch the circle. Do not press any keys while the circle is pulsing."
+ */
+export function complianceLine(arm, keys) {
+  return arm === 'vision' ? doSentences('vision', keys)[0] : pacerReminder(arm, keys)
+}
+
+/**
+ * The full-page reminder after a run of non-compliant trials: the arm's instruction-page sentences on what to
+ * do while the circle pulses, word for word (touch: the tap-along sentences of its first paragraph; breath:
+ * the breathe-along sentences and the W/S paragraph; vision: "Please just watch the circle. ..."). Shown with
+ * the Continue button and CONTINUE_HINT, like every other page; no heading (there is none to reuse).
+ */
+export function armReminderPage(arm, keys) {
+  const p = doSentences(arm, keys)
+  if (!p) throw new Error(`armReminderPage: unknown arm ${JSON.stringify(arm)}`)
+  return { paragraphs: p.slice() }
 }
 
 /** The answer screen. Words as on the test build's picture (img/SpeedImg.png); the icons are drawn in the step. */

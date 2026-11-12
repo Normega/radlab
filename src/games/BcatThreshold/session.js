@@ -4,7 +4,7 @@
 // a live session (presenter.js, in the browser) and a simulated one (simulate.js, in a preview or in node).
 // session.test.mjs runs whole simulated sessions through it on the engine's main-thread controller.
 //
-// present({ phase, spec } | { phase, specPromise }) resolves to
+// present({ phase, spec, reminder } | { phase, specPromise, reminder }) resolves to
 //   { pres, answer: { response, key, rtMs, questionOnsetMs }, interrupted, focusEvents, keys, tStartMs, wallclockStart }
 // or { no_trial: true } (specPromise gave null) or { cancelled: true }.
 //
@@ -13,22 +13,32 @@
 // hundred ms (trialLoop.js holds the circle if it ever does not). That needs the previous reply's
 // last_trial === false, which says the session goes on whatever this answer is; otherwise it waits for the
 // reply. What the engine is given, and what is shown again later, is sequence.js's rule.
+//
+// Compliance reminders (compliance.js), when a `compliance` object is passed: before each trial it may show the
+// page reminder (awaited, so the next trial waits for Continue; the engine meanwhile computes as usual) and
+// asks the presenter for the fixation line (present({ ..., reminder: true })); after each trial it scores the
+// trial. Neither touches what the engine is given. Without one, rows carry no compliance facts.
 
 import { practiceTrials } from './trialPlan.js'
 import { makeTrialRecord } from './records.js'
 
 const cancelled = Object.freeze({ cancelled: true })
+const NO_REMINDER = Object.freeze({ line: false, page: false })
+const before = compliance => (compliance ? compliance.before() : NO_REMINDER)
+const after = (compliance, shown) => (compliance ? compliance.after(shown) : null)
 
 /** The practice trials, each followed by afterEach(spec) (the feedback page). Never sent to the engine. */
-export async function runPractice({ cfg, present, sequence, saveTrial, runId, afterEach, isCancelled = () => false }) {
+export async function runPractice({ cfg, present, sequence, saveTrial, runId, afterEach, isCancelled = () => false, compliance = null }) {
   for (const spec of practiceTrials(cfg)) {
     if (isCancelled()) return cancelled
-    const shown = await present({ phase: 'practice', spec })
+    const reminder = await before(compliance)
+    if (isCancelled()) return cancelled
+    const shown = await present({ phase: 'practice', spec, reminder: reminder.line })
     if (shown.cancelled) return cancelled
     const seq = sequence.nextSeq()
     await saveTrial(makeTrialRecord({ runId, seq, phase: 'practice', spec, pres: shown.pres, answer: shown.answer,
       interrupted: shown.interrupted, focusEvents: shown.focusEvents, keys: shown.keys, tStartMs: shown.tStartMs,
-      wallclockStart: shown.wallclockStart }))
+      wallclockStart: shown.wallclockStart, compliance: after(compliance, shown), reminder }))
     if (afterEach) await afterEach(spec)
   }
   return { done: true }
@@ -38,7 +48,7 @@ export async function runPractice({ cfg, present, sequence, saveTrial, runId, af
  * The adaptive trials, from init to the engine's last trial.
  * @returns {Promise<{ init: object, n: number } | { cancelled: true }>}
  */
-export async function runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled = () => false, prestart = true }) {
+export async function runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled = () => false, prestart = true, compliance = null }) {
   const init = await engine.call({ type: 'init', cfg: cfg.engine, seed })
   let source = init.trial ? { spec: init.trial } : null
   let lastFlag = init.last_trial
@@ -46,10 +56,14 @@ export async function runEngineTrials({ engine, cfg, seed, present, sequence, sa
   const saves = []
   while (source) {
     if (isCancelled()) return cancelled
-    const shown = await present({ phase: 'main', ...source })
+    const reminder = await before(compliance)
+    if (isCancelled()) return cancelled
+    const shown = await present({ phase: 'main', ...source, reminder: reminder.line })
     if (shown.cancelled) return cancelled
     if (shown.no_trial) break
     const spec = shown.pres.spec
+    const comp = after(compliance, shown)
+    // the engine gets the answer as sequence.js decides; compliance plays no part in it
     const decision = sequence.mainAnswered({ spec, response: shown.answer.response, interrupted: shown.interrupted })
     const seq = sequence.nextSeq()
     n += 1
@@ -57,7 +71,7 @@ export async function runEngineTrials({ engine, cfg, seed, present, sequence, sa
     const saved = replyP.then(reply => saveTrial(makeTrialRecord({ runId, seq, phase: 'main', spec, pres: shown.pres,
       answer: shown.answer, interrupted: shown.interrupted, focusEvents: shown.focusEvents, keys: shown.keys,
       engineResponse: decision.engineResponse, reply, repeatQueued: decision.repeatQueued, tStartMs: shown.tStartMs,
-      wallclockStart: shown.wallclockStart })))
+      wallclockStart: shown.wallclockStart, compliance: comp, reminder })))
     saved.catch(() => {})   // awaited below; this only stops an early "unhandled rejection"
     saves.push(saved)
     if (prestart && lastFlag === false) {
@@ -74,17 +88,19 @@ export async function runEngineTrials({ engine, cfg, seed, present, sequence, sa
 }
 
 /** The repeats sequence.js queued, each shown once, data only. */
-export async function runRepeats({ present, sequence, saveTrial, runId, isCancelled = () => false }) {
+export async function runRepeats({ present, sequence, saveTrial, runId, isCancelled = () => false, compliance = null }) {
   let r, n = 0
   while ((r = sequence.takeRepeat())) {
     if (isCancelled()) return cancelled
-    const shown = await present({ phase: 'repeat', spec: r.spec })
+    const reminder = await before(compliance)
+    if (isCancelled()) return cancelled
+    const shown = await present({ phase: 'repeat', spec: r.spec, reminder: reminder.line })
     if (shown.cancelled) return cancelled
     const seq = sequence.nextSeq()
     n += 1
     await saveTrial(makeTrialRecord({ runId, seq, phase: 'repeat', spec: r.spec, pres: shown.pres, answer: shown.answer,
       interrupted: shown.interrupted, focusEvents: shown.focusEvents, keys: shown.keys, repeatOf: r.repeatOf,
-      tStartMs: shown.tStartMs, wallclockStart: shown.wallclockStart }))
+      tStartMs: shown.tStartMs, wallclockStart: shown.wallclockStart, compliance: after(compliance, shown), reminder }))
   }
   return { n }
 }

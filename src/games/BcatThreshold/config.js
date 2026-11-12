@@ -130,11 +130,20 @@ const BASE = {
     // ln 1.5: 4-s pulses become 2.67 s or 6 s. Was ln 2 (2 s or 8 s), which Norm found excessive (2026-11-12).
     trials: [{ cell: 'speeding', magnitude: LN_1_5 }, { cell: 'slowing', magnitude: LN_1_5 }, { cell: 'no_change' }],
   },
+  // Compliance reminders (compliance.js; Norm, 2026-11-12). Outside `engine`: they never change what the engine
+  // is told, and configHash(cfg.engine) does not include them. Compliance is scored and recorded on every
+  // trial whatever `reminders` says; `reminders` switches only what is shown.
+  compliance: {
+    reminders: true,            // show the fixation line and the page reminder
+    min_coverage: 0.5,          // touch, breath: a trial is non-compliant below this share of the pulses covered by the right key
+    vision_min_press_ms: 0,     // vision: a W or S press during the pulses of at least this length is non-compliant (0: any press)
+    page_after: 3,              // this many non-compliant trials in a row bring the page reminder before the next trial
+  },
 }
 
 /**
  * @param {{ mode?: 'online'|'lab', demo?: boolean, catchTrials?: boolean, changeTrialsPerDirection?: number,
- *           practice?: boolean, fixationMs?: number }} [opts]
+ *           practice?: boolean, fixationMs?: number, reminders?: boolean }} [opts]
  */
 export function makeConfig(opts = {}) {
   const mode = opts.mode === undefined ? 'online' : opts.mode
@@ -159,5 +168,10 @@ export function makeConfig(opts = {}) {
     if (!(f >= 0)) throw new Error('fixationMs must be >= 0.')
     cfg.timing.fixation_ms = f
   }
+  if (opts.reminders !== undefined) cfg.compliance.reminders = !!opts.reminders
+  const cc = cfg.compliance
+  if (!(cc.min_coverage >= 0 && cc.min_coverage <= 1)) throw new Error('compliance.min_coverage must be in [0, 1].')
+  if (!Number.isInteger(cc.page_after) || cc.page_after < 1) throw new Error('compliance.page_after must be a whole number >= 1.')
+  if (!(cc.vision_min_press_ms >= 0)) throw new Error('compliance.vision_min_press_ms must be >= 0.')
   return { mode, demo: !!opts.demo, engine_version: ENGINE_VERSION, engine, ...cfg }
 }

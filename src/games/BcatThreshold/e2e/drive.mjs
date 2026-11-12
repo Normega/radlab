@@ -4,7 +4,8 @@
 //   1. start the app with Supabase pointed at nowhere, so nothing can reach a database:
 //        VITE_SUPABASE_URL=http://127.0.0.1:9 VITE_SUPABASE_ANON_KEY=offline npx vite --port 5199 --strictPort
 //   2. node src/games/BcatThreshold/e2e/drive.mjs <outDir> [scenario ...]
-//        scenarios: simulate (all three arms), demo_touch, blur_vision   (default: all)
+//        scenarios: simulate (all three arms), demo_touch, blur_vision, reminder_touch, reminder_vision   (default: all)
+//        reminder_* save screenshots bt_reminder_*.png in <outDir>
 //
 // Chrome resolves no host but localhost, and every request to another origin is aborted and counted, so
 // the run cannot send anything anywhere. Key presses are trusted input events (CDP Input.dispatchKeyEvent),
@@ -64,8 +65,11 @@ async function waitFor(page, pred, ms = 60000) {
  * shrinks, lagMs late. Answers correctly 75% of the time. Hooks:
  *   onCircle(u, k)  every poll during a circle (k = main-trial count so far)
  *   holdBeforeAnswer: on main trial n, press W before answering and keep it 1200 ms after (keys-up gate)
+ *   offTaskOn: main trial numbers on which it does not comply: touch and breath hold no key; vision holds W
+ *     from 3.0 to 3.8 s after fixation onset (during the first pulse)
+ *   onPage(u)  awaited on every page before it presses the space bar
  */
-async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBeforeAnswerOn = null, log = () => {} }) {
+async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBeforeAnswerOn = null, offTaskOn = [], onPage = null, log = () => {} }) {
   let held = null, last = null, nMain = 0, gateSeen = false
   const t0 = Date.now()
   while (Date.now() - t0 < 20 * 60 * 1000) {
@@ -75,10 +79,24 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
     if (u.what === 'done') return { nMain, gateSeen }
     if (u.what === 'error' || u.what === 'device') throw new Error('stopped: ' + JSON.stringify(u))
     if (u.what === 'gate') gateSeen = true
-    if (u.what === 'page') { await sleep(300); const again = await ui(page); if (again.what === 'page' && again.at === u.at) await page.keyboard.press('Space'); await sleep(150); continue }
+    if (u.what === 'page') {
+      await sleep(300)
+      const again = await ui(page)
+      if (again.what === 'page' && again.at === u.at) { if (onPage) await onPage(again); await page.keyboard.press('Space') }
+      await sleep(150); continue
+    }
     if (u.what === 'circle') {
       if (onCircle) await onCircle(u, nMain)
-      if (arm !== 'vision') {
+      const off = u.phase === 'main' && offTaskOn.includes(nMain + 1)
+      if (off) {
+        const el = u.now - u.t0
+        const want = arm === 'vision' && el >= 3000 && el < 3800 ? 'KeyW' : null
+        if (want !== held) {
+          if (held) await page.keyboard.up(held)
+          if (want) await page.keyboard.down(want)
+          held = want
+        }
+      } else if (arm !== 'vision') {
         const durs = u.durs || [4, 4, 4, 4]   // until the level is known: the approved trial's four baseline-length pulses
         const el = (u.now - u.t0 - 1500 - lagMs) / 1000
         let want = null
@@ -152,6 +170,67 @@ function checkRows(snap, { arm }) {
   return problems
 }
 
+// What the cue line shows now: its text and whether it is visible.
+const cueState = page => page.evaluate(() => {
+  const el = document.querySelector('.bt-cue')
+  return el ? { text: el.textContent, visibility: getComputedStyle(el).visibility } : null
+})
+
+// Reminders: screenshot the line during the fixation of each trial that has one (first one per kind), check it
+// is gone once the circle moves, and screenshot the page reminder.
+async function reminderRun(browser, { arm, url, offTaskOn, tag }) {
+  const { page, blocked, log } = await openPage(browser, url)
+  const shots = {}, lines = [], pages = []
+  let lineTrial = null
+  const p = await participant(page, {
+    arm, offTaskOn, log: m => console.log(`  ${tag} ` + m),
+    onCircle: async (u, nMain) => {
+      if (!u.reminder || u.phase !== 'main') return
+      const el = u.now - u.t0, k = nMain + 1
+      if (el < 1200 && lineTrial !== k) {
+        lineTrial = k
+        const c = await cueState(page)
+        const name = `bt_reminder_line_${tag}_main${k}.png`
+        if (!shots.line) { await page.screenshot({ path: path.join(OUT, name) }); shots.line = name }
+        lines.push({ main: k, at_ms: Math.round(el), cue: c })
+      } else if (el > 2500 && el < 4000 && lines.length && lines[lines.length - 1].main === k && !lines[lines.length - 1].after) {
+        const c = await cueState(page)
+        lines[lines.length - 1].after = { at_ms: Math.round(el), cue: c }
+        if (!shots.gone) { const name = `bt_reminder_line_gone_${tag}_main${k}.png`; await page.screenshot({ path: path.join(OUT, name) }); shots.gone = name }
+      }
+    },
+    onPage: async u => {
+      if (u.id !== 'compliance_reminder') return
+      const text = await page.evaluate(() => document.querySelector('.bt-card')?.innerText)
+      const name = `bt_reminder_page_${tag}.png`
+      if (!shots.page) { await page.screenshot({ path: path.join(OUT, name) }); shots.page = name }
+      pages.push({ text })
+    },
+  })
+  const snap = await snapshot(page)
+  fs.writeFileSync(path.join(OUT, `reminder_${tag}.json`), JSON.stringify(snap))
+  const rows = snap.trials
+  const res = {
+    participant: p, rows: rows.length, main: snap.result.n_main,
+    per_main: rows.filter(r => r.phase === 'main').map(r => ({ trial_index: r.trial_index, seq: r.seq, compliant: r.compliant,
+      coverage: r.compliance_coverage === null ? null : +r.compliance_coverage.toFixed(3), ws_presses: r.compliance_ws_presses,
+      streak: r.noncompliant_streak, line: r.reminder_shown, page: r.reminder_page_shown, reminder_off_ms: r.timing.reminder_off_ms,
+      first_pulse_ms: r.delivered_boundaries_ms ? r.delivered_boundaries_ms[1] : null, response: r.response, engine_response: r.engine_response })),
+    practice_compliant: rows.filter(r => r.phase === 'practice').map(r => r.compliant),
+    counts: { n_noncompliant: snap.result.n_noncompliant, n_reminder_lines: snap.result.n_reminder_lines, n_reminder_pages: snap.result.n_reminder_pages },
+    engine_response_equals_response: rows.filter(r => r.phase === 'main').every(r => r.engine_response === r.response),
+    lines_seen: lines, pages_seen: pages, screenshots: shots,
+    // the vision run presses W on purpose, so checkRows's "no W/S" check is expected to fail there
+    problems: checkRows(snap, { arm }).filter(m => !(arm === 'vision' && /vision: no W\/S/.test(m))),
+    // the fonts 403 under a worktree's dev server (node_modules is a junction): known, not counted
+    blocked: blocked.length, errors: log.filter(l => /error/i.test(l) && !/Failed to load resource/.test(l)),
+    font_or_resource_errors: log.filter(l => /Failed to load resource/.test(l)).length,
+  }
+  console.log(`${tag}:`, JSON.stringify(res, null, 1))
+  await page.close()
+  return res
+}
+
 const SCENARIOS = {
   async simulate(browser) {
     const out = {}
@@ -197,6 +276,12 @@ const SCENARIOS = {
     await page.close()
     return res
   },
+  // touch: off task on main trial 2 (the line at main 3), then on 4, 5 and 6 (the page before main 7, and its line)
+  reminder_touch: browser => reminderRun(browser, { arm: 'touch', tag: 'touch', offTaskOn: [2, 4, 5, 6],
+    url: `${BASE}/dev/bcat-threshold?arm=touch&demo=1` }),
+  // vision: W held during the pulses of main trials 2, then 4, 5 and 6
+  reminder_vision: browser => reminderRun(browser, { arm: 'vision', tag: 'vision', offTaskOn: [2, 4, 5, 6],
+    url: `${BASE}/dev/bcat-threshold?arm=vision&demo=1&practice=0` }),
   async blur_vision(browser) {
     const { page, blocked, log } = await openPage(browser, `${BASE}/dev/bcat-threshold?arm=vision&demo=1&practice=0`)
     let blurred = false

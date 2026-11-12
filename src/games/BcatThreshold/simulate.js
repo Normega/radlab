@@ -7,6 +7,13 @@
 // Settings are the test build's (6_online_pilot/js/config.js, online.simulation).
 //
 // Reachable only from a preview (BcatThreshold.jsx refuses it in a study run).
+//
+// Compliance (compliance.js): by default the observer is always compliant (touch and breath: it holds the right
+// key for most of every half; vision: it presses nothing), so a simulated session shows no reminders. For tests,
+// `offTask` makes chosen trials non-compliant: touch and breath hold no key at all, vision holds W for 800 ms
+// from 500 ms after the first pulse starts. The random draws are the same either way, so an off-task trial gets
+// the same answer and the same timing as the on-task one would have. present() ignores `reminder` (nothing is
+// shown); the rows record that one was asked for.
 
 import { SimulatedObserver, makeRng } from './engine/adaptive.js'
 import { timelineForTrial, halfPulses } from './pacerClock.js'
@@ -17,17 +24,22 @@ export const SIM_OBSERVER = Object.freeze({ alpha_speeding: 0.17, alpha_slowing:
 export const SIM_TIMING = Object.freeze({ rt_median_ms: 1200, key_lag_ms: 250, key_lag_sd_ms: 80 })
 
 /**
- * @param {{ cfg: object, arm: string, seed: number, observer?: object, timing?: object }} o
- * @returns {(req: { phase: string, spec?: object, specPromise?: Promise<object|null> }) => Promise<object>}
+ * @param {{ cfg: object, arm: string, seed: number, observer?: object, timing?: object,
+ *           offTask?: number[] | ((n: number, phase: string) => boolean) }} o
+ *   offTask — which trials are non-compliant: 1-based numbers in the order shown (practice included), or a test
+ * @returns {(req: { phase: string, spec?: object, specPromise?: Promise<object|null>, reminder?: boolean }) => Promise<object>}
  */
-export function createSimulatedPresenter({ cfg, arm, seed, observer = SIM_OBSERVER, timing = SIM_TIMING }) {
+export function createSimulatedPresenter({ cfg, arm, seed, observer = SIM_OBSERVER, timing = SIM_TIMING, offTask = null }) {
   const rng = makeRng((seed ^ 0x5bd1e995) >>> 0)
   const obs = new SimulatedObserver({ ...observer })
   const answerKey = cfg.keys.answers
-  let clock = 0
-  return async function present({ spec, specPromise }) {
+  const isOff = typeof offTask === 'function' ? offTask : Array.isArray(offTask) ? (n => offTask.includes(n)) : () => false
+  let clock = 0, shownN = 0
+  return async function present({ phase, spec, specPromise }) {
     if (!spec) spec = await specPromise
     if (!spec) return { no_trial: true }
+    shownN += 1
+    const off = !!isOff(shownN, phase)
     const tl = timelineForTrial(spec, cfg)
     const planned = plannedBoundaries(tl)
     const total = tl.totalMs
@@ -42,7 +54,11 @@ export function createSimulatedPresenter({ cfg, arm, seed, observer = SIM_OBSERV
         if (down < up) { evs.push({ type: 'keydown', k, t: down }); evs.push({ type: 'keyup', k, t: up }) }
       }
       evs.sort((a, b) => a.t - b.t)
-      for (const e of evs) log[e.type]({ key: e.k.key, code: e.k.code, t: e.t, tHandler: e.t + 1 })
+      if (!off) for (const e of evs) log[e.type]({ key: e.k.key, code: e.k.code, t: e.t, tHandler: e.t + 1 })
+    } else if (off) {
+      const t = tl.pulses[0].startMs + 500, k = cfg.keys.grow
+      log.keydown({ key: k.key, code: k.code, t, tHandler: t + 1 })
+      log.keyup({ key: k.key, code: k.code, t: t + 800, tHandler: t + 801 })
     }
     const ended = log.end(total, [])
     const summary = scoreHolds(parseKeyLog(ended.events, { endMs: total }), halfPulses(tl)).summary

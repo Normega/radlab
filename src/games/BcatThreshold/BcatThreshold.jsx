@@ -6,6 +6,7 @@ import { buildTrialPlan } from './trialPlan.js'
 import { createEngineClient } from './engineClient.js'
 import { createMemoryStore } from './store.js'
 import { createTrialSequence } from './sequence.js'
+import { createCompliance } from './compliance.js'
 import { newSeed, newRunId, makeRunRecord, makeResultRecord } from './records.js'
 import { runPractice, runEngineTrials, runRepeats } from './session.js'
 import { createLivePresenter, measureFramePeriod, nextPaint } from './presenter.js'
@@ -15,7 +16,7 @@ import { initialChoice } from './options.js'
 import { isDemoMode } from '../../lib/demoMode'
 import {
   richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder, ANSWER_QUESTION, ANSWER_LABELS,
-  releaseKeysCue, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS,
+  releaseKeysCue, complianceLine, armReminderPage, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS,
 } from './texts.js'
 
 // BCAT threshold task (Stage B): the participant-facing screens of the adaptive breathing-pace threshold task
@@ -30,7 +31,8 @@ import {
 //
 // Data stay in memory in this stage (store.js); Stage C swaps the store for the database.
 // The order of a run is session.js; one trial on screen is presenter.js and trialLoop.js; the interruption
-// rule is sequence.js. This file is only the screens.
+// rule is sequence.js; the compliance reminders (the fixation line and the page) are compliance.js. This file is
+// only the screens.
 
 const DEFAULTS = makeConfig()
 const KEYS = DEFAULTS.keys
@@ -107,6 +109,7 @@ function readoutText(readout, counts) {
     `quality flag: ${f.quality_flag ? 'YES' : 'no'}; censored: speeding ${f.censored?.speeding ? 'YES' : 'no'}, slowing ${f.censored?.slowing ? 'YES' : 'no'}`,
     `engine trials ${readout.n_trials_total}; unanswered or withheld ${readout.n_missing_responses}; false alarms ${readout.false_alarms.n_false_alarms}/${readout.false_alarms.n_no_change}`,
     `rows ${counts.rows}; interrupted ${counts.interrupted}; repeats ${counts.repeats}; engine ${counts.engineMode}`,
+    `non-compliant ${counts.noncompliant}; reminder lines ${counts.lines}; reminder pages ${counts.pages}`,
   ].join('\n')
 }
 
@@ -122,6 +125,7 @@ export default function BcatThreshold({
   const [cue, setCue] = useState(null)
   const circleRef = useRef(null)
   const questionRef = useRef(null)
+  const cueRef = useRef(null)
   const completedRef = useRef(false)
 
   // ── one run ───────────────────────────────────────────────────────────────
@@ -143,7 +147,7 @@ export default function BcatThreshold({
     const onUi = preview ? ui => { window.__bcatThreshold = { ...(window.__bcatThreshold || {}), ui: { ...ui, at: performance.now() } } } : () => {}
     const live = createLivePresenter({
       cfg, arm, runStart, onUi, isCancelled,
-      els: () => ({ circle: circleRef.current, question: questionRef.current }),
+      els: () => ({ circle: circleRef.current, question: questionRef.current, cue: cueRef.current }),
       setCue: c => { if (!cancelled) setCue(c) },
       framePeriodMs: () => framePeriod,
     })
@@ -154,6 +158,9 @@ export default function BcatThreshold({
       setView({ kind: 'page', shownAt: performance.now(), ...spec, onContinue: resolve })
     })
     const toTrialScreen = async () => { show({ kind: 'trial' }); await nextPaint() }
+    // the page reminder (compliance.js), then back to the trial screen; a simulated run shows nothing
+    const compliance = createCompliance({ cfg, arm,
+      showPage: sim ? null : async () => { await page({ id: 'compliance_reminder', ...armReminderPage(arm, cfg.keys) }); await toTrialScreen() } })
 
     ;(async () => {
       if (!sim) {
@@ -182,7 +189,7 @@ export default function BcatThreshold({
       if (cfg.practice.enabled) {
         if (!sim) await page({ id: 'practice_intro', paragraphs: [PRACTICE_INTRO] })
         const r = await runPractice({
-          cfg, sequence, saveTrial, runId, isCancelled,
+          cfg, sequence, saveTrial, runId, isCancelled, compliance,
           present: sim ? present : async req => { await toTrialScreen(); return present(req) },
           afterEach: sim ? null : spec => page({ id: 'practice_feedback', paragraphs: [PRACTICE_FEEDBACK[spec.cell]] }),
         })
@@ -190,9 +197,9 @@ export default function BcatThreshold({
         if (!sim) await page({ id: 'ready', paragraphs: [READY] })
       }
       if (sim) { onUi({ what: 'simulating' }); show({ kind: 'simulating' }) } else await toTrialScreen()
-      const main = await runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled })
+      const main = await runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled, compliance })
       if (main.cancelled) return
-      const reps = await runRepeats({ present, sequence, saveTrial, runId, isCancelled })
+      const reps = await runRepeats({ present, sequence, saveTrial, runId, isCancelled, compliance })
       if (reps.cancelled) return
       const { readout } = await engine.call({ type: 'readout' })
       await store.saveResult(makeResultRecord({ runId, trials: rows, readout, engineMode: engine.mode }))
@@ -200,7 +207,9 @@ export default function BcatThreshold({
       engine.terminate()
       if (cancelled) return
       const counts = { rows: rows.length, interrupted: rows.filter(r => r.interrupted).length,
-        repeats: rows.filter(r => r.phase === 'repeat').length, engineMode: engine.mode, unsaved }
+        repeats: rows.filter(r => r.phase === 'repeat').length, engineMode: engine.mode, unsaved,
+        noncompliant: rows.filter(r => r.compliant === false).length, lines: rows.filter(r => r.reminder_shown).length,
+        pages: rows.filter(r => r.reminder_page_shown).length }
       onUi({ what: 'done' })
       setView({ kind: 'done', runId, arm, readout, counts, data: preview ? store.snapshot(runId) : null })
     })().catch(err => {
@@ -289,12 +298,15 @@ export default function BcatThreshold({
     )
   }
 
-  const cueText = cue?.kind === 'release' ? releaseKeysCue(KEYS) : cue?.kind === 'reminder' && choice?.arm ? pacerReminder(choice.arm, KEYS) : ''
+  const cueText = !cue || !choice?.arm ? ''
+    : cue.kind === 'release' ? releaseKeysCue(KEYS)
+      : cue.kind === 'compliance' ? complianceLine(choice.arm, KEYS)
+        : cue.kind === 'practice' ? pacerReminder(choice.arm, KEYS) : ''
   return (
     <>
       {screen}
       <div className="bt bt-stage" hidden={view.kind !== 'trial'}>
-        <p className="bt-cue" aria-live="polite">{cueText && <Rich text={cueText} />}</p>
+        <p className="bt-cue" ref={cueRef} aria-live="polite">{cueText && <Rich text={cueText} />}</p>
         <Circle ref={circleRef} maxSize={DISPLAY.circle_max_size} minSize={DISPLAY.circle_min_size} />
         <div className="bt-question" ref={questionRef}>
           <AnswerPanel />

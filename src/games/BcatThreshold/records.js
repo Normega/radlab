@@ -11,6 +11,12 @@
 //   replay(rows.filter(r => r.sent_to_engine).map(r => savedTrial(r, r.engine_response)), cfg.engine, run.seed,
 //          { expect: { engine_version: run.engine_version, config_hash: run.config_hash } })
 // savedTrial reads trial_index, cell, placement and magnitude, which every trial row carries.
+//
+// Compliance (compliance.js) is on the trial row as facts only and never enters the replay: `compliant`
+// (null when not assessed, `compliance_skip` says why), `compliance_coverage` (touch, breath) or
+// `compliance_ws_presses` / `compliance_ws_press_ms` (vision), `noncompliant_streak`, and what was shown:
+// `reminder_shown` (the line at this trial's fixation) and `reminder_page_shown` (the page just before this
+// trial). The result counts them. The rule's settings are the run's config.compliance.
 
 import { configHash } from './config.js'
 
@@ -99,6 +105,8 @@ export function makeRunRecord(o) {
  * @param {number|null} [o.repeatOf]
  * @param {boolean} [o.repeatQueued]
  * @param {number} o.tStartMs           fixation onset, ms from the run's start (performance.now)
+ * @param {object|null} [o.compliance]  compliance.js's assessment of this trial, with `streak`
+ * @param {{ line: boolean, page: boolean }} [o.reminder]  what was shown before and at this trial's fixation
  */
 export function makeTrialRecord(o) {
   const { spec, pres, answer, phase } = o
@@ -147,6 +155,14 @@ export function makeTrialRecord(o) {
     key_repeats: o.keys?.repeats ?? 0,
     key_blurs: o.keys?.blurs ?? 0,
     key_summary: o.keys?.summary ?? null,
+    compliant: o.compliance ? o.compliance.compliant : null,
+    compliance_skip: o.compliance ? o.compliance.skip : 'not_assessed',
+    compliance_coverage: o.compliance ? o.compliance.coverage : null,
+    compliance_ws_presses: o.compliance ? o.compliance.ws_presses : null,
+    compliance_ws_press_ms: o.compliance ? o.compliance.ws_press_ms : null,
+    noncompliant_streak: o.compliance ? o.compliance.streak ?? null : null,
+    reminder_shown: !!o.reminder?.line,
+    reminder_page_shown: !!o.reminder?.page,
     timing: {
       t_start_ms: o.tStartMs ?? null,
       circle_end_ms: pres.t_end ?? null,
@@ -157,6 +173,7 @@ export function makeTrialRecord(o) {
       frame_period_ms: pres.frame_period_ms ?? null,
       level_ready_ms: pres.level_ready_ms ?? null,
       level_wait_ms: pres.level_wait_ms ?? null,
+      reminder_off_ms: pres.reminder_off_ms ?? null,
       simulated: !!pres.simulated,
     },
     wallclock_start: o.wallclockStart ?? null,
@@ -174,7 +191,7 @@ export function hiddenTime(focusEvents, endMs) {
   return total
 }
 
-/** The end of a run: the engine's readout and counts of what was shown. */
+/** The end of a run: the engine's readout and counts of what was shown (compliance counts over every row). */
 export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null }) {
   const rows = trials || []
   return plain({
@@ -189,6 +206,10 @@ export function makeResultRecord({ runId, trials, readout, status = 'completed',
     n_repeats: rows.filter(r => r.phase === 'repeat').length,
     n_interrupted: rows.filter(r => r.interrupted).length,
     n_withheld: rows.filter(r => r.phase === 'main' && r.response !== null && r.engine_response === null).length,
+    n_noncompliant: rows.filter(r => r.compliant === false).length,
+    n_compliance_not_assessed: rows.filter(r => r.compliant === null || r.compliant === undefined).length,
+    n_reminder_lines: rows.filter(r => r.reminder_shown).length,
+    n_reminder_pages: rows.filter(r => r.reminder_page_shown).length,
     readout: readout ?? null,
   })
 }
