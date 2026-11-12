@@ -19,8 +19,26 @@
 //   - practice trials: config.practice.trials, in their listed order (no randomness, as the source build)
 //
 // The order does not depend on the answers as long as every trial is answered (the online build waits for
-// an answer; a missing one would not count toward its direction). It does depend on them under the
-// precision stopping rule, so that rule is refused here.
+// an answer). It does depend on them under the precision stopping rule, so that rule is refused here.
+//
+// When the plan and the live session part (an unanswered trial, response null). The plan assumes every
+// trial is answered. An unanswered trial counts as shown but updates nothing, so from that trial on:
+//   - an unanswered no-change trial: the order, placements, levels and length are unchanged, but the
+//     engine's cell_trial_index of every LATER no-change trial is one less than the plan's (the engine
+//     numbers answered no-change trials, n_no_change + 1; the plan numbers shown ones);
+//   - an unanswered change trial: it does not count toward its direction, so that direction needs one more
+//     change trial. From the next trial of that direction on its placements (which trials are reserved at
+//     d' 0.5 / 3) shift by one, and so do the catch trials if it is the catch direction; the session gets
+//     1 to 3 more trials than planned (the extra trial can need another block, which tops up the
+//     no-change trials); and the order of directions can differ from about where the plan has that
+//     direction finish, or at once when a catch trial falls due or the missed trial was its last;
+//   - an unanswered catch trial: nothing changes (catch trials never update the posterior or the counts
+//     that drive the schedule).
+// Nothing before the unanswered trial changes. trialPlan.test.mjs pins all three. So Stage B must not
+// compare cell_trial_index naively: after an unanswered no-change trial, trial_index, cell and placement
+// still match plan.main[i] but later no-change cell_trial_index values do not; after an unanswered change
+// trial the plan no longer describes the session, so stop comparing there (the worker's trial is the
+// authority) rather than reporting a mismatch.
 
 import {
   CELLS, NO_CHANGE, makeRng, roundHalfEven, maxTrials, reservedPlacement, validateConfig, clampMagnitude, num,
@@ -55,7 +73,8 @@ export function practiceTrials(cfg) {
 
 /**
  * @param {object} cfg  from makeConfig()
- * @param {number} seed the session's seed (the same one the engine's init message gets)
+ * @param {number} seed the session's seed (the same one the engine's init message gets): an integer in
+ *   [0, 2^32); anything else throws, as the engine does (makeRng)
  * @param {{ shuffle?: (items: string[]) => string[] }} [opts]  shuffle: replace the seeded shuffle (the tests inject
  *   the Python reference sessions' queue orders, as engine.test.mjs does)
  * @returns {{ seed, practice: object[], main: object[], queues: string[][], counts: object }}

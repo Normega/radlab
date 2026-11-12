@@ -4,10 +4,16 @@
 // NextStudy/Thresholds/6_online_pilot/js/adaptive.js (sha256 d1c4e4b2…f4a780, 2026-11-11), the port of
 // 4_task_prototype/bcat_adaptive.py 0.3.0, model `sdt` (the approved configuration of 2026-11-11). The
 // port is mechanical: the UMD wrapper became ES imports and exports, the body was de-indented by two
-// spaces. Two lines were changed on purpose, neither in the computation:
+// spaces. These lines were changed on purpose, none in the computation:
 //   1. AdaptiveSession no longer falls back to an unseeded Math.random() seed when no rng is passed; it
 //      throws. A session is always seeded, so it can be replayed (replay.js).
 //   2. makeController's default clock is performance.now() only (the source fell back to Date.now()).
+//   3. makeRng refuses a seed that is not an integer number in [0, 2^32) (assertSeed). The source coerced
+//      it with `>>> 0`, so a missing seed ran as 0 and 1.9, '7', 'abc', -1 and 2^32 + 1 silently became
+//      1, 7, 0, 4294967295 and 1. A valid seed is used exactly as before (`seed >>> 0` is then the seed),
+//      so every session the source could replay is unchanged. Every entry point that builds a session
+//      (the controller's init, replay.js, trialPlan.js) goes through makeRng. The controller also forgets
+//      its previous session before an init, so a refused init cannot leave an old session answering.
 // Everything else, including the stable sort in weightedQuantile, is the source's.
 // Do not "improve" this file: any change must keep engine.test.mjs passing unchanged.
 //
@@ -77,7 +83,17 @@ function deepMerge(base, over) {
 }
 
 // ------------------------------------------------------------------ seeded RNG (sfc32 seeded by splitmix32)
+const SEED_LIMIT = 2 ** 32;
+/** A session seed is an integer number in [0, 2^32); anything else throws (radlab change 3, see the header). */
+function assertSeed(seed) {
+  if (typeof seed !== 'number' || !Number.isInteger(seed) || seed < 0 || seed >= SEED_LIMIT) {
+    const shown = typeof seed === 'string' ? JSON.stringify(seed) : String(seed);
+    throw new RangeError(`seed must be an integer number in [0, 2^32); got ${shown} (${typeof seed}). A session needs its own recorded seed.`);
+  }
+  return seed;
+}
 function makeRng(seed) {
+  assertSeed(seed);
   let s = (seed >>> 0) ^ 0x9E3779B9;
   const sm = () => { s = (s + 0x9E3779B9) >>> 0; let z = s; z = Math.imul(z ^ (z >>> 16), 0x85EBCA6B) >>> 0; z = Math.imul(z ^ (z >>> 13), 0xC2B2AE35) >>> 0; return (z ^ (z >>> 16)) >>> 0; };
   let a = sm(), b = sm(), c = sm(), d = sm();
@@ -595,6 +611,7 @@ function makeController(now) {
   }
   return function handle(msg) {
     if (msg.type === 'init') {
+      session = null; current = null;
       const t0 = clock();
       session = new AdaptiveSession(msg.cfg, makeRng(msg.seed));
       const running0 = session.runningColumns();
@@ -636,6 +653,6 @@ function willFinishAfter(session, trial) {
   return active.length === 0 && !catchPending;
 }
 export { VERSION, CELLS, NO_CHANGE, RESPONSES, DIRECTION_SIGN, LN2, num, linspace, buildGrid, roundHalfEven, deepMerge, deepCopy,
-  makeRng, safeMaxMagnitude, signedLogRatio, changedPulseDuration, pctPulseChange, pulseSchedule, changeIndex, clampMagnitude,
+  makeRng, assertSeed, safeMaxMagnitude, signedLogRatio, changedPulseDuration, pctPulseChange, pulseSchedule, changeIndex, clampMagnitude,
   interp, weightedQuantile, summarizeDiscrete, jeffreysInterval, betainc, sdtResponseProbs, responseCategory, validateConfig,
   reservedPlacement, maxTrials, SDTProcedure, AdaptiveSession, SimulatedObserver, makeController, willFinishAfter };

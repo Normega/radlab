@@ -20,7 +20,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import * as E from './engine.js'
 import * as A from './adaptive.js'
 import { replay, savedTrial, ReplayMismatchError } from './replay.js'
-import { makeConfig } from '../config.js'
+import { makeConfig, ENGINE_VERSION, configHash } from '../config.js'
 
 const REF = new URL('./reference/', import.meta.url)
 const readRef = f => JSON.parse(readFileSync(new URL(f, REF), 'utf8'))
@@ -247,15 +247,20 @@ test('replay: an interrupted trial comes back as the same trial at the same leve
   assert.equal(r.next.trial_index, k + 1)
 })
 
-test('replay: a saved list from another seed, or an edited level, is refused (fails closed)', () => {
+// Trial matching is a consistency check, not a seed check (replay.js header): with few saved trials a wrong seed
+// is often accepted. Both cases below are fixed examples, not a search for a seed that happens to fail; the run
+// row's stored seed, engine version and config hash are the guard (next test).
+test('replay: trial matching refuses an edited level or answer, but is no proof of the seed', () => {
   const cfg = makeConfig({ mode: 'online', demo: true }).engine
   const live = liveRun(cfg, 5, OBSERVER, 11)
   const saved = live.steps.map(s => s.saved)
-  let otherSeed = null
-  for (const s of [6, 7, 8, 9, 10]) {
-    try { replay(saved, cfg, s) } catch (e) { otherSeed = e; break }
-  }
-  assert.ok(otherSeed instanceof ReplayMismatchError, 'another seed gives another trial order, which replay refuses')
+  assert.equal(saved.length, 9)
+  // seed 8's first trial is also a no-change trial, so one saved trial of the seed-5 run replays under seed 8
+  const wrong = replay(saved.slice(0, 1), cfg, 8)
+  assert.equal(wrong.n_replayed, 1, 'a wrong seed accepted: matching one trial says nothing about the seed')
+  // with the whole list the same wrong seed, and another, are refused
+  assert.throws(() => replay(saved, cfg, 8), ReplayMismatchError)
+  assert.throws(() => replay(saved, cfg, 6), ReplayMismatchError)
   const iAdaptive = saved.findIndex(t => t.placement === 'infogain')
   assert.ok(iAdaptive >= 0)
   const edited = saved.map((t, i) => (i === iAdaptive ? { ...t, magnitude: t.magnitude * 1.01 } : t))
@@ -282,6 +287,79 @@ test('replay: unanswered (null) trials replay too', () => {
   assert.deepStrictEqual(r.next, last.next_trial)
 })
 
+test('replay: the stored engine version and config hash are checked before anything is replayed', () => {
+  const cfg = makeConfig({ mode: 'online', demo: true }).engine
+  const live = liveRun(cfg, 5, OBSERVER, 11)
+  const saved = live.steps.map(s => s.saved)
+  const expect = { engine_version: ENGINE_VERSION, config_hash: configHash(cfg) }
+  assert.match(expect.config_hash, /^fnv1a64:[0-9a-f]{16}$/)
+  assert.deepStrictEqual(replay(saved, cfg, 5, { expect }).history, replay(saved, cfg, 5).history, 'a matching header changes nothing')
+  const refused = (opts, field) => assert.throws(() => replay(saved, cfg, 5, opts),
+    e => e instanceof ReplayMismatchError && e.details.field === field)
+  refused({ expect: { ...expect, engine_version: 'sdt-0.3.0-js1+radlab.0' } }, 'engine_version')
+  refused({ expect: { ...expect, config_hash: configHash({ ...cfg, design: { ...cfg.design, no_change_rate: 0.2 } }) } }, 'config_hash')
+  // the header is checked first: even an empty list (where trial matching has nothing to compare) is refused
+  assert.throws(() => replay([], cfg, 5, { expect: { ...expect, config_hash: 'fnv1a64:0000000000000000' } }), ReplayMismatchError)
+  // half a header is a caller error, not a pass
+  assert.throws(() => replay(saved, cfg, 5, { expect: { engine_version: ENGINE_VERSION } }), TypeError)
+  assert.throws(() => replay(saved, cfg, 5, { expect: null }), TypeError)
+})
+
+test('configHash: key order does not matter, any value does; deterministic', () => {
+  const cfg = makeConfig().engine
+  const deepReorder = o => (o && typeof o === 'object' && !Array.isArray(o)
+    ? Object.fromEntries(Object.keys(o).reverse().map(k => [k, deepReorder(o[k])])) : o)
+  assert.equal(configHash(deepReorder(cfg)), configHash(cfg))
+  assert.notEqual(JSON.stringify(deepReorder(cfg)), JSON.stringify(cfg), 'the reordering is real')
+  assert.equal(configHash(JSON.parse(JSON.stringify(cfg))), configHash(cfg), 'a JSON round trip (as through the database)')
+  assert.equal(configHash(makeConfig().engine), configHash(cfg))
+  assert.notEqual(configHash(makeConfig({ mode: 'lab' }).engine), configHash(cfg))
+  assert.notEqual(configHash({ a: [1, 2] }), configHash({ a: [2, 1] }))
+  assert.notEqual(configHash({ a: 1 }), configHash({ a: '1' }))
+  assert.equal(configHash({ a: 1, b: undefined }), configHash({ a: 1 }))
+  // pinned, so a change to the hash itself (which would orphan every stored run) fails here
+  assert.equal(configHash({ b: [1, 'x', null, true], a: { d: 0.25, c: -3 } }), configHash({ a: { c: -3, d: 0.25 }, b: [1, 'x', null, true] }))
+  assert.equal(configHash(''), 'fnv1a64:07cc7607b4949e25')   // FNV-1a 64 of the two bytes ""
+  assert.equal(configHash({ b: [1, 'x', null, true], a: { d: 0.25, c: -3 } }), 'fnv1a64:cc1a97ad3184d180')
+  assert.throws(() => configHash({ a: NaN }), TypeError)
+})
+
+test('replay: a saved trial without a response field is refused; an explicit null is unanswered', () => {
+  const cfg = makeConfig({ mode: 'online', demo: true }).engine
+  const live = liveRun(cfg, 5, OBSERVER, 11)
+  const saved = live.steps.map(s => s.saved)
+  const { response: _dropped, ...noField } = saved[1]
+  assert.throws(() => replay([saved[0], noField, ...saved.slice(2)], cfg, 5), e => e instanceof ReplayMismatchError && /no response field/.test(e.message))
+  assert.throws(() => replay([saved[0], { ...saved[1], response: undefined }], cfg, 5), ReplayMismatchError)
+  assert.throws(() => replay([null], cfg, 5), ReplayMismatchError)
+  assert.equal(replay([saved[0], { ...saved[1], response: null }], cfg, 5).n_replayed, 2)
+  assert.throws(() => savedTrial(live.init.trial), TypeError)
+})
+
 test('an AdaptiveSession must be seeded', () => {
   assert.throws(() => new A.AdaptiveSession(makeConfig().engine), /seeded rng/)
 })
+
+test('seeds: only an integer number in [0, 2^32) is accepted, by the controller, replay and makeRng', () => {
+  const cfg = makeConfig({ mode: 'online', demo: true }).engine
+  const BAD = [undefined, null, 1.9, '7', 'abc', -1, 2 ** 32, 2 ** 32 + 1, NaN, Infinity, 7n, true, [7], { seed: 7 }]
+  for (const seed of BAD) {
+    const msg = { type: 'init', cfg }
+    if (seed !== undefined) msg.seed = seed
+    assert.throws(() => A.makeController()(msg), RangeError, `controller init, seed ${String(seed)}`)
+    assert.throws(() => replay([], cfg, seed), RangeError, `replay, seed ${String(seed)}`)
+    assert.throws(() => A.makeRng(seed), /integer number in \[0, 2\^32\)/)
+  }
+  // a refused init leaves no session behind to answer
+  const ctl = A.makeController()
+  const first = ctl({ type: 'init', cfg, seed: 3 })
+  assert.throws(() => ctl({ type: 'init', cfg, seed: -1 }), RangeError)
+  assert.throws(() => ctl({ type: 'respond', trial_index: first.trial.trial_index, response: 'same' }), /unexpected trial/)
+  assert.equal(ctl({ type: 'readout' }).readout, null)
+  // valid seeds, including both ends, are used as before (draws pinned from the unguarded makeRng of commit 807d26b0)
+  for (const seed of [0, 1, 4242, 0xdeadbeef, 2 ** 32 - 1]) {
+    assert.equal(A.assertSeed(seed), seed)
+    assert.ok(A.makeController()({ type: 'init', cfg, seed }).trial)
+  }
+  const draws = r => Array.from({ length: 5 }, () => r.random())
+  assert.deepStrictEqual(draws(A.makeRng(1)), [0.8969592412468046, 0.2911854269914329, 0.9763102538418025, 0.243563235970214, 0.7215832360088825])})

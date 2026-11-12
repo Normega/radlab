@@ -18,6 +18,33 @@ import { validateConfig, deepCopy, deepMerge, VERSION as PORT_VERSION } from './
 /** Recorded with every run. Bump the suffix whenever anything in engine/ changes what a session does. */
 export const ENGINE_VERSION = `sdt-${PORT_VERSION}+radlab.1`
 
+// JSON with object keys in sorted order at every level, so equal configs give equal text whatever order their
+// keys were written in. Values follow JSON (undefined object members are left out, as JSON.stringify does).
+function canonicalJson(v) {
+  if (v === null || typeof v !== 'object') {
+    if (typeof v === 'number' && !Number.isFinite(v)) throw new TypeError(`configHash: ${v} cannot be hashed`)
+    if (typeof v === 'function' || typeof v === 'symbol' || typeof v === 'bigint' || v === undefined) throw new TypeError(`configHash: a ${typeof v} cannot be hashed`)
+    return JSON.stringify(v)
+  }
+  if (Array.isArray(v) || ArrayBuffer.isView(v)) return '[' + Array.from(v, canonicalJson).join(',') + ']'
+  const keys = Object.keys(v).filter(k => v[k] !== undefined).sort()
+  return '{' + keys.map(k => JSON.stringify(k) + ':' + canonicalJson(v[k])).join(',') + '}'
+}
+
+/**
+ * A deterministic fingerprint of a config snapshot: 64-bit FNV-1a over the UTF-8 bytes of its canonical JSON
+ * (keys sorted), as 'fnv1a64:' + 16 hex digits. Synchronous and identical in node and browsers (TextEncoder and
+ * BigInt). Not a security hash: it detects a config that differs from the stored one, it does not resist forgery.
+ * replay() checks configHash(cfg.engine), the engine config it is given, so store that one with the run.
+ */
+export function configHash(cfg) {
+  const bytes = new TextEncoder().encode(canonicalJson(cfg))
+  let h = 0xcbf29ce484222325n
+  const PRIME = 0x100000001b3n, MASK = 0xffffffffffffffffn
+  for (const b of bytes) h = ((h ^ BigInt(b)) * PRIME) & MASK
+  return 'fnv1a64:' + h.toString(16).padStart(16, '0')
+}
+
 export const MODES = {
   online: { change_trials_per_cell: 30, catch_trials_enabled: true },
   lab:    { change_trials_per_cell: 40, catch_trials_enabled: false },

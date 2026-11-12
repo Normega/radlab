@@ -16,7 +16,8 @@ const close = (a, b) => Math.abs(a - b) < 1e-12
 // The engine's own session, with the posterior work stubbed out so it runs in milliseconds. The scheduler and
 // the bookkeeping that drives it (nextTrial, _refillQueue, _nextCell, _catchPending, recordResponse, _record,
 // checkStop) run as they are; only the level choice, the likelihood updates and the summaries are replaced.
-function stubbedLiveOrder(engineCfg, seed) {
+// unanswered(i): true to leave the trial at position i (0-based) unanswered (response null).
+function stubbedLiveOrder(engineCfg, seed, unanswered = () => false) {
   const s = new AdaptiveSession(engineCfg, makeRng(seed))
   const x = s.proc.stim_grid
   s.proc.nextMagnitude = () => ({ requested_magnitude: x[5], magnitude: x[5], grid_index: 5, clamped: false, reference_threshold: null, target_dprime: null })
@@ -24,7 +25,10 @@ function stubbedLiveOrder(engineCfg, seed) {
   s.proc.engine.updateNoChange = () => {}
   s.proc.summary = () => ({ threshold: { ln_sd: 1 } })
   const out = []
-  for (let t = s.nextTrial(); t; t = s.nextTrial()) { out.push(t); s.recordResponse(t, out.length % 3 ? 'same' : 'slowed') }
+  for (let t = s.nextTrial(); t; t = s.nextTrial()) {
+    out.push(t)
+    s.recordResponse(t, unanswered(out.length - 1) ? null : (out.length % 3 ? 'same' : 'slowed'))
+  }
   return out
 }
 
@@ -154,6 +158,65 @@ test('different seeds give different orders; the same seed always the same plan'
   const a = JSON.stringify(buildTrialPlan(cfg, 5))
   assert.equal(a, JSON.stringify(buildTrialPlan(cfg, 5)))
   assert.notEqual(JSON.stringify(buildTrialPlan(cfg, 5).main), JSON.stringify(buildTrialPlan(cfg, 6).main))
+})
+
+test('a seed that is not an integer in [0, 2^32) is refused, as the engine refuses it', () => {
+  const cfg = makeConfig()
+  for (const seed of [undefined, null, 1.9, '7', 'abc', -1, 2 ** 32, 2 ** 32 + 1, NaN]) {
+    assert.throws(() => buildTrialPlan(cfg, seed), RangeError, String(seed))
+  }
+  assert.equal(buildTrialPlan(cfg, 2 ** 32 - 1).seed, 2 ** 32 - 1)
+})
+
+// The plan assumes every trial is answered (trialPlan.js header). These pin how an unanswered trial makes the
+// live session part from it, so Stage B does not compare cell_trial_index (or anything after a missed change
+// trial) naively.
+test('where the plan and the live session part: unanswered no-change, change and catch trials', () => {
+  const ORDER = ['trial_index', 'cell', 'placement']
+  const pick = (ts, keys) => ts.map(t => Object.fromEntries(keys.map(k => [k, t[k]])))
+  let nChecked = 0
+  for (const mode of ['online', 'lab']) {
+    const cfg = makeConfig({ mode })
+    for (const seed of [77, 3, 2026]) {
+      const plan = buildTrialPlan(cfg, seed).main
+      assert.deepStrictEqual(order(stubbedLiveOrder(cfg.engine, seed)), order(plan), 'all answered: identical')
+      const at = f => plan.findIndex((t, i) => i >= 10 && f(t))
+
+      // 1. an unanswered no-change trial: same length, order and placements; every later no-change trial's
+      //    cell_trial_index is one less than the plan's, everything else equal
+      const m = at(t => t.cell === 'no_change')
+      const live = stubbedLiveOrder(cfg.engine, seed, i => i === m)
+      assert.equal(live.length, plan.length)
+      assert.deepStrictEqual(pick(live, ORDER), pick(plan, ORDER))
+      let nShifted = 0
+      plan.forEach((p, i) => {
+        const shift = i > m && p.cell === 'no_change' ? 1 : 0
+        nShifted += shift
+        assert.equal(live[i].cell_trial_index, p.cell_trial_index - shift, `${mode} seed ${seed} trial ${i + 1}`)
+      })
+      assert.ok(nShifted > 0)
+
+      // 2. an unanswered change trial (each direction): identical up to and including it, then the session
+      //    is 1-3 trials longer and differs from the plan
+      for (const cell of ['speeding', 'slowing']) {
+        const c = at(t => t.cell === cell && t.placement !== 'catch')
+        const lc = stubbedLiveOrder(cfg.engine, seed, i => i === c)
+        assert.deepStrictEqual(order(lc.slice(0, c + 1)), order(plan.slice(0, c + 1)), `${mode} seed ${seed} ${cell}: before the miss`)
+        const extra = lc.length - plan.length
+        assert.ok(extra >= 1 && extra <= 3, `${mode} seed ${seed} ${cell}: ${extra} extra trials`)
+        const firstDiff = plan.findIndex((p, i) => p.placement !== lc[i].placement || p.cell !== lc[i].cell)
+        assert.ok(firstDiff > c, `${mode} seed ${seed} ${cell}: placements or order shift after the miss`)
+      }
+
+      // 3. an unanswered catch trial: nothing changes
+      const k = plan.findIndex(t => t.placement === 'catch')
+      if (k >= 0) {
+        assert.deepStrictEqual(order(stubbedLiveOrder(cfg.engine, seed, i => i === k)), order(plan), `${mode} seed ${seed}: catch`)
+      }
+      nChecked++
+    }
+  }
+  assert.equal(nChecked, 6)
 })
 
 test('practice: three large changes in a fixed order (2-s pulses, 8-s pulses, no change), or none', () => {
