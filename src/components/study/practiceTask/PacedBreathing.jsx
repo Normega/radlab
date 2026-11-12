@@ -49,6 +49,17 @@ function detectHoldMode() {
   }
 }
 
+// Both labels share one grid cell and the hidden one keeps its space, so the
+// box is always the size of the longer label and never jumps while held.
+function HoldLabel({ held, idle }) {
+  return (
+    <span className="pt-hold-labels">
+      <span aria-hidden={held} className={held ? 'off' : ''}>{idle}</span>
+      <span aria-hidden={!held} className={held ? '' : 'off'}>Breathing in</span>
+    </span>
+  )
+}
+
 const CUES = {
   settle: 'Get comfortable',
   in:     'In through your nose',
@@ -240,11 +251,11 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
               onLostPointerCapture={() => letGo()}
               onContextMenu={e => e.preventDefault()}
             >
-              {held ? 'Breathing in' : 'Touch and hold while you breathe in'}
+              <HoldLabel held={held} idle="Touch and hold while you breathe in" />
             </button>
           ) : (
             <div className={`pt-hold${held ? ' on' : ''}`}>
-              {held ? 'Breathing in' : 'Hold the spacebar while you breathe in'}
+              <HoldLabel held={held} idle="Hold the spacebar while you breathe in" />
             </div>
           )}
         </div>

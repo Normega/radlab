@@ -171,6 +171,11 @@
   color: var(--bgc);
 }
 
+/* both labels in one cell: the box keeps the longer one's size */
+.pt-hold-labels { display: grid; }
+.pt-hold-labels > span { grid-area: 1 / 1; }
+.pt-hold-labels > .off { visibility: hidden; }
+
 .pt-hold-touch {
   font-family: inherit;
   cursor: pointer;
