@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   createKeyLog, createKeyTracker, roleOf, pairPresses, controlSegments, normalizeSegments, parseKeyLog, scoreHolds,
-  MIN_HOLD_MS, MERGE_GAP_MS,
+  MIN_HOLD_MS, MERGE_GAP_MS, keyId,
 } from './keyLog.js'
 import * as Kite from '../Kite/breathShapes.js'
 import { buildTimeline, halfPulses } from './pacerClock.js'
@@ -14,14 +14,15 @@ import { mulberry32 } from '../BcatDdm/schedule.js'
 const KEYS = makeConfig().keys
 const W = { key: 'w', code: 'KeyW' }, S = { key: 's', code: 'KeyS' }, LEFT = { key: 'ArrowLeft', code: 'ArrowLeft' }
 
-// A trial log from a script of [t, 'down'|'up', key] steps.
-function logOf(steps, { endMs = 20000, heldAtStart = [], heldAtEnd } = {}) {
+// A trial log from a script of [t, 'down'|'up'|'blur', key] steps.
+function logOf(steps, { endMs = 20000, heldAtStart = [], heldAtEnd, tracker = createKeyTracker() } = {}) {
   const log = createKeyLog(KEYS)
-  const tracker = createKeyTracker()
   for (const h of heldAtStart) tracker.keydown(h)
   log.begin(0, tracker.held())
   for (const [t, kind, k] of steps) {
-    if (kind === 'down') { log.keydown({ ...k, t }); tracker.keydown(k) } else { log.keyup({ ...k, t }); tracker.keyup(k) }
+    if (kind === 'down') { log.keydown({ ...k, t }); tracker.keydown(k) } else if (kind === 'up') { log.keyup({ ...k, t }); tracker.keyup(k) } else {
+      log.blur({ t, tracker })
+    }
   }
   log.end(endMs, heldAtEnd ?? tracker.held())
   return log
@@ -231,6 +232,115 @@ test('a key already down at the trial start has no onset to score; one still dow
 test('the vision arm (no keys): nothing matched, coverage 0, no error', () => {
   const sc = scoreHolds(parseKeyLog(logOf([]).events, { endMs: tl.totalMs }), HALVES)
   assert.deepStrictEqual([sc.summary.n_holds, sc.summary.n_matched, sc.summary.mean_coverage, sc.summary.median_onset_lag_ms], [0, 0, 0, null])
+})
+
+// ── focus loss, delivery races, keys without a code ──────────────────────
+test('blur: every open press is closed at the blur and marked; the blur is in the raw log; no phantom hold next trial', () => {
+  const tracker = createKeyTracker()
+  const A = { key: 'a', code: 'KeyA' }
+  // W and S down, then the window loses focus with both still held; after focus returns W's key-up arrives,
+  // A (pressed while away) is released, and W is pressed again
+  const log = logOf([[1000, 'down', W], [1500, 'down', S], [2000, 'blur'], [2600, 'up', W], [2700, 'up', A],
+    [3000, 'down', W], [4000, 'up', W]], { endMs: 5000, tracker })
+  assert.deepStrictEqual(tracker.held(), [], 'the blur let go of every key')
+  const types = log.events.map(e => e.type)
+  assert.deepStrictEqual(types, ['keydown', 'keydown', 'blur', 'keyup', 'keyup', 'keydown', 'keyup'], 'every raw event kept, none added at the end')
+  assert.deepStrictEqual([log.events[2].t, log.events[2].role, log.blurs], [2000, null, 1])
+  const parsed = parseKeyLog(log.events, { endMs: 5000 })
+  assert.equal(parsed.blurred, true)
+  assert.deepStrictEqual(parsed.focusLost, [{ t0: 2000, t1: 3000 }])
+  assert.deepStrictEqual(parsed.presses.map(p => [p.role, p.t0, p.t1, p.closedBy, p.keyupAfterBlur]), [
+    ['grow', 1000, 2000, 'blur', 3], ['shrink', 1500, 2000, 'blur', null], ['grow', 3000, 4000, 'keyup', null]])
+  assert.ok(parsed.presses.every(p => !p.heldAtEnd), 'nothing looks held to the end')
+  assert.deepStrictEqual(parsed.unpairedKeyups, [4], 'the key-up of a key pressed while away: kept, in no press')
+  assert.deepStrictEqual(parsed.holds.map(h => [h.phase, h.t0, h.t1, h.closedByBlur]),
+    [['grow', 1000, 1500, true], ['shrink', 1500, 2000, true], ['grow', 3000, 4000, false]])
+  // the next trial: the tracker no longer reports W or S as held
+  const next = createKeyLog(KEYS)
+  next.begin(0, tracker.held())
+  assert.equal(next.events.length, 0, 'no phantom held_at_onset')
+  // a blur between trials (no log open) still clears the tracker
+  tracker.keydown(W)
+  assert.equal(createKeyLog(KEYS).blur({ t: 0, tracker }), false)
+  assert.deepStrictEqual(tracker.held(), [])
+  tracker.keydown(S); tracker.releaseAll()
+  assert.deepStrictEqual(tracker.held(), [])
+})
+
+test('blur: a hold closed by a blur is left out of onset lag and coverage; the summary says the trial was blurred', () => {
+  // the 250-ms tracker, with focus lost 600 ms into the fifth hold and back at the sixth key-down
+  const steps = []
+  HALVES.forEach(h => {
+    const k = h.phase === 'grow' ? W : S
+    steps.push([h.startMs + 250, 'down', k])
+    if (h.endMs + 250 < tl.totalMs) steps.push([h.endMs + 250, 'up', k])
+  })
+  const blurT = HALVES[4].startMs + 250 + 600
+  steps.push([blurT, 'blur'])
+  const order = { up: 0, blur: 1, down: 2 }
+  const log = logOf(steps.sort((a, b) => a[0] - b[0] || order[a[1]] - order[b[1]]), { endMs: tl.totalMs })
+  const parsed = parseKeyLog(log.events, { endMs: tl.totalMs })
+  const sc = scoreHolds(parsed, HALVES)
+  assert.equal(sc.summary.blurred, true)
+  assert.equal(sc.summary.n_blur_closed_holds, 1)
+  assert.deepStrictEqual(sc.holds.map(h => h.closedByBlur), [false, false, false, false, true, false, false, false, false, false])
+  assert.equal(sc.holds[4].half, null)
+  assert.deepStrictEqual([sc.halves[4].hold, sc.halves[4].onsetLagMs, sc.halves[4].coverage, sc.halves[4].blurred], [null, null, null, true])
+  // the sixth half overlaps the time away (focus is known to be back only at its key-down): no coverage, onset scored
+  assert.deepStrictEqual([sc.halves[5].onsetLagMs, sc.halves[5].coverage, sc.halves[5].blurred], [250, null, true])
+  assert.equal(sc.summary.n_blurred_halves, 2)
+  assert.equal(sc.summary.n_matched, 9)
+  const others = sc.halves.filter(r => !r.blurred)
+  assert.ok(Math.abs(sc.summary.mean_coverage - others.reduce((a, r) => a + r.coverage, 0) / others.length) < 1e-12)
+  // offline comparison: the same log scored as if nothing happened
+  const raw = scoreHolds(parsed, HALVES, { excludeBlurred: false })
+  assert.equal(raw.summary.n_matched, 10)
+  assert.ok(raw.halves.every(r => r.coverage !== null))
+  // a trial without a blur says so
+  assert.equal(scoreHolds(parseKeyLog(tracker(250).events, { endMs: tl.totalMs }), HALVES).summary.blurred, false)
+})
+
+test('race at trial start: a key-up stamped before the start but delivered after begin() closes the onset press at 0', () => {
+  const log = createKeyLog(KEYS)
+  log.begin(0, [{ ...W }])
+  log.keyup({ ...W, t: -5 })   // stamped before begin(), delivered after it
+  log.keydown({ ...W, t: 1000 })
+  log.keyup({ ...W, t: 2000 })
+  log.end(5000, [])
+  assert.deepStrictEqual(log.events.map(e => [e.type, e.t]), [['held_at_onset', 0], ['keyup', -5], ['keydown', 1000], ['keyup', 2000]],
+    'the raw key-up keeps its own timestamp')
+  const parsed = parseKeyLog(log.events, { endMs: 5000 })
+  assert.deepStrictEqual(parsed.presses.map(p => [p.role, p.t0, p.t1, p.durationMs, p.heldAtStart, p.heldAtEnd, p.upClamped, p.upEvent]), [
+    ['grow', 0, 0, 0, true, false, true, 1], ['grow', 1000, 2000, 1000, false, false, false, 3]])
+  assert.ok(parsed.presses.every(p => p.durationMs >= 0))
+  assert.deepStrictEqual(parsed.holds.map(h => [h.phase, h.t0, h.t1]), [['grow', 1000, 2000]])
+  // the same key-up with no held_at_onset (the tracker had not seen the key go down): a press of length 0, flagged
+  const p2 = pairPresses([{ i: 0, type: 'keyup', key: 'w', code: 'KeyW', role: 'grow', t: -5 }], { endMs: 5000 })
+  assert.deepStrictEqual(p2.map(p => [p.t0, p.t1, p.durationMs, p.inferredStart, p.upClamped]), [[0, 0, 0, true, true]])
+  // a key-down stamped before the start counts as down from the start; a key-up stamped before its own key-down
+  const p3 = pairPresses([
+    { i: 0, type: 'keydown', key: 's', code: 'KeyS', role: 'shrink', t: -20 },
+    { i: 1, type: 'keyup', key: 's', code: 'KeyS', role: 'shrink', t: 800 },
+    { i: 2, type: 'keydown', key: 'w', code: 'KeyW', role: 'grow', t: 1000 },
+    { i: 3, type: 'keyup', key: 'w', code: 'KeyW', role: 'grow', t: 999 },
+  ], { endMs: 5000 })
+  assert.deepStrictEqual(p3.map(p => [p.role, p.t0, p.t1, p.heldAtStart, p.downClamped, p.upClamped]), [
+    ['shrink', 0, 800, true, true, false], ['grow', 1000, 1000, false, false, true]])
+})
+
+test('keys without a code (code \'\') are told apart by their character', () => {
+  const W0 = { key: 'w', code: '' }, S0 = { key: 's', code: '' }
+  const tracker = createKeyTracker()
+  const log = logOf([[1000, 'down', W0], [2000, 'down', S0], [3000, 'up', W0], [4000, 'up', S0]], { endMs: 5000, tracker })
+  const presses = pairPresses(log.events, { endMs: 5000 })
+  assert.deepStrictEqual(presses.map(p => [p.role, p.t0, p.t1, p.missingKeyup, p.inferredStart]), [
+    ['grow', 1000, 3000, false, false], ['shrink', 2000, 4000, false, false]])
+  tracker.keydown(W0); tracker.keydown(S0)
+  assert.equal(tracker.held().length, 2)
+  tracker.keyup(W0)
+  assert.deepStrictEqual(tracker.held().map(k => k.key), ['s'])
+  assert.equal(keyId('w', ''), 'w')
+  assert.equal(keyId('w', 'KeyW'), 'KeyW')
 })
 
 test('the tracker across trials knows which keys are down', () => {
