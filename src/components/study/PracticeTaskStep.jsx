@@ -23,8 +23,10 @@ import './practiceTask/practiceTask.css'
  *     breathing_seconds  inhale_ms  exhale_ms  settle_ms   (defaults 240 / 4000 / 6000 / 2500)
  *     shape              'natural' or 'symmetric' pacer (default 'natural', breathTiming.js)
  *     voice_base         folder of recorded cues for the breathing arm
- *     hold_to_inhale     true: hold the spacebar while breathing in (keyboard only),
- *                        scored as an adherence check (breathHold.js)
+ *     hold_to_inhale     true: hold while breathing in, scored as an adherence
+ *                        check (breathHold.js): the spacebar on a computer, a
+ *                        button on a phone or tablet (detected, recorded as hold.mode)
+ *     hold_input         'key' or 'touch': skip the detection (the preview uses it)
  *     passage            reading passage key           (default 'mail_sorting_centre')
  *
  * Saved as ONE instrument_responses row (instrument type 'practice_task',

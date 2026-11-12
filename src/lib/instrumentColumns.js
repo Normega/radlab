@@ -128,6 +128,8 @@ export function instrumentColumns(prefix, type, response, def = null) {
       out[`${prefix}_breath_hold_release_lag_s`] = h ? secs(h.release_lag_ms) : null
       out[`${prefix}_breath_hold_phase_r`]     = h ? (h.phase_r ?? null) : null
       out[`${prefix}_breath_hold_input`]       = h ? ((h.input ?? []).join('+') || null) : null
+      // which instructions were shown: 'key' (spacebar) or 'touch' (button), as recorded
+      out[`${prefix}_breath_hold_mode`]        = h ? (h.mode ?? null) : null
       out[`${prefix}_read_passage`] = q ? (q.passage ?? null) : null
       out[`${prefix}_read_s`]       = q ? secs(q.read_ms) : null
       out[`${prefix}_read_questions_s`] = q ? secs(q.questions_ms) : null

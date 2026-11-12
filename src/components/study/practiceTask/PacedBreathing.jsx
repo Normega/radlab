@@ -25,13 +25,29 @@ import { useScrollToTopOn } from '../../../lib/scrollToTop'
 // is shown in demos, never to participants.
 //
 // Adherence check (config `hold_to_inhale`, off unless a step sets it). The
-// participant holds the spacebar while breathing in, and lets go while
-// breathing out. It is the keyboard only (Sandy, 2026-11-11): the box under
-// the circle shows whether the key is held and is not itself pressable, so
-// Study 4 needs a computer with a keyboard. Presses are timed on the
+// participant holds something while breathing in, and lets go while breathing
+// out. What they hold depends on the device, decided once when the step opens
+// and recorded as `hold.mode` (Norm, 2026-11-12):
+//   'key'    a computer: hold the spacebar (Sandy, 2026-11-11). The box under
+//            the circle only shows whether the key is held.
+//   'touch'  a phone or tablet (primary input a finger, no hover): touch and
+//            hold the box, which is a button. The spacebar also works, for a
+//            tablet with a keyboard; `hold.input` records what was used.
+// The step's config `hold_input` ('key' or 'touch') overrides the detection;
+// the preview page uses it to show either version. Presses are timed on the
 // pacer's visible clock, so they line up with the phase on screen, and are
 // scored by breathHold.js. Leaving the page or the window lets go of the press.
 // Nothing tells the participant whether they are in time.
+
+// A phone or tablet: the primary pointer is a finger and nothing can hover.
+// A touchscreen laptop reports its trackpad or mouse, so it counts as a computer.
+function detectHoldMode() {
+  try {
+    return window.matchMedia?.('(pointer: coarse) and (hover: none)')?.matches ? 'touch' : 'key'
+  } catch {
+    return 'key'
+  }
+}
 
 const CUES = {
   settle: 'Get comfortable',
@@ -57,6 +73,10 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
   const clk  = useRef({ visible: 0, last: 0 })                  // the pacer's visible clock
   const hold = useRef({ down: null, list: [], input: new Set() })
   const holdOn = cfg.hold_to_inhale === true
+  const [holdMode] = useState(() => ['key', 'touch'].includes(cfg.hold_input)
+    ? { mode: cfg.hold_input, from: 'step' }
+    : { mode: detectHoldMode(), from: 'detected' })
+  const touch = holdMode.mode === 'touch'
   useScrollToTopOn(stage)
 
   const voice = useBreathVoice(cfg.voice_base ?? null)
@@ -135,6 +155,8 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
           voice_off_ms:    Math.round(voiceOffMs),
           voice_toggles:   togglesRef.current,
           hold: holdOn ? {
+            mode:      holdMode.mode,
+            mode_from: holdMode.from,
             input:  [...hold.current.input].sort(),
             ...holdSummary(hold.current.list, cfg, c.visible),
             events: hold.current.list,
@@ -178,7 +200,9 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
       <div className="pt-card">
         <h2>Next: a breathing practice</h2>
         <p>It takes about {length}. You will breathe slowly along with a circle that grows and shrinks. Please sit comfortably. Please stay on this page during the task, and do not switch tabs. Press Start to begin the task.</p>
-        {holdOn && <p>While you breathe in, press and hold the spacebar on your keyboard. Let go as you breathe out.</p>}
+        {holdOn && (touch
+          ? <p>While you breathe in, touch and hold the button under the circle. Let go as you breathe out.</p>
+          : <p>While you breathe in, press and hold the spacebar on your keyboard. Let go as you breathe out.</p>)}
         <div className="pt-actions"><button type="button" className="pt-btn" onClick={start}>Start</button></div>
       </div>
     )
@@ -204,9 +228,25 @@ export default function PacedBreathing({ config, demoMode = false, onDone }) {
       </div>
       {holdOn && (
         <div className="pt-hold-wrap">
-          <div className={`pt-hold${held ? ' on' : ''}`}>
-            {held ? 'Breathing in' : 'Hold the spacebar while you breathe in'}
-          </div>
+          {touch ? (
+            <button
+              type="button"
+              tabIndex={-1}
+              className={`pt-hold pt-hold-touch${held ? ' on' : ''}`}
+              aria-pressed={held}
+              onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId); press(e.pointerType || 'pointer') }}
+              onPointerUp={() => letGo()}
+              onPointerCancel={() => letGo()}
+              onLostPointerCapture={() => letGo()}
+              onContextMenu={e => e.preventDefault()}
+            >
+              {held ? 'Breathing in' : 'Touch and hold while you breathe in'}
+            </button>
+          ) : (
+            <div className={`pt-hold${held ? ' on' : ''}`}>
+              {held ? 'Breathing in' : 'Hold the spacebar while you breathe in'}
+            </div>
+          )}
         </div>
       )}
       <div className="pt-bar">

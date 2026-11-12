@@ -139,7 +139,8 @@
 
 .pt-bar .pt-grow { flex: 1; }
 
-/* shows whether the spacebar is held (adherence check); not pressable */
+/* the hold check (adherence): on a computer it only shows whether the spacebar
+   is held; on a phone or tablet it is the button to hold (.pt-hold-touch) */
 .pt-hold-wrap {
   display: flex;
   justify-content: center;
@@ -168,6 +169,14 @@
 .pt-hold.on {
   background: var(--pkd);
   color: var(--bgc);
+}
+
+.pt-hold-touch {
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* reading */

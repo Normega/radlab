@@ -1,5 +1,6 @@
-// The breathing arm's adherence check: the participant holds the spacebar
-// while breathing in and lets go while breathing out. Each press is
+// The breathing arm's adherence check: the participant holds the spacebar (a
+// computer) or a button (a phone or tablet) while breathing in and lets go
+// while breathing out. Each press is
 // recorded on the pacer's own clock (visible time, breathTiming.js), so it can
 // be lined up against the phase the circle was showing.
 //
