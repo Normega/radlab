@@ -1,0 +1,61 @@
+{
+  "source": "NextStudy/Thresholds/6_online_pilot/tests/reference/",
+  "stride": 211,
+  "files": {
+    "case_A_default_40.json": {
+      "source_sha256": "63592c833d61e30f77a5e220af0b53e28058376171700f7350282f4b2e868e26",
+      "source_bytes": 21309288,
+      "reduced": "spec.logL_slowing_rows -> spec.logL_slowing_rows_sampled",
+      "fixture_sha256": "453479a4bdbb4650ffcc1c520a462d75d834a646295db1506d977dd419db54d3",
+      "fixture_bytes": 366969
+    },
+    "case_B_online_30_catch.json": {
+      "source_sha256": "41f9ff78e01377459a915954747b544a224e576684839601692432aec3e34830",
+      "source_bytes": 182294,
+      "fixture_sha256": "41f9ff78e01377459a915954747b544a224e576684839601692432aec3e34830",
+      "fixture_bytes": 182294
+    },
+    "case_C_heavy_lapse.json": {
+      "source_sha256": "5d9a9c3288196c112ad6d76be8864214b85b393dcb0c651c280267a2df3efd22",
+      "source_bytes": 175124,
+      "fixture_sha256": "5d9a9c3288196c112ad6d76be8864214b85b393dcb0c651c280267a2df3efd22",
+      "fixture_bytes": 175124
+    },
+    "case_D_censored_slowing.json": {
+      "source_sha256": "f1d8182f3039122fbd00b034c7f63dbb04aa1195bbfd8dc7b09b4dd8288c244a",
+      "source_bytes": 123007,
+      "fixture_sha256": "f1d8182f3039122fbd00b034c7f63dbb04aa1195bbfd8dc7b09b4dd8288c244a",
+      "fixture_bytes": 123007
+    },
+    "case_E_precision_filler.json": {
+      "source_sha256": "da4ba18a075bc3fe2fe68ff09965f44d156fa7d40f4afe4b628970a0d1dae6d0",
+      "source_bytes": 94010,
+      "fixture_sha256": "da4ba18a075bc3fe2fe68ff09965f44d156fa7d40f4afe4b628970a0d1dae6d0",
+      "fixture_bytes": 94010
+    },
+    "case_F_two_categories.json": {
+      "source_sha256": "c13d3140e10d62e370a524d3d153b8249cbb7047005705d769bc701be8350aed",
+      "source_bytes": 97599,
+      "fixture_sha256": "c13d3140e10d62e370a524d3d153b8249cbb7047005705d769bc701be8350aed",
+      "fixture_bytes": 97599
+    },
+    "case_G_demo_3_catch1.json": {
+      "source_sha256": "bbe63bf5f40b6837622e8364a3bfe403848bf2859cb73d4bc07bee5596fb15c8",
+      "source_bytes": 37105,
+      "fixture_sha256": "bbe63bf5f40b6837622e8364a3bfe403848bf2859cb73d4bc07bee5596fb15c8",
+      "fixture_bytes": 37105
+    },
+    "ndtr.json": {
+      "source_sha256": "db9a228e11eb6056b136af42e7a0956ae73a1473b44c3af7b49feff0d79bde5e",
+      "source_bytes": 33874,
+      "fixture_sha256": "db9a228e11eb6056b136af42e7a0956ae73a1473b44c3af7b49feff0d79bde5e",
+      "fixture_bytes": 33874
+    },
+    "readouts_stable_sort.json": {
+      "source_sha256": "144f28e053e46a7f5d77e41fd2db0ecbf550a5399ac38575563a2d061b12a9e8",
+      "source_bytes": 47542,
+      "fixture_sha256": "144f28e053e46a7f5d77e41fd2db0ecbf550a5399ac38575563a2d061b12a9e8",
+      "fixture_bytes": 47542
+    }
+  }
+}
