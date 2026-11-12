@@ -100,6 +100,7 @@ const AlongsidePreview  = lazy(() => import('./pages/dev/AlongsidePreview'))
 const SidelongPreview   = lazy(() => import('./pages/dev/SidelongPreview'))
 const OwlBarnPreview    = lazy(() => import('./pages/dev/OwlBarnPreview'))
 const SensingPausePreview = lazy(() => import('./pages/dev/SensingPausePreview'))
+const BcatThresholdPreview = lazy(() => import('./pages/dev/BcatThresholdPreview'))
 const Keynote   = lazy(() => import('./pages/keynote/Keynote'))
 const ToniJuly2026 = lazy(() => import('./pages/toni-july-2026/ToniJuly2026'))
 const AdobeAug2026 = lazy(() => import('./pages/adobe-aug-2026/AdobeAug2026'))
@@ -728,6 +729,8 @@ export default function App() {
           <Route path="/dev/owl-barn-preview" element={<OwlBarnPreview />} />
           {/* Sense Foraging 2b's free-choice pause in a mock survey; nothing saved (?fast=1 shortens the timers) */}
           <Route path="/dev/sensing-pause-preview" element={<SensingPausePreview />} />
+          {/* BCAT threshold task, no-save preview without signing in; `npm run dev` only (?arm=&demo=1&simulate=1) */}
+          <Route path="/dev/bcat-threshold" element={<BcatThresholdPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
           {/* Kite (né Free Breathing) graduated to the catalog (2026-09-04) — old dev URL forwards */}

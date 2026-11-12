@@ -1,0 +1,163 @@
+/* BCAT threshold task. Scoped to .bt. Site tokens only (src/index.css): ground --bg, cards --bgc, text --tx and
+   --tx2, buttons --pkd (hover --pkdd), the circle --pk. Type 12/14/16/20/28; radius 24 buttons, 12 cards;
+   spacing 4/8/16/24/32/40/48/64. */
+
+.bt {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.bt *, .bt *::before, .bt *::after { box-sizing: border-box; }
+
+.bt-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 16px 64px;
+}
+
+.bt-card {
+  background: var(--bgc);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.bt-card h2 {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 0 0 16px;
+}
+
+.bt-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+
+.bt-card p { margin: 0 0 16px; }
+
+.bt-counter {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx2);
+  margin: 0 0 8px;
+}
+
+.bt-key {
+  display: inline-block;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 0 8px;
+  margin: 0 4px;
+  border: 1px solid var(--bds);
+  border-bottom-width: 2px;
+  border-radius: 12px;
+  background: var(--bgc);
+  color: var(--tx);
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.bt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.bt-hint { font-size: 14px; color: var(--tx2); margin: 0; }
+
+.bt-btn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  border: none;
+  border-radius: 24px;
+  padding: 8px 24px;
+  background: var(--pkd);
+  color: var(--bgc);
+  cursor: pointer;
+}
+.bt-btn:hover { background: var(--pkdd); }
+.bt-btn:focus-visible { outline: 2px solid var(--pkd); outline-offset: 4px; }
+.bt-btn.quiet { background: var(--bgc); color: var(--tx); border: 1px solid var(--bds); }
+.bt-btn.quiet:hover { background: var(--bgp); }
+.bt-btn[aria-pressed="true"] { background: var(--pkd); color: var(--bgc); border-color: var(--pkd); }
+
+.bt-err { color: var(--err-tx); }
+
+/* the trial screen: circle, one cue line, the question picture. Nothing else. */
+.bt-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg);
+  overflow: hidden;
+  cursor: none;
+}
+.bt-stage[hidden] { display: none; }
+
+.bt-circle-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.bt-circle {
+  border-radius: 50%;
+  background: var(--pk);
+  will-change: transform;
+}
+
+.bt-cue {
+  position: absolute;
+  top: 48px;
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  text-align: center;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--tx);
+}
+
+.bt-question {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 5vh + 24px);
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+.bt-question img {
+  display: block;
+  height: 34vh;
+  width: auto;
+  max-width: calc(100vw - 32px);
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* preview only */
+.bt-choice { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.bt-readout {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--tx2);
+  background: var(--bgp);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+}

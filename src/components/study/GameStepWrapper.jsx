@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import AptitudeSuite from '../../games/AptitudeSuite/AptitudeSuite'
 import BreathBelt    from '../../games/BreathBelt/BreathBelt'
 import ColorMax      from '../../games/ColorMax/ColorMax'
@@ -8,8 +9,12 @@ import StillWater    from '../../games/StillWater/StillWater'
 import WordMax       from '../../games/WordMax/WordMax'
 import { usePhysioContext } from './PhysioContext'
 
+// Lazy: the task and its engine load only when a session reaches this step.
+const BcatThreshold = lazy(() => import('../../games/BcatThreshold/BcatThreshold'))
+
 const GAME_COMPONENTS = {
   aptitude_suite: AptitudeSuite,
+  bcat_threshold: BcatThreshold,
   breath_belt:    BreathBelt,
   color_max:      ColorMax,
   foggy_valleys_1: FoggyValleysFirst,
@@ -38,18 +43,20 @@ export default function GameStepWrapper({ slug, enrollment, scheduleId = null, o
   const physioProps = PHYSIO_AWARE_SLUGS.has(slug) ? { physio: physio ?? null } : {}
 
   return (
-    <GameComponent
-      studyMode
-      userId={enrollment.profile_id ?? enrollment.user_id}
-      studyId={enrollment.studies?.id ?? enrollment.study_id}
-      externalId={enrollment.external_id}
-      scheduleId={scheduleId}
-      onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
-      supabaseClient={supabaseClient}
-      isSimMode={isSimMode}
-      assignments={assignments}
-      {...physioProps}
-    />
+    <Suspense fallback={null}>
+      <GameComponent
+        studyMode
+        userId={enrollment.profile_id ?? enrollment.user_id}
+        studyId={enrollment.studies?.id ?? enrollment.study_id}
+        externalId={enrollment.external_id}
+        scheduleId={scheduleId}
+        onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
+        supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+        assignments={assignments}
+        {...physioProps}
+      />
+    </Suspense>
   )
 }
 

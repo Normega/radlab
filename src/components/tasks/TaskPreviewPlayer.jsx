@@ -15,6 +15,8 @@ const GAMES = {
   color_max:      lazy(() => import('../../games/ColorMax/ColorMax')),
   word_max:       lazy(() => import('../../games/WordMax/WordMax')),
   foggy_valleys:  lazy(() => import('../../games/FoggyValleys/FoggyValleys')),
+  // writes nothing at all yet (Stage B); arm and version from ?arm=&demo=&simulate= or its own chooser
+  bcat_threshold: lazy(() => import('../../games/BcatThreshold/BcatThreshold')),
 }
 
 export default function TaskPreviewPlayer({ slug, name, quickDemo = false }) {

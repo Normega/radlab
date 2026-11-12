@@ -27,6 +27,9 @@ export const TASKS = {
   foggy_valleys_1: { name: 'Foggy Valleys – first valley', runsInSessions: true, note: 'Sandy Study 4 · fog from slot valley_order' },
   foggy_valleys_2: { name: 'Foggy Valleys – second valley', runsInSessions: true, note: 'Sandy Study 4 · after the first valley' },
   foggy_valleys_review: { name: 'Foggy Valleys – review of what was missed', runsInSessions: true, note: 'Sandy Study 4 · after both valleys' },
+  // BCAT threshold pilot (NextStudy/Thresholds): the arm comes from slot bcat_arm in a session; the preview
+  // takes ?arm=vision|touch|breath, &demo=1, &simulate=1, or offers a chooser. Stage B: nothing is saved.
+  bcat_threshold: { name: 'BCAT threshold task', previewable: true, runsInSessions: true, note: 'Threshold pilot · arm from slot bcat_arm · not piloted' },
   pond_watch:     { name: 'Pond Watch', route: '/games/pond-watch',     runsInSessions: true },
   still_water:    { name: 'Still Water', route: '/games/still-water',    runsInSessions: true },
   breath_belt:    { name: 'Breath Belt', route: '/games/breath-belt',    runsInSessions: true, note: 'Requires Polar H10 belt' },
