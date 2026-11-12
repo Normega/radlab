@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -10,6 +10,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
+// every step component comes with it, so it loads on the first Preview click
+const StepPreviewModal = lazy(() => import('../../components/study/StepPreviewModal'))
 
 const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy', 'assessment', 'video', 'form', 'physio', 'training', 'embedded_practice', 'practice_task', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
 const CATEGORY_LABELS = {
@@ -121,7 +123,24 @@ function useSession(id) {
   })
 }
 
-function SortableItem({ item, onRemove, verdict }) {
+// A sequence item as the node a session would hand StepDispatcher (the shape
+// SessionDemoModal builds), for the per-step Preview button. Unsaved items work
+// too: everything needed is on the item.
+function previewNode(item) {
+  const base = { id: item._key, label: item.label }
+  if (item.module_id) {
+    return { ...base, module_id: item.module_id,
+      activities: { id: null, category: 'training', subcategory: item.module_id, label: item.label } }
+  }
+  if (item.questionnaire_id) {
+    return { ...base, questionnaire_id: item.questionnaire_id,
+      activities: { id: item.questionnaire_id, category: 'questionnaire', subcategory: item.questionnaire_slug ?? null, label: item.label } }
+  }
+  return { ...base, activity_id: item.activity_id,
+    activities: { id: item.activity_id, category: item.activity_category ?? item.category, subcategory: item.subcategory ?? null, label: item.label } }
+}
+
+function SortableItem({ item, onRemove, onPreview, verdict }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item._key })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -140,6 +159,8 @@ function SortableItem({ item, onRemove, verdict }) {
         {item.estimated_minutes ? (
           <span style={S.seqMin}>{item.estimated_minutes}m</span>
         ) : null}
+        <button type="button" style={S.previewBtn} onClick={() => onPreview(item)}
+          title="See this step as a participant would. Nothing is saved.">Preview</button>
         <button style={S.removeBtn} onClick={() => onRemove(item._key)}>×</button>
       </div>
       {hasWarnings && (
@@ -176,6 +197,7 @@ export default function SessionBuilder() {
   const [sequence,      setSequence]      = useState([])
   const [error,         setError]         = useState(null)
   const [collapsedCats, setCollapsedCats] = useState(new Set(CATEGORY_ORDER))
+  const [previewItem,   setPreviewItem]   = useState(null)
 
   function toggleCat(cat) {
     setCollapsedCats(prev => {
@@ -197,8 +219,10 @@ export default function SessionBuilder() {
       _key:              `existing-${n.id}-${i}`,
       activity_id:       n.activity_id      ?? null,
       questionnaire_id:  n.questionnaire_id ?? null,
+      questionnaire_slug: n.questionnaires?.slug ?? null,
       module_id:         n.module_id        ?? null,
       label:             n.activities?.label ?? n.questionnaires?.name ?? n.label,
+      activity_category: n.activities?.category ?? null,
       category:          n.module_id ? 'training' : (n.activities ? displayCategory(n.activities) : 'questionnaire'),
       subcategory:       n.activities?.subcategory ?? null,
       estimated_minutes: n.activities?.estimated_minutes ?? null,
@@ -238,6 +262,7 @@ export default function SessionBuilder() {
         _key:             `q-${act.id}-${Date.now()}`,
         activity_id:      null,
         questionnaire_id: act.id,
+        questionnaire_slug: act.slug ?? null,
         module_id:        null,
         label:            act.label,
         category:         'questionnaire',
@@ -251,6 +276,7 @@ export default function SessionBuilder() {
         module_id:         null,
         label:             act.label,
         category:          displayCategory(act),
+        activity_category: act.category,
         subcategory:       act.subcategory ?? null,
         estimated_minutes: act.estimated_minutes,
       }])
@@ -534,10 +560,15 @@ export default function SessionBuilder() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={sequence.map(i => i._key)} strategy={verticalListSortingStrategy}>
                 {sequence.map((item, i) => (
-                  <SortableItem key={item._key} item={item} onRemove={removeItem} verdict={verdicts[i]} />
+                  <SortableItem key={item._key} item={item} onRemove={removeItem} onPreview={setPreviewItem} verdict={verdicts[i]} />
                 ))}
               </SortableContext>
             </DndContext>
+          )}
+          {previewItem && (
+            <Suspense fallback={null}>
+              <StepPreviewModal node={previewNode(previewItem)} onClose={() => setPreviewItem(null)} />
+            </Suspense>
           )}
           {totalMinutes > 0 && (
             <div style={S.totalRow}>
@@ -581,6 +612,7 @@ const S = {
   seqLabel:     { fontSize: 14, color: 'var(--tx)', fontFamily: '"DM Sans",system-ui,sans-serif', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   seqCat:       { fontSize: 12, color: 'var(--tx3)', fontFamily: '"Space Mono",monospace', display: 'block' },
   seqMin:       { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', flexShrink: 0 },
+  previewBtn:   { background: 'none', border: '1px solid var(--bd)', borderRadius: 24, padding: '4px 16px', cursor: 'pointer', fontSize: 12, color: 'var(--pkd)', fontFamily: '"DM Sans",system-ui,sans-serif', flexShrink: 0 },
   removeBtn:    { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--tx3)', padding: '0 2px', lineHeight: 1, flexShrink: 0 },
   totalRow:     { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--bd)', marginTop: 12, paddingTop: 10 },
   totalLabel:   { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },

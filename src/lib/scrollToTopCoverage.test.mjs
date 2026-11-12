@@ -80,7 +80,7 @@ test('every session runner marks its scroll panel', () => {
   for (const f of all) {
     const src = readFileSync(f, 'utf8')
     if (!/<StepDispatcher\b/.test(src)) continue
-    if (relOf(f) === 'components/study/SessionDemoModal.jsx') {
+    if (['components/study/SessionDemoModal.jsx', 'components/study/StepPreviewModal.jsx'].includes(relOf(f))) {
       // Renders inside DemoModal, which carries the marker.
       assert.match(readFileSync(join(SRC, 'components/DemoModal.jsx'), 'utf8'), /data-scroll-root/)
       continue
