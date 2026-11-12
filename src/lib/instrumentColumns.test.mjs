@@ -148,13 +148,13 @@ check('hyphens are stripped from ids',
   check('no hold check asked: its columns are blank', br.relax_s1_breath_hold_balanced_pct === null && rd.relax_s1_breath_hold_presses === null)
   const hd = instrumentColumns('relax_s1', 'practice_task', {
     arm: 'breathing', completed: true, reading: null,
-    breathing: { visible_ms: 240000, cycles: 24, hold: { input: ['key', 'touch'], presses: 23, cycles_pressed: 22, inhale_held_pct: 81.5,
+    breathing: { visible_ms: 240000, cycles: 24, hold: { mode: 'touch', input: ['key', 'touch'], presses: 23, cycles_pressed: 22, inhale_held_pct: 81.5,
       exhale_held_pct: 9.2, balanced_pct: 86.2, onset_lag_ms: 412, release_lag_ms: 260, phase_r: 0.93 } },
   })
   check('the hold check exports its summary, lags in seconds',
     hd.relax_s1_breath_hold_presses === 23 && hd.relax_s1_breath_hold_breaths === 22 && hd.relax_s1_breath_hold_balanced_pct === 86.2 &&
     hd.relax_s1_breath_hold_onset_lag_s === 0.4 && hd.relax_s1_breath_hold_release_lag_s === 0.3 && hd.relax_s1_breath_hold_phase_r === 0.93 &&
-    hd.relax_s1_breath_hold_input === 'key+touch')
+    hd.relax_s1_breath_hold_input === 'key+touch' && hd.relax_s1_breath_hold_mode === 'touch')
 }
 
 console.log(`instrumentColumns: ${pass} passed, ${fail} failed`)
