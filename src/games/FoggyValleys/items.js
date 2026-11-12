@@ -1,8 +1,11 @@
 // Ratings asked inside the game, worded exactly as in the Study 4 prototype.
-// CORE is the set asked at every time point; VALLEY items only after each valley.
-// Stress uses the platform's own item. The two emotionality sliders are
+// CORE is the set asked at every time point; VALLEY items only after each valley
+// (the past-tense motivation and performance items too, so "before you start"
+// never asks about a task not yet done).
+// Updated 2026-11-12 to Study 4's revised wording (stress 0-100, no alertness,
+// past-tense motivation, performance relative to other people). The two emotionality sliders are
 // placeholders for the platform's Study 3 sliders, whose wording a study build
-// must copy exactly. Calm, motivation and alertness use the wording in Sandy's
+// must copy exactly. Calm and motivation follow the wording in Sandy's
 // Study_Flow_for_Norm.md.
 //
 // These run in the preview only. A study session asks its ratings with the
@@ -10,17 +13,17 @@
 // tables as every other rating (see FoggyValleys.jsx, studyMode).
 
 export const CORE = [
-  { id: 'stress', type: 'six', q: 'Right now, how stressed are you feeling?', anchors: ['Not at all stressed', 'Slightly stressed', 'Somewhat stressed', 'Moderately stressed', 'Very stressed', 'Extremely stressed'] },
+  { id: 'stress', type: 'slider', q: 'Right now, how stressed are you feeling?', lo: 'Not at all stressed', hi: 'Extremely stressed' },
   { id: 'negative_emotionality', type: 'slider', q: 'Negative emotionality', placeholder: true, lo: '0', hi: '100' },
   { id: 'positive_emotionality', type: 'slider', q: 'Positive emotionality', placeholder: true, lo: '0', hi: '100' },
   { id: 'calm', type: 'slider', q: 'How calm or relaxed do you feel right now?', lo: 'Not at all calm', hi: 'Extremely calm' },
-  { id: 'motivation', type: 'slider', q: 'How motivated are you to do well on this task?', lo: 'Not at all motivated', hi: 'Extremely motivated' },
-  { id: 'alertness', type: 'slider', q: 'How alert or energetic do you feel right now?', lo: 'Not at all alert', hi: 'Extremely alert' },
 ]
 
 export const VALLEY = [
+  { id: 'motivation', type: 'slider', q: 'How motivated were you to do well on this task?', lo: 'Not at all motivated', hi: 'Extremely motivated' },
+  { id: 'performance', type: 'slider', q: 'How well do you think you performed on this task relative to other people?', lo: 'Much worse than others', hi: 'Much better than others' },
   { id: 'bother_moving_on', type: 'slider', q: 'How much did it bother you to move on from pictures before you had found every difference?', lo: 'Not at all', hi: 'Extremely' },
-  { id: 'enjoyment', type: 'six', q: 'How enjoyable did you find this valley?', anchors: ['Not at all enjoyable', 'Slightly enjoyable', 'Somewhat enjoyable', 'Moderately enjoyable', 'Very enjoyable', 'Extremely enjoyable'] },
+  { id: 'enjoyment', type: 'six', q: 'How much did you enjoy looking for differences in this valley?', anchors: ['Not at all', 'Slightly', 'Somewhat', 'Moderately', 'Very much', 'Extremely'] },
 ]
 
 // Asked after each picture that cleared (D4, 2026-11-05): why they moved on
