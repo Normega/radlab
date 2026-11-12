@@ -10,19 +10,30 @@ const ref = f => JSON.parse(readFileSync(new URL(`./engine/reference/${f}`, impo
 const ENGINE_KEYS = ['model', 'stimulus', 'design', 'stopping', 'placement', 'sdt']
 const engineSections = c => Object.fromEntries(ENGINE_KEYS.map(k => [k, c[k]]))
 
-test('online mode is the online pilot build: 30 per direction, catch trials on (reference session B)', () => {
+// The one documented departure from the approved reference configs: no lead-in pulse (Norm, 2026-11-12), so a
+// trial is two baseline pulses and two changed ones. The reference sessions keep their own lead-in of 1 (the
+// engine reference tests run on those configs); every other engine field must still equal the reference's.
+function approvedEngine(refConfig) {
+  const e = engineSections(refConfig)
+  assert.equal(e.stimulus.n_lead_in_pulses, 1, 'the reference config has one lead-in pulse')
+  return { ...e, stimulus: { ...e.stimulus, n_lead_in_pulses: 0 } }
+}
+
+test('online mode is the online pilot build: 30 per direction, catch trials on (reference session B, no lead-in)', () => {
   const c = makeConfig({ mode: 'online' })
   assert.equal(c.mode, 'online')
   assert.equal(c.engine.stopping.change_trials_per_cell, 30)
   assert.equal(c.engine.design.catch_trials.enabled, true)
-  assert.deepStrictEqual(c.engine, engineSections(ref('case_B_online_30_catch.json').config))
+  assert.equal(c.engine.stimulus.n_lead_in_pulses, 0)
+  assert.deepStrictEqual(c.engine, approvedEngine(ref('case_B_online_30_catch.json').config))
 })
 
-test('lab mode is the approved YAML: 40 per direction, catch trials off (reference session A)', () => {
+test('lab mode is the approved YAML: 40 per direction, catch trials off (reference session A, no lead-in)', () => {
   const c = makeConfig({ mode: 'lab' })
   assert.equal(c.engine.stopping.change_trials_per_cell, 40)
   assert.equal(c.engine.design.catch_trials.enabled, false)
-  assert.deepStrictEqual(c.engine, engineSections(ref('case_A_default_40.json').config))
+  assert.equal(c.engine.stimulus.n_lead_in_pulses, 0)
+  assert.deepStrictEqual(c.engine, approvedEngine(ref('case_A_default_40.json').config))
 })
 
 test('the default is online; an unknown mode fails closed', () => {

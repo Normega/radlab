@@ -51,12 +51,14 @@ export const MODES = {
 }
 
 // The approved `sdt` configuration (6_online_pilot/js/config.js, sections model to sdt).
+const LN_1_5 = Math.log(1.5)
+
 const ENGINE = {
   model: 'sdt',
   stimulus: {
     baseline_pulse_s: 4.0,      // one pulse = grow (inhale) + shrink (exhale); 4 s = 15 breaths/min
-    n_lead_in_pulses: 1,        // one unanalyzed pulse at the baseline pace first
-    n_pulses: 4,                // the trial's own pulses after the lead-in
+    n_lead_in_pulses: 0,        // no lead-in: two pulses at baseline, then two changed (Norm, 2026-11-12)
+    n_pulses: 4,                // the trial's pulses
     change_after_pulse: 2,      // pulses 1-2 at baseline, 3-4 changed (abrupt)
     min_pulse_s: 2.0,
     max_pulse_s: 8.0,
@@ -104,7 +106,7 @@ const DEMO_OVERRIDES = { stopping: { change_trials_per_cell: 3 }, design: { catc
 
 const BASE = {
   timing: {
-    fixation_ms: 1500,          // still circle at its smallest size before the lead-in (decision 9.2)
+    fixation_ms: 1500,          // still circle at its smallest size before the first pulse (decision 9.2)
   },
   display: {
     circle_min_size: 0.1,       // diameter as a fraction of the window height, as the source build
@@ -125,7 +127,8 @@ const BASE = {
   practice: {
     enabled: true,
     feedback: true,             // after each practice trial, say what the circle did
-    trials: [{ cell: 'speeding', magnitude: 'ln2' }, { cell: 'slowing', magnitude: 'ln2' }, { cell: 'no_change' }],
+    // ln 1.5: 4-s pulses become 2.67 s or 6 s. Was ln 2 (2 s or 8 s), which Norm found excessive (2026-11-12).
+    trials: [{ cell: 'speeding', magnitude: LN_1_5 }, { cell: 'slowing', magnitude: LN_1_5 }, { cell: 'no_change' }],
   },
 }
 

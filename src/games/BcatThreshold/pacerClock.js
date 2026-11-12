@@ -7,7 +7,8 @@
 //
 // One trial (PLAN.md section 3):
 //   fixation   the circle still at its smallest size, timing.fixation_ms (1500 ms)
-//   lead-in    1 pulse at the baseline pace (4 s), not analyzed
+//   lead-in    n_lead_in_pulses pulses at the baseline pace (4 s), not analyzed. 0 in the approved config
+//              since 2026-11-12: no lead-in is shown (the option stays; the timeline still supports one)
 //   pulses     4 test pulses; on a change trial pulses 3 and 4 are changed abruptly (2-8 s)
 //   done       back at the smallest size, still; the question follows
 //
@@ -29,14 +30,15 @@ export function fillAt(phase, x) {
 
 /**
  * The schedule of one trial.
- * @param {number[]} pulseDurationsS  every pulse in order, lead-in first (an engine trial's pulse_durations_s)
+ * @param {number[]} pulseDurationsS  every pulse in order, any lead-in first (an engine trial's pulse_durations_s)
  * @param {{ fixationMs?: number, nLeadIn?: number, changeIndex?: number|null, minScale?: number, maxScale?: number }} [opts]
+ *   nLeadIn — how many of the first pulses are lead-in (default 0, none; callers pass the trial's n_lead_in_pulses)
  *   changeIndex — 0-based index of the first changed pulse, or null on a no-change trial
  * @returns {{ fixationMs, totalMs, nLeadIn, minScale, maxScale, pulses: Array<{ index, startMs, midMs, endMs,
- *   durationMs, leadIn, changed }> }}  index is 1-based with the lead-in as pulse 1 (the source build's pulse_index)
+ *   durationMs, leadIn, changed }> }}  index is 1-based, counting any lead-in pulse first (the source build's pulse_index)
  */
 export function buildTimeline(pulseDurationsS, opts = {}) {
-  const { fixationMs = 1500, nLeadIn = 1, changeIndex = null, minScale = 0.1, maxScale = 0.3 } = opts
+  const { fixationMs = 1500, nLeadIn = 0, changeIndex = null, minScale = 0.1, maxScale = 0.3 } = opts
   if (!Array.isArray(pulseDurationsS) || pulseDurationsS.length === 0) throw new Error('buildTimeline: need at least one pulse')
   if (!(fixationMs >= 0) || !Number.isFinite(fixationMs)) throw new Error('buildTimeline: fixationMs must be a finite number >= 0')
   const pulses = []

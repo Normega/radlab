@@ -163,19 +163,33 @@ test('overlap: the most recently pressed key that is still held wins (Kite\'s co
 })
 
 // ── scoring against the pacer ────────────────────────────────────────────
-const tl = buildTimeline([4, 4, 4, 2.6, 2.6], { fixationMs: 1500, changeIndex: 3 })
+// a timeline with a lead-in pulse (the scoring does not depend on it; the approved config now has none)
+const tl = buildTimeline([4, 4, 4, 2.6, 2.6], { fixationMs: 1500, nLeadIn: 1, changeIndex: 3 })
 const HALVES = halfPulses(tl)
 
-function tracker(lagMs) {
+function tracker(lagMs, timeline = tl) {
   // hold the right key from each half's start + lag to the next half's start + lag (a hand-over at each boundary)
   const steps = []
-  HALVES.forEach(h => {
+  halfPulses(timeline).forEach(h => {
     const k = h.phase === 'grow' ? W : S
     steps.push([h.startMs + lagMs, 'down', k])
-    if (h.endMs + lagMs < tl.totalMs) steps.push([h.endMs + lagMs, 'up', k])
+    if (h.endMs + lagMs < timeline.totalMs) steps.push([h.endMs + lagMs, 'up', k])
   })
-  return logOf(steps.sort((a, b) => a[0] - b[0] || (a[1] === 'up' ? -1 : 1)), { endMs: tl.totalMs })
+  return logOf(steps.sort((a, b) => a[0] - b[0] || (a[1] === 'up' ? -1 : 1)), { endMs: timeline.totalMs })
 }
+
+test('the approved trial (no lead-in, 4 pulses): all eight halves scored from the first grow, the last four changed', () => {
+  const cfg = makeConfig()
+  const t4 = buildTimeline([4, 4, 2.6, 2.6], { fixationMs: cfg.timing.fixation_ms, nLeadIn: cfg.engine.stimulus.n_lead_in_pulses, changeIndex: 2 })
+  const h4 = halfPulses(t4)
+  const sc = scoreHolds(parseKeyLog(tracker(250, t4).events, { endMs: t4.totalMs }), h4)
+  assert.equal(sc.summary.n_halves, 8)
+  assert.equal(sc.summary.n_matched, 8)
+  assert.equal(sc.summary.median_onset_lag_ms, 250)
+  assert.deepStrictEqual(sc.halves.map(r => r.leadIn), Array(8).fill(false))
+  assert.deepStrictEqual(sc.halves.filter(r => r.changed).map(r => r.half), [4, 5, 6, 7])
+  assert.equal(sc.halves[0].plannedStartMs, 1500, 'the first scored half starts when fixation ends')
+})
 
 test('a tracker 250 ms behind the pacer: every half matched, onset and offset lag 250 ms', () => {
   const parsed = parseKeyLog(tracker(250).events, { endMs: tl.totalMs })

@@ -11,7 +11,7 @@
 // Texts marked NEW below are not in the test build: they say what this step needs and the test build did not
 // (the keys-up cue, the end of the step, error screens). They add no claim about the study.
 //
-// `n` is the number of pulses a participant sees per round (lead-in included), 5 in the approved config.
+// `n` is the number of pulses a participant sees per round (lead-in included), 4 in the approved config (no lead-in).
 
 /** [[W]] -> a key cap. Split a text into strings and { key } parts. */
 export function richParts(text) {
@@ -94,7 +94,10 @@ export function pacerReminder(arm, keys) {
     : `Hold ${K} while the circle grows, ${Ks} while the circle shrinks`
 }
 
-/** Alt text of the answer picture (img/SpeedImg.png): what it shows. */
+/** The answer screen. Words as on the test build's picture (img/SpeedImg.png); the icons are drawn in the step. */
+export const ANSWER_QUESTION = 'Did you sense a change?'
+export const ANSWER_LABELS = { slowed: 'slower', same: 'same', sped_up: 'faster' }
+/** What the answer screen shows, for screen readers. */
 export const ANSWER_PICTURE_ALT = 'Did you sense a change? Left arrow: slower. Up arrow: same. Right arrow: faster.'
 
 // ── NEW: not in the test build ─────────────────────────────────────────────

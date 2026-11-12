@@ -10,6 +10,13 @@ import { timelineForTrial } from './pacerClock.js'
 const cfg = makeConfig()
 const [speeding, slowing] = practiceTrials(cfg)
 const P = 1000 / 60
+// the practice changes by ln 1.5: speeding gives 2.67-s pulses, slowing 6-s pulses (no lead-in: fixation, 2 at 4 s, 2 changed)
+const FAST = 4000 / 1.5, SLOW = 4000 * 1.5
+const closeTo = (a, b, tol = 1e-6) => Math.abs(a - b) <= tol
+const assertCloseAll = (got, want, msg = '') => {
+  assert.equal(got.length, want.length, msg)
+  got.forEach((g, i) => assert.ok(closeTo(g, want[i]), `${msg} [${i}]: ${g} vs ${want[i]}`))
+}
 
 // A frame clock: raf() queues a callback, run() fires frames at the given times until the loop stops.
 function frameClock({ start = 1000, period = P, gaps = {} } = {}) {
@@ -38,10 +45,12 @@ function frameClock({ start = 1000, period = P, gaps = {} } = {}) {
 
 test('the planned boundaries are fixation onset, each pulse start and the end', () => {
   const tl = timelineForTrial(speeding, cfg)
-  assert.deepStrictEqual(plannedBoundaries(tl), [0, 1500, 5500, 9500, 13500, 13500 + 2000, 13500 + 4000])
-  assert.equal(knownPrefix(cfg), 3)
+  assertCloseAll(plannedBoundaries(tl), [0, 1500, 5500, 9500, 9500 + FAST, 9500 + 2 * FAST])
+  assert.equal(knownPrefix(cfg), 2)
   const prov = provisionalTimeline(cfg)
-  assert.deepStrictEqual(plannedBoundaries(prov).slice(0, 5), plannedBoundaries(tl).slice(0, 5), 'the provisional schedule matches up to the first changed pulse')
+  assert.equal(prov.pulses.length, 4)
+  assert.deepStrictEqual(plannedBoundaries(prov).slice(0, 4), plannedBoundaries(tl).slice(0, 4), 'the provisional schedule matches up to the first changed pulse')
+  assert.equal(plannedBoundaries(tl)[3], 9500, 'the first changed pulse is due 9.5 s after fixation onset')
 })
 
 test('at 60 Hz every boundary is delivered within half a frame, and nothing is dropped', async () => {
@@ -52,12 +61,12 @@ test('at 60 Hz every boundary is delivered within half a frame, and nothing is d
     render: s => scales.push(s), onStart: t0 => { started = t0 }, onEnd: ts => { ended = ts } }))
   assert.equal(rec.t0, started)
   assert.equal(rec.t0 + rec.t_end, ended)
-  assert.deepStrictEqual(rec.planned_boundaries_ms, [0, 1500, 5500, 9500, 13500, 21500, 29500])
-  assert.equal(rec.delivered_boundaries_ms.length, 7)
+  assertCloseAll(rec.planned_boundaries_ms, [0, 1500, 5500, 9500, 9500 + SLOW, 9500 + 2 * SLOW])
+  assert.equal(rec.delivered_boundaries_ms.length, 6)
   for (const e of rec.boundary_error_ms) assert.ok(Math.abs(e) <= P / 2 + 1e-9, `error ${e}`)
   assert.equal(rec.dropped_frames, 0)
   assert.ok(Math.abs(rec.max_frame_gap_ms - P) < 1e-6)
-  assert.deepStrictEqual(rec.planned_pulses_ms, [4000, 4000, 4000, 8000, 8000])
+  assertCloseAll(rec.planned_pulses_ms, [4000, 4000, SLOW, SLOW])
   rec.delivered_pulses_ms.forEach((d, i) => assert.ok(Math.abs(d - rec.planned_pulses_ms[i]) <= P + 1e-9, `pulse ${i + 1}: ${d}`))
   assert.equal(rec.level_wait_ms, 0)
   assert.equal(scales[0], 0.1, 'fixation: smallest size')
@@ -70,12 +79,12 @@ test('a late frame is counted and does not shift later boundaries', async () => 
   const rec = await clk.run(presentCircle({ cfg, spec: speeding, raf: clk.raf, now: clk.now, framePeriodMs: P, render: () => {} }))
   assert.equal(rec.max_frame_gap_ms, 250)
   assert.equal(rec.dropped_frames, Math.round(250 / P) - 1)
-  // the stall falls inside the lead-in; every boundary after it is still on time
+  // the stall falls inside the first pulse (1.5-5.5 s); every boundary after it is still on time
   for (const e of rec.boundary_error_ms.slice(2)) assert.ok(Math.abs(e) <= P / 2 + 1e-9, `error ${e}`)
-  assert.ok(Math.abs(rec.t_end - 17500) <= P, `ends on time: ${rec.t_end}`)
+  assert.ok(Math.abs(rec.t_end - (9500 + 2 * FAST)) <= P, `ends on time: ${rec.t_end}`)
 })
 
-test('a trial can start before its level is known; it arrives during the lead-in', async () => {
+test('a trial can start before its level is known; it arrives during fixation, well before the first changed pulse', async () => {
   const clk = frameClock()
   let give
   const specPromise = new Promise(r => { give = r })
@@ -84,7 +93,7 @@ test('a trial can start before its level is known; it arrives during the lead-in
   assert.equal(rec.spec, slowing)
   assert.equal(rec.level_wait_ms, 0)
   assert.ok(rec.level_ready_ms !== null && rec.level_ready_ms < 1500)
-  assert.deepStrictEqual(rec.planned_boundaries_ms, [0, 1500, 5500, 9500, 13500, 21500, 29500])
+  assertCloseAll(rec.planned_boundaries_ms, [0, 1500, 5500, 9500, 9500 + SLOW, 9500 + 2 * SLOW])
 })
 
 test('a level that comes after the first changed pulse is due holds the circle still, and is recorded', async () => {
@@ -96,14 +105,15 @@ test('a level that comes after the first changed pulse is due holds the circle s
   let frames = 0, heldSince = null
   const p = presentCircle({ cfg, specPromise, raf: clk.raf, now: clk.now, framePeriodMs: P, render: (s) => {
     scales.push(s); frames += 1
-    if (heldSince === null && clk.now() - 1000 >= 13500) heldSince = frames
+    if (heldSince === null && clk.now() - 1000 >= 9500) heldSince = frames
     if (heldSince !== null && frames === heldSince + holdFor) give(speeding)
   } })
   const rec = await clk.run(p)
   assert.ok(rec.level_wait_ms > (holdFor - 2) * P, `held ${rec.level_wait_ms} ms`)
   const shift = rec.level_wait_ms
-  assert.equal(rec.planned_boundaries_ms[4], 13500 + shift, 'the first changed pulse starts after the hold')
-  assert.equal(rec.planned_boundaries_ms[6], 17500 + shift)
+  assert.equal(rec.planned_boundaries_ms[3], 9500 + shift, 'the first changed pulse starts after the hold')
+  assert.deepStrictEqual(rec.planned_boundaries_ms.slice(0, 3), [0, 1500, 5500], 'the baseline prefix is not shifted')
+  assert.ok(closeTo(rec.planned_boundaries_ms[5], 9500 + 2 * FAST + shift), `ends at ${rec.planned_boundaries_ms[5]}`)
   for (const e of rec.boundary_error_ms) assert.ok(Math.abs(e) <= P / 2 + 1e-9, `error ${e}`)
 })
 

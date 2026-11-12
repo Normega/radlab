@@ -112,10 +112,14 @@ test('half-pulse boundaries: ten halves, contiguous, alternating, from the end o
 })
 
 test('the baseline prefix does not move when the changed pulses are filled in', () => {
-  // the next trial can start before its level is known: its first three pulses are always at 4 s
-  const prefix = buildTimeline([4, 4, 4], { fixationMs: 1500 })
+  // the next trial can start before its level is known: its first two pulses (no lead-in) are always at 4 s
+  const st = cfg.engine.stimulus
+  assert.equal(st.n_lead_in_pulses + st.change_after_pulse, 2)
+  const nLeadIn = st.n_lead_in_pulses
+  const prefix = buildTimeline([4, 4], { fixationMs: 1500, nLeadIn })
   for (const lr of [-Math.log(2), -0.3, 0, 0.1, Math.log(2)]) {
-    const full = buildTimeline(pulseSchedule(cfg.engine.stimulus, lr), { fixationMs: 1500 })
+    const full = buildTimeline(pulseSchedule(st, lr), { fixationMs: 1500, nLeadIn })
+    assert.equal(full.pulses.length, 4)
     prefix.pulses.forEach((p, i) => {
       assert.equal(full.pulses[i].startMs, p.startMs)
       assert.equal(full.pulses[i].endMs, p.endMs)
@@ -125,24 +129,32 @@ test('the baseline prefix does not move when the changed pulses are filled in', 
 })
 
 test('the 2-8 s bounds: the largest changes give 2-s and 8-s pulses', () => {
-  const [fast, slow, same] = practiceTrials(cfg)
-  const a = timelineForTrial(fast, cfg), b = timelineForTrial(slow, cfg), n = timelineForTrial(same, cfg)
-  assert.ok(near(a.pulses[3].durationMs, 2000) && near(a.pulses[4].durationMs, 2000))
-  assert.ok(near(b.pulses[3].durationMs, 8000) && near(b.pulses[4].durationMs, 8000))
-  assert.deepStrictEqual(n.pulses.map(p => p.durationMs), [4000, 4000, 4000, 4000, 4000])
-  assert.deepStrictEqual(n.pulses.map(p => p.changed), [false, false, false, false, false])
-  assert.deepStrictEqual(a.pulses.map(p => p.changed), [false, false, false, true, true])
-  assert.equal(a.fixationMs, 1500)
-  assert.equal(a.minScale, cfg.display.circle_min_size)
-  assert.equal(a.maxScale, cfg.display.circle_max_size)
+  // trials at ln 2 (the largest change, as the catch trials) and beyond it (clamped to the bounds)
+  const big = { ...cfg, practice: { ...cfg.practice, trials: [{ cell: 'speeding', magnitude: 'ln2' }, { cell: 'slowing', magnitude: 'ln2' },
+    { cell: 'no_change' }, { cell: 'speeding', magnitude: 1.0 }, { cell: 'slowing', magnitude: 1.0 }] } }
+  const [fast, slow, same, fast2, slow2] = practiceTrials(big).map(t => timelineForTrial(t, big))
+  for (const a of [fast, fast2]) assert.ok(near(a.pulses[2].durationMs, 2000) && near(a.pulses[3].durationMs, 2000))
+  for (const b of [slow, slow2]) assert.ok(near(b.pulses[2].durationMs, 8000) && near(b.pulses[3].durationMs, 8000))
+  assert.deepStrictEqual(same.pulses.map(p => p.durationMs), [4000, 4000, 4000, 4000])
+  assert.deepStrictEqual(same.pulses.map(p => p.changed), [false, false, false, false])
+  assert.deepStrictEqual(fast.pulses.map(p => p.changed), [false, false, true, true])
+  assert.deepStrictEqual(fast.pulses.map(p => p.leadIn), [false, false, false, false], 'no lead-in pulse')
+  assert.equal(fast.fixationMs, 1500)
+  assert.equal(fast.minScale, cfg.display.circle_min_size)
+  assert.equal(fast.maxScale, cfg.display.circle_max_size)
+  // the practice itself changes by ln 1.5, inside the bounds: 2.67-s and 6-s pulses
+  const [pf, ps] = practiceTrials(cfg).map(t => timelineForTrial(t, cfg))
+  assert.ok(near(pf.pulses[2].durationMs, 8000 / 3, 1e-6) && near(pf.pulses[3].durationMs, 8000 / 3, 1e-6))
+  assert.ok(near(ps.pulses[2].durationMs, 6000, 1e-6) && near(ps.pulses[3].durationMs, 6000, 1e-6))
 })
 
 test('a configurable fixation, including none', () => {
   const t0 = buildTimeline([4, 4], { fixationMs: 0 })
-  assert.equal(circleAt(t0, 0).segment, 'leadin')
+  assert.equal(circleAt(t0, 0).segment, 'pulse', 'no lead-in unless one is asked for')
+  assert.equal(circleAt(buildTimeline([4, 4], { fixationMs: 0, nLeadIn: 1 }), 0).segment, 'leadin')
   const t3 = buildTimeline([4, 4], { fixationMs: 3000 })
   assert.equal(circleAt(t3, 2999).segment, 'fixation')
-  assert.equal(circleAt(t3, 3000).segment, 'leadin')
+  assert.equal(circleAt(t3, 3000).segment, 'pulse')
   assert.equal(t3.totalMs, 11000)
 })
 

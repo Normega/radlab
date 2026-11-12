@@ -12,9 +12,10 @@
 //   - per trial: planned and delivered boundaries (fixation onset, each pulse start, the end), dropped frames
 //     (a gap over 1.5 frame periods counts round(gap / period) - 1), the longest frame gap, frame count.
 //
-// Starting before the level is known. The first n_lead_in + change_after_pulse pulses (lead-in and two
-// baseline pulses, 12 s after fixation) are always at the baseline pace, so a trial can start while the
-// engine still computes its level (Stage A notes). Until the spec arrives the circle runs a provisional
+// Starting before the level is known. The first n_lead_in + change_after_pulse pulses (in the approved
+// config no lead-in and two baseline pulses: the first changed pulse is due 1.5 + 8 = 9.5 s after fixation
+// onset) are always at the baseline pace, so a trial can start while the engine still computes its level
+// (Stage A notes). Until the spec arrives the circle runs a provisional
 // all-baseline schedule; if it is still missing when the first changed pulse is due, the circle holds still
 // at its smallest size until it comes (level_wait_ms > 0 flags such a trial; the boundaries after it are
 // planned from the end of the hold). Expected never to happen: an update takes about 50-300 ms.

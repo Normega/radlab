@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import './bcatThreshold.css'
-import speedImg from './SpeedImg.png'
 import Circle from './Circle'
 import { makeConfig } from './config.js'
 import { buildTrialPlan } from './trialPlan.js'
@@ -15,7 +14,7 @@ import { deviceProblem, readDeviceEnv } from './device.js'
 import { initialChoice } from './options.js'
 import { isDemoMode } from '../../lib/demoMode'
 import {
-  richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder,
+  richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder, ANSWER_QUESTION, ANSWER_LABELS,
   releaseKeysCue, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS,
 } from './texts.js'
 
@@ -39,6 +38,46 @@ const DISPLAY = DEFAULTS.display
 
 function Rich({ text }) {
   return <>{richParts(text).map((p, i) => (typeof p === 'string' ? <span key={i}>{p}</span> : <kbd key={i} className="bt-key">{p.key}</kbd>))}</>
+}
+
+// The answer screen: our own icons (a speed dial low, an equals sign, a speed dial high), each over its arrow key.
+function Dial({ fast }) {
+  return (
+    <svg className="bt-answer-icon" viewBox="0 0 48 32" aria-hidden="true">
+      <path d="M6 28a18 18 0 0 1 36 0" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      <path d={fast ? 'M24 28l12-11' : 'M24 28l-12-11'} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="24" cy="28" r="3" fill="currentColor" />
+    </svg>
+  )
+}
+function Equals() {
+  return (
+    <svg className="bt-answer-icon" viewBox="0 0 48 32" aria-hidden="true">
+      <path d="M10 11h28M10 23h28" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  )
+}
+// The arrow on a key cap, drawn: the key-cap font (Space Mono) has no arrow glyphs, so ← → ↑ fell back to
+// other fonts at different sizes.
+function Arrow({ dir }) {
+  const turn = { right: 0, left: 180, up: -90 }[dir]
+  return (
+    <svg className="bt-arrow" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" transform={`rotate(${turn} 8 8)`} />
+    </svg>
+  )
+}
+function AnswerPanel() {
+  return (
+    <div className="bt-answer" role="img" aria-label={ANSWER_PICTURE_ALT}>
+      <p className="bt-answer-q">{ANSWER_QUESTION}</p>
+      <div className="bt-answer-row">
+        <div className="bt-answer-opt"><Dial /><kbd className="bt-key"><Arrow dir="left" /></kbd><span>{ANSWER_LABELS.slowed}</span></div>
+        <div className="bt-answer-opt"><Equals /><kbd className="bt-key"><Arrow dir="up" /></kbd><span>{ANSWER_LABELS.same}</span></div>
+        <div className="bt-answer-opt"><Dial fast /><kbd className="bt-key"><Arrow dir="right" /></kbd><span>{ANSWER_LABELS.sped_up}</span></div>
+      </div>
+    </div>
+  )
 }
 
 function Page({ children }) {
@@ -258,7 +297,7 @@ export default function BcatThreshold({
         <p className="bt-cue" aria-live="polite">{cueText && <Rich text={cueText} />}</p>
         <Circle ref={circleRef} maxSize={DISPLAY.circle_max_size} minSize={DISPLAY.circle_min_size} />
         <div className="bt-question" ref={questionRef}>
-          <img src={speedImg} alt={ANSWER_PICTURE_ALT} />
+          <AnswerPanel />
         </div>
       </div>
     </>

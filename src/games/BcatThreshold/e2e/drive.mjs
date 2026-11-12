@@ -79,7 +79,7 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
     if (u.what === 'circle') {
       if (onCircle) await onCircle(u, nMain)
       if (arm !== 'vision') {
-        const durs = u.durs || [4, 4, 4, 4, 4]
+        const durs = u.durs || [4, 4, 4, 4]   // until the level is known: the approved trial's four baseline-length pulses
         const el = (u.now - u.t0 - 1500 - lagMs) / 1000
         let want = null
         if (el >= 0) {

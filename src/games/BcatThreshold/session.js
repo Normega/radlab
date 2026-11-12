@@ -9,7 +9,7 @@
 // or { no_trial: true } (specPromise gave null) or { cancelled: true }.
 //
 // Engine trials (PLAN.md section 3): the answer goes to the engine at once, and while the engine updates (in
-// its worker) the next trial already starts with fixation and the lead-in, its level arriving within a few
+// its worker) the next trial already starts with fixation and its baseline pulses, its level arriving within a few
 // hundred ms (trialLoop.js holds the circle if it ever does not). That needs the previous reply's
 // last_trial === false, which says the session goes on whatever this answer is; otherwise it waits for the
 // reply. What the engine is given, and what is shown again later, is sequence.js's rule.

@@ -109,13 +109,14 @@ test('online plan (seed 77): 84 trials — 30 + 30 change, 20 no change (25%), 4
       after.push(nSlowing)
       assert.equal(t.cell, 'slowing')
       assert.ok(close(t.magnitude, Math.log(2)))
-      assert.ok([4, 4, 4, 8, 8].every((d, i) => close(t.pulse_durations_s[i], d)))
+      assert.equal(t.pulse_durations_s.length, 4)
+      assert.ok([4, 4, 8, 8].every((d, i) => close(t.pulse_durations_s[i], d)))
     } else if (t.cell === 'slowing') nSlowing++
   }
   assert.deepStrictEqual(after, [6, 12, 18, 24])
-  // trial indices run 1..84 and no-change trials have all-baseline pulses
+  // trial indices run 1..84 and no-change trials have all-baseline pulses (four: no lead-in)
   assert.deepStrictEqual(plan.main.map(t => t.trial_index), Array.from({ length: 84 }, (_, i) => i + 1))
-  for (const t of plan.main.filter(t => t.cell === 'no_change')) assert.deepStrictEqual(t.pulse_durations_s, [4, 4, 4, 4, 4])
+  for (const t of plan.main.filter(t => t.cell === 'no_change')) assert.deepStrictEqual(t.pulse_durations_s, [4, 4, 4, 4])
 })
 
 test('lab plan: 40 + 40 change, 26-28 no change, no catch trials', () => {
@@ -219,11 +220,17 @@ test('where the plan and the live session part: unanswered no-change, change and
   assert.equal(nChecked, 6)
 })
 
-test('practice: three large changes in a fixed order (2-s pulses, 8-s pulses, no change), or none', () => {
+test('practice: two clear changes of ln 1.5 and no change, in a fixed order (2.67-s pulses, 6-s pulses, 4-s pulses), or none', () => {
   const p = practiceTrials(makeConfig())
   assert.deepStrictEqual(p.map(t => [t.cell, t.placement]), [['speeding', 'practice'], ['slowing', 'practice'], ['no_change', 'practice']])
-  const want = [[4, 4, 4, 2, 2], [4, 4, 4, 8, 8], [4, 4, 4, 4, 4]]
-  p.forEach((t, i) => assert.ok(t.pulse_durations_s.every((d, k) => close(d, want[i][k])), `practice ${i + 1}`))
+  assert.deepStrictEqual(p.map(t => close(t.magnitude, Math.log(1.5))), [true, true, false])
+  assert.equal(p[2].magnitude, 0)
+  const want = [[4, 4, 8 / 3, 8 / 3], [4, 4, 6, 6], [4, 4, 4, 4]]
+  p.forEach((t, i) => {
+    assert.equal(t.pulse_durations_s.length, want[i].length, `practice ${i + 1}: four pulses, no lead-in`)
+    assert.ok(t.pulse_durations_s.every((d, k) => close(d, want[i][k])), `practice ${i + 1}`)
+    assert.deepStrictEqual([t.n_lead_in_pulses, t.change_index], [0, 2], `practice ${i + 1}: changed from pulse 3`)
+  })
   assert.deepStrictEqual(buildTrialPlan(makeConfig(), 1).practice, p)
   assert.deepStrictEqual(practiceTrials(makeConfig({ practice: false })), [])
 })

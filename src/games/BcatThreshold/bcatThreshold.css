@@ -139,13 +139,26 @@
   transform: translateX(-50%);
   visibility: hidden;
 }
-.bt-question img {
-  display: block;
-  height: 34vh;
-  width: auto;
-  max-width: calc(100vw - 32px);
-  object-fit: contain;
-  border-radius: 12px;
+.bt-answer { text-align: center; color: var(--tx); }
+.bt-answer-q {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 0 0 24px;
+}
+.bt-answer-row { display: flex; justify-content: center; gap: 64px; }
+.bt-answer-opt { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 96px; flex: none; font-weight: 600; }
+.bt-answer-icon { display: block; width: 72px; height: 48px; color: var(--pkd); }
+.bt-answer-opt .bt-key { display: flex; align-items: center; height: 32px; padding: 0 16px; margin: 0; }
+.bt-arrow { display: block; width: 16px; height: 16px; }
+/* The panel starts 24px below the still circle (top: 50% + 5vh + 24px), so it has 45vh - 24px. A window on an
+   800 x 500 screen can be about 420px tall once the browser's bars are drawn: there the full panel (about
+   180px) would run off the bottom, so short windows get a compact one (about 130px). */
+@media (max-height: 540px) {
+  .bt-answer-q { font-size: 20px; margin-bottom: 16px; }
+  .bt-answer-opt { gap: 4px; }
+  .bt-answer-icon { width: 48px; height: 32px; }
+  .bt-answer-opt .bt-key { height: 24px; }
 }
 
 /* preview only */
