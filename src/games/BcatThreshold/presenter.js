@@ -21,12 +21,16 @@
 // Focus: window blur and page hide are kept per trial on the trial clock from fixation onset to the answer;
 // a blur or hide during the circle makes the trial interrupted (sequence.js). On blur the tracker lets go of
 // every key and the key log closes its open presses (keyLog.js: log.blur), so no phantom hold survives.
+// Full screen (fullscreen.js, when o.fullscreen is passed): a full-screen exit or entry is logged among the same
+// focus events ('fullscreen_exit', 'fullscreen_enter'), and an exit during the circle interrupts the trial as a
+// blur does (sequence.js). Keys are not let go on an exit: the window keeps the focus, so no key-up is lost.
+// present() also returns whether the trial began in full screen (fullscreenAtOnset) and the interruption's reasons.
 
 import { createKeyTracker, createKeyLog, parseKeyLog, scoreHolds } from './keyLog.js'
 import { halfPulses } from './pacerClock.js'
 import { presentCircle } from './trialLoop.js'
 import { mustWaitForRelease } from './keysGate.js'
-import { wasInterrupted } from './sequence.js'
+import { interruptionReasons } from './sequence.js'
 
 /** Median frame interval over n frames, in ms. */
 export function measureFramePeriod(n = 60) {
@@ -61,6 +65,7 @@ const TASK_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' 
  * @param {() => number} [o.now]   performance.now
  * @param {{ visibilityState: string }} [o.doc]   document
  * @param {EventTarget} [o.win]   window (attach / detach)
+ * @param {ReturnType<import('./fullscreen.js').createFullscreen>} [o.fullscreen]   the run's full-screen controller
  */
 export function createLivePresenter(o) {
   const { cfg, arm, els, setCue, isCancelled, runStart, onUi = () => {} } = o
@@ -75,7 +80,8 @@ export function createLivePresenter(o) {
   }
   const tracker = createKeyTracker()
   const answerOf = Object.fromEntries(Object.entries(cfg.keys.answers).map(([resp, key]) => [key, resp]))
-  let log = null, t0 = null, focus = null, onAnswer = null, onRelease = null, onTrialScreen = false
+  let log = null, t0 = null, focus = null, onAnswer = null, onRelease = null, onTrialScreen = false, unsubscribe = null
+  const onFullscreen = type => { if (focus) focus.push({ type, t: rel(now()) }) }
 
   const rel = ts => (t0 === null ? null : ts - t0)
   const handlers = {
@@ -130,7 +136,7 @@ export function createLivePresenter(o) {
     onTrialScreen = true
     // 2. the circle
     const maxScale = cfg.display.circle_max_size
-    let ended = null, questionOnset = null, hiddenAtStart = false, frameTs = null, moving = false, reminderOffMs = null
+    let ended = null, questionOnset = null, hiddenAtStart = false, frameTs = null, moving = false, reminderOffMs = null, fullscreenAtOnset = null
     const wallclockStart = new Date().toISOString()
     let durs = spec ? spec.pulse_durations_s : null
     if (!spec && specPromise) specPromise.then(s => { if (s) { durs = s.pulse_durations_s; onUi({ what: 'circle', phase, t0, durs, cell: s.cell, reminder: !!reminder }) } }, () => {})
@@ -150,6 +156,7 @@ export function createLivePresenter(o) {
         t0 = ts
         focus = []
         hiddenAtStart = doc().visibilityState === 'hidden'
+        fullscreenAtOnset = o.fullscreen ? o.fullscreen.isActive() : null
         log = createKeyLog(cfg.keys)
         log.begin(0, tracker.held())
         onUi({ what: 'circle', phase, t0, durs, cell: spec ? spec.cell : null, reminder: !!reminder })
@@ -174,12 +181,15 @@ export function createLivePresenter(o) {
     onTrialScreen = false
     const focusEvents = focus
     focus = null
-    const interrupted = wasInterrupted(focusEvents, { startMs: 0, endMs: rec.t_end, hiddenAtStart })
+    const reasons = interruptionReasons(focusEvents, { startMs: 0, endMs: rec.t_end, hiddenAtStart })
+    const interrupted = reasons.length > 0
     onUi({ what: 'between', phase })
     return {
       pres: { ...rec, reminder_off_ms: reminderOffMs },
       answer,
       interrupted,
+      interruptionReasons: reasons,
+      fullscreenAtOnset,
       focusEvents,
       keys: { events: ended.events, repeats: ended.repeats, blurs: ended.blurs, summary: scoreKeys(ended.events, rec.timeline, rec.t_end) },
       tStartMs: rec.t0 - runStart,
@@ -197,6 +207,7 @@ export function createLivePresenter(o) {
       w.addEventListener('blur', handlers.blur)
       w.addEventListener('focus', handlers.focus)
       d.addEventListener('visibilitychange', handlers.visibilitychange)
+      if (o.fullscreen && !unsubscribe) unsubscribe = o.fullscreen.subscribe(onFullscreen)
     },
     detach() {
       const w = win(), d = doc()
@@ -205,6 +216,7 @@ export function createLivePresenter(o) {
       w.removeEventListener('blur', handlers.blur)
       w.removeEventListener('focus', handlers.focus)
       d.removeEventListener('visibilitychange', handlers.visibilitychange)
+      if (unsubscribe) { unsubscribe(); unsubscribe = null }
       onAnswer = null; onRelease = null; log = null; focus = null
     },
   }

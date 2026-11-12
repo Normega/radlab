@@ -139,11 +139,17 @@ const BASE = {
     vision_min_press_ms: 0,     // vision: a W or S press during the pulses of at least this length is non-compliant (0: any press)
     page_after: 3,              // this many non-compliant trials in a row bring the page reminder before the next trial
   },
+  // Full screen (fullscreen.js; the test build's online.require_fullscreen; Norm, 2026-11-12). Outside `engine`:
+  // configHash(cfg.engine) does not include it. Asked for in both modes; a browser that cannot or will not go
+  // full screen runs the task windowed, and the run records why.
+  fullscreen: {
+    enabled: true,
+  },
 }
 
 /**
  * @param {{ mode?: 'online'|'lab', demo?: boolean, catchTrials?: boolean, changeTrialsPerDirection?: number,
- *           practice?: boolean, fixationMs?: number, reminders?: boolean }} [opts]
+ *           practice?: boolean, fixationMs?: number, reminders?: boolean, fullscreen?: boolean }} [opts]
  */
 export function makeConfig(opts = {}) {
   const mode = opts.mode === undefined ? 'online' : opts.mode
@@ -169,6 +175,7 @@ export function makeConfig(opts = {}) {
     cfg.timing.fixation_ms = f
   }
   if (opts.reminders !== undefined) cfg.compliance.reminders = !!opts.reminders
+  if (opts.fullscreen !== undefined) cfg.fullscreen.enabled = !!opts.fullscreen
   const cc = cfg.compliance
   if (!(cc.min_coverage >= 0 && cc.min_coverage <= 1)) throw new Error('compliance.min_coverage must be in [0, 1].')
   if (!Number.isInteger(cc.page_after) || cc.page_after < 1) throw new Error('compliance.page_after must be a whole number >= 1.')

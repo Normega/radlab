@@ -7,6 +7,7 @@ import { createEngineClient } from './engineClient.js'
 import { createMemoryStore } from './store.js'
 import { createTrialSequence } from './sequence.js'
 import { createCompliance } from './compliance.js'
+import { createFullscreen, createReturnGate } from './fullscreen.js'
 import { newSeed, newRunId, makeRunRecord, makeResultRecord } from './records.js'
 import { runPractice, runEngineTrials, runRepeats } from './session.js'
 import { createLivePresenter, measureFramePeriod, nextPaint } from './presenter.js'
@@ -16,13 +17,13 @@ import { initialChoice } from './options.js'
 import { isDemoMode } from '../../lib/demoMode'
 import {
   richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder, ANSWER_QUESTION, ANSWER_LABELS,
-  releaseKeysCue, complianceLine, armReminderPage, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS,
+  releaseKeysCue, complianceLine, armReminderPage, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS, FULLSCREEN,
 } from './texts.js'
 
 // BCAT threshold task (Stage B): the participant-facing screens of the adaptive breathing-pace threshold task
-// (NextStudy/Thresholds/7_radlab_site_plan/PLAN.md). One study step: device check, three instruction pages
-// by arm, three practice rounds with feedback, a "ready" page, the adaptive trials, done. Consent and
-// debrief are separate study steps.
+// (NextStudy/Thresholds/7_radlab_site_plan/PLAN.md). One study step: device check, the full-screen page, three
+// instruction pages by arm, three practice rounds with feedback, a "ready" page, the adaptive trials, done.
+// Consent and debrief are separate study steps.
 //
 //   study step (GameStepWrapper, studyMode): the arm is the assignment slot bcat_arm, nothing else; without
 //     one the step shows an error and stops (options.js). Never demo, never simulated.
@@ -31,8 +32,11 @@ import {
 //
 // Data stay in memory in this stage (store.js); Stage C swaps the store for the database.
 // The order of a run is session.js; one trial on screen is presenter.js and trialLoop.js; the interruption
-// rule is sequence.js; the compliance reminders (the fixation line and the page) are compliance.js. This file is
-// only the screens.
+// rule is sequence.js; the compliance reminders (the fixation line and the page) are compliance.js; full screen
+// (entry, the page between trials, the windowed fallback) is fullscreen.js. This file is only the screens.
+// The step renders in place on every route (study session, TaskPreviewPlayer, /dev/bcat-threshold), not in an
+// iframe; were it ever framed without allow="fullscreen", fullscreen.js finds full screen not enabled and the
+// task runs windowed, recorded on the run.
 
 const DEFAULTS = makeConfig()
 const KEYS = DEFAULTS.keys
@@ -110,6 +114,7 @@ function readoutText(readout, counts) {
     `engine trials ${readout.n_trials_total}; unanswered or withheld ${readout.n_missing_responses}; false alarms ${readout.false_alarms.n_false_alarms}/${readout.false_alarms.n_no_change}`,
     `rows ${counts.rows}; interrupted ${counts.interrupted}; repeats ${counts.repeats}; engine ${counts.engineMode}`,
     `non-compliant ${counts.noncompliant}; reminder lines ${counts.lines}; reminder pages ${counts.pages}`,
+    `full screen: ${counts.fullscreen}`,
   ].join('\n')
 }
 
@@ -145,19 +150,28 @@ export default function BcatThreshold({
     const runStart = performance.now()
     let framePeriod = 1000 / 60
     const onUi = preview ? ui => { window.__bcatThreshold = { ...(window.__bcatThreshold || {}), ui: { ...ui, at: performance.now() } } } : () => {}
+    const fullscreen = createFullscreen({ enabled: cfg.fullscreen.enabled, simulated: sim })
+    fullscreen.attach()
     const live = createLivePresenter({
-      cfg, arm, runStart, onUi, isCancelled,
+      cfg, arm, runStart, onUi, isCancelled, fullscreen,
       els: () => ({ circle: circleRef.current, question: questionRef.current, cue: cueRef.current }),
       setCue: c => { if (!cancelled) setCue(c) },
       framePeriodMs: () => framePeriod,
     })
     live.attach()
-    const page = spec => new Promise(resolve => {
+    // spec.gesture: called inside the Continue click or space-bar press itself (full screen needs that)
+    const page = ({ gesture, ...spec }) => new Promise(resolve => {
       if (cancelled) return
       onUi({ what: 'page', id: spec.id })
-      setView({ kind: 'page', shownAt: performance.now(), ...spec, onContinue: resolve })
+      let done = false
+      const onContinue = () => { if (done) return; done = true; if (gesture) gesture(); resolve() }
+      setView({ kind: 'page', shownAt: performance.now(), ...spec, onContinue })
     })
     const toTrialScreen = async () => { show({ kind: 'trial' }); await nextPaint() }
+    // before each trial: the return-to-full-screen page while the participant is out of it (fullscreen.js)
+    const returnGate = createReturnGate({ fullscreen, isCancelled,
+      showPage: gesture => page({ id: 'fullscreen_return', paragraphs: [FULLSCREEN.return], hint: FULLSCREEN.hint, gesture }) })
+    const gate = sim ? null : async () => { const shown = await returnGate(); if (shown && !cancelled) await toTrialScreen(); return shown }
     // the page reminder (compliance.js), then back to the trial screen; a simulated run shows nothing
     const compliance = createCompliance({ cfg, arm,
       showPage: sim ? null : async () => { await page({ id: 'compliance_reminder', ...armReminderPage(arm, cfg.keys) }); await toTrialScreen() } })
@@ -172,6 +186,14 @@ export default function BcatThreshold({
       if (preview) window.__bcatThreshold = { runId, ui: { what: 'start' }, snapshot: () => store.snapshot(runId) }
       const kind = studyMode ? 'study' : sim ? 'simulated' : cfg.demo ? 'demo' : 'preview'
       const present = sim ? createSimulatedPresenter({ cfg, arm, seed }) : live.present
+      if (fullscreen.wanted) {
+        // the test build's page: Continue (or the space bar) switches to full screen; if refused, windowed
+        let req = null
+        await page({ id: 'fullscreen_enter', paragraphs: [FULLSCREEN.enter], hint: FULLSCREEN.hint, gesture: () => { req = fullscreen.enter() } })
+        await req
+        if (cancelled) return
+      }
+      onUi({ what: 'fullscreen', ...fullscreen.runFacts() })
       const framesP = sim ? Promise.resolve(null) : measureFramePeriod().then(p => { framePeriod = p; return p })
       if (!sim) {
         const st = cfg.engine.stimulus
@@ -184,12 +206,12 @@ export default function BcatThreshold({
       if (cancelled) return
       await store.saveRun(makeRunRecord({
         id: runId, arm, cfg, seed, kind, plannedTrials: buildTrialPlan(cfg, seed).counts.total, policy: sequence.policy,
-        engineMode: engine.mode, framePeriodMs: measured, client: clientFacts(measured),
+        engineMode: engine.mode, framePeriodMs: measured, client: clientFacts(measured), fullscreen: fullscreen.runFacts(),
       }))
       if (cfg.practice.enabled) {
         if (!sim) await page({ id: 'practice_intro', paragraphs: [PRACTICE_INTRO] })
         const r = await runPractice({
-          cfg, sequence, saveTrial, runId, isCancelled, compliance,
+          cfg, sequence, saveTrial, runId, isCancelled, compliance, gate,
           present: sim ? present : async req => { await toTrialScreen(); return present(req) },
           afterEach: sim ? null : spec => page({ id: 'practice_feedback', paragraphs: [PRACTICE_FEEDBACK[spec.cell]] }),
         })
@@ -197,29 +219,34 @@ export default function BcatThreshold({
         if (!sim) await page({ id: 'ready', paragraphs: [READY] })
       }
       if (sim) { onUi({ what: 'simulating' }); show({ kind: 'simulating' }) } else await toTrialScreen()
-      const main = await runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled, compliance })
+      const main = await runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled, compliance, gate })
       if (main.cancelled) return
-      const reps = await runRepeats({ present, sequence, saveTrial, runId, isCancelled, compliance })
+      const reps = await runRepeats({ present, sequence, saveTrial, runId, isCancelled, compliance, gate })
       if (reps.cancelled) return
       const { readout } = await engine.call({ type: 'readout' })
-      await store.saveResult(makeResultRecord({ runId, trials: rows, readout, engineMode: engine.mode }))
+      const fs = fullscreen.summary()
+      await store.saveResult(makeResultRecord({ runId, trials: rows, readout, engineMode: engine.mode, fullscreen: fs }))
       const { unsaved } = await store.flush()
       engine.terminate()
       if (cancelled) return
+      fullscreen.exit()
       const counts = { rows: rows.length, interrupted: rows.filter(r => r.interrupted).length,
         repeats: rows.filter(r => r.phase === 'repeat').length, engineMode: engine.mode, unsaved,
         noncompliant: rows.filter(r => r.compliant === false).length, lines: rows.filter(r => r.reminder_shown).length,
-        pages: rows.filter(r => r.reminder_page_shown).length }
+        pages: rows.filter(r => r.reminder_page_shown).length,
+        fullscreen: `${fs.windowed_reason ? `windowed (${fs.windowed_reason})` : 'asked'}; entered ${fs.entered ? 'yes' : 'no'}; exits ${fs.exits}; `
+          + `return pages ${rows.filter(r => r.fullscreen_return_shown).length}; interrupted by an exit ${rows.filter(r => r.interruption_reasons?.includes('fullscreen_exit')).length}` }
       onUi({ what: 'done' })
       setView({ kind: 'done', runId, arm, readout, counts, data: preview ? store.snapshot(runId) : null })
     })().catch(err => {
       if (cancelled) return
       console.error('bcat threshold: the run stopped', err)
+      fullscreen.exit()
       onUi({ what: 'error', message: String(err && err.message) })
       setView({ kind: 'error', message: ERRORS.engine })
     })
 
-    return () => { cancelled = true; live.detach(); engine.terminate() }
+    return () => { cancelled = true; live.detach(); fullscreen.exit(); fullscreen.detach(); engine.terminate() }
   }, [choice]) // eslint-disable-line react-hooks/exhaustive-deps -- one run per choice; the props are fixed for a step
 
   // ── the space bar continues a page ───────────────────────────────────────
@@ -269,7 +296,7 @@ export default function BcatThreshold({
         {view.paragraphs.map((p, i) => <p key={i}><Rich text={p} /></p>)}
         <div className="bt-actions">
           <button type="button" className="bt-btn" onClick={() => view.onContinue()}>{CONTINUE}</button>
-          <p className="bt-hint"><Rich text={CONTINUE_HINT} /></p>
+          <p className="bt-hint"><Rich text={view.hint || CONTINUE_HINT} /></p>
         </div>
       </Page>
     )

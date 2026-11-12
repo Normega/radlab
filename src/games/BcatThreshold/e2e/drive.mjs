@@ -4,8 +4,12 @@
 //   1. start the app with Supabase pointed at nowhere, so nothing can reach a database:
 //        VITE_SUPABASE_URL=http://127.0.0.1:9 VITE_SUPABASE_ANON_KEY=offline npx vite --port 5199 --strictPort
 //   2. node src/games/BcatThreshold/e2e/drive.mjs <outDir> [scenario ...]
-//        scenarios: simulate (all three arms), demo_touch, blur_vision, reminder_touch, reminder_vision   (default: all)
-//        reminder_* save screenshots bt_reminder_*.png in <outDir>
+//        scenarios: simulate (all three arms), demo_touch, blur_vision, reminder_touch, reminder_vision,
+//                   fullscreen_vision, fullscreen_iframe, fullscreen_noapi, fullscreen_rejected   (default: all)
+//        reminder_* save screenshots bt_reminder_*.png in <outDir>; fullscreen_* save bt_fullscreen_*.png
+//        Full screen in headless Chrome: entry is a real request from a trusted space-bar press; an "exit" is
+//        document.exitFullscreen() (Esc cannot be sent to the browser itself); no API and a refused request are
+//        simulated by replacing the API before the page loads; the iframe case is a real cross-origin frame.
 //
 // Chrome resolves no host but localhost, and every request to another origin is aborted and counted, so
 // the run cannot send anything anywhere. Key presses are trusted input events (CDP Input.dispatchKeyEvent),
@@ -21,9 +25,10 @@ const OUT = path.resolve(process.argv[2] || 'bcat_e2e_out')
 const WHICH = process.argv.slice(3)
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-async function openPage(browser, url, dl) {
+async function openPage(browser, url, dl, beforeLoad = null) {
   const page = await browser.newPage()
   await page.setViewport({ width: 1280, height: 800 })
+  if (beforeLoad) await page.evaluateOnNewDocument(beforeLoad)
   const blocked = []
   await page.setRequestInterception(true)
   page.on('request', req => {
@@ -69,7 +74,7 @@ async function waitFor(page, pred, ms = 60000) {
  *     from 3.0 to 3.8 s after fixation onset (during the first pulse)
  *   onPage(u)  awaited on every page before it presses the space bar
  */
-async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBeforeAnswerOn = null, offTaskOn = [], onPage = null, log = () => {} }) {
+async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBeforeAnswerOn = null, offTaskOn = [], onPage = null, onQuestion = null, stopAt = null, log = () => {} }) {
   let held = null, last = null, nMain = 0, gateSeen = false
   const t0 = Date.now()
   while (Date.now() - t0 < 20 * 60 * 1000) {
@@ -77,6 +82,7 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
     if (!u) { await sleep(50); continue }
     if (u.what !== last) { log(`[${((Date.now() - t0) / 1000).toFixed(0)} s] ${u.what}${u.id ? ' ' + u.id : ''}${u.phase ? ' ' + u.phase : ''}`); last = u.what }
     if (u.what === 'done') return { nMain, gateSeen }
+    if (stopAt && stopAt(u, nMain)) return { nMain, gateSeen, stopped: true }
     if (u.what === 'error' || u.what === 'device') throw new Error('stopped: ' + JSON.stringify(u))
     if (u.what === 'gate') gateSeen = true
     if (u.what === 'page') {
@@ -114,6 +120,7 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
     } else if (u.what === 'question') {
       if (held) { await page.keyboard.up(held); held = null }
       if (u.phase === 'main') nMain += 1
+      if (onQuestion) await onQuestion(u, nMain)
       const holdW = holdWBeforeAnswerOn !== null && u.phase === 'main' && nMain === holdWBeforeAnswerOn
       if (holdW) await page.keyboard.down('KeyW')
       await sleep(300 + Math.random() * 400)
@@ -231,7 +238,152 @@ async function reminderRun(browser, { arm, url, offTaskOn, tag }) {
   return res
 }
 
+// ── full screen ──
+const fsState = target => target.evaluate(() => ({
+  fullscreen: !!document.fullscreenElement, enabled: document.fullscreenEnabled, w: window.innerWidth, h: window.innerHeight,
+}))
+// The answer panel's box against the window: does it fit, and is the compact layout on?
+const panelFit = page => page.evaluate(() => {
+  const q = document.querySelector('.bt-answer'), t = document.querySelector('.bt-answer-q')
+  const r = q.getBoundingClientRect()
+  return { window_h: window.innerHeight, panel_top: Math.round(r.top), panel_bottom: Math.round(r.bottom), fits: r.bottom <= window.innerHeight,
+    question_font_px: parseFloat(getComputedStyle(t).fontSize), circle_px: Math.round(document.querySelector('.bt-circle').getBoundingClientRect().height) }
+})
+const pageText = target => target.evaluate(() => document.querySelector('.bt-card')?.innerText)
+
+// A windowed run up to the first answered main trial: which pages came, and what the run and that row recorded.
+async function windowedRun(browser, { tag, url, inIframe = false, beforeLoad = null }) {
+  let page, frame, blocked = [], log = []
+  if (inIframe) {
+    // a cross-origin iframe without allow="fullscreen": the browser itself says full screen is not enabled. The
+    // parent is a real page of another origin (localhost vs 127.0.0.1); an about:blank parent makes the frame's
+    // sessionStorage throw before the app starts.
+    page = await browser.newPage()
+    await page.setViewport({ width: 1280, height: 800 })
+    page.on('console', m => log.push(`${m.type()}: ${m.text()}`))
+    const u = new URL(url)
+    await page.goto(`http://${u.hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${u.port}/HQlogo.png`)
+    await page.evaluate(src => {
+      document.body.innerHTML = ''; document.body.style.margin = '0'
+      const f = document.createElement('iframe'); f.src = src; f.style.cssText = 'border:0;width:100vw;height:100vh'
+      document.body.appendChild(f)
+    }, url)
+    for (let i = 0; i < 200 && !frame; i++) { frame = page.frames().find(f => f.url().startsWith(url.split('?')[0])); if (!frame) await sleep(50) }
+    await frame.waitForFunction(() => window.__bcatThreshold, { timeout: 30000 })
+    await page.click('iframe')   // keyboard focus into the frame
+  } else {
+    ({ page, blocked, log } = await openPage(browser, url, null, beforeLoad))
+  }
+  const target = inIframe ? frame : page
+  const actor = { evaluate: (...a) => target.evaluate(...a), keyboard: page.keyboard }
+  const pages = []
+  let state = null
+  const p = await participant(actor, {
+    arm: 'vision', log: m => console.log(`  ${tag} ` + m),
+    onPage: async u => { pages.push(u.id); if (u.id === 'fullscreen_enter') await page.screenshot({ path: path.join(OUT, `bt_fullscreen_${tag}_entry.png`) }) },
+    onQuestion: async (u, n) => { if (n === 1 && !state) state = await fsState(target) },
+    stopAt: (u, n) => n >= 1 && u.what === 'circle',
+  })
+  await sleep(1000)   // the first main row is saved once the engine has replied
+  const snap = await target.evaluate(() => window.__bcatThreshold.snapshot())
+  const row = snap.trials.find(r => r.phase === 'main')
+  const res = { participant: p, pages, run_fullscreen: snap.run.fullscreen, state_at_first_question: state,
+    first_main_row: row && { fullscreen_at_onset: row.fullscreen_at_onset, shown_fullscreen: row.shown_fullscreen, interrupted: row.interrupted, fullscreen_return_shown: row.fullscreen_return_shown },
+    blocked: blocked.length, errors: log.filter(l => /error/i.test(l) && !/Failed to load resource/.test(l)) }
+  console.log(`${tag}:`, JSON.stringify(res, null, 1))
+  await page.close()
+  return res
+}
+
 const SCENARIOS = {
+  // Entry by the space bar on the full-screen page (a trusted key press); an exit during main trial 2 (the API's
+  // exitFullscreen, as Esc would); a blur and an exit together during main trial 3; an exit while the question of
+  // main trial 4 is up (no interruption, but the page before trial 5); each page answered with the space bar. The
+  // window is also shrunk to 1280 x 460 during main trial 5 and restored, to check the answer panel's layout.
+  async fullscreen_vision(browser) {
+    const { page, blocked, log } = await openPage(browser, `${BASE}/dev/bcat-threshold?arm=vision&demo=1`)
+    const seen = { states: [], returnPages: [], layout: [] }
+    let did2 = false, did3 = false, did4 = false, did5 = false
+    const p = await participant(page, {
+      arm: 'vision', log: m => console.log('  fullscreen_vision ' + m),
+      onPage: async u => {
+        if (u.id === 'fullscreen_enter') {
+          seen.entry_text = await pageText(page)
+          seen.before_entry = await fsState(page)
+          await page.screenshot({ path: path.join(OUT, 'bt_fullscreen_entry_page.png') })
+        } else if (u.id === 'instructions_1' && !seen.after_entry) {
+          seen.after_entry = await fsState(page)
+        } else if (u.id === 'fullscreen_return') {
+          const s = await fsState(page)
+          seen.returnPages.push({ text: await pageText(page), state: s })
+          if (seen.returnPages.length === 1) await page.screenshot({ path: path.join(OUT, 'bt_fullscreen_return_page.png') })
+        }
+      },
+      onCircle: async (u, nMain) => {
+        const el = u.now - u.t0
+        if (u.phase !== 'main') return
+        if (nMain === 1 && !did2 && el > 6000) {
+          did2 = true
+          await page.evaluate(() => document.exitFullscreen())
+          await sleep(300)
+          seen.states.push({ at: 'main 2, after exit', ...(await fsState(page)), ui: (await ui(page)).what })
+        } else if (nMain === 2 && !did3 && el > 6000) {
+          did3 = true
+          await page.evaluate(() => { window.dispatchEvent(new Event('blur')); return document.exitFullscreen() })
+          await sleep(1000)
+          await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+        } else if (nMain === 4 && !did5 && el > 3000) {
+          did5 = true
+          seen.layout.push({ at: 'main 5, full size', ...(await fsState(page)) })
+          await page.setViewport({ width: 1280, height: 460 })
+          await sleep(300)
+          seen.layout.push({ at: 'main 5, shrunk', ...(await fsState(page)) })
+        }
+      },
+      onQuestion: async (u, nMain) => {
+        if (u.phase === 'main' && nMain === 4 && !did4) {
+          did4 = true
+          await page.evaluate(() => document.exitFullscreen())
+          await sleep(200)
+        }
+        if (u.phase === 'main' && nMain === 5 && did5 && !seen.layout_done) {
+          seen.layout_done = true
+          seen.layout.push({ at: 'main 5 question, 1280 x 460', ...(await panelFit(page)) })
+          await page.screenshot({ path: path.join(OUT, 'bt_fullscreen_question_460.png') })
+          await page.setViewport({ width: 1280, height: 800 })
+          await sleep(300)
+          seen.layout.push({ at: 'main 5 question, 1280 x 800', ...(await panelFit(page)) })
+          await page.screenshot({ path: path.join(OUT, 'bt_fullscreen_question_800.png') })
+        }
+      },
+    })
+    seen.at_done = await fsState(page)
+    const snap = await snapshot(page)
+    fs.writeFileSync(path.join(OUT, 'fullscreen_vision.json'), JSON.stringify(snap))
+    const rows = snap.trials
+    const res = {
+      participant: p, seen, run_fullscreen: snap.run.fullscreen, client: snap.run.client,
+      rows: rows.map(r => ({ seq: r.seq, phase: r.phase, trial_index: r.trial_index, repeat_of: r.repeat_of, fs_onset: r.fullscreen_at_onset, shown_fs: r.shown_fullscreen,
+        fs_exits: r.fullscreen_exits, return_page: r.fullscreen_return_shown, interrupted: r.interrupted, reason: r.interruption_reason, reasons: r.interruption_reasons,
+        response: r.response, engine_response: r.engine_response, n_blur: r.n_blur, dropped: r.timing.dropped_frames })),
+      result: { n_interrupted: snap.result.n_interrupted, n_repeats: snap.result.n_repeats, n_withheld: snap.result.n_withheld, n_fullscreen_exits: snap.result.n_fullscreen_exits,
+        n_fullscreen_return_pages: snap.result.n_fullscreen_return_pages, n_interrupted_fullscreen: snap.result.n_interrupted_fullscreen,
+        events: snap.result.fullscreen.events.map(e => e.type), readout_missing: snap.result.readout.n_missing_responses },
+      timing: timing(rows), problems: checkRows(snap, { arm: 'vision' }), blocked: blocked.length,
+      errors: log.filter(l => /error/i.test(l) && !/Failed to load resource/.test(l)), font_or_resource_errors: log.filter(l => /Failed to load resource/.test(l)).length,
+    }
+    console.log('fullscreen_vision:', JSON.stringify(res, null, 1))
+    await page.close()
+    return res
+  },
+  // the step framed without permission: no entry page, windowed, recorded as not_enabled
+  fullscreen_iframe: browser => windowedRun(browser, { tag: 'iframe', inIframe: true, url: `${BASE}/dev/bcat-threshold?arm=vision&demo=1&practice=0` }),
+  // no API at all (removed before the page loads; simulated)
+  fullscreen_noapi: browser => windowedRun(browser, { tag: 'noapi', url: `${BASE}/dev/bcat-threshold?arm=vision&demo=1&practice=0`,
+    beforeLoad: () => { delete Element.prototype.requestFullscreen; delete Element.prototype.webkitRequestFullscreen } }),
+  // the request is refused (replaced by one that rejects before the page loads; simulated)
+  fullscreen_rejected: browser => windowedRun(browser, { tag: 'rejected', url: `${BASE}/dev/bcat-threshold?arm=vision&demo=1&practice=0`,
+    beforeLoad: () => { Element.prototype.requestFullscreen = function () { return Promise.reject(new TypeError('Permissions check failed')) } } }),
   async simulate(browser) {
     const out = {}
     for (const arm of ['vision', 'touch', 'breath']) {

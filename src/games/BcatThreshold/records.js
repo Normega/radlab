@@ -17,8 +17,20 @@
 // `compliance_ws_presses` / `compliance_ws_press_ms` (vision), `noncompliant_streak`, and what was shown:
 // `reminder_shown` (the line at this trial's fixation) and `reminder_page_shown` (the page just before this
 // trial). The result counts them. The rule's settings are the run's config.compliance.
+//
+// Full screen (fullscreen.js), facts only, never in the replay. Run: `fullscreen` { enabled, supported, entered,
+// windowed_reason } as it stood after the entry page (windowed_reason null when the task asked for full screen
+// and got it; else 'config_off', 'simulated', 'no_api', 'not_enabled' (e.g. an iframe without permission) or
+// 'rejected'). Trial: `fullscreen_at_onset` (null in a simulated run), `shown_fullscreen` (full screen from
+// fixation onset to the circle's end), `fullscreen_exits` (exits from fixation onset to the answer),
+// `fullscreen_return_shown` (the return page came just before this trial), and for every interrupted trial
+// `interruption_reason` (the first loss: 'blur', 'hidden', 'hidden_at_start' or 'fullscreen_exit') and
+// `interruption_reasons` (all of them, once each). Result: `n_fullscreen_exits` over the whole run (pages too;
+// an exit the task makes at the end is not counted), `n_fullscreen_return_pages`, and the run's `fullscreen`
+// summary with its time-stamped events.
 
 import { configHash } from './config.js'
+import { interruptionReasons } from './sequence.js'
 
 export const RUN_SCHEMA = 'bcat_threshold_run/1'
 export const TRIAL_SCHEMA = 'bcat_threshold_trial/1'
@@ -84,6 +96,7 @@ export function makeRunRecord(o) {
     engine_mode: o.engineMode ?? null,
     frame_period_ms: o.framePeriodMs ?? null,
     client: o.client ?? null,
+    fullscreen: o.fullscreen ?? null,
     resumed_from: null,
   })
 }
@@ -107,11 +120,18 @@ export function makeRunRecord(o) {
  * @param {number} o.tStartMs           fixation onset, ms from the run's start (performance.now)
  * @param {object|null} [o.compliance]  compliance.js's assessment of this trial, with `streak`
  * @param {{ line: boolean, page: boolean }} [o.reminder]  what was shown before and at this trial's fixation
+ * @param {string[]} [o.interruptionReasons]  the presenter's (sequence.interruptionReasons); else from focusEvents
+ * @param {boolean|null} [o.fullscreenAtOnset]  in full screen at fixation onset (null: not known, simulated)
+ * @param {boolean} [o.fullscreenReturn]  the return-to-full-screen page was shown just before this trial
  */
 export function makeTrialRecord(o) {
   const { spec, pres, answer, phase } = o
   const main = phase === 'main'
   const hiddenMs = hiddenTime(o.focusEvents, answer.questionOnsetMs ?? pres.t_end ?? 0)
+  const reasons = !o.interrupted ? []
+    : Array.isArray(o.interruptionReasons) ? o.interruptionReasons
+      : typeof pres.t_end === 'number' ? interruptionReasons(o.focusEvents, { endMs: pres.t_end }) : []
+  const fsOnset = typeof o.fullscreenAtOnset === 'boolean' ? o.fullscreenAtOnset : null
   return plain({
     schema: TRIAL_SCHEMA,
     run_id: o.runId,
@@ -143,11 +163,17 @@ export function makeTrialRecord(o) {
     sent_to_engine: main,
     engine_response: main ? (o.engineResponse === undefined ? answer.response : o.engineResponse) : null,
     interrupted: !!o.interrupted,
+    interruption_reason: o.interrupted ? reasons[0] ?? 'unknown' : null,
+    interruption_reasons: reasons,
     repeat_queued: !!o.repeatQueued,
     focus_events: o.focusEvents || [],
     n_blur: (o.focusEvents || []).filter(e => e.type === 'blur').length,
     n_hidden: (o.focusEvents || []).filter(e => e.type === 'hidden').length,
     hidden_ms: hiddenMs,
+    fullscreen_at_onset: fsOnset,
+    shown_fullscreen: fsOnset === null ? null : fsOnset && !reasons.includes('fullscreen_exit'),
+    fullscreen_exits: (o.focusEvents || []).filter(e => e.type === 'fullscreen_exit').length,
+    fullscreen_return_shown: !!o.fullscreenReturn,
     posterior: main && o.reply ? o.reply.running ?? null : null,
     scoring: main && o.reply ? o.reply.scoring ?? null : null,
     procedure_ms: main && o.reply ? o.reply.procedure_ms ?? null : null,
@@ -191,8 +217,11 @@ export function hiddenTime(focusEvents, endMs) {
   return total
 }
 
-/** The end of a run: the engine's readout and counts of what was shown (compliance counts over every row). */
-export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null }) {
+/**
+ * The end of a run: the engine's readout and counts of what was shown (compliance counts over every row).
+ * `fullscreen`: fullscreen.js's summary() (null when there was none, as in the node tests).
+ */
+export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null, fullscreen = null }) {
   const rows = trials || []
   return plain({
     schema: RESULT_SCHEMA,
@@ -210,6 +239,10 @@ export function makeResultRecord({ runId, trials, readout, status = 'completed',
     n_compliance_not_assessed: rows.filter(r => r.compliant === null || r.compliant === undefined).length,
     n_reminder_lines: rows.filter(r => r.reminder_shown).length,
     n_reminder_pages: rows.filter(r => r.reminder_page_shown).length,
+    n_fullscreen_exits: fullscreen ? fullscreen.exits : null,
+    n_fullscreen_return_pages: rows.filter(r => r.fullscreen_return_shown).length,
+    n_interrupted_fullscreen: rows.filter(r => (r.interruption_reasons || []).includes('fullscreen_exit')).length,
+    fullscreen: fullscreen ?? null,
     readout: readout ?? null,
   })
 }

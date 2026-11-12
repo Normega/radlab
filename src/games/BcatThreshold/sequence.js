@@ -3,9 +3,11 @@
 // Pure and node-testable (sequence.test.mjs). The ONE place that decides what happens to a trial during
 // which the participant left the page: INTERRUPTION_POLICY below. Change it here, nowhere else.
 //
-// A trial is interrupted when the window lost focus or the page was hidden at any time from fixation onset
-// to the end of the last pulse (the circle), or the page was already hidden when the circle started. Leaving
-// while the question is up is allowed: the instructions tell people to take breaks before answering.
+// A trial is interrupted when the window lost focus, the page was hidden, or full screen was left
+// (fullscreen.js) at any time from fixation onset to the end of the last pulse (the circle), or the page was
+// already hidden when the circle started. Leaving while the question is up is allowed: the instructions tell
+// people to take breaks before answering. Several losses in one trial (a blur and a full-screen exit together)
+// are one interruption: the trial is flagged, withheld and repeated once, and every reason is recorded.
 //
 // With the policy on (the default, PLAN.md decision 9.8 "flag and repeat once"):
 //   - the trial is flagged (`interrupted: true` on its row) and the participant still answers it, so the
@@ -29,15 +31,30 @@ export const INTERRUPTION_POLICY = Object.freeze({
   withholdFromEngine: true,
 })
 
+/** The focus events that interrupt a circle. A 'focus', 'visible' or 'fullscreen_enter' alone does not. */
+export const LOSS_EVENTS = Object.freeze(['blur', 'hidden', 'fullscreen_exit'])
+
 /**
- * Was the circle interrupted? focusEvents: [{ type: 'blur'|'focus'|'hidden'|'visible', t }] on the trial clock
- * (ms from fixation onset). Only losses count; a 'focus' or 'visible' alone does not.
+ * Why the circle was interrupted: the distinct losses during it, in the order they first came
+ * ('hidden_at_start' first when the page was hidden as it began); [] when it was not.
+ * focusEvents: [{ type: 'blur'|'focus'|'hidden'|'visible'|'fullscreen_exit'|'fullscreen_enter', t }] on the
+ * trial clock (ms from fixation onset).
  * @param {{ startMs?: number, endMs: number, hiddenAtStart?: boolean }} window  the circle's span
  */
+export function interruptionReasons(focusEvents, { startMs = 0, endMs, hiddenAtStart = false }) {
+  if (typeof endMs !== 'number' || Number.isNaN(endMs)) throw new Error('interruptionReasons: endMs is required')
+  const out = hiddenAtStart ? ['hidden_at_start'] : []
+  for (const e of focusEvents || []) {
+    if (LOSS_EVENTS.includes(e.type) && e.t >= startMs && e.t <= endMs && !out.includes(e.type)) out.push(e.type)
+  }
+  return out
+}
+
+/** Was the circle interrupted? (interruptionReasons is not empty) */
 export function wasInterrupted(focusEvents, { startMs = 0, endMs, hiddenAtStart = false }) {
   if (hiddenAtStart) return true
   if (typeof endMs !== 'number' || Number.isNaN(endMs)) throw new Error('wasInterrupted: endMs is required')
-  return (focusEvents || []).some(e => (e.type === 'blur' || e.type === 'hidden') && e.t >= startMs && e.t <= endMs)
+  return interruptionReasons(focusEvents, { startMs, endMs }).length > 0
 }
 
 /**

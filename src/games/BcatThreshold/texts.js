@@ -135,6 +135,18 @@ export function armReminderPage(arm, keys) {
   return { paragraphs: p.slice() }
 }
 
+// ── Full screen (fullscreen.js). The test build's own sentences, 6_online_pilot/js/app.js: `enter` is the
+// message of ensureFullscreen('The task runs in full screen.') (l. 338), `return` the one shown between trials
+// (l. 217), and `hint` the line every one of those pages had (l. 192), with the space bar drawn as a key cap. On
+// these pages `hint` takes the place of CONTINUE_HINT; the button is CONTINUE, as on every page. The test build's
+// third message, 'The task needs full screen.' (l. 355, before the main trials), is not used: here the page
+// between trials comes before every trial, practice included, so `return` covers that case too. ──
+export const FULLSCREEN = {
+  enter: 'The task runs in full screen.',
+  return: 'The task needs full screen. Please return to full screen to continue.',
+  hint: `Press the ${cap('space bar')} to switch to full screen.`,
+}
+
 /** The answer screen. Words as on the test build's picture (img/SpeedImg.png); the icons are drawn in the step. */
 export const ANSWER_QUESTION = 'Did you sense a change?'
 export const ANSWER_LABELS = { slowed: 'slower', same: 'same', sped_up: 'faster' }
