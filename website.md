@@ -5215,6 +5215,13 @@ a "pending REB approval of the amendment" banner**: nothing recruits until the a
 
 > **Retired 2026-11-09:** superseded by Study 2b above; both studies renamed "(RETIRED: superseded by 2b)".
 
+> **2026-11-14: Study 2b is preregistered and recruiting.** "Sense Foraging Study 2b (CFA + validity)"
+> `1864d663-d01c-5d82-91f0-3047462470c3` is `active`; filed at osf.io/d4a5u from sense-foraging-scale commit
+> d3e60c9 after a 61-person pilot (13 November, shuffled run only). 639 places remain on the same Prolific posting;
+> pay £4.92, Prolific maximum time 90 minutes. The pilot's staff dry run is marked `is_test`. Known gap: `auto-enroll`'s
+> single-session path gives a returning participant who already finished a fresh session (2 cases in 2a, none in the
+> pilot); the analysis keeps first complete sessions only.
+
 > **2026-10-23: this build is now Study 2b, and Study 2a runs first.** Study 2a (about 500 adults: the current
 > 20 statements, 35 test statements, six plain-wording twins without "sensing mode", IUS-12, two attention checks;
 > ~13 minutes) settles each factor's statements and the wording before the validity study. Its plan is at
