@@ -16,8 +16,10 @@
 // Study 2a; RoomScale.jsx, talk_poll_scale_results(),
 // supabase/migrations/20261111_talk_poll_scale.sql) and a two-minute Toggle on
 // sounds (slides 10–11, the Tanenbaum RoomToggle, talk_poll_toggle_results()).
-// BreathCheck (breathing) and ForageRoom (sounds, light, touch) run on the shared
-// screen, answered in the Zoom chat.
+// Two breathing trials (the SocPers RoomTrials circle, slide 5) are rated on the
+// phone (pace changed? how activated?, talk_poll_submit) and slide 6 shows
+// activation for people who noticed vs missed the change (LiveResults). ForageRoom
+// (sounds, light, touch) runs on the shared screen, answered in the Zoom chat.
 //
 // Shell copied from /tanenbaum-nov-2026: click / → / Space advance, ← back, P opens
 // the presenter window (notes, target times, clock; its keys drive the deck), B
@@ -30,7 +32,8 @@ import QRCode from 'react-qr-code'
 import { supabase } from '../../lib/supabase'
 import { RoomToggleLive, RoomToggleResults } from '../tanenbaum-nov-2026/RoomToggle'
 import { STORY, SENSE } from '../tanenbaum-nov-2026/toggle'
-import { BreathCheck } from '../adobe-aug-2026/exercises'
+import RoomTrials from '../socpers-oct-2026/RoomTrials'
+import LiveResults from '../socpers-oct-2026/LiveResults'
 import { ForageRoom } from '../bpmh-sep-2026/exercises'
 import { RoomScaleLive, RoomScaleResults } from './RoomScale'
 import { pollCodeFromUrl, ANCHOR, LIVE_POLL, REF_2A } from './scale'
@@ -509,7 +512,7 @@ const SLIDES = [
   {
     label: 'Questionnaire (live count)',
     by: 280,
-    note: 'Give it about 90 seconds. Fill the silence lightly: “Take your time. Answer for how you are in general, not today.” Read the count when it settles. For anyone without a phone: “Watching is fine; there’s plenty more to do with me.” When most have sent: “Thank you. Keep that page open; we’ll use it again in about ten minutes.”',
+    note: 'Give it about 90 seconds. Fill the silence lightly: “Take your time. Answer for how you are in general, not today.” Read the count when it settles. For anyone without a phone: “Watching is fine; there’s plenty more to do with me.” When most have sent: “Thank you. Keep that page open and tap Next: we’ll use it again in a moment.”',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="On your phones">
         <H2>How you pay attention</H2>
@@ -519,14 +522,28 @@ const SLIDES = [
     ),
   },
 
-  // 5 — BreathCheck (breathing)
+  // 5 — Two breathing trials, rated on phones (the SocPers BCAT demo)
   {
-    label: 'BreathCheck (breathing)',
-    by: 400,
-    note: 'Zoom: share computer sound is not needed; it is visual. “Breathe with the circle for four breaths. Afterwards I’ll ask whether the pace sped up, slowed down or stayed the same.” Enter begins. When it asks: “In the chat: F for faster, S for slower, = for the same.” Read the split aloud, then Enter to reveal. The debrief is the point: “How did you decide? Some of you counted, or reasoned about it. Some of you just felt it in the breath. Those are the two modes, in forty seconds.” Space moves on once it is done.',
-    render: () => (
+    label: 'Breathing: two trials',
+    by: 460,
+    note: 'Visual only; no computer sound needed. Phones should be on “Next: a breathing demo” (they tapped Next after the eight statements). “Breathe with the circle, in as it grows, out as it shrinks. When it stops, answer two quick questions on your phone: did the pace change, and how activated do you feel right now?” ① Space or Begin; say nothing for about 14 s. ② “On your phone: tap ‘The circle has stopped’, then the two questions.” Watch the count; move on at about 80% of the room. ③ Trial 2, “once more”, about 14 s. ④ Same two questions. ⑤ Done. Don’t reveal anything yet. R resets if you start early.',
+    render: (_d, _b, ctx) => (
       <Frame wide>
-        <BreathCheck />
+        <RoomTrials code={ctx.code} url={phoneUrl(ctx.code)} />
+      </Frame>
+    ),
+  },
+
+  // 6 — What you noticed moved you (live)
+  {
+    label: 'Noticing moves us (live)',
+    by: 550,
+    note: 'The reveal first: “Both circles sped your breathing up by the same amount, about 30% faster. The first crept up over three breaths; the second jumped.” Then the figure, one panel at a time: “Here are the people who noticed the change, and here are the people who didn’t. Same change in the body. Look at how activated each group felt.” Read the n under each column, and the line beneath. The point: “Whatever you noticed moved you. Some of you counted, some of you just felt it in the breath: doing or sensing, what we notice is what moves us.” With a small room, don’t over-read it: “With this many people, it could go either way; in the full study it held for hundreds.” If no answers reached the server, the slide shows three hands-up questions instead: ask them in order.',
+    render: (_d, _b, ctx) => (
+      <Frame wide kicker="You, a minute ago · live">
+        <H2>What you noticed moved you</H2>
+        <Lead>Both circles sped up by the same amount: gradually in trial 1, suddenly in trial 2.</Lead>
+        <LiveResults code={ctx.code} active />
       </Frame>
     ),
   },
@@ -534,7 +551,7 @@ const SLIDES = [
   // 6 — Two ways of knowing yourself
   {
     label: 'Two ways of knowing yourself',
-    by: 490,
+    by: 640,
     note: '“In 2007 we scanned people while they attended to themselves in two ways. In one, they judged: what does this word say about me? That’s the narrative mode, doing: using what you know to explain, judge and plan. It stretches across past and future. In the other, they simply sensed what was happening right now, in the body, with no goal. The brain treats them as distinct: after mindfulness training, the two networks came apart.” Then the line for this audience: “Neither mode is the villain. Doing is how we plan a life and care for people. The skill is moving between them.”',
     render: (density) => (
       <div style={K.artSplit}>
@@ -555,7 +572,7 @@ const SLIDES = [
   // 7 — Doing spans time; sensing spans the present
   {
     label: 'Doing spans time',
-    by: 550,
+    by: 700,
     note: '“A picture of the difference. Doing is a thin band that stretches from the remembered past to the imagined future: it’s how we connect today to yesterday and tomorrow. Sensing is narrow in time but wide in what it takes in: everything that is here, now.” Keep it brief.',
     render: () => (
       <Frame wide kicker="Two ways of attending">
@@ -569,7 +586,7 @@ const SLIDES = [
   // 8 — Many vocabularies
   {
     label: 'Many vocabularies',
-    by: 640,
+    by: 790,
     note: '“This isn’t a new idea. Buddhist psychology describes contact and feeling, and then papañca, the proliferation of thought that builds a story on top. MBCT calls them doing and being. My field calls them narrative and experiential. I suspect every tradition has noticed this capacity, and each frames it differently.” Pause on the last row: “And I won’t speak for Indigenous traditions; Michael and Jeffrey will, in their own terms. One thing I’m curious about, and will come back to: whether experience is even divided this way at all.”',
     render: () => (
       <Frame wide kicker="An old distinction">
@@ -582,7 +599,7 @@ const SLIDES = [
   // 9 — Toggle: instructions
   {
     label: 'Toggle: instructions',
-    by: 700,
+    by: 850,
     note: '“Back to your phones. Tap Next. You’ll see two words, Story and Sense. For two minutes, rest your attention on the sounds around you, near and far: the room, the street, your own computer’s hum. No breath to watch, no posture to hold. Minds wander; that’s not failure. Your only job is to notice. When you notice you’re thinking, tap Story. When you’re back with the sounds, tap Sense. You start in Sense. Ready? Press Begin.” If they joined late, the phone has a “skip to the listening practice” link. Click to the live slide as you say Begin.',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="Try it · two minutes">
@@ -601,7 +618,7 @@ const SLIDES = [
   // 10 — Toggle, live
   {
     label: 'Toggle (live, 2 min)',
-    by: 840,
+    by: 990,
     note: 'Stay quiet for most of the two minutes; mute yourself if your room is noisy. One cue around 0:40: “If you’ve drifted, no problem: notice, tap, come back to the sounds.” Another near 1:30: “Wherever you are, just notice.” Don’t comment on the bars while people practise. When most have finished, click on.',
     render: (_d, _b, ctx) => (
       <Frame wide kicker="The room, right now">
@@ -613,7 +630,7 @@ const SLIDES = [
   // 11 — Toggle, the room's two minutes
   {
     label: 'Toggle: the room',
-    by: 930,
+    by: 1080,
     note: 'Read the room’s numbers: “Our median stay with the sounds before someone noticed a drift was about X seconds. And this many of you came back at least once.” Then the literature, so the room knows it’s normal: “In a meditation study that decoded attention from brain activity, stays with the breath averaged about 11 seconds. In our own work, people held active attention to the body for about 90 seconds of three minutes, trained or not.” Land it: “The drift is universal. What varies, and what can be trained, is noticing it and coming back.” For Q&A: a Story tap marks when a drift was noticed, not when it began, so the stays are an upper bound.',
     render: (density, _b, ctx) => (
       <Frame wide kicker="The room’s two minutes">
@@ -627,7 +644,7 @@ const SLIDES = [
   // 12 — Sad mood turns the senses down
   {
     label: 'Sad mood turns the senses down',
-    by: 1010,
+    by: 1160,
     note: 'Story, not data: “Why does this matter? Because mood moves us between modes, without asking. In 2010 we showed people sad film clips in the scanner. Everyone felt equally sad. But in people without training, sadness lit up the story network and turned down the areas that feel the body. And the more depressive symptoms people had, the more those areas went quiet.” Plain version: “Sad mood pulls attention out of the senses and into the story.”',
     render: (density) => (
       <Frame wide kicker="Why it matters">
@@ -643,7 +660,7 @@ const SLIDES = [
   // 13 — Senses online predicts staying well
   {
     label: 'Senses online, staying well',
-    by: 1100,
+    by: 1250,
     note: '“Does it matter clinically? We followed 85 people who had recovered from depression. We scanned them watching sad clips, then followed them for two years. Of the 42 whose senses stayed most online during sadness, 2 relapsed. Of the 43 whose senses shut down most, 16 relapsed.” Pause. Then, plainly: “That split was chosen in the same data, so it’s optimistic, and it hasn’t yet been replicated by another lab.” Then the reframe: “Feeling sad wasn’t the risk. Turning the senses down while sad was.”',
     render: (density) => (
       <Frame wide kicker="Why it matters">
@@ -660,7 +677,7 @@ const SLIDES = [
   // 14 — Practice works through the skill
   {
     label: 'Practice works through the skill',
-    by: 1180,
+    by: 1330,
     note: 'For teachers in the room: “In our relapse-prevention trial, what mattered was practice after the course ended. Practice grew decentering, the ability to see a thought as a thought, and decentering predicted staying well. Practice didn’t protect directly; it protected through the skill.” Then the humbling part: “Cognitive therapy, with no sensory practice at all, protected about as well. So there may be several doors to the same skill.” [Norm: the decks disagree on these path numbers and Ns (BPMH/Adobe .31/.42/−.22, Tanenbaum .46/−.27, N 156 vs 166). Check Segal et al. 2019 before Sunday; the slide face carries no numbers.]',
     render: (density) => (
       <Frame wide kicker="For teachers">
@@ -683,7 +700,7 @@ const SLIDES = [
   // 15 — Sense foraging
   {
     label: 'Sense foraging',
-    by: 1260,
+    by: 1410,
     note: 'Your own idea, so say it simply: “Most of what I’ve shown you came from people sitting with their eyes closed. But sensing doesn’t need a cushion, a posture or the breath. It needs curiosity. Sense foraging is shifting from thinking to sensing on purpose, open to whatever is there, willing to be surprised. Three steps, anywhere: check in, forage, check back.” Then the Council’s own concern: “It isn’t about stopping judgement. It’s about having somewhere to go.”',
     render: (density) => (
       <ArtSplit name="s08-touch" alt="An older hand trailing its fingertips through tall grass and wildflowers" kicker="No cushion required">
@@ -703,7 +720,7 @@ const SLIDES = [
   // 16 — ForageRoom (vision, sound, touch)
   {
     label: 'Forage together (1 min)',
-    by: 1390,
+    by: 1540,
     note: 'Enter steps through it. Check in: “One word for how you are right now; keep it to yourself.” Enter starts a minute of rotating prompts (sounds, the seat, the brightest light, the air on your hands); a tone opens and closes it. Say nothing during the minute. Check back: “One word again.” Then: “In the chat: did your word change? Yes, a little, or no.” Read a few aloud. “Either answer is information. The second look is where change gets registered.” Space moves on.',
     render: () => (
       <Frame wide>
@@ -715,7 +732,7 @@ const SLIDES = [
   // 17 — The room's questionnaire answers
   {
     label: 'The room’s answers',
-    by: 1510,
+    by: 1660,
     note: '“Remember the eight statements? Here’s the room, beside 500 adults from our last online study.” Read the left panel: “Most of you sit toward sensing, which is what we’d expect from people who practise; in that study, people who practise scored about two-thirds of a standard deviation higher.” Then the right panel, the highlighted row: “The one this room found hardest was…” If it is “never the right time” or “a struggle”: “Even for practitioners, the barrier isn’t knowing how. It’s that sensing doesn’t feel like it has a place in the day.” Caveat, briefly: “The scale is still being validated, and this is a demonstration, not data we keep.”',
     render: (density, _b, ctx) => (
       <Frame wide kicker="The room, beside 500 adults">
@@ -729,7 +746,7 @@ const SLIDES = [
   // 18 — Balance and cautions for teachers
   {
     label: 'Balance and cautions',
-    by: 1600,
+    by: 1750,
     note: '“Sensing isn’t always the answer. Too much story and we ruminate; too much sensation and some people feel flooded or detached, especially with a trauma history. For teaching, that means a few simple habits.” Read the four. “The goal isn’t to live in either mode. It’s the switch.”',
     render: (density) => (
       <Frame wide kicker="For teachers">
@@ -747,7 +764,7 @@ const SLIDES = [
   // 19 — A question for this program
   {
     label: 'A question for this program',
-    by: 1690,
+    by: 1840,
     note: 'Slow down here. “I want to end with a question rather than an answer, because I’m sharing this program with people who know much more than I do about other ways of knowing. My field tends to treat doing and sensing as opposites. But in many practices, beading, harvesting, song, careful work on the land, open sensory attention seems to be the way the doing is done well. So I’m curious whether the split I’ve drawn is a Western habit, and whether the skill is less about switching away from doing and more about doing with the senses open.” Hand it on: “That’s a question I’d love to hear Michael and Jeffrey take up.” Do not summarize their work for them. Bonus 1 has the research literature if someone asks.',
     render: () => (
       <ArtSplit name="s21-close" alt="An older couple sitting on a dock at dusk, listening to the lake" kicker="A question, not an answer">
@@ -761,8 +778,8 @@ const SLIDES = [
   // 20 — Take-home + thanks
   {
     label: 'Take-home + thanks',
-    by: 1860,
-    note: '“Three things to take with you. Everyone has both modes. Mood moves us between them without asking, and keeping the senses on when mood drops seems to matter. And the practice is the noticing: you did it three ways today, with the breath, the sounds and the room around you.” Thank the Council, Jackie, Dylan, Michael and Jeffrey, the lab and Zindel Segal. Then questions: Jackie has the chat. B opens the bonus slides.',
+    by: 2010,
+    note: '“Three things to take with you. Everyone has both modes. Mood moves us between them without asking, and keeping the senses on when mood drops seems to matter. And the practice is the noticing: you did it three ways today, with the breathing circle, the sounds and the room around you.” Thank the Council, Jackie, Dylan, Michael and Jeffrey, the lab and Zindel Segal. Then questions: Jackie has the chat. B opens the bonus slides.',
     render: () => (
       <Frame wide kicker="Take-home">
         <H2>Two ways of paying attention</H2>
