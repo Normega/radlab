@@ -28,7 +28,8 @@ const CIRCLE_MAX = 1.0
 const FORWARD = [' ', 'Enter', 'ArrowRight', 'PageDown']
 
 // START → RUN_A → ANS_A → RUN_B → ANS_B → DONE
-export default function RoomTrials({ code }) {
+// `url` is the phone address printed under the count (default: the SocPers phone).
+export default function RoomTrials({ code, url }) {
   const [act, setAct] = useState('START')
   const { getPhase, getBT, startBreath, reset } = useBreathCycle()
   const circleRef = useRef(null)
@@ -119,7 +120,7 @@ export default function RoomTrials({ code }) {
                 <span style={X.countL}>answered</span>
               </div>
             )}
-            {!offline && <p style={X.url}>radlab.zone/poll/{code}</p>}
+            {!offline && <p style={X.url}>{url ?? `radlab.zone/poll/${code}`}</p>}
             <button style={X.btn} onClick={forward}>{act === 'ANS_A' ? 'Trial 2 →' : 'Done →'}</button>
           </>
         )}

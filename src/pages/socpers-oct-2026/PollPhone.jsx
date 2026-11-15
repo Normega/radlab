@@ -187,7 +187,7 @@ export function MoodForm({ code, device, onDone }) {
   )
 }
 
-function TrialForm({ trial, code, device, onDone }) {
+export function TrialForm({ trial, code, device, onDone }) {
   const [pace, setPace] = useState(null)
   const [arousal, setArousal] = useState(null)
   const [err, setErr] = useState(null)

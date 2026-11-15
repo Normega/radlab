@@ -3,10 +3,13 @@
 // nothing personal: the same random device id as the other talk phones
 // (localStorage 'talkpoll:device').
 //
-// Two parts, one link, so it can sit in the Zoom chat for the whole talk:
+// Three parts, one link, so it can sit in the Zoom chat for the whole talk:
 //   1. eight statements, the 8-statement Sense Foraging Scale after a short
 //      definition of the two modes (talk_poll_scale_submit, 20261111_talk_poll_scale.sql);
-//   2. a two-minute Toggle practice anchored on sounds (talk_poll_toggle_submit,
+//   2. two breathing trials on the shared screen, each rated here: did the pace
+//      change, how activated do you feel (talk_poll_submit, 20261012_talk_polls.sql,
+//      the SocPers TrialForm);
+//   3. a two-minute Toggle practice anchored on sounds (talk_poll_toggle_submit,
 //      the Tanenbaum phone's Practice and Timeline).
 //
 // The phone does not follow the projector; the presenter says when to move on.
@@ -16,7 +19,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSubmitLock } from '../../lib/useSubmitLock'
-import { deviceId, P } from '../socpers-oct-2026/PollPhone'
+import { deviceId, P, TrialForm } from '../socpers-oct-2026/PollPhone'
 import { Practice, Timeline } from '../tanenbaum-nov-2026/LivePhone'
 import { STORY, SENSE } from '../tanenbaum-nov-2026/toggle'
 import { LIVE_POLL, FORM, ANCHOR, MODES_INTRO, SCALE, ITEMS, personScore } from './scale'
@@ -26,7 +29,7 @@ export default function MccPhone() {
   const code = params.code ?? LIVE_POLL
   const [device] = useState(deviceId)
   const [info, setInfo] = useState(undefined)     // undefined = loading, null = unknown poll
-  // welcome → scale → thanks → toggle → run → done
+  // welcome → scale → thanks → breath → trial1 → wait → trial2 → breathDone → toggle → run → done
   const [stage, setStage] = useState('welcome')
   const [answers, setAnswers] = useState(null)    // what this phone sent, for its own summary
   const [taps, setTaps] = useState([])
@@ -42,7 +45,9 @@ export default function MccPhone() {
         const k = `mcc:${code}:${row.round}`
         const sent = JSON.parse(localStorage.getItem(`${k}:scale`) || 'null')
         const tog = JSON.parse(localStorage.getItem(`${k}:toggle`) || 'null')
-        if (sent) { setAnswers(sent); setStage('toggle') }
+        const trials = JSON.parse(localStorage.getItem(`${k}:trials`) || '[]')
+        if (sent) { setAnswers(sent); setStage('breath') }
+        if (trials.includes(1)) setStage(trials.includes(2) ? 'toggle' : 'wait')
         if (tog?.taps?.length) { setTaps(tog.taps); setStage('done') }
       } catch { /* fresh start */ }
     })
@@ -51,6 +56,13 @@ export default function MccPhone() {
   const scaleSent = (a) => {
     setAnswers(a); setStage('thanks')
     try { localStorage.setItem(`${key}:scale`, JSON.stringify(a)) } catch { /* ignore */ }
+  }
+  const trialSent = (t) => {
+    try {
+      const prev = JSON.parse(localStorage.getItem(`${key}:trials`) || '[]')
+      localStorage.setItem(`${key}:trials`, JSON.stringify([...new Set([...prev, t])]))
+    } catch { /* ignore */ }
+    setStage(t === 1 ? 'wait' : 'breathDone')
   }
   const finished = (all) => {
     setTaps(all); setStage('done')
@@ -72,17 +84,60 @@ export default function MccPhone() {
         {MODES_INTRO.map((t, k) => <p key={k} style={P.sub}>{t}</p>)}
         <p style={{ ...P.sub, color: 'var(--tx)' }}>Next: eight short statements about how you pay attention in general. There are no right or wrong answers.</p>
         <button style={P.primary} onClick={() => setStage('scale')}>Start</button>
-        <button style={M.link} onClick={() => setStage('toggle')}>Joining late? Skip to the listening practice</button>
+        <button style={M.link} onClick={() => setStage('breath')}>Joining late? Skip ahead</button>
       </div>
     )
   }
   else if (stage === 'scale') { kicker = 'Part 1 · how you pay attention'; body = <ScaleForm code={code} device={device} onDone={scaleSent} /> }
   else if (stage === 'thanks') {
     kicker = 'Part 1 · sent'
-    body = <Thanks answers={answers} onNext={() => setStage('toggle')} />
+    body = <Thanks answers={answers} onNext={() => setStage('breath')} />
+  }
+  else if (stage === 'breath') {
+    kicker = 'Part 2 · a breathing demo'
+    body = (
+      <div style={P.form}>
+        <h1 style={P.h1}>Next: a breathing demo</h1>
+        <p style={P.sub}>In a moment the shared screen will show a pulsing circle.</p>
+        <ol style={P.steps}>
+          <li style={P.step}><b>Breathe with the circle</b> for about 15 seconds: in as it grows, out as it shrinks.</li>
+          <li style={P.step}><b>When it stops, answer two quick questions here:</b> did the circle’s pace change, and how activated do you feel right now?</li>
+          <li style={P.step}><b>Then we do it once more,</b> with the same two questions.</li>
+        </ol>
+        <p style={P.sub}>Keep this page open. Tap below once the circle has stopped.</p>
+        <button style={P.primary} onClick={() => setStage('trial1')}>The circle has stopped →</button>
+        <button style={M.link} onClick={() => setStage('toggle')}>Skip to the listening practice</button>
+      </div>
+    )
+  }
+  else if (stage === 'trial1' || stage === 'trial2') {
+    const t = stage === 'trial1' ? 1 : 2
+    kicker = 'Part 2 · a breathing demo'
+    body = <TrialForm key={t} trial={t} code={code} device={device} onDone={() => trialSent(t)} />
+  }
+  else if (stage === 'wait') {
+    kicker = 'Part 2 · a breathing demo'
+    body = (
+      <div style={P.center}>
+        <h1 style={P.h1}>Got it</h1>
+        <p style={P.sub}>Now breathe with the circle for the second trial. Answer when it stops.</p>
+        <button style={P.primary} onClick={() => setStage('trial2')}>The second trial is over →</button>
+      </div>
+    )
+  }
+  else if (stage === 'breathDone') {
+    kicker = 'Part 2 · sent'
+    body = (
+      <div style={P.center}>
+        <h1 style={P.h1}>Thank you</h1>
+        <p style={P.sub}>Both answers are in. Look up: the room’s answers are about to be on the screen.</p>
+        <p style={P.sub}>Keep this page open: we’ll use it again for a two-minute listening practice.</p>
+        <button style={P.primary} onClick={() => setStage('toggle')}>Next →</button>
+      </div>
+    )
   }
   else if (stage === 'toggle') {
-    kicker = 'Part 2 · a listening practice'
+    kicker = 'Part 3 · a listening practice'
     body = (
       <div style={P.form}>
         <h1 style={P.h1}>Toggle</h1>
@@ -171,7 +226,7 @@ function Thanks({ answers, onNext }) {
           <p style={{ ...P.sub, fontSize: 14 }}>Your average, {score.toFixed(1)}, with the three reversed statements flipped. This scale is still being developed; it isn’t a test, and there’s no good or bad score.</p>
         </div>
       )}
-      <p style={P.sub}>Keep this page open: we’ll use it again for a two-minute listening practice.</p>
+      <p style={P.sub}>Keep this page open and tap Next: a short breathing demo comes next.</p>
       <button style={P.primary} onClick={onNext}>Next →</button>
     </div>
   )
