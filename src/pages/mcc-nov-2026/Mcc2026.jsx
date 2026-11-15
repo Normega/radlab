@@ -697,10 +697,32 @@ const SLIDES = [
     ),
   },
 
+  // 14b — Does it need a manual? (Norm's images, Nov 15, in public/mcc-nov-2026/)
+  {
+    label: 'Does it need a manual?',
+    by: 1375,
+    note: 'Let the question sit for a beat. “Most of us met this through a course: a manual, a schedule, a cushion. Those courses work; I teach them. But does moving into a sensing, receptive mode need a manual?” Point to the right: “Here is the same person, and their mind is already full of ways in: moving, reading, cooking, a meal. Everyday life is full of doors.” Then click on: “Here’s one way in that needs no manual.”',
+    render: () => (
+      <Frame wide kicker="A question">
+        <H2>Does moving into a sensing, receptive mode need a manual?</H2>
+        <div style={K.manualRow}>
+          <figure style={K.manualFig}>
+            <img src="/mcc-nov-2026/manual-course.jpg" alt="A person sitting cross-legged, reading a book titled MBSR" style={K.manualImg} />
+            <figcaption style={K.lead}>A course, learned from a manual</figcaption>
+          </figure>
+          <figure style={K.manualFig}>
+            <img src="/mcc-nov-2026/everyday-sensing.jpg" alt="A person meditating, with a thought bubble full of everyday moments: dancing, reading, cooking, a meal" style={K.manualImg} />
+            <figcaption style={K.lead}>Everyday life, already full of ways in</figcaption>
+          </figure>
+        </div>
+      </Frame>
+    ),
+  },
+
   // 15 — Sense foraging
   {
     label: 'Sense foraging',
-    by: 1410,
+    by: 1455,
     note: 'Your own idea, so say it simply: “Most of what I’ve shown you came from people sitting with their eyes closed. But sensing doesn’t need a cushion, a posture or the breath. It needs curiosity. Sense foraging is shifting from thinking to sensing on purpose, open to whatever is there, willing to be surprised. Three steps, anywhere: check in, forage, check back.” Then the Council’s own concern: “It isn’t about stopping judgement. It’s about having somewhere to go.”',
     render: (density) => (
       <ArtSplit name="s08-touch" alt="An older hand trailing its fingertips through tall grass and wildflowers" kicker="No cushion required">
@@ -720,7 +742,7 @@ const SLIDES = [
   // 16 — ForageRoom (vision, sound, touch)
   {
     label: 'Forage together (1 min)',
-    by: 1540,
+    by: 1585,
     note: 'Enter steps through it. Check in: “One word for how you are right now; keep it to yourself.” Enter starts a minute of rotating prompts (sounds, the seat, the brightest light, the air on your hands); a tone opens and closes it. Say nothing during the minute. Check back: “One word again.” Then: “In the chat: did your word change? Yes, a little, or no.” Read a few aloud. “Either answer is information. The second look is where change gets registered.” Space moves on.',
     render: () => (
       <Frame wide>
@@ -732,7 +754,7 @@ const SLIDES = [
   // 17 — The room's questionnaire answers
   {
     label: 'The room’s answers',
-    by: 1660,
+    by: 1705,
     note: '“Remember the eight statements? Here’s the room, beside 500 adults from our last online study.” Read the left panel: “Most of you sit toward sensing, which is what we’d expect from people who practise; in that study, people who practise scored about two-thirds of a standard deviation higher.” Then the right panel, the highlighted row: “The one this room found hardest was…” If it is “never the right time” or “a struggle”: “Even for practitioners, the barrier isn’t knowing how. It’s that sensing doesn’t feel like it has a place in the day.” Caveat, briefly: “The scale is still being validated, and this is a demonstration, not data we keep.”',
     render: (density, _b, ctx) => (
       <Frame wide kicker="The room, beside 500 adults">
@@ -746,7 +768,7 @@ const SLIDES = [
   // 18 — Balance and cautions for teachers
   {
     label: 'Balance and cautions',
-    by: 1750,
+    by: 1795,
     note: '“Sensing isn’t always the answer. Too much story and we ruminate; too much sensation and some people feel flooded or detached, especially with a trauma history. For teaching, that means a few simple habits.” Read the four. “The goal isn’t to live in either mode. It’s the switch.”',
     render: (density) => (
       <Frame wide kicker="For teachers">
@@ -764,7 +786,7 @@ const SLIDES = [
   // 19 — A question for this program
   {
     label: 'A question for this program',
-    by: 1840,
+    by: 1885,
     note: 'Slow down here. “I want to end with a question rather than an answer, because I’m sharing this program with people who know much more than I do about other ways of knowing. My field tends to treat doing and sensing as opposites. But in many practices, beading, harvesting, song, careful work on the land, open sensory attention seems to be the way the doing is done well. So I’m curious whether the split I’ve drawn is a Western habit, and whether the skill is less about switching away from doing and more about doing with the senses open.” Hand it on: “That’s a question I’d love to hear Michael and Jeffrey take up.” Do not summarize their work for them. Bonus 1 has the research literature if someone asks.',
     render: () => (
       <ArtSplit name="s21-close" alt="An older couple sitting on a dock at dusk, listening to the lake" kicker="A question, not an answer">
@@ -778,7 +800,7 @@ const SLIDES = [
   // 20 — Take-home + thanks
   {
     label: 'Take-home + thanks',
-    by: 2010,
+    by: 2055,
     note: '“Three things to take with you. Everyone has both modes. Mood moves us between them without asking, and keeping the senses on when mood drops seems to matter. And the practice is the noticing: you did it three ways today, with the breathing circle, the sounds and the room around you.” Thank the Council, Jackie, Dylan, Michael and Jeffrey, the lab and Zindel Segal. Then questions: Jackie has the chat. B opens the bonus slides.',
     render: () => (
       <Frame wide kicker="Take-home">
@@ -983,6 +1005,9 @@ const K = {
   bigNum: { fontFamily: '"DM Serif Display",Georgia,serif', fontWeight: 400, fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1, flex: '0 0 auto', minWidth: '2.2ch' },
   plainItem: { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'clamp(17px, 1.9vw, 22px)', color: 'var(--tx)', lineHeight: 1.4, textAlign: 'left' },
   plainHead: { fontFamily: '"Space Mono",monospace', fontSize: 14, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pkd)', fontWeight: 400 },
+  manualRow: { display: 'flex', gap: 48, justifyContent: 'center', alignItems: 'flex-start', width: '100%' },
+  manualFig: { margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' },
+  manualImg: { height: 'min(52vh, 40vw)', width: 'auto', aspectRatio: '1 / 1', borderRadius: 24, display: 'block' },
   art: { width: '100%', height: 'auto', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 24, display: 'block' },
   artSplit: { display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 48, alignItems: 'center', width: 'min(1560px, 94vw)' },
   artBanner: { maxWidth: 'min(1100px, 92vw, 71vh)' },
