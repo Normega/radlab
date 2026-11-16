@@ -639,7 +639,14 @@ export default function ClassRoom({ session }) {
                 <p style={S.weeklyMeta}>Review your test, question by question →</p>
               </Link>
             ))}
+            {/* The card shows one quiz; earlier ones were reachable only from the
+                course home page, so students read them as gone (Nov 16). */}
             {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
+            {quizCard && (
+              <Link to={`${loungePath(slug)}/quizzes`} style={S.quizAllLink}>
+                {courseFeatures(slug).quizGraded ? 'All weekly quizzes' : 'All practice quizzes'} →
+              </Link>
+            )}
 
             {/* One row per board rather than a card that hides them behind a
                 page (Norm, 2026-09-09). There are two, so listing them costs
@@ -1103,6 +1110,7 @@ const S = {
   weeklyPrompt: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
   weeklyMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   quizMetaDone: { fontFamily: MONO, fontSize: 12, color: '#2e7d32' },
+  quizAllLink: { display: 'inline-block', fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', textDecoration: 'none', marginTop: 8 },
   banner: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 },
   bannerForm: {},
   bannerText: { fontSize: 14, color: 'var(--tx2)', marginBottom: 10 },
