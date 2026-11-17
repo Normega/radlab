@@ -19,8 +19,8 @@
 -- get_class_test_review (20261026). New: class_test_due_for, class_test_mc_count,
 -- set_class_test_due, set_class_test_due_until.
 --
--- APPLY ONLY when no timed test is in progress: class_test_deadline is read by every live
--- attempt. Verify first with the rolled-back checks in the session notes.
+-- Applied 2026-11-17 with no timed test in progress (class_test_deadline is read by every live
+-- attempt), and verified in rolled-back checks (supabase/migrations/README.md).
 
 begin;
 
