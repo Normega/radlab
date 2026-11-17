@@ -394,8 +394,8 @@ does not degrade anything — it fails the **entire** deployment, Production and
 in GitHub's commit status (the ✗ beside the commit), never in Actions, which is how it goes unseen.
 
 **The hard limit of 12 was the Hobby plan's and no longer applies.** The account moved to Pro on
-2026-09-19 — needed to host senseforaging.com, since Hobby is non-commercial only and that site
-sells a course — which lifts the cap well clear of the 12 files `api/` currently holds. Two things
+2026-09-19, when senseforaging.com moved onto it (Hobby covers personal, non-commercial use only),
+which lifts the cap well clear of the 12 files `api/` currently holds. Two things
 still matter:
 
 - **Pro's limits attach to the team.** A project left in a personal scope keeps the Hobby cap even
