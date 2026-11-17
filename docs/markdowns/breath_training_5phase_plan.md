@@ -103,7 +103,14 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - files hosted by us (as Tune is), with the voice service's licence checked for research and commercial use.
 
   Emotional prosody can come back later as a separate crossed factor if wanted.
-- **Still open for phases 4–5:** passage length relative to an 11–12 s breath; how many per round and the gaps between them; onsets locked to a breath phase or random (P4-2); the on-screen indicator (P4-3, mock-up 4 shows one). **Proposal (2026-11-10):** `breath_training_passages.md` works out the timing, the size of the set for six sessions (108 frames, 324 passages with three voiced kites per round), the counterbalancing, and nine sample triplets.
+- **W18 (Norm, 2026-11-17). The passage design** (details in `breath_training_passages.md`):
+  - **One passage on every kite.** Each round of six has two of each valence, shuffled. Phase 3 is therefore the only no-voice comparison.
+  - **6 rounds per session:** about 12 minutes in phase 4 and about 17 in phase 5.
+  - **Each passage starts just after begin** (0–1.5 s), runs about 9 s for the pilot, and ends before the rating.
+  - **One comprehension question per passage, asked after each phase 5 round.** It is about the shared scene, so all three versions have the same answer.
+  - **A large reserve, so sessions stay novel.** Nobody hears a frame twice. The proposal is 360 normed frames (1,080 passages, ten sessions' worth), drafted from about 470.
+  - **Voice.** The lab's voice is Kokoro-82M, run locally. The PSY240 trial's pick, af_nicole at 0.80, reads these passages in about 14 s, too slow for the breath. af_heart at 0.80 gives 8.7 s and is proposed; Norm to listen.
+  - (Answers P4-2 and P5-3's timing; P4-3, the on-screen indicator, is still open.)
 
 ## Open questions
 
@@ -142,13 +149,13 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
 ### Phase 4
 
 - **P4-1 (answered by W16 and W17).** Sound source: a validated affective set (IADS-2/IADS-E; licensing to check), or curated clips (BBC sound effects are licensed under RemArc, so commercial use needs per-clip clearance)?
-- **P4-2.** How many sounds per round, how long, how loud, and the valence mix (equal thirds)? Are onsets locked to breath phases or random?
+- **P4-2 (answered by W18).** How many sounds per round, how long, how loud, and the valence mix (equal thirds)? Are onsets locked to breath phases or random?
 - **P4-3.** Does anything on screen show a sound is playing?
 
 ### Phase 5
 
 - **P5-2.** Is there a listen-only baseline for comprehension?
-- **P5-3.** When are questions asked (after each round, or at the end), how many, and is confidence asked for them too?
+- **P5-3 (mostly answered by W18: one per passage, after each round; confidence on them still open).** When are questions asked (after each round, or at the end), how many, and is confidence asked for them too?
 - **P5-4 (answered by W16: yes, the same three valences).** Does the spoken content carry valence (continuing phase 4), or is it neutral?
 
 ### Later
