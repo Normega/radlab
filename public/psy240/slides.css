@@ -133,6 +133,8 @@ section.tight .small { font-size:1.9vmin; }
 section.tight .box { padding:1.3vmin 2vmin; }
 section.tight .svgwrap { margin:.4vmin 0; }
 section.tight .svgwrap svg { max-height:30vh; }
+/* wide: figure slides whose text sits under a full-width figure */
+section.wide p, section.wide li { max-width:88ch; }
 
 /* ---- figure / image ---- */
 img.fig { max-width:100%; max-height:56vh; object-fit:contain; border-radius:6px; }
