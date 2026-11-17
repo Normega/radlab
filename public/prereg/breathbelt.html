@@ -15,6 +15,11 @@
   is public. Never add them back.
   Static page outside the SPA bundle, so it loads the site's three font families from
   Google Fonts. Light tokens mirror src/index.css :root; the dark values are this page's own.
+  Added 2026-11-17: a "Data analysis" section after "Other" (#data-analysis). It is NOT part of
+  the registration; everything before it is the registered text and stays word for word. It lists
+  the deviations, clarifications and open rulings from the private analysis repository. It must
+  never contain participant IDs, health details or results: the study is blinded until the single
+  confirmatory run, and only sample counts may appear.
 -->
 <link rel="icon" type="image/svg+xml" href="/RADlab_Logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +32,8 @@
     --pk:#f068a4; --pkd:#ba417a;
     --tx:#1c1c1e; --tx2:#6b6c70; --gy:#7d7e82;
     --bd:rgba(180,100,140,0.13); --bds:rgba(180,100,140,0.25);
-    --code:#f7e6ee;
+    --code:#f7e6ee; --ok-bg:#e7f3ea; --ok-tx:#1d6a37; --ok-bd:rgba(29,106,55,0.28);
+    --wait-bg:#fdf0db; --wait-tx:#875200; --wait-bd:rgba(135,82,0,0.3);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -36,7 +42,8 @@
       --pk:#f68bbb; --pkd:#f68bbb;
       --tx:#ece8ea; --tx2:#b9b1b6; --gy:#a39aa0;
       --bd:rgba(240,104,164,0.18); --bds:rgba(240,104,164,0.32);
-      --code:#2e2730;
+      --code:#2e2730; --ok-bg:#1d3324; --ok-tx:#a3dbb4; --ok-bd:rgba(163,219,180,0.32);
+      --wait-bg:#3a2c15; --wait-tx:#f2c77e; --wait-bd:rgba(242,199,126,0.32);
     }
   }
   :root[data-theme="dark"] {
@@ -45,7 +52,8 @@
     --pk:#f68bbb; --pkd:#f68bbb;
     --tx:#ece8ea; --tx2:#b9b1b6; --gy:#a39aa0;
     --bd:rgba(240,104,164,0.18); --bds:rgba(240,104,164,0.32);
-    --code:#2e2730;
+    --code:#2e2730; --ok-bg:#1d3324; --ok-tx:#a3dbb4; --ok-bd:rgba(163,219,180,0.32);
+    --wait-bg:#3a2c15; --wait-tx:#f2c77e; --wait-bd:rgba(242,199,126,0.32);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -105,6 +113,26 @@
   .redact { font-style: italic; color: var(--tx2); }
   .redact-note { border-left: 3px solid var(--pk); padding: 4px 0 4px 16px; margin: 16px 0; }
   .foot { margin-top: 64px; font-size: 14px; color: var(--gy); border-top: 1px solid var(--bd); padding-top: 16px; }
+  .added { margin-top: 64px; padding-top: 24px; border-top: 4px solid var(--pk); }
+  main .added > h2 { margin-top: 0; padding-top: 0; border-top: 0; }
+  main .status-line { color: var(--tx2); }
+  td.ind { padding-left: 32px; }
+  table.hyp { min-width: 640px; }
+  .dv { background: var(--bgc); border: 1px solid var(--bd); border-radius: 12px; padding: 16px 24px; margin: 16px 0; }
+  main .dv h4 { font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 1.4; margin: 8px 0; }
+  main .dv-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+  .dv-id { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--pkd); }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; line-height: 1.5; padding: 0 8px; border-radius: 24px; border: 1px solid; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok-tx); border-color: var(--ok-bd); }
+  .badge.wait { background: var(--wait-bg); color: var(--wait-tx); border-color: var(--wait-bd); }
+  main .dv-meta { font-size: 14px; color: var(--tx2); }
+  .lbl { font-weight: 600; }
+  main p.q { font-weight: 600; margin-top: 16px; }
+  main ul.opts { list-style: none; padding-left: 0; }
+  main ul.opts li { border: 1px solid var(--bd); border-radius: 12px; padding: 8px 16px; margin: 8px 0; }
+  main ul.opts li:has(.rec) { background: var(--bgp); border-color: var(--bds); }
+  .rec { display: inline-block; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--pkd); margin-right: 8px; }
   @media print { body { background: #fff; } .tbl { overflow: visible; } }
 </style>
 </head>
@@ -118,10 +146,10 @@
     <p class="meta">OSF registration: <a href="https://osf.io/4ms3c">osf.io/4ms3c</a></p>
     <div class="about">
       <p>This page reproduces the registered text for easier reading; the OSF registration is the record, and pilot participant IDs are omitted here.</p>
-      <p>Deviations from the plan are reported with the results.</p>
+      <p>Deviations from the plan are reported with the results. They are listed ahead of the results in the <a href="#data-analysis">Data analysis</a> section at the end, which was added after registration and is not part of it.</p>
     </div>
   </header>
-  <nav class="toc" aria-label="Contents"><p class="toc-h">Contents</p><ol><li><a href="#overview">Overview</a><ol class="sub"><li><a href="#research-questions-or-hypotheses">Research questions or hypotheses</a></li><li><a href="#foreknowledge-of-data-or-evidence">Foreknowledge of data or evidence</a></li><li><a href="#explanation-of-foreknowledge-and-managing-unintended-influences">Explanation of foreknowledge and managing unintended influences</a></li></ol></li><li><a href="#research-design">Research Design</a><ol class="sub"><li><a href="#study-type">Study type</a></li><li><a href="#intention-for-causal-interpretation">Intention for causal interpretation</a></li><li><a href="#blinding-of-experimental-treatments">Blinding of experimental treatments</a></li><li><a href="#additional-blinding-during-research-or-analysis">Additional blinding during research or analysis</a></li><li><a href="#study-design">Study design</a></li><li><a href="#randomization">Randomization</a></li></ol></li><li><a href="#sampling">Sampling</a><ol class="sub"><li><a href="#data-collection-procedures">Data collection procedures</a></li><li><a href="#sample-size">Sample size</a></li><li><a href="#sample-size-rationale">Sample size rationale</a></li><li><a href="#starting-and-stopping-rules">Starting and stopping rules</a></li></ol></li><li><a href="#variables">Variables</a><ol class="sub"><li><a href="#manipulated-variables">Manipulated variables</a></li><li><a href="#measured-variables">Measured variables</a></li><li><a href="#indices">Indices</a></li></ol></li><li><a href="#analysis-plan">Analysis Plan</a><ol class="sub"><li><a href="#statistical-models">Statistical models</a></li><li><a href="#transformations">Transformations</a></li><li><a href="#inference-criteria">Inference criteria</a></li><li><a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a></li><li><a href="#missing-data">Missing data</a></li><li><a href="#other-planned-analysis">Other planned analysis</a></li></ol></li><li><a href="#other">Other</a><ol class="sub"><li><a href="#context-and-additional-information">Context and additional information</a></li></ol></li></ol></nav>
+  <nav class="toc" aria-label="Contents"><p class="toc-h">Contents</p><ol><li><a href="#overview">Overview</a><ol class="sub"><li><a href="#research-questions-or-hypotheses">Research questions or hypotheses</a></li><li><a href="#foreknowledge-of-data-or-evidence">Foreknowledge of data or evidence</a></li><li><a href="#explanation-of-foreknowledge-and-managing-unintended-influences">Explanation of foreknowledge and managing unintended influences</a></li></ol></li><li><a href="#research-design">Research Design</a><ol class="sub"><li><a href="#study-type">Study type</a></li><li><a href="#intention-for-causal-interpretation">Intention for causal interpretation</a></li><li><a href="#blinding-of-experimental-treatments">Blinding of experimental treatments</a></li><li><a href="#additional-blinding-during-research-or-analysis">Additional blinding during research or analysis</a></li><li><a href="#study-design">Study design</a></li><li><a href="#randomization">Randomization</a></li></ol></li><li><a href="#sampling">Sampling</a><ol class="sub"><li><a href="#data-collection-procedures">Data collection procedures</a></li><li><a href="#sample-size">Sample size</a></li><li><a href="#sample-size-rationale">Sample size rationale</a></li><li><a href="#starting-and-stopping-rules">Starting and stopping rules</a></li></ol></li><li><a href="#variables">Variables</a><ol class="sub"><li><a href="#manipulated-variables">Manipulated variables</a></li><li><a href="#measured-variables">Measured variables</a></li><li><a href="#indices">Indices</a></li></ol></li><li><a href="#analysis-plan">Analysis Plan</a><ol class="sub"><li><a href="#statistical-models">Statistical models</a></li><li><a href="#transformations">Transformations</a></li><li><a href="#inference-criteria">Inference criteria</a></li><li><a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a></li><li><a href="#missing-data">Missing data</a></li><li><a href="#other-planned-analysis">Other planned analysis</a></li></ol></li><li><a href="#other">Other</a><ol class="sub"><li><a href="#context-and-additional-information">Context and additional information</a></li></ol></li><li><a href="#data-analysis">Data analysis (added after registration)</a><ol class="sub"><li><a href="#da-status">Status and how to read this section</a></li><li><a href="#da-sample">Final sample</a></li><li><a href="#da-deviations">Deviations and clarifications</a></li><li><a href="#da-hypotheses">Hypothesis by hypothesis</a></li><li><a href="#da-rulings">Open rulings, R1 to R11</a></li></ol></li></ol></nav>
   <main id="text">
 <h2 id="overview">Overview</h2>
 <h3 id="research-questions-or-hypotheses">Research questions or hypotheses</h3>
@@ -592,6 +620,365 @@ ambivalence = (p + n) / 2 - |p - n|</code></pre>
 <h2 id="other">Other</h2>
 <h3 id="context-and-additional-information">Context and additional information</h3>
 <p>*** Please read the attached pdf for a much better formatted and clearly laid out pre-registration, the boxes here are filled out for completeness ***</p>
+<section class="added" aria-labelledby="data-analysis">
+<p class="eyebrow">Added after registration · not part of the OSF record</p>
+<h2 id="data-analysis">Data analysis</h2>
+<p class="status-line">Last updated 17 November 2026. The confirmatory analysis has not been run; the data stay blinded until it is.</p>
+
+<h3 id="da-status">Status and how to read this section</h3>
+<ul>
+<li>Everything above this section is the registered text. This section is not part of the registration, and the OSF registration stays the record.</li>
+<li>The section lists two kinds of entry. A <strong>deviation</strong> departs from the registered text. A <strong>clarification</strong> reads a passage the registered text leaves open or ambiguous, without departing from it.</li>
+<li>The analysis plan was fixed before unblinding, in two documents kept in the analysis repository (private): a full specification of the analyses of H1 to H8 and of the secondary and exploratory analyses, and a deviations log, DV1 to DV20.</li>
+<li>Every entry was decided without results. No outcome has been computed, and the quantities the registration blocks stay blocked until the confirmatory run.</li>
+<li>Where the registered text was silent, ambiguous or in conflict with the code, each case was written up as a numbered question and answered by Norm Farb before the run. The answers are written into the deviations below.</li>
+<li>The confirmatory run happens once, and Norm runs it. It takes a lock before computing anything and refuses to run a second time. It prints progress only, never an estimate or a decision, until every analysis has finished.</li>
+<li>The run cannot start until the eleven open rulings below are answered and the frozen sample list's checksum is recorded in the deviations log.</li>
+<li>Each entry links to the registered passage it affects. Results will be reported with these deviations.</li>
+</ul>
+
+<h3 id="da-sample">Final sample</h3>
+<p>Recruitment closed on 11 November 2026. Preprocessing of 17 November 2026 classified every session; none failed for a reason outside the rules of <a href="#dv7">DV7</a>.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Final sample"><table><thead><tr><th>Sessions</th><th>n</th></tr></thead><tbody>
+<tr class="b"><td>Completed</td><td>107</td></tr>
+<tr class="b"><td>Analysed (complete data)</td><td>92</td></tr>
+<tr><td class="ind">Aligned by trigger codes</td><td>83</td></tr>
+<tr><td class="ind">Aligned by wall clock (<a href="#dv4">DV4</a>), duration analyses only</td><td>9</td></tr>
+<tr class="b"><td>Excluded as incomplete (<a href="#dv7">DV7</a>)</td><td>15</td></tr>
+<tr><td class="ind">No stretch-belt recording</td><td>3</td></tr>
+<tr><td class="ind">Flat stretch-belt signal</td><td>1</td></tr>
+<tr><td class="ind">Start of calibration pacing not recorded by the accelerometer</td><td>9</td></tr>
+<tr><td class="ind">Left-seat session with no trigger codes (<a href="#dv4">DV4</a>)</td><td>2</td></tr>
+</tbody></table></div>
+<ul>
+<li>One of the three sessions with no stretch-belt recording is the account the draft preregistration names as a test account. It has a web session and no recording.</li>
+<li>17 sessions have no trigger codes. 15 are from the right-hand seat: 9 of them are complete and aligned by wall clock, and 6 are among the 9 excluded because the start of calibration pacing was not recorded. The other 2 are from the left-hand seat and are excluded (<a href="#dv4">DV4</a>).</li>
+<li>All 18 pilot participants are complete and in the analysed sample, as registered.</li>
+<li>No session is excluded for performance or signal quality. The registered flags (low calibration fit, low signal quality, poor pacer adherence, large alignment residuals, staircases that did not converge) are reported, and flagged participants stay in.</li>
+</ul>
+<h4 class="da-h4">Which sessions decide which hypothesis</h4>
+<div class="tbl" role="region" tabindex="0" aria-label="Analysis sets"><table><thead><tr><th>Analysis</th><th>Decides on</th><th>Reported beside it</th></tr></thead><tbody>
+<tr><td>H1, H3, H4, H5, H6, H7, H8</td><td>Triggered sessions (83)</td><td>Triggered plus wall-clock sessions (92)</td></tr>
+<tr><td>H2, ways 1 and 2 (<a href="#dv5">DV5</a>)</td><td>Triggered sessions (83)</td><td>None: wall-clock sessions never enter H2</td></tr>
+<tr><td>H2, way 3</td><td>Triggered sessions recorded on the later trigger helper, from 29 September 2026</td><td>None</td></tr>
+</tbody></table></div>
+<ul>
+<li>The triggered-only run is the analysis as registered, and it decides. The run with the wall-clock sessions added is a sensitivity analysis and never replaces it.</li>
+<li>Every analysis, and every rerun, is also reported without the participant retained under <a href="#dv9">DV9</a>. That version never decides.</li>
+</ul>
+
+<h3 id="da-deviations">Deviations and clarifications</h3>
+<p>One entry per item of the deviations log. Dates are the dates Norm decided or the entry was recorded.</p>
+
+<article class="dv" id="dv1">
+<p class="dv-top"><span class="dv-id">DV1</span><span class="badge ok">Decided</span></p>
+<h4>The interim re-estimation ran late</h4>
+<p class="dv-meta">Decided 28 October 2026 · Affects <a href="#the-interim-re-estimation-fixed-in-advance">The interim re-estimation, fixed in advance</a></p>
+<p><span class="lbl">Registered.</span> Exactly one re-estimation, when the 40th participant had been enrolled.</p>
+<p><span class="lbl">Change.</span> It ran once, on 28 October 2026, over every participant whose preprocessing was complete; about 85 sessions had been completed by then. For most of the time after the 40th enrolment, the stretch-belt recordings from August to early October sat on a lab computer's local disk and were found the day the interim ran, so running at 40 would have used whichever subset happened to have files. No outcome had been computed, so nothing observed about any hypothesis influenced the timing. The extraction script was unchanged apart from the larger sample, and the interim set the target at 70 enrolled.</p>
+</article>
+
+<article class="dv" id="dv2">
+<p class="dv-top"><span class="dv-id">DV2</span><span class="badge ok">Decided</span></p>
+<h4>The pacer overshoot is 5 to 7 ms per breath, not 83 to 86</h4>
+<p class="dv-meta">Decided 27 October 2026 · Affects <a href="#decomposing-the-belt-to-pacer-offset">Decomposing the belt-to-pacer offset</a></p>
+<p><span class="lbl">Registered.</span> The pilot was said to show a pacer overshoot of 83 to 86 ms per breath.</p>
+<p><span class="lbl">Change.</span> That figure was the trigger hardware's input and output latency, not the pacer. Measured from timing metadata, the overshoot is 5 to 7 ms per breath, and preprocessing uses each session's measured value. It changes any expectation stated in terms of breath index; no decision rule changes.</p>
+</article>
+
+<article class="dv" id="dv3">
+<p class="dv-top"><span class="dv-id">DV3</span><span class="badge ok">Decided</span></p>
+<h4>A misread trigger code is corrected as data</h4>
+<p class="dv-meta">Decided 28 October 2026 · Affects <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a></p>
+<p><span class="lbl">Registered.</span> Alignment matches trial-start codes to trial records in recording order.</p>
+<p><span class="lbl">Change.</span> In one session, one trial-start code was recorded with a single dropped bit, at the moment its trial record predicts. It is corrected through a listed correction that preprocessing applies and flags, and the session then aligns like any other. This restores one session under the registered method and creates no second method.</p>
+</article>
+
+<article class="dv" id="dv4">
+<p class="dv-top"><span class="dv-id">DV4</span><span class="badge ok">Decided</span></p>
+<h4>Sessions without trigger codes are aligned by wall clock, for duration analyses only</h4>
+<p class="dv-meta">Decided 28 October 2026; revised 13 November; confirmed 17 November · Affects <a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a>, <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a></p>
+<p><span class="lbl">Registered.</span> Alignment uses trial-start codes. A session missing the trial-level records needed to align it is incomplete and excluded.</p>
+<p><span class="lbl">Change.</span> 17 sessions have complete web records and a stretch-belt recording but no session codes, because the browser was set to a trigger output the recording rig did not receive; that setting has since been disabled. They are aligned from the recording's own wall-clock stamp against the browser's clock, using no breathing signal, so the alignment cannot be tuned to an outcome. Small alignment errors are negligible against breaths of 3 to 5 s but enter onset timing directly, which sets the rules:</p>
+<ul>
+<li>A session is aligned this way only if it lies wholly inside one recording segment, chosen from the stamps alone.</li>
+<li>Its clock constant comes from triggered sessions with the same seat and segment position.</li>
+<li>It enters H1 and H3 to H8, never H2, and every analysis it enters is reported with and without these sessions.</li>
+<li>The left-hand seat's computer clock moves too far between synchronisations for any check to verify its alignment, so its 2 sessions are excluded.</li>
+<li>A planned check against ECG heart rate was dropped: the recordings carry no usable ECG, and no other independent check exists that avoids a blocked quantity.</li>
+<li>An alternative that fits each session's offset by matching breath troughs was rejected. It uses the stretch belt's error against the pacer, which is blocked, and would bias between-device comparisons by construction.</li>
+</ul>
+</article>
+
+<article class="dv" id="dv5">
+<p class="dv-top"><span class="dv-id">DV5</span><span class="badge ok">Decided</span></p>
+<h4>Trigger alignment is corrected for the helper's send time</h4>
+<p class="dv-meta">Decided 29 October 2026 · Affects <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a>, <a href="#5-4-h2-cycle-level-detection">5.4 H2</a></p>
+<p><span class="lbl">Registered.</span> Trial-start codes are matched to trial records, and a linear fit of the offset over trials gives the alignment.</p>
+<p><span class="lbl">Change.</span> The fit placed each code at the browser time taken before the trigger was sent, so the stretch belt sat early by each code's landing delay; on the trigger helper used before 29 September 2026 that delay varied from trial to trial and grew across a session. The alignment now adds each trial's measured send time, drops trials more than 4 median absolute deviations (at least 10 ms) from a first fit and refits, and stops if that would drop more than 30% of trials. Sessions on the older helper are shifted by one constant to put them on the same footing as later ones. Because that constant rests on an assumption about the recording software, H2 is run three ways: with that shift (primary), with the alternative shift implied by the registered alignment, and on later-helper sessions alone. A conclusion about H2 holds only if it holds in all three ways; duration analyses do not depend on the shift.</p>
+</article>
+
+<article class="dv" id="dv6">
+<p class="dv-top"><span class="dv-id">DV6</span><span class="badge ok">Decided</span></p>
+<h4>Recruitment ran past the target and the hard cap</h4>
+<p class="dv-meta">Decided 13 November 2026 · Affects <a href="#starting-and-stopping-rules">Starting and stopping rules</a>, <a href="#sample-size">Sample size</a></p>
+<p><span class="lbl">Registered.</span> Recruit to 75 enrolled, with the target re-estimated once within a hard cap of 100. The interim set it at 70.</p>
+<p><span class="lbl">Change.</span> About 85 sessions were already complete when the interim ran, and 107 were completed by 11 November 2026, when recruitment closed. Usable sessions lagged enrolments by more than the registered assumption of 13 in 18, because of missing recordings (<a href="#dv1">DV1</a>) and sessions without trigger codes (<a href="#dv4">DV4</a>), so recruitment ran until the number of complete sessions was secure, and sessions already booked went ahead. The decision to stop used counts only; no outcome existed. Every complete session is analysed with no selection among them, and the pilot participants stay in, as registered.</p>
+</article>
+
+<article class="dv" id="dv7">
+<p class="dv-top"><span class="dv-id">DV7</span><span class="badge ok">Decided</span></p>
+<h4>What “incomplete data” means in practice</h4>
+<p class="dv-meta">Decided 13 November 2026; revised 17 November · Affects <a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a></p>
+<p><span class="lbl">Registered.</span> Exclusion applies only to incomplete data: a session missing usable signal from either device, or the records needed to align them. No one is excluded for poor performance or poor signal.</p>
+<p><span class="lbl">Change.</span> The rule is applied as an explicit list of hardware or storage failures, each identified without reference to results: no stretch-belt recording, a flat stretch-belt channel, no accelerometer file, or a calibration whose start of pacing the accelerometer did not record. Without the start of pacing, the strap cannot be calibrated against the pacer as registered, so it yields no breathing signal. The cause was the website: its calibration timer did not wait for the strap's accelerometer stream, which can start well after the heart-rate stream. One rule applies to every session, decided from the stream's packet order and phase labels alone with no duration threshold: the final calibration run must be preceded in the stream by at least one packet with another label.</p>
+</article>
+
+<article class="dv" id="dv8">
+<p class="dv-top"><span class="dv-id">DV8</span><span class="badge ok">Decided</span></p>
+<h4>Each device is lag-corrected by its own Block 1 offset</h4>
+<p class="dv-meta">Decided 13 November 2026 · Affects <a href="#5-1-preprocessing">5.1 Preprocessing</a>, <a href="#5-3-h1-breath-duration-agreement">5.3 H1</a>, <a href="#5-4-h2-cycle-level-detection">5.4 H2</a></p>
+<p><span class="lbl">Registered.</span> H1 matches lag-corrected onsets, and H2's detection score uses the lag fixed from Block 1. The offset is measured between a device's breathing signal and the pacer. The text does not say whether the stretch belt's onsets are corrected.</p>
+<p><span class="lbl">Change.</span> Each device's onsets are corrected by that device's own Block 1 offset against the pacer, following the registered definition. The stretch belt's offset is computed inside the confirmatory run and not before, because the registration reserves it for that run. A constant alignment error within a session falls into the stretch belt's offset and cancels, so the <a href="#dv5">DV5</a> shift no longer affects H1's matching or H2's detection score. H2's onset timing difference stays on uncorrected onsets, as registered.</p>
+</article>
+
+<article class="dv" id="dv9">
+<p class="dv-top"><span class="dv-id">DV9</span><span class="badge ok">Decided</span></p>
+<h4>A participant who reported a screening condition is retained</h4>
+<p class="dv-meta">Decided 10 November 2026; reporting decided 17 November · Affects <a href="#1-2-participants">1.2 Participants</a></p>
+<p><span class="lbl">Registered.</span> Listed conditions are exclusions at screening.</p>
+<p><span class="lbl">Change.</span> A participant who reported a condition named in the screening questions was retained after confirming they could take part safely; results are reported with and without them. Norm decided before any outcome had been computed. The registered exclusions at analysis cover incomplete data only, and their data are complete, so they stay in the main sample.</p>
+</article>
+
+<article class="dv" id="dv10">
+<p class="dv-top"><span class="dv-id">DV10</span><span class="badge ok">Decided</span></p>
+<h4>Block 1 offsets are estimated after removing the window's mean, for both devices</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-1-preprocessing">5.1 Preprocessing</a></p>
+<p><span class="lbl">Registered.</span> The offset is estimated by cross-correlation over plus or minus 2000 ms on the Block 1 window, after a band-pass filter of design order 4 with 15 s odd-reflection padding. The text does not say whether the window's mean is removed first.</p>
+<p><span class="lbl">Change.</span> On synthetic signals, a large constant level in the window leaves a filter start-up transient that biases the offset, and the two devices carry different constant levels (strap tension sets the stretch belt's, gravity the accelerometer's). Both devices' offsets are therefore estimated with the window mean subtracted before the band-pass, so the two corrections stay comparable. The accelerometer's offset is recomputed in the run, with the value preprocessing stored reported beside it. The decision rested on synthetic signals only; no stretch-belt offset had been computed.</p>
+</article>
+
+<article class="dv" id="dv11">
+<p class="dv-top"><span class="dv-id">DV11</span><span class="badge ok">Decided</span></p>
+<h4>The onset detector is kept as implemented; the registered filter sentence misdescribes it</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-1-preprocessing">5.1 Preprocessing</a></p>
+<p><span class="lbl">Registered.</span> Step 4 gives design order 4 and 15 s padding for every filter, including the onset detection and measurement bands. Step 7 commits to the same onset function for the pilot and every confirmatory analysis.</p>
+<p><span class="lbl">Change.</span> The onset function uses filter order 2 with 60 s odd-reflection padding. It was committed on the registration date and produced the pilot and interim variance components and the 0.4 prominence threshold, so it is kept: step 7's commitment is to the same function, and changing the filter would change every onset and leave the threshold tuned on another filter. No onset and no decision rule changes, and the calibration filter is as registered.</p>
+</article>
+
+<article class="dv" id="dv12">
+<p class="dv-top"><span class="dv-id">DV12</span><span class="badge ok">Decided</span></p>
+<h4>The pacer is reconstructed with send time and overshoot; H4 is tested against the realised period</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-6-h4-accuracy-against-the-pacer">5.6 H4</a>, <a href="#5-1-preprocessing">5.1 Preprocessing</a></p>
+<p><span class="lbl">Registered.</span> The pacer is reconstructed from the software's trial records, and H4 compares each device's durations with the commanded period (the period the pacer was set to).</p>
+<p><span class="lbl">Change.</span> Each paced trial's pacer begins at the trial start plus that trial's measured send time (<a href="#dv5">DV5</a>), and each pacer breath lasts its commanded period plus the session's measured overshoot (<a href="#dv2">DV2</a>). Both terms were measured from timing metadata, and leaving them out would misplace the pacer by known amounts. H4 is decided against this realised period, and the version against the commanded period is reported beside it. It moves the pacer onsets to which H3, H4, H7 and H8 assign breaths; no margin changes.</p>
+</article>
+
+<article class="dv" id="dv13">
+<p class="dv-top"><span class="dv-id">DV13</span><span class="badge ok">Decided</span></p>
+<h4>H6 test 2 is defined here and carries no pass or fail; H6 is decided on test 1</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-8-h6-within-session-stability">5.8 H6</a>, <a href="#inference-criteria">Inference criteria</a></p>
+<p><span class="lbl">Registered.</span> Test 2 is a mixed model of agreement on the signal quality index over rolling windows, controlling for elapsed time. Window-level agreement, the window step, the random structure and a decision rule are not stated, although Inference criteria lists H6b among the threshold-based tests.</p>
+<p><span class="lbl">Change.</span> Window agreement is the Fisher-z correlation of the two devices' lag-corrected signals, in non-overlapping 15 s windows from the start of Block 2 to the end of Block 5, with uncorrelated random intercept and slopes. Test 2 is reported as consistent with the prediction when the quality coefficient is positive with its 95% interval excluding 0 and the elapsed-time interval includes 0. It carries no pass or fail, because no floor was registered and setting one now would be a new rule. H6 is decided on test 1, the registered stability test.</p>
+</article>
+
+<article class="dv" id="dv14">
+<p class="dv-top"><span class="dv-id">DV14</span><span class="badge ok">Decided</span></p>
+<h4>The model for H7 test 2</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-9-h7-downstream-equivalence">5.9 H7</a></p>
+<p><span class="lbl">Registered.</span> Fit the same model twice, once with each device supplying the breath-duration predictor, and test the two coefficients for equivalence with two one-sided tests at a 75 ms margin. The model is not specified in the registration, the draft, the power simulation or any script.</p>
+<p><span class="lbl">Change.</span> For each device, the outcome is the trial's change in breath duration (mean of pacer breaths 3 and 4 minus mean of breaths 1 and 2, in ms), and the predictor is the cued direction (+1 for a slower cue, −1 for a faster one). The between-device test is a difference-score model on trials where both devices give a value, with two one-sided tests at plus or minus 75 ms on the cue coefficient; the per-device models are reported. It is the one model found whose coefficient is in ms, the margin's unit, and it uses the same trials and breaths as test 1. In it duration is the outcome, where the registered text names duration as the predictor.</p>
+</article>
+
+<article class="dv" id="dv15">
+<p class="dv-top"><span class="dv-id">DV15</span><span class="badge ok">Decided</span></p>
+<h4>A fallback for mixed models, stated in advance</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#statistical-models">Statistical models</a></p>
+<p><span class="lbl">Registered.</span> H3, H6 test 2, H7 test 2 and H8 are mixed-effects models. No inference method and no fallback for a failed or singular fit is stated.</p>
+<p><span class="lbl">Change.</span> Fixed-effect intervals and tests use Satterthwaite degrees of freedom. A failed or singular fit falls back in one fixed order, the same everywhere and logged: (1) the registered random structure; (2) the same with uncorrelated random effects; (3) one ordinary least squares coefficient per participant, tested across participants, as in the power simulation. The first rung that fits without a singular fit is used, and the rung is reported with every result, so a failed fit cannot force a choice after it is seen.</p>
+</article>
+
+<article class="dv" id="dv16">
+<p class="dv-top"><span class="dv-id">DV16</span><span class="badge ok">Decided</span></p>
+<h4>The amendment of 24 August 2026 is analysed as secondary</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-4-h2-cycle-level-detection">5.4 H2</a>, <a href="#5-8-h6-within-session-stability">5.8 H6</a></p>
+<p><span class="lbl">Registered.</span> Neither addition is in the registration. The draft preregistration gained both five days after registration: a second onset detector based on zero crossings, reported beside the primary detector for detection yield, and a split of the signal quality index into postural drift angle and band-limited motion power, with two H6 secondary analyses.</p>
+<p><span class="lbl">Change.</span> Both are analysed and reported as secondary analyses, labelled as an amendment made after registration. The registered prominence detector decides every hypothesis, and the composite quality index stays H6 test 2's predictor. “Total postural drift across the session” is read as the mean drift angle over the Block 5 window.</p>
+</article>
+
+<article class="dv" id="dv17">
+<p class="dv-top"><span class="dv-id">DV17</span><span class="badge ok">Recorded</span></p>
+<h4>The registered pilot list has errata; the pilot stays as registered</h4>
+<p class="dv-meta">Recorded 17 November 2026 · Affects <a href="#pilot-participant-list">Pilot participant list</a></p>
+<p><span class="lbl">Registered.</span> The pilot is 18 named participants. Six further identifiers are listed as having no accelerometer file.</p>
+<p><span class="lbl">Change.</span> Three of those six do have an accelerometer file in storage, and one more participant met the pilot criteria but is not on the list. The pilot list stays as registered, and its variance components were computed on those 18. The four are in the confirmatory sample like anyone else, subject to <a href="#dv7">DV7</a>.</p>
+</article>
+
+<article class="dv" id="dv18">
+<p class="dv-top"><span class="dv-id">DV18</span><span class="badge ok">Decided</span></p>
+<h4>Two rulings on trigger lines</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a></p>
+<p><span class="lbl">Registered.</span> Alignment matches a session's trial-start codes to its trial records, and a session missing them is incomplete.</p>
+<p><span class="lbl">Change.</span> Two sessions recorded with the neighbouring seat empty carry one or two stray events on the empty seat's trigger lines. Those events are listed as noise; preprocessing removes only the listed events and stops if anything else remains, and both sessions were then excluded under <a href="#dv7">DV7</a> in any case. A lone setup-check cascade (codes 1 to 13, fired once each before a session) with nothing else on a rig's lines does not count as that rig's session codes, which keeps one session aligned by wall clock. Neither ruling aligns a session to codes it did not send, and both were decided from the trigger channel and the seat map alone.</p>
+</article>
+
+<article class="dv" id="dv19">
+<p class="dv-top"><span class="dv-id">DV19</span><span class="badge ok">Decided</span><span class="badge wait">Final block awaiting ruling (R2)</span></p>
+<h4>Clarifications of passages the registered text leaves open</h4>
+<p class="dv-meta">Approved 17 November 2026; final block recorded 17 November, pending · Affects <a href="#statistical-models">Statistical models</a>, <a href="#inference-criteria">Inference criteria</a></p>
+<p>None of these departs from the registered text. The ones that shape a decision:</p>
+<ul>
+<li>A “lower 95% bound” is the one-sided 95% bound, the lower end of a two-sided 90% interval. The two-sided 95% bound is reported beside it.</li>
+<li>H1's pooled test decides; the four per-block tests are reported.</li>
+<li>H1's two one-sided tests are a one-sample t procedure on unweighted participant means.</li>
+<li>A participant-level summary needs at least 5 units, and durations are limited to 1500 to 12000 ms, as in the code that produced the variance components.</li>
+<li>H1's margin is 150 ms. The “300ms decision on H1” in Inference criteria is text left over from before the margin was tightened on 14 August 2026.</li>
+<li>H2's detection score is one score per participant over all four blocks, with a t-based bound.</li>
+<li>H2's timing test takes the breath-level median per block, and all four blocks must lie within their tolerance.</li>
+<li>H2's count agreement is one ICC per block, and all four must pass.</li>
+<li>Across the three ways of <a href="#dv5">DV5</a>, H2 is supported, not supported or unresolved.</li>
+<li>H3(a) uses the period in ms, trial-level outcomes from pacer breaths 3 and 4, signed error, and includes trials with no change.</li>
+<li>H3(b) z-scores depth within participant and device over all paced breaths and requires a negative period coefficient (error rising as the period shortens) with two-sided p below 0.05.</li>
+<li>H4 and H8 use breaths matched between devices, mapped to the pacer by the stretch belt's opening onset.</li>
+<li>H5 uses each device's own durations, pools both free-breathing blocks with a participant-cluster bootstrap, and computes RMSSD over adjacent retained breaths only.</li>
+<li>H6 test 1 uses the absolute between-device difference in coefficient of variation; the signed version is reported.</li>
+<li>H7 test 1 uses each device's own breaths, with a participant-cluster bootstrap interval of 10,000 resamples.</li>
+<li>H7 test 3's missingness rates are reported in the H7 decision table with no threshold, beside a sensitivity agreement coefficient that counts a one-device classification as a disagreement.</li>
+<li>H8's adherence is the trial's mean absolute deviation from the pacer's realised period, in ms, the unit of its margin; alertness is centred within participant and scaled by the pooled within-participant SD.</li>
+<li>The triggered-only sample decides H1 and H3 to H8, with the wall-clock sessions added reported beside it.</li>
+<li>No correction for multiplicity is applied across H1 to H8, as registered.</li>
+<li>The circularity sensitivity analysis reruns H1 and H2.</li>
+</ul>
+<p><span class="lbl">Final block, awaiting ruling.</span> About twenty further rules, recorded after a review of the confirmatory code on synthetic data, fill gaps the specification left: minimum counts for each statistic, how windows are tiled, a fixed bootstrap seed, and that a decision whose statistic does not exist is “not computable” rather than a fail. None departs from the registered text or used outcome data. They wait on <a href="#r2">R2</a>.</p>
+</article>
+
+<article class="dv" id="dv20">
+<p class="dv-top"><span class="dv-id">DV20</span><span class="badge wait">Awaiting ruling (R1)</span></p>
+<h4>A pacer breath's duration needs both of its ends</h4>
+<p class="dv-meta">Recorded 17 November 2026, pending · Affects <a href="#5-3-h1-breath-duration-agreement">5.3 H1</a> (“Why both ends must be resolved”), <a href="#5-9-h7-downstream-equivalence">5.9 H7</a></p>
+<p><span class="lbl">Registered.</span> A device that misses a closing onset must not report a duration spanning two breaths, and a classification is undefined when the breaths it needs were not detected.</p>
+<p><span class="lbl">Proposed change.</span> The code review found that each device's breath was taken to its next onset whatever pacer breath that onset belonged to, so one missed onset produced a two-breath duration that passed the 12000 ms filter. A pacer breath would have a duration for a device only when the device resolved both ends: for breaths 1 to 3 the closing onset must be the one mapped to the next pacer breath and the device's next onset; for breath 4 it must be the next onset and lie within 1000 ms of the breath's expected close. Otherwise the breath is missing for that device, and the miss shows in H7 test 3's missingness instead of as a duration disagreement. Only H7 changes. The defect was found on synthetic data.</p>
+</article>
+
+<h3 id="da-hypotheses">Hypothesis by hypothesis</h3>
+<p>A summary of the analysis specification. Rules that apply to every hypothesis:</p>
+<ul>
+<li>Signs are accelerometer minus stretch belt.</li>
+<li>An equivalence test passes when the 90% interval lies inside the margin, so both one-sided tests reject at 0.05. The achieved equivalence bound is reported with it.</li>
+<li>A floor rule (“lower 95% bound above X”) uses the one-sided 95% bound.</li>
+<li>Mixed models follow the fallback ladder of <a href="#dv15">DV15</a>, and the rung used is reported.</li>
+<li>A decision whose statistic does not exist is “not computable”, not a fail. What happens after such a stop is <a href="#r10">R10</a>.</li>
+</ul>
+<div class="tbl" role="region" tabindex="0" aria-label="Hypotheses H1 to H8"><table class="hyp"><thead><tr><th>Hypothesis</th><th>Registered test</th><th>Decision rule as specified</th><th>Touched by</th></tr></thead><tbody>
+<tr><td><a href="#5-3-h1-breath-duration-agreement">H1</a> Breath duration agrees (primary)</td><td>Two one-sided tests on the between-device duration difference, margin 150 ms, in each block and pooled.</td><td>Matched breaths; one mean per participant (at least 5 breaths); one-sample two one-sided tests at plus or minus 150 ms. The pooled test decides; the four per-block tests are reported.</td><td><a href="#dv4">DV4</a>, <a href="#dv8">DV8</a>, <a href="#dv10">DV10</a>, <a href="#dv11">DV11</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a></td></tr>
+<tr><td><a href="#5-4-h2-cycle-level-detection">H2</a> The belts find the same breaths, at the same times</td><td>All three must pass: detection score bound above 0.85; median onset timing difference within the block's tolerance (150 ms paced, 400 ms free); count agreement bound above 0.75.</td><td>Detection score per participant over all four blocks, t-based bound above 0.85. Breath-level median timing difference on uncorrected onsets, within tolerance in every block. Count ICC per block, bound above 0.75 in every block. Run three ways: supported if it passes in all three, not supported if it fails in all three, unresolved otherwise. Triggered sessions only.</td><td><a href="#dv4">DV4</a>, <a href="#dv5">DV5</a>, <a href="#dv8">DV8</a>, <a href="#dv10">DV10</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a>, <a href="#r9">R9</a>, <a href="#r11">R11</a></td></tr>
+<tr><td><a href="#5-5-h3-rate-invariance-of-timing-rate-dependence-of-depth">H3</a> Timing survives rate changes; depth does not</td><td>(a) Mixed model of duration error on imposed rate, equivalence bound 0.05 ms per ms. (b) Same structure for depth error, predicted to grow as the period shortens, tested conventionally.</td><td>Trials of Blocks 3 and 4, pooled with block as a covariate, outcomes from pacer breaths 3 and 4, the period as predictor. (a) The period coefficient's 90% interval inside plus or minus 0.05. (b) Depth z-scored within participant and device; supported if the period coefficient is negative with two-sided p below 0.05.</td><td><a href="#dv12">DV12</a>, <a href="#dv15">DV15</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a>, <a href="#r3">R3</a>, <a href="#r4">R4</a>, <a href="#r5">R5</a></td></tr>
+<tr><td><a href="#5-6-h4-accuracy-against-the-pacer">H4</a> Neither belt tracks the pacer better</td><td>Two one-sided tests on the between-device difference in mean absolute error against the commanded period, margin 150 ms. Per-device errors are descriptive.</td><td>Matched paced breaths; per participant (at least 5 breaths), the difference in mean absolute error against the realised period; two one-sided tests at plus or minus 150 ms. The commanded-period version is reported beside it.</td><td><a href="#dv2">DV2</a>, <a href="#dv12">DV12</a>, <a href="#dv19">DV19</a>; <a href="#r3">R3</a></td></tr>
+<tr><td><a href="#5-7-h5-variability-agreement">H5</a> The belts agree about variability</td><td>ICC (two-way random, absolute agreement, single measurement) for the coefficient of variation and RMSSD in the free-breathing blocks; each bound above 0.75.</td><td>Each device's own durations; Blocks 2 and 5 pooled as rows, with a participant-cluster bootstrap bound. Passes only if both measures pass.</td><td><a href="#dv19">DV19</a>; <a href="#r2">R2</a>, <a href="#r7">R7</a></td></tr>
+<tr><td><a href="#5-8-h6-within-session-stability">H6</a> Agreement is stable across the session</td><td>(1) Equivalence of agreement between the pre and post free-breathing blocks, margin 0.05 on the coefficient of variation scale. (2) Mixed model of agreement on signal quality, controlling for elapsed time.</td><td>Decided on test 1: two one-sided tests at plus or minus 0.05 on each participant's change, Block 2 to Block 5, in the absolute between-device difference in coefficient of variation. Test 2 is reported with no pass or fail.</td><td><a href="#dv13">DV13</a>, <a href="#dv15">DV15</a>, <a href="#dv16">DV16</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a></td></tr>
+<tr><td><a href="#5-9-h7-downstream-equivalence">H7</a> Conclusions do not depend on the belt (decisive)</td><td>(1) Agreement coefficient (AC1) on direction-correct classification, bound above 0.80. (2) Two one-sided tests on the coefficient difference, margin 75 ms. (3) Device-specific missingness reported as part of the decision.</td><td>(1) Each device classifies from its own breaths; AC1 over trials both classify, participant-cluster bootstrap bound above 0.80. (2) The difference-score model of <a href="#dv14">DV14</a>, plus or minus 75 ms. (3) Rates reported in the decision table with no threshold. Passes if tests 1 and 2 pass.</td><td><a href="#dv14">DV14</a>, <a href="#dv15">DV15</a>, <a href="#dv19">DV19</a>, <a href="#dv20">DV20</a>; <a href="#r1">R1</a>, <a href="#r2">R2</a>, <a href="#r3">R3</a></td></tr>
+<tr><td><a href="#5-10-h8-alertness-and-adherence">H8</a> Alertness predicts adherence, equally on both belts</td><td>Mixed model of adherence on alertness centred within participant, per device; equivalence of the coefficient across devices, margin 75 ms per SD of alertness.</td><td>Block 4 trials; adherence is the mean absolute deviation from the realised period over matched breaths; alertness centred within participant and scaled by the pooled within-participant SD. Difference-score model; the coefficient's 90% interval inside plus or minus 75 ms.</td><td><a href="#dv12">DV12</a>, <a href="#dv15">DV15</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a>, <a href="#r3">R3</a>, <a href="#r6">R6</a></td></tr>
+</tbody></table></div>
+<h4 class="da-h4">Secondary and exploratory analyses</h4>
+<ul>
+<li>None of these makes a confirmatory decision.</li>
+<li>The zero-crossing detector and the split of the signal quality index are secondary analyses, labelled as the post-registration amendment (<a href="#dv16">DV16</a>).</li>
+<li>Flagged conditions are reported as counts and proportions, and flagged participants stay in.</li>
+<li>The belt-to-pacer offset decomposition is fitted as registered for both devices, without the wall-clock sessions, and is descriptive.</li>
+<li>The circularity sensitivity analysis refits the calibration against the stretch belt and reruns H1 and H2, read as an upper bound only.</li>
+<li>EH3 (calibration model as moderator) runs with the confirmatory analysis. EH1, EH2 and EH4 are not yet implemented and will be run later, as exploratory analyses.</li>
+</ul>
+
+<h3 id="da-rulings">Open rulings, R1 to R11</h3>
+<p>These eleven came from an independent review of the H1 to H8 code, done on synthetic data only. None is decided. Each is shown with the option the review recommends. The run refuses to start while any deviation entry is pending, so it cannot start until all eleven are answered.</p>
+
+<article class="dv" id="r1">
+<p class="dv-top"><span class="dv-id">R1</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>A breath's duration needs both of its ends (<a href="#dv20">DV20</a>)</h4>
+<p class="q">Confirm DV20 as a clarification that follows the registered text?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> Confirm DV20.</li><li>Reject; the alternative comes back built.</li></ul>
+</article>
+
+<article class="dv" id="r2">
+<p class="dv-top"><span class="dv-id">R2</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>The gap-filling rules at the end of <a href="#dv19">DV19</a></h4>
+<p>Examples: H2's detection test enters only participants with onsets on a device; a coefficient of variation needs at least 5 durations; H7's cued trials have a change and a period other than 4000 ms; overlapping windows or an unknown trial phase stop a session.</p>
+<p class="q">Confirm the remaining DV19 clarifications as written?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> Confirm as written.</li><li>Reject; the alternative comes back built.</li></ul>
+</article>
+
+<article class="dv" id="r3">
+<p class="dv-top"><span class="dv-id">R3</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>Trial windows cut off some first and last breaths</h4>
+<p>A trial window ends at the trial's last trigger send. A fourth breath that closes late, or a first breath that opens early, falls outside it, and both devices lose the same breaths. It affects H7, and the counts of first and fourth breaths in H3, H4 and H8.</p>
+<p class="q">Keep the registered windows, or extend them?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> (a) Keep the windows as registered, and report how many breaths were lost.</li><li>(b) Let a fourth breath's closing onset fall up to 1000 ms after the window (a deviation).</li></ul>
+</article>
+
+<article class="dv" id="r4">
+<p class="dv-top"><span class="dv-id">R4</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>H3(b) will be decided by the simplest model</h4>
+<p>H3(b) z-scores depth within each participant, which leaves the random intercept almost no variance, so the mixed model is singular by construction. The approved ladder (<a href="#dv15">DV15</a>) then decides H3(b) at rung 3: one fit per participant, summarised with a t interval.</p>
+<p class="q">How is H3(b) fitted?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> (a) Accept rung 3, as the approved ladder provides.</li><li>(b) Drop the random intercept and fit slopes only (a deviation).</li></ul>
+</article>
+
+<article class="dv" id="r5">
+<p class="dv-top"><span class="dv-id">R5</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>Which reading of “error grows” decides H3(b)</h4>
+<p>The approved reading is signed: support requires the accelerometer's depth error to grow in one direction as the rate rises. The registered wording could also mean the absolute error, in either direction.</p>
+<p class="q">Which reading decides H3(b)?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> (a) Keep the signed reading already approved.</li><li>(b) Use absolute error, in either direction.</li></ul>
+</article>
+
+<article class="dv" id="r6">
+<p class="dv-top"><span class="dv-id">R6</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>H8 when alertness ratings do not vary</h4>
+<p>H8's margin is per standard deviation of alertness. If the pooled within-participant SD is zero, the test cannot be scaled. The first version of the code recorded that as a fail.</p>
+<p class="q">A zero alertness SD makes H8 not computable, not failed. Confirm?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> Confirm.</li><li>Reject; the alternative comes back built.</li></ul>
+</article>
+
+<article class="dv" id="r7">
+<p class="dv-top"><span class="dv-id">R7</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>Minimum data for a participant's RMSSD</h4>
+<p>H5 computes RMSSD from adjacent retained breaths in each free-breathing block. The code now needs one adjacent pair. Every other participant-level summary needs at least 5 units, and the coefficient of variation already needs 5 durations.</p>
+<p class="q">How many adjacent pairs does a participant's RMSSD need?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> (a) At least 5, matching the minimum-data rule and the coefficient of variation.</li><li>(b) At least 1, as the code does now.</li></ul>
+</article>
+
+<article class="dv" id="r8">
+<p class="dv-top"><span class="dv-id">R8</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>A broken-device check before the run starts</h4>
+<p>Before the run takes its lock, it checks that each device gives at least 60 breath onsets across the session, which catches only a dead or flat stream. A failing session stops the run, named by session and device only, for Norm to classify under <a href="#dv7">DV7</a> before any result exists. Onset counts per device are on the registration's list of quantities that may be extracted, and the check shows only pass or fail.</p>
+<p class="q">Keep the 60-onset check as a stop before the lock?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> Keep it.</li><li>Reject; the alternative comes back built.</li></ul>
+</article>
+
+<article class="dv" id="r9">
+<p class="dv-top"><span class="dv-id">R9</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>Count agreement when both devices give identical counts</h4>
+<p>H2's count test is an ICC per block. When both devices give exactly the same counts for everyone, the ICC software returns no interval, and the first version of the code recorded a fail. The fix takes the limit: an ICC of 1 with bounds of 1, a pass. If counts do not vary between participants at all, the ICC is not computable.</p>
+<p class="q">Identical counts score an ICC of 1, a pass. Confirm?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> Confirm.</li><li>Reject; the alternative comes back built.</li></ul>
+</article>
+
+<article class="dv" id="r10">
+<p class="dv-top"><span class="dv-id">R10</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>What happens if a hypothesis cannot be computed from the data</h4>
+<p>The run stops before it writes or shows any decision if a primary test cannot be computed, for example when a block has fewer than 3 participants. The message names only the analysis. That stops a code fault from producing a full set of plausible fails, but if the data truly cannot support a test, a rerun would stop in the same place.</p>
+<p class="q">What happens after such a stop?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> (a) Norm logs a deviation. A code fault is fixed; if the cause is the data, the rerun records that hypothesis as not computable.</li><li>(b) Never stop: record “not computable” and carry on.</li></ul>
+</article>
+
+<article class="dv" id="r11">
+<p class="dv-top"><span class="dv-id">R11</span><span class="badge wait">Awaiting Norm's ruling</span></p>
+<h4>H2's timing test when no breath in a block is matched</h4>
+<p>H2's timing test compares matched breaths, per block. If the stretch belt found breaths in a block but the accelerometer matched none of them, there is no timing to test. The code records that block as a fail, a detection failure. A block with no stretch-belt breaths at all is not computable.</p>
+<p class="q">A block with reference breaths but no matches fails H2's timing test. Confirm?</p>
+<ul class="opts"><li><span class="rec">Recommended</span> Confirm.</li><li>Reject; the alternative comes back built.</li></ul>
+</article>
+</section>
   </main>
   <p class="foot">Reproduced from the OSF registration at <a href="https://osf.io/4ms3c">osf.io/4ms3c</a>. The registration is the record.</p>
 </div>
