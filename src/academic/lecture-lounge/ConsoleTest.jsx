@@ -77,7 +77,8 @@ export default function ConsoleTest({ classInfo }) {
   const t = dash.test
   const itemCount = t.item_count
   const vsaCount = t.vsa_count ?? 0
-  const saCount = itemCount - t.mc_count - vsaCount
+  const saCount = itemCount - t.mc_count - vsaCount - (t.unscored_count ?? 0)
+  const takeHome = Boolean(t.due_at)
 
   if (view === 'preview') {
     return <ClassTest preview testId={t.id} onExit={() => setView('roster')} />
@@ -105,7 +106,8 @@ export default function ConsoleTest({ classInfo }) {
       <div style={S.head}>
         <div>
           <h2 style={S.h2}>{t.title}</h2>
-          <p style={S.sub}>{[`${t.mc_count} MC`, vsaCount && `${vsaCount} short typed`, saCount && `${saCount} short answer`].filter(Boolean).join(' + ')} · {t.duration_minutes} min + extra time ·
+          <p style={S.sub}>{[`${t.mc_count} MC`, t.unscored_count && `${t.unscored_count} not marked`, vsaCount && `${vsaCount} short typed`, saCount && `${saCount} short answer`].filter(Boolean).join(' + ')} ·{' '}
+            {takeHome ? `take-home, due ${fmtDue(t.due_at)}` : `${t.duration_minutes} min + extra time`} ·
             MC order {t.shuffle_mc ? 'shuffled per student' : 'fixed'}</p>
         </div>
         <span style={S.status(t.status)}>{t.status === 'open' ? 'OPEN' : t.status === 'closed' ? 'CLOSED' : 'NOT OPEN'}</span>
@@ -117,7 +119,7 @@ export default function ConsoleTest({ classInfo }) {
         </label>
         {t.status !== 'open' && (
           <button style={S.primaryBtn} disabled={busy} onClick={() => {
-            if (!codeDraft.trim() && !confirm('Open with NO access code? Anyone enrolled could start from anywhere.')) return
+            if (!takeHome && !codeDraft.trim() && !confirm('Open with NO access code? Anyone enrolled could start from anywhere.')) return
             run(() => supabase.rpc('set_class_test_status', { p_test_id: t.id, p_status: 'open', p_code: codeDraft }))
           }}>Open the test</button>
         )}
@@ -132,6 +134,7 @@ export default function ConsoleTest({ classInfo }) {
           </>
         )}
         {t.status === 'closed' && <span style={S.sub}>Reopen with "Open the test" if a late sitting needs it.</span>}
+        {takeHome && <DueControl test={t} busy={busy} run={run} />}
         <span style={{ flex: 1 }} />
         <button style={S.btn} onClick={() => setView('preview')}>Preview the test</button>
         {vsaCount > 0 && <button style={S.btn} onClick={() => setView('typed')}>Review typed answers</button>}
@@ -149,7 +152,7 @@ export default function ConsoleTest({ classInfo }) {
       <div style={S.tableWrap}>
         <table style={S.table}>
           <thead><tr>
-            {['Student', 'Student #', 'Account', 'Extra min', 'Status', 'Started', 'Deadline', 'Submitted', 'Answered', 'MC', ...(vsaCount ? ['Typed'] : []), 'Last seen', ''].map((h) =>
+            {['Student', 'Student #', 'Account', takeHome ? 'Extension' : 'Extra min', 'Status', 'Started', takeHome ? 'Due' : 'Deadline', 'Submitted', 'Answered', 'MC', ...(vsaCount ? ['Typed'] : []), 'Last seen', ''].map((h) =>
               <th key={h} style={S.th}>{h}</th>)}
           </tr></thead>
           <tbody>
@@ -166,12 +169,12 @@ export default function ConsoleTest({ classInfo }) {
                   <td style={S.td}>{!r.has_account ? <span style={S.warn}>no account</span>
                     : !r.is_member ? <span style={S.warn}>not in class</span>
                     : !r.verified ? <span style={S.warn}>unverified</span> : '✓'}</td>
-                  <td style={S.td}><ExtraCell row={r} testId={t.id} onSaved={refresh} /></td>
+                  <td style={S.td}>{takeHome ? <DueCell row={r} testId={t.id} onSaved={refresh} /> : <ExtraCell row={r} testId={t.id} onSaved={refresh} />}</td>
                   <td style={S.td}><span style={S.pill(st)}>{st}</span>
-                    {left != null && <div style={S.left(left)}>{fmtLeft(left)}</div>}</td>
-                  <td style={S.tdMono}>{fmtTime(r.started_at)}</td>
-                  <td style={S.tdMono}>{fmtTime(r.deadline)}{r.bonus_minutes ? <div style={S.email}>+{r.bonus_minutes} extended</div> : null}</td>
-                  <td style={S.tdMono}>{fmtTime(r.submitted_at)}</td>
+                    {left != null && !takeHome && <div style={S.left(left)}>{fmtLeft(left)}</div>}</td>
+                  <td style={S.tdMono}>{takeHome ? fmtDue(r.started_at) : fmtTime(r.started_at)}</td>
+                  <td style={S.tdMono}>{takeHome ? fmtDue(r.deadline) : fmtTime(r.deadline)}{!takeHome && r.bonus_minutes ? <div style={S.email}>+{r.bonus_minutes} extended</div> : null}</td>
+                  <td style={S.tdMono}>{takeHome ? fmtDue(r.submitted_at) : fmtTime(r.submitted_at)}</td>
                   <td style={S.tdMono}>{r.attempt_id ? `${r.answered}/${itemCount}` : ''}</td>
                   <td style={S.tdMono}>{r.attempt_id ? `${r.mc_correct}/${t.mc_count}` : ''}</td>
                   {vsaCount > 0 && <td style={S.tdMono}>{r.attempt_id ? `${r.vsa_correct}/${vsaCount}` : ''}</td>}
@@ -179,7 +182,7 @@ export default function ConsoleTest({ classInfo }) {
                   <td style={S.td}>
                     {r.attempt_id && !r.submitted_at && (
                       <>
-                        <button style={S.mini} disabled={busy} onClick={() => run(() => supabase.rpc('adjust_class_test_attempt', { p_attempt_id: r.attempt_id, p_action: 'extend', p_minutes: 10 }))}>+10 min</button>
+                        {!takeHome && <button style={S.mini} disabled={busy} onClick={() => run(() => supabase.rpc('adjust_class_test_attempt', { p_attempt_id: r.attempt_id, p_action: 'extend', p_minutes: 10 }))}>+10 min</button>}
                         <button style={S.mini} disabled={busy} onClick={() => {
                           if (!confirm(`End ${r.first_name ?? r.email}'s test now? Their saved answers are kept.`)) return
                           run(() => supabase.rpc('adjust_class_test_attempt', { p_attempt_id: r.attempt_id, p_action: 'submit', p_minutes: null }))
@@ -203,8 +206,53 @@ export default function ConsoleTest({ classInfo }) {
           </tbody>
         </table>
       </div>
-      <p style={S.sub}>Extra time applies the moment you save it, including to a test already in progress.
+      <p style={S.sub}>{takeHome ? 'An extension moves that one student\'s due date; set it only on the instructor\'s decision.' : 'Extra time applies the moment you save it, including to a test already in progress.'}
         "Cannot sign in" means no linked, verified account for that roster email: fix it before the test.</p>
+    </div>
+  )
+}
+
+// Take-home tests (class_tests.due_at, 20261117): the due date, editable. Times are
+// entered in this computer's time zone (the course runs on Toronto time).
+function DueControl({ test, busy, run }) {
+  const [draft, setDraft] = useState(toLocalInput(test.due_at))
+  return (
+    <label style={S.codeLabel}>Due
+      <input style={S.miniInput} type="datetime-local" value={draft} onChange={(e) => setDraft(e.target.value)} />
+      <button style={S.btn} disabled={busy || !draft || toLocalInput(test.due_at) === draft}
+        onClick={() => run(() => supabase.rpc('set_class_test_due', { p_test_id: test.id, p_due_at: new Date(draft).toISOString() }))}>Set due date</button>
+    </label>
+  )
+}
+
+// One student's extended due date on a take-home test (empty = the class due date).
+function DueCell({ row, testId, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [note, setNote] = useState(row.note ?? '')
+  if (!editing) {
+    return (
+      <button style={S.extraBtn} onClick={() => { setDraft(toLocalInput(row.due_until)); setNote(row.note ?? ''); setEditing(true) }}
+              title={row.note ?? ''}>
+        {row.due_until ? fmtDue(row.due_until) : '—'}{row.note ? ' ✎' : ''}
+      </button>
+    )
+  }
+  const save = async (value) => {
+    const { error } = await supabase.rpc('set_class_test_due_until',
+      { p_test_id: testId, p_email: row.email, p_due_until: value ? new Date(value).toISOString() : null, p_note: note })
+    if (error) { alert(error.message); return }
+    setEditing(false); onSaved()
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 170 }}>
+      <input style={S.miniInput} type="datetime-local" value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="extended due date" />
+      <input style={S.miniInput} value={note} onChange={(e) => setNote(e.target.value)} placeholder="note (e.g. AA letter)" />
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button style={S.mini} onClick={() => save(draft)}>Save</button>
+        {row.due_until && <button style={S.mini} onClick={() => save('')}>Clear</button>}
+        <button style={S.mini} onClick={() => setEditing(false)}>Cancel</button>
+      </div>
     </div>
   )
 }
@@ -362,6 +410,14 @@ async function exportCsv(t, rows) {
 }
 
 const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' }) : ''
+const fmtDue = (d) => d ? new Date(d).toLocaleString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' }) : ''
+// an ISO time as a datetime-local value, in this computer's time zone
+const toLocalInput = (d) => {
+  if (!d) return ''
+  const x = new Date(d)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`
+}
 const fmtLeft = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m left` : `${m}m left` }
 const ago = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : `${Math.round(s / 3600)}h ago` }
 

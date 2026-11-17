@@ -627,9 +627,13 @@ export default function ClassRoom({ session }) {
 
             {testCard && (
               <Link to={`${loungePath(slug)}/test/${testCard.id}`} style={S.testCard}>
-                <p style={S.testEyebrow}>{testCard.submitted ? 'Test submitted' : testCard.started ? 'Test in progress' : 'Test open now'}</p>
+                <p style={S.testEyebrow}>{testCard.take_home
+                  ? (testCard.submitted ? 'Submitted' : `Take-home · due ${fmtCardDue(testCard.due_at)}`)
+                  : (testCard.submitted ? 'Test submitted' : testCard.started ? 'Test in progress' : 'Test open now')}</p>
                 <p style={S.testTitle}>{testCard.title}</p>
-                <p style={S.testMeta}>{testCard.submitted ? 'Your answers are in. Nothing more to do.' : testCard.started ? 'Tap to return to your test →' : 'Tap to begin →'}</p>
+                <p style={S.testMeta}>{testCard.submitted ? 'Your answers are in. Nothing more to do.'
+                  : testCard.take_home ? (testCard.started ? 'Your answers are saved. Tap to keep going →' : 'Tap to begin. It saves as you go, so you can come back →')
+                  : testCard.started ? 'Tap to return to your test →' : 'Tap to begin →'}</p>
               </Link>
             )}
             {reviewCards.map((r) => (
@@ -1056,6 +1060,9 @@ function ClassAuthCard({ classInfo, slug }) {
     </div>
   )
 }
+
+// "Tue, Dec 8, 11:59 p.m.", Toronto time (take-home test card)
+const fmtCardDue = (d) => (d ? new Date(d).toLocaleString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' }) : '')
 
 const S = {
   testCard: { display: 'block', textDecoration: 'none', background: '#1f5c8b', color: '#fff', borderRadius: 14, padding: '16px 18px', margin: '0 0 14px' },
