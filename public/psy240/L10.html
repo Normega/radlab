@@ -645,7 +645,7 @@
 <section data-kind="divider">
   <p class="kicker">Part three</p>
   <h1>Our trial: what happened</h1>
-  <aside class="notes"><p>About 45 minutes, 17 slides: the design, the practices and the draw (five slides), predictions on phones, six results, how to read many intervals, the checks, then what the design can and cannot tell us. If time runs short, skip "Did it matter who we counted?" and "Enjoyed, helped, would continue"; keep "42 comparisons". By-practice figures are fine from here: the practices were named in the debrief at the end of the final survey.</p></aside>
+  <aside class="notes"><p>About 45 minutes, 17 slides: the design, the practices and the draw (five slides), predictions on phones, six results, dose and response, the checks, then what the design can and cannot tell us. If time runs short, skip "Did it matter who we counted?" and "Enjoyed, helped, would continue"; keep "Did more sessions mean more change?". By-practice figures are fine from here: the practices were named in the debrief at the end of the final survey.</p></aside>
 </section>
 
 <section class="tight wide">
@@ -852,12 +852,12 @@
 </section>
 
 <section class="tight wide">
-  <p class="kicker">How to read many intervals</p>
-  <h1>42 comparisons, 3 "hits"</h1>
-  <img class="fig" src="./assets/trial/all_differences.png" alt="Forty-two differences between two practices with 95% intervals, sorted by size; three of them exclude zero" style="max-height:42vh">
-  <p class="hidden-until">Every pair of practices, on every questionnaire: 42 differences. Three intervals exclude zero. If no practice differed from any other at all, about <strong>two</strong> would, by chance.</p>
-  <p class="hidden-until small">So treat the hits as leads, not findings. The results that survive are the ones that are large, repeat across checks, and were predicted: the within-session pattern, and Stress mindset on its own measure.</p>
-  <aside class="notes"><p>The three in red: Nonreactivity over Sense Foraging on positive feelings; Stress mindset over Sense Foraging on the Sense Foraging form; Stress mindset over Sense Foraging on the Stress Mindset Measure. 42 × 5% = 2.1. They are not independent (the decentering facets overlap their total), so the expected count is rough. This is the forking-paths problem, and why a pre-registration names its primary outcome in advance.</p></aside>
+  <p class="kicker">Dose and response · exploratory</p>
+  <h1>Did more sessions mean more change?</h1>
+  <img class="fig" src="./assets/trial/dose_response.png" alt="For each practice, the change in before-session stress and mood over four weeks, plotted against sessions completed, with 95% bands; all six lines are close to flat and every band includes zero, widening where few students did fewer sessions" style="max-height:54vh">
+  <p class="hidden-until">Within each practice the lines are close to flat, and every band includes zero: doing more sessions did not clearly go with a bigger drop in stress or rise in mood. The bands fan out on the left because only <strong>23 of 204</strong> students did half the sessions or fewer.</p>
+  <p class="hidden-until small">And a steep line would not have shown the practice working either. <strong>Nobody was randomized to a number of sessions:</strong> the students who kept going may have been less busy, more motivated or already feeling better. Dose was chosen, not assigned, which is why "completers only" is a check, never the result.</p>
+  <aside class="notes"><p>Ask first: "If the practice works, what should this graph look like?" Lines sloping the helpful way: down for stress, up for mood.</p><p>Model (added Nov 18 at the instructor's request, after the results were seen, so exploratory; not in the Nov 2 plan): before-session rating ~ day × practice × sessions completed, with each person's own intercept and day slope. Each line is the model's change from day 1 to day 28 at a given number of sessions. Per 10 more sessions, the four-week change: stress −0.15 [−0.87, 0.56] Sense Foraging, −0.25 [−1.03, 0.54] Nonreactivity, −0.06 [−0.83, 0.71] Stress mindset; mood +0.17 [−0.39, 0.72], +0.49 [−0.13, 1.11], −0.20 [−0.79, 0.40]. Students with fewer than 2 rated sessions carry no slope and are left out (4 for stress, 3 for mood). Half the sessions or fewer: 7 Sense Foraging, 9 Nonreactivity, 7 Stress mindset.</p><p>This slide replaced "42 comparisons, 3 hits", which made the forking-paths point. It is itself an example: an analysis chosen after the results were in. Say so; it is why the slide says exploratory. Code: analysis/dose_response.py in the trial's private repository.</p></aside>
 </section>
 
 <section class="tight wide">
