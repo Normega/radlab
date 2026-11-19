@@ -92,13 +92,15 @@ function QuizTile({ q, slug, graded }) {
   // The state a student needs is "can I still get full marks", not a date.
   let status, tone
   if (done) { status = `Completed ${fmt(q.completed_at)}`; tone = S.done }
-  else if (now > close) { status = 'Closed'; tone = S.shut }
+  else if (now > close) { status = 'Closed · open to see the answers'; tone = S.shut }
   else if (!graded) { status = `Practice · open until ${fmt(q.hard_close_at)}`; tone = S.live }
   else if (now <= due) { status = `Due ${fmt(q.due_at)}`; tone = S.live }
   else if (now <= grace) { status = `Grace week — still full credit until ${fmtMs(grace)}`; tone = S.live }
   else { status = `Late — 75% credit until ${fmt(q.hard_close_at)}`; tone = S.late }
 
   const progress = done ? `${q.total} of ${q.total}` : `${q.answered} of ${q.total} answered`
+  // A closed quiz still opens: get_weekly_quiz sends the answers to anything the
+  // student skipped (20261007_weekly_quiz_closed_reveal.sql), so it is a review.
   const shut = now > close && !done
 
   const body = (
@@ -109,8 +111,7 @@ function QuizTile({ q, slug, graded }) {
       <p style={S.tileMeta}>{progress}</p>
     </>
   )
-  return shut ? <div style={{ ...S.tile, opacity: 0.6 }}>{body}</div>
-              : <Link to={`${loungePath(slug)}/quiz/${q.id}`} style={S.tile}>{body}</Link>
+  return <Link to={`${loungePath(slug)}/quiz/${q.id}`} style={shut ? { ...S.tile, opacity: 0.75 } : S.tile}>{body}</Link>
 }
 
 function WallTile({ w, slug }) {

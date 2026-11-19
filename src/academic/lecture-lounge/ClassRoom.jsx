@@ -627,9 +627,13 @@ export default function ClassRoom({ session }) {
 
             {testCard && (
               <Link to={`${loungePath(slug)}/test/${testCard.id}`} style={S.testCard}>
-                <p style={S.testEyebrow}>{testCard.submitted ? 'Test submitted' : testCard.started ? 'Test in progress' : 'Test open now'}</p>
+                <p style={S.testEyebrow}>{testCard.take_home
+                  ? (testCard.submitted ? 'Submitted' : `Take-home · due ${fmtCardDue(testCard.due_at)}`)
+                  : (testCard.submitted ? 'Test submitted' : testCard.started ? 'Test in progress' : 'Test open now')}</p>
                 <p style={S.testTitle}>{testCard.title}</p>
-                <p style={S.testMeta}>{testCard.submitted ? 'Your answers are in. Nothing more to do.' : testCard.started ? 'Tap to return to your test →' : 'Tap to begin →'}</p>
+                <p style={S.testMeta}>{testCard.submitted ? 'Your answers are in. Nothing more to do.'
+                  : testCard.take_home ? (testCard.started ? 'Your answers are saved. Tap to keep going →' : 'Tap to begin. It saves as you go, so you can come back →')
+                  : testCard.started ? 'Tap to return to your test →' : 'Tap to begin →'}</p>
               </Link>
             )}
             {reviewCards.map((r) => (
@@ -639,7 +643,14 @@ export default function ClassRoom({ session }) {
                 <p style={S.weeklyMeta}>Review your test, question by question →</p>
               </Link>
             ))}
+            {/* The card shows one quiz; earlier ones were reachable only from the
+                course home page, so students read them as gone (Nov 16). */}
             {quizCard && <QuizLobbyCard card={quizCard} slug={slug} />}
+            {quizCard && (
+              <Link to={`${loungePath(slug)}/quizzes`} style={S.quizAllLink}>
+                {courseFeatures(slug).quizGraded ? 'All weekly quizzes' : 'All practice quizzes'} →
+              </Link>
+            )}
 
             {/* One row per board rather than a card that hides them behind a
                 page (Norm, 2026-09-09). There are two, so listing them costs
@@ -1050,6 +1061,9 @@ function ClassAuthCard({ classInfo, slug }) {
   )
 }
 
+// "Tue, Dec 8, 11:59 p.m.", Toronto time (take-home test card)
+const fmtCardDue = (d) => (d ? new Date(d).toLocaleString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' }) : '')
+
 const S = {
   testCard: { display: 'block', textDecoration: 'none', background: '#1f5c8b', color: '#fff', borderRadius: 14, padding: '16px 18px', margin: '0 0 14px' },
   testEyebrow: { fontFamily: MONO, fontSize: 11.5, letterSpacing: 1.5, textTransform: 'uppercase', margin: '0 0 4px', opacity: 0.85 },
@@ -1103,6 +1117,7 @@ const S = {
   weeklyPrompt: { fontFamily: SERIF, fontSize: 18, color: 'var(--tx)', lineHeight: 1.35, marginBottom: 6 },
   weeklyMeta: { fontFamily: MONO, fontSize: 12, color: 'var(--tx2)' },
   quizMetaDone: { fontFamily: MONO, fontSize: 12, color: '#2e7d32' },
+  quizAllLink: { display: 'inline-block', fontFamily: MONO, fontSize: 12, color: 'var(--pkd)', textDecoration: 'none', marginTop: 8 },
   banner: { background: 'var(--bgp)', border: '1px solid var(--pkb)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 },
   bannerForm: {},
   bannerText: { fontSize: 14, color: 'var(--tx2)', marginBottom: 10 },

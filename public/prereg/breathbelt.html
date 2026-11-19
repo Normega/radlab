@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>BreathBelt preregistration</title>
+<!--
+  BreathBelt preregistration, reproduced from the OSF registration (https://osf.io/4ms3c,
+  registered 2026-08-19) for easier reading. The OSF registration is the record.
+  Unlinked on purpose: reachable only by URL, noindex. Nothing on the site links here.
+  Built from the registered form text; reformatting only (headings, lists, tables,
+  paragraphs), same wording and order.
+  The participant IDs in "Pilot participant list" are deliberately omitted: this repo
+  is public. Never add them back.
+  Static page outside the SPA bundle, so it loads the site's three font families from
+  Google Fonts. Light tokens mirror src/index.css :root; the dark values are this page's own.
+  Added 2026-11-17: a "Data analysis" section after "Other" (#data-analysis). It is NOT part of
+  the registration; everything before it is the registered text and stays word for word. It lists
+  the deviations, clarifications and open rulings from the private analysis repository. It must
+  never contain participant IDs, health details or results: the study is blinded until the single
+  confirmatory run, and only sample counts may appear.
+-->
+<link rel="icon" type="image/svg+xml" href="/RADlab_Logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=DM+Serif+Display&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg:#FCF0F5; --bgc:#ffffff; --bgp:#FBEAF3;
+    --pk:#f068a4; --pkd:#ba417a;
+    --tx:#1c1c1e; --tx2:#6b6c70; --gy:#7d7e82;
+    --bd:rgba(180,100,140,0.13); --bds:rgba(180,100,140,0.25);
+    --code:#f7e6ee; --ok-bg:#e7f3ea; --ok-tx:#1d6a37; --ok-bd:rgba(29,106,55,0.28);
+    --wait-bg:#fdf0db; --wait-tx:#875200; --wait-bd:rgba(135,82,0,0.3);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg:#1a171b; --bgc:#242026; --bgp:#2c262e;
+      --pk:#f68bbb; --pkd:#f68bbb;
+      --tx:#ece8ea; --tx2:#b9b1b6; --gy:#a39aa0;
+      --bd:rgba(240,104,164,0.18); --bds:rgba(240,104,164,0.32);
+      --code:#2e2730; --ok-bg:#1d3324; --ok-tx:#a3dbb4; --ok-bd:rgba(163,219,180,0.32);
+      --wait-bg:#3a2c15; --wait-tx:#f2c77e; --wait-bd:rgba(242,199,126,0.32);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg:#1a171b; --bgc:#242026; --bgp:#2c262e;
+    --pk:#f68bbb; --pkd:#f68bbb;
+    --tx:#ece8ea; --tx2:#b9b1b6; --gy:#a39aa0;
+    --bd:rgba(240,104,164,0.18); --bds:rgba(240,104,164,0.32);
+    --code:#2e2730; --ok-bg:#1d3324; --ok-tx:#a3dbb4; --ok-bd:rgba(163,219,180,0.32);
+    --wait-bg:#3a2c15; --wait-tx:#f2c77e; --wait-bd:rgba(242,199,126,0.32);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--tx); font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 16px 80px; }
+  .logo { display: inline-block; margin-bottom: 24px; }
+  .logo img { height: 40px; width: auto; display: block; }
+  .eyebrow { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--pkd); margin: 0 0 8px; }
+  h1 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 32px;
+    line-height: 1.2; margin: 0 0 16px; }
+  .meta { color: var(--tx2); margin: 0 0 8px; }
+  .about { background: var(--bgc); border: 1px solid var(--bd); border-radius: 12px;
+    padding: 16px 24px; margin: 24px 0; }
+  .about p { margin: 8px 0; }
+  a { color: var(--pkd); text-underline-offset: 2px; }
+  .toc { background: var(--bgc); border: 1px solid var(--bd); border-radius: 12px;
+    padding: 16px 24px; margin: 24px 0 40px; }
+  .toc-h { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--gy); margin: 0 0 8px; }
+  .toc ol { margin: 0; padding-left: 24px; }
+  .toc li { margin: 4px 0; }
+  .toc ol.sub { list-style: none; padding-left: 16px; font-size: 14px; }
+  .toc ol.sub li { margin: 0; }
+  main h2 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 32px;
+    line-height: 1.2; margin: 64px 0 16px; padding-top: 16px; border-top: 1px solid var(--bds); }
+  main h2:first-child { margin-top: 0; }
+  main h3 { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--pkd); margin: 40px 0 8px; }
+  main h4 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 24px;
+    line-height: 1.25; margin: 32px 0 8px; }
+  main h5 { font-size: 16px; font-weight: 600; margin: 24px 0 8px; }
+  main p { margin: 8px 0; overflow-wrap: anywhere; }
+  main p.muted { color: var(--gy); }
+  main p.file { font-family: 'Space Mono', monospace; font-size: 14px; color: var(--tx2); }
+  main ul, main ol { margin: 8px 0; padding-left: 24px; }
+  main li { margin: 4px 0; overflow-wrap: anywhere; }
+  main ol.num { list-style: none; padding-left: 0; }
+  main ol.num > li { padding-left: 32px; position: relative; }
+  main ol.num > li > .n { position: absolute; left: 0; font-weight: 600; color: var(--tx2); }
+  main li > p { margin: 8px 0; }
+  main ul.sub { margin: 4px 0 8px; }
+  main hr { border: 0; border-top: 1px solid var(--bd); margin: 32px 0; }
+  pre { background: var(--code); border-radius: 12px; padding: 16px; margin: 16px 0;
+    overflow-x: auto; font-size: 14px; line-height: 1.5; }
+  code { font-family: 'Space Mono', monospace; }
+  .tbl { overflow-x: auto; margin: 16px 0; border: 1px solid var(--bd); border-radius: 12px;
+    background: var(--bgc); }
+  .tbl:focus-visible { outline: 2px solid var(--pk); outline-offset: 2px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.5; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 16px; border-bottom: 1px solid var(--bd); }
+  th { font-weight: 600; background: var(--bgp); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tr.b td { font-weight: 600; }
+  td:first-child, th:first-child { min-width: 120px; }
+  .redact { font-style: italic; color: var(--tx2); }
+  .redact-note { border-left: 3px solid var(--pk); padding: 4px 0 4px 16px; margin: 16px 0; }
+  .foot { margin-top: 64px; font-size: 14px; color: var(--gy); border-top: 1px solid var(--bd); padding-top: 16px; }
+  .added { margin-top: 64px; padding-top: 24px; border-top: 4px solid var(--pk); }
+  main .added > h2 { margin-top: 0; padding-top: 0; border-top: 0; }
+  main .status-line { color: var(--tx2); }
+  td.ind { padding-left: 32px; }
+  table.hyp { min-width: 640px; }
+  .dv { background: var(--bgc); border: 1px solid var(--bd); border-radius: 12px; padding: 16px 24px; margin: 16px 0; }
+  main .dv h4 { font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 1.4; margin: 8px 0; }
+  main .dv-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+  .dv-id { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--pkd); }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; line-height: 1.5; padding: 0 8px; border-radius: 24px; border: 1px solid; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok-tx); border-color: var(--ok-bd); }
+  .badge.wait { background: var(--wait-bg); color: var(--wait-tx); border-color: var(--wait-bd); }
+  main .dv-meta { font-size: 14px; color: var(--tx2); }
+  .lbl { font-weight: 600; }
+  main p.q { font-weight: 600; margin-top: 16px; }
+  main ul.opts { list-style: none; padding-left: 0; }
+  main ul.opts li { border: 1px solid var(--bd); border-radius: 12px; padding: 8px 16px; margin: 8px 0; }
+  main ul.opts li:has(.rec) { background: var(--bgp); border-color: var(--bds); }
+  .rec { display: inline-block; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--pkd); margin-right: 8px; }
+  @media print { body { background: #fff; } .tbl { overflow: visible; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="/" aria-label="RADlab home"><img src="/RADlab_Logo.svg" alt="RADlab"></a>
+    <p class="eyebrow">Preregistration</p>
+    <h1>BreathBelt: Comparing an Accelerometer Chest Strap Against a Stretch Respiration Belt</h1>
+    <p class="meta">Preregistered on the Open Science Framework, 19 August 2026</p>
+    <p class="meta">OSF registration: <a href="https://osf.io/4ms3c">osf.io/4ms3c</a></p>
+    <div class="about">
+      <p>This page reproduces the registered text for easier reading; the OSF registration is the record, and pilot participant IDs are omitted here.</p>
+      <p>Deviations from the plan are reported with the results. They are listed ahead of the results in the <a href="#data-analysis">Data analysis</a> section at the end, which was added after registration and is not part of it.</p>
+    </div>
+  </header>
+  <nav class="toc" aria-label="Contents"><p class="toc-h">Contents</p><ol><li><a href="#overview">Overview</a><ol class="sub"><li><a href="#research-questions-or-hypotheses">Research questions or hypotheses</a></li><li><a href="#foreknowledge-of-data-or-evidence">Foreknowledge of data or evidence</a></li><li><a href="#explanation-of-foreknowledge-and-managing-unintended-influences">Explanation of foreknowledge and managing unintended influences</a></li></ol></li><li><a href="#research-design">Research Design</a><ol class="sub"><li><a href="#study-type">Study type</a></li><li><a href="#intention-for-causal-interpretation">Intention for causal interpretation</a></li><li><a href="#blinding-of-experimental-treatments">Blinding of experimental treatments</a></li><li><a href="#additional-blinding-during-research-or-analysis">Additional blinding during research or analysis</a></li><li><a href="#study-design">Study design</a></li><li><a href="#randomization">Randomization</a></li></ol></li><li><a href="#sampling">Sampling</a><ol class="sub"><li><a href="#data-collection-procedures">Data collection procedures</a></li><li><a href="#sample-size">Sample size</a></li><li><a href="#sample-size-rationale">Sample size rationale</a></li><li><a href="#starting-and-stopping-rules">Starting and stopping rules</a></li></ol></li><li><a href="#variables">Variables</a><ol class="sub"><li><a href="#manipulated-variables">Manipulated variables</a></li><li><a href="#measured-variables">Measured variables</a></li><li><a href="#indices">Indices</a></li></ol></li><li><a href="#analysis-plan">Analysis Plan</a><ol class="sub"><li><a href="#statistical-models">Statistical models</a></li><li><a href="#transformations">Transformations</a></li><li><a href="#inference-criteria">Inference criteria</a></li><li><a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a></li><li><a href="#missing-data">Missing data</a></li><li><a href="#other-planned-analysis">Other planned analysis</a></li></ol></li><li><a href="#other">Other</a><ol class="sub"><li><a href="#context-and-additional-information">Context and additional information</a></li></ol></li><li><a href="#data-analysis">Data analysis (added after registration)</a><ol class="sub"><li><a href="#da-status">Status and how to read this section</a></li><li><a href="#da-sample">Final sample</a></li><li><a href="#da-deviations">Deviations and clarifications</a></li><li><a href="#da-hypotheses">Hypothesis by hypothesis</a></li><li><a href="#da-rulings">Rulings R1 to R11</a></li></ol></li></ol></nav>
+  <main id="text">
+<h2 id="overview">Overview</h2>
+<h3 id="research-questions-or-hypotheses">Research questions or hypotheses</h3>
+<h4 id="2-research-questions">2. Research Questions</h4>
+<p>The confirmatory aim is the instrument comparison. A secondary, wholly exploratory set of questions uses the task to examine interoception, and does not depend on the device comparison. The interoception questions are not powered for confirmatory testing and are labelled as such throughout.</p>
+<h5 id="confirmatory-instrument-comparison">Confirmatory: instrument comparison</h5>
+<p><strong>RQ1.</strong> Do the two belts agree about how long each breath takes?</p>
+<p><strong>RQ2.</strong> Do the two belts pick out the same individual breaths, at the same moments in time?</p>
+<p><strong>RQ3.</strong> Is agreement better for breath timing than for breath depth, and does that difference get worse as breathing gets faster?</p>
+<p><strong>RQ4.</strong> How accurately does each belt recover the breathing rate the pacer actually asked for, and is one belt better than the other?</p>
+<p><strong>RQ5.</strong> Do the two belts agree about how much a person's breathing varies over time?</p>
+<p><strong>RQ6.</strong> Does agreement between the belts hold up across a session, or does it degrade as the belts are worn?</p>
+<p><strong>RQ7.</strong> Would the conclusions we draw from this study change if we had used one belt rather than the other?</p>
+<p><strong>RQ8.</strong> Does how alert a person reports feeling predict how closely they follow the pacer, and does that relationship look the same on both belts?</p>
+<h5 id="exploratory-interoception">Exploratory: interoception</h5>
+<p>The sample affords no useful power for between-participant association tests, each of which has one observation per person. These questions ask only whether the estimated relationships are directionally consistent with prior work. They are labelled ERQ to keep them out of the confirmatory sequence.</p>
+<p><strong>ERQ1.</strong> Are people's ability to detect breathing-rate changes, their confidence in those judgements, and their self-reported body awareness related in the way prior work suggests?</p>
+<p><strong>ERQ2.</strong> Does self-reported body awareness relate to how people actually breathe, in rate, variability, or pacer adherence?</p>
+<p>ERQ1 was considered for confirmatory testing and dropped. It rests on a predicted near-zero association, which requires an equivalence test, and bounding a correlation at plus or minus 0.20 needs over 200 participants. Testing the contrast between the two correlations directly is cheaper but still reaches only about 0.74 power at 100 participants under generous assumptions. Neither is feasible here, so ERQ1 is reported descriptively.</p>
+<hr>
+<h4 id="3-hypotheses">3. Hypotheses</h4>
+<p>Each hypothesis states a prediction in plain language. The tests and decision rules are in Section 5. Terms in bold are defined in Section 4.</p>
+<h5 id="aim-1">Aim 1</h5>
+<p><strong>H1. Breath duration agrees (primary).</strong> Serves RQ1. Breath duration measured by the accelerometer and by the stretch belt agree closely enough to treat them as interchangeable, within a margin set in advance. Tested separately in each block and pooled.</p>
+<p><strong>H2. The belts find the same breaths, at the same times.</strong> Serves RQ2. Where the stretch belt marks a breath onset, so does the accelerometer, and vice versa, with few additions or omissions. Among breaths both devices find, the onsets line up closely. The number of breaths counted per block agrees.</p>
+<p>This is a stricter test than H1: two devices can produce the same average breath duration while disagreeing about which breaths occurred.</p>
+<p><strong>H3. Timing survives rate changes; depth does not.</strong> Serves RQ3. An accelerometer measures acceleration, which for a given chest movement grows with the square of breathing frequency. Breath duration carries no such dependence. We therefore predict:</p>
+<ul class="bul"><li><strong>(a)</strong> Agreement on breath duration is unaffected by the imposed rate.</li><li><strong>(b)</strong> Agreement on breath depth gets systematically worse as breathing gets faster.</li></ul>
+<p>If (a) fails, the claim that a calibration performed at a single rate generalises to other rates is falsified.</p>
+<p><strong>H4. Neither belt tracks the pacer better than the other.</strong> Serves RQ4. The gap between what a belt measures and what the pacer commanded is equivalent across the two belts. This is a separate question from H1: two belts can agree perfectly with each other and both be wrong.</p>
+<p>That gap reflects two things at once: how accurately the device measures breathing, and how closely the participant actually followed the pacer. For a single device the two cannot be separated. They do separate in the comparison between devices, because both record the same breaths, so the adherence component is common to both and cancels. The between-belt comparison is therefore the hypothesis test; the per-belt figures are descriptive only.</p>
+<p><strong>H5. The belts agree about breathing variability.</strong> Serves RQ5. Measures of breath-to-breath variability computed from the two devices agree during the free-breathing blocks.</p>
+<p><strong>H6. Agreement is stable across the session, except where signal quality drops.</strong> Serves RQ6. Agreement does not decline from the pre to the post free-breathing block. Where it does decline, the decline is predicted by the signal quality index, not by time elapsed. In other words, disagreement reflects the belt shifting or the participant moving, not the device degrading with wear.</p>
+<p><strong>H7. Conclusions do not depend on which belt we used (decisive).</strong> Serves RQ7. The study's substantive outputs are unchanged when the accelerometer is substituted for the stretch belt. Specifically: classifications of whether a participant's breathing followed the cued direction agree between devices, and any trial-level effects using breath duration as a predictor give equivalent coefficients.</p>
+<p><strong>H8. Alertness predicts adherence, equally on both belts.</strong> Serves RQ8. Within a participant, trials on which they report feeling more alert are trials on which they follow the pacer more closely. This relationship is equivalent whether adherence is measured from the accelerometer or the stretch belt.</p>
+<h5 id="exploratory">Exploratory</h5>
+<p><strong>EH1. Body awareness relates to how people breathe.</strong> Serves ERQ2. Higher interoceptive sensibility is associated with slower, less variable breathing and closer pacer adherence. Pacer adherence is included here rather than in a separate hypothesis.</p>
+<p><strong>EH2. Waveform shape is best recovered at ordinary breathing rates.</strong></p>
+<p>The two devices do not measure the same physical quantity. The stretch belt measures chest circumference, which is displacement. The accelerometer measures acceleration, which is the second derivative of displacement. For a roughly sinusoidal breath, differentiating twice does two things: it scales the amplitude by the square of frequency, and it distorts the waveform shape, because faster components of the waveform are amplified more than slower ones. The accelerometer signal therefore looks sharper and more peaked, and the asymmetry between inhale and exhale is not preserved.</p>
+<p>Comparing waveform shape is not a fair comparison until that derivative relationship is undone. Once it is, we predict that shape agreement is best at ordinary breathing rates and worse at both extremes, for opposite reasons:</p>
+<ul class="bul"><li><strong>When breathing is fast:</strong> the squared-frequency scaling amplifies the sharp parts of the waveform and any motion artifact; the heartbeat's own mechanical signature, at around 1 Hz, starts to intrude.</li><li><strong>When breathing is slow:</strong> the same scaling shrinks the acceleration, so a slow deep breath produces very little acceleration relative to sensor noise, and drift dominates.</li></ul>
+<p>The prediction is an inverted U across imposed rate.</p>
+<p>This is the only hypothesis that tests waveform shape rather than summary statistics. It matters for anything derived from the shape of a breath rather than its timing: the ratio of inhale to exhale duration, flow estimates, and the onset detection that H2 depends on.</p>
+<p><strong>EH3. The chosen calibration model may act as a hidden moderator.</strong> Calibration selects, per participant, whichever of three candidate transformations best reconstructs the pacer. Different participants therefore run under different transformations. We will describe how often each is selected, and test whether the selected model predicts subsequent agreement between the belts. Not a focal hypothesis, and on the internal pilot the selection looks close to arbitrary; see Section 5.11.</p>
+<p><strong>EH4. Directional consistency with prior findings.</strong> Serves ERQ1. Prior work suggests that accuracy and self-report come apart while confidence and self-report do not. Two parts:</p>
+<ul class="bul"><li><strong>(a)</strong> Detection threshold correlates weakly or not at all with self-reported interoceptive sensibility.</li><li><strong>(b)</strong> Mean confidence correlates substantially with interoceptive sensibility.</li></ul>
+<p>Part (a) is a prediction of near-zero association. A non-significant result cannot support it, and the sample needed to bound the correlation properly is far beyond what is feasible here, so (a) is assessed descriptively by asking whether the estimated parameter is near zero.</p>
+<p>Four commitments, fixed in advance:</p>
+<ul class="bul"><li>Both correlations are reported with confidence intervals, alongside the contrast between them.</li><li>Directional consistency is stated explicitly: for (b), a positive point estimate; for (a), whether the confidence interval falls inside, overlaps, or excludes a region of practical equivalence of plus or minus 0.20.</li><li>Results are described as consistent or inconsistent with the prior pattern. No claim is made that the prior finding has been reproduced, in either direction.</li><li>A non-significant threshold-by-sensibility correlation will not be read as evidence of dissociation.</li></ul>
+<h3 id="foreknowledge-of-data-or-evidence">Foreknowledge of data or evidence</h3>
+<p>Authors’ limited observation of the data could not influence their analysis decisions. At least some of the data that will be used for this analysis plan has been accessed and observed by the authors. However, the authors certify that they have not sufficiently observed relevant evidence to influence their analysis decisions for this analysis plan and will not do so until after this plan is registered.</p>
+<h3 id="explanation-of-foreknowledge-and-managing-unintended-influences">Explanation of foreknowledge and managing unintended influences</h3>
+<h4 id="1-7-internal-pilot-and-sample-size">1.7 Internal pilot and sample size</h4>
+<p>At the point this pre-registration was written, 18 participants had completed the full session. No outcome from those sessions has been examined.</p>
+<p>Rather than discard them or guess at the variance parameters needed to set a sample size, they are declared an internal pilot. Their data are used to estimate nuisance variance only. They remain in the confirmatory sample. Using interim data to re-estimate a nuisance variance, without examining the quantities under test, has negligible effect on the false positive rate, and is a recognised design rather than an informal look.</p>
+<p>The guarantee only holds if the restriction is real. It is enforced by script rather than by intention: a single extraction routine computes the permitted quantities, discards everything else before returning, and refuses to write output containing anything outside the list below. Participant-level values are destroyed inside the function that computes them. The pilot sample is fixed in advance and is not extended after output is seen.</p>
+<h5 id="extracted">Extracted</h5>
+<p>Nuisance parameters. None appears in any decision rule in Section 5.</p>
+<ul class="bul"><li>Between-participant standard deviation of each participant's own mean breath-duration bias</li><li>Within-participant standard deviation of breath-level duration differences</li><li>Between-participant standard deviation of the breath-depth bias</li><li>Between-participant standard deviation of each breathing-variability measure</li><li>Distribution of Block 4 trial counts</li><li>Distribution of per-device breath counts</li><li>Distribution of calibration fit, both uncorrected and lag-adjusted</li><li>Distribution of the estimated belt-to-pacer offset</li><li>Distribution of alignment residuals</li><li>Frequency with which each candidate calibration model is selected, and the winning model's margin over the runner-up</li></ul>
+<p>Breath count is extracted per device, never as a count of matched breaths. The matched count is the numerator of H2's match proportion, which is blocked, so reporting it alongside per-device counts would disclose the blocked quantity by division. An earlier version of the extraction script reported the matched count under the label "breath count"; this was found and corrected before any output was read.</p>
+<h5 id="blocked">Blocked</h5>
+<p>Each is an effect entering a confirmatory decision rule. None is computed, or is computed only inside a function that discards it.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Blocked quantity</th><th scope="col">Protects</th></tr></thead><tbody><tr><td>Mean breath-duration bias</td><td>H1</td></tr><tr><td>Proportion of breaths matched between devices</td><td>H2</td></tr><tr><td>Count of breaths matched between devices</td><td>H2, as the numerator of the above</td></tr><tr><td>Onset timing difference between devices</td><td>H2</td></tr><tr><td>Duration or depth error broken down by imposed rate</td><td>H3</td></tr><tr><td>Any error relative to the pacer</td><td>H4</td></tr><tr><td>Any agreement coefficient: intraclass, concordance, or kappa</td><td>H2, H5, H7</td></tr><tr><td>Pre-to-post change in agreement</td><td>H6</td></tr><tr><td>Any alertness and adherence relationship</td><td>H8</td></tr><tr><td>Any correlation</td><td>H1 to H8, EH1, EH4</td></tr><tr><td>Any agreement quantity split by selected calibration model</td><td>EH3</td></tr><tr><td>Any per-participant value or identifier</td><td>All</td></tr></tbody></table></div>
+<p>Two calls warrant note. Calibration fit and the belt-to-pacer offset are extracted: neither enters a decision rule, both are preprocessing parameters the simulation needs, and the offset distribution is separately required for the check in Section 5.1. Conversely, the proportion of breaths matched between devices is blocked despite being useful, because it is the recall component of H2's test statistic; H2's expected match rate is instead set from a stated smallest effect of interest.</p>
+<h5 id="sequence">Sequence</h5>
+<ol class="num"><li><span class="n">1.</span> Correct the preprocessing pipeline so calibration weights are fitted against the reconstructed pacer. The extraction script refuses to run on files fitted against the stretch belt, since those absorb participant-specific variance and would understate the between-participant standard deviation, yielding an optimistic sample size.</li><li><span class="n">2.</span> Fix the pilot sample and record the participant list here.</li><li><span class="n">3.</span> Run the extraction. Read only its report.</li><li><span class="n">4.</span> Set the equivalence margins, deriving the breath-duration margin from the downstream classification in H7 where possible.</li><li><span class="n">5.</span> Simulate power across a grid of sample sizes and fix a provisional target.</li><li><span class="n">6.</span> Re-estimate the variance once, at 40 enrolled, and adjust the target within a hard cap of 100 enrolled. Both numbers are fixed here, in advance, and are set out in full below.</li></ol>
+<h5 id="the-interim-re-estimation-fixed-in-advance">The interim re-estimation, fixed in advance</h5>
+<p><strong>Trigger.</strong> Exactly one re-estimation, when the 40th participant has been enrolled. Not repeated, not triggered by any result, and not conditional on anything observed.</p>
+<p><strong>What is recomputed.</strong> The same extraction script, unchanged, over the enlarged sample. Only the nuisance variance components in Section 5.12 are read. Every quantity blocked at the initial estimate stays blocked at the interim: the re-estimation is not an interim look at the hypotheses, and nothing about whether any hypothesis is passing is computed or reported.</p>
+<p><strong>Why 40.</strong> The relative standard error of a standard deviation estimated from n observations is approximately 1/sqrt(2(n-1)). At the pilot's 18 that is 17.1%; at 40 it is 11.3%, so a third of the uncertainty is removed. Waiting to 50 gains only a further 1.2 points and costs ten participants of room to react. Forty is where most of the achievable sharpening has been banked while adjustment is still feasible.</p>
+<p><strong>What may change.</strong> The enrolment target only. Margins, decision rules, hypotheses, the analysis plan, and the pilot participant list are all fixed and are not revisited. The target may move up or down, bounded above by the cap.</p>
+<p><strong>Why the cap is 100.</strong> If the true CV spread is one standard error above the pilot estimate, H6 needs 103 enrolled for 0.80 power, and stopping at 75 would leave it at 0.665, which is too low for a null result to be interpretable. A cap of 100 holds H6 at 0.794 in that unfavourable case, against 0.897 at the point estimate. A cap at the target would have made the re-estimation unable to act in the only direction that matters.</p>
+<p><strong>If the cap binds.</strong> Should the re-estimate imply a target above 100, recruitment stops at 100 and the shortfall is reported as a limitation, with the realised power stated. The margin is not widened to manufacture power, and no hypothesis is dropped.</p>
+<h5 id="precision-this-affords">Precision this affords</h5>
+<p>A variance estimate from 18 participants is usable but not sharp, and in this case one of the two components came back at its boundary.</p>
+<p><strong>The between-participant variance was estimated at exactly zero.</strong> A random-intercept model fitted to the pooled breath-level differences returned a singular fit: the observed spread of participant mean biases is fully explained by within-participant sampling noise. Zero between-participant variance is the most favourable possible value for an equivalence design, because it makes the participant-level mean maximally precise and minimises the required sample size. Powering on it would be exactly the optimism this section exists to prevent.</p>
+<p>The power analysis therefore uses the 95% profile upper bound of 35.3 ms, not the point estimate. The within-participant standard deviation, 308.2 ms, is estimated well away from any boundary and is used directly.</p>
+<p>A small true between-participant value is substantively plausible rather than suspicious. Breath duration is a timing quantity, and unlike breath depth it has no obvious route by which body shape, posture, or exactly how the strap sits would make it differ systematically between people.</p>
+<p>The interim re-estimation at step 6 exists for this reason and matters more than precision in the initial estimate.</p>
+<h5 id="assumed-bias">Assumed bias</h5>
+<p>Power for an equivalence test is highest when the true bias is exactly zero, so assuming zero yields an optimistic sample size. The simulation instead assumes a non-zero bias of one quarter of the equivalence margin. This is fixed in advance.</p>
+<h5 id="pilot-participant-list">Pilot participant list</h5>
+<p>Fixed before extraction and recorded here. Eighteen participants, being every enrolled participant with an accelerometer file, an acquisition file, Block 3 and Block 4 trial records, and a recorded Block 4 end time:</p>
+<p class="redact-note"><span class="redact">The 18 pilot participants are listed by participant ID in the OSF registration; the IDs are omitted here.</span></p>
+<p>Participant <span class="redact">[ID omitted]</span> is a test account and is excluded. Six further identifiers appear in acquisition filenames with no accelerometer file (<span class="redact">IDs omitted</span>) and are treated as adjacent-seat occupants with missing or other-study belt data. If any are recovered they join the confirmatory sample, not this pilot, and contribute at the interim re-estimation in step 6.</p>
+<p>This list is not extended after output has been seen.</p>
+<h2 id="research-design">Research Design</h2>
+<h3 id="study-type">Study type</h3>
+<p>Randomized Experiment: Must include random assignment of subjects to treatments or conditions. This usually includes lab experiments, field experiments, intervention experiments, randomized controlled trials, and A/B testing.</p>
+<h3 id="intention-for-causal-interpretation">Intention for causal interpretation</h3>
+<p>Direct inference on causal relationship(s): This study is intended to infer or estimate a causal relationship between two or more variables. It is designed specifically for the purposes of causal inference or identification.</p>
+<p>Indirect inference on causal relationship(s): This study is intended to examine a potential causal relationship, but is not designed to isolate the specific causal effect. This work may inform causal inference indirectly or advance insight toward future estimation of a causal relationship.</p>
+<h3 id="blinding-of-experimental-treatments">Blinding of experimental treatments</h3>
+<p>No blinding is involved.</p>
+<h3 id="additional-blinding-during-research-or-analysis">Additional blinding during research or analysis</h3>
+<p class="muted">No data</p>
+<h3 id="study-design">Study design</h3>
+<h4 id="1-1-design">1.1 Design</h4>
+<p>Within-participant instrument comparison. Every participant wears both respiration sensors simultaneously for a single session, so the two devices record the same breaths under identical conditions. A visual pacer provides a third, independently known reference for breathing rate during the paced blocks.</p>
+<h4 id="1-2-participants">1.2 Participants</h4>
+<p>Recruited through the university SONA portal, from either the course-credit or the paid pool.</p>
+<p><strong>Eligibility.</strong> Participants had to be comfortable attending to their own breathing and answering questions about mental health. Exclusions at screening: asthma, other chronic respiratory illness, or a cardiovascular condition.</p>
+<p><strong>Pre-session instructions.</strong> Avoid heavy meals, caffeine, and drugs or medication within 30 minutes of the session. No other scheduling constraints.</p>
+<p><strong>Sample size.</strong> 75 participants enrolled.</p>
+<p>Set by the power simulation in Section 5.13. The binding constraint is H6, within-session stability, which reaches 80% power at 75 enrolled and only 70% at 60. Every other confirmatory hypothesis clears 80% at or below 60: H2 at 60, H5 at 40, H3 at 25, and H1, H4, H7 and H8 at 10 or fewer.</p>
+<p>The target is stated in enrolled participants because not every session yields analysable data. In the internal pilot, 5 of 18 participants produced no matched breaths usable for the breath-level comparison, so 75 enrolled corresponds to roughly 54 analysable. The simulation applies that attrition rather than assuming enrolled and analysable are the same, which would overstate power by about a third.</p>
+<p><strong>The target is provisional by design, and the sampling plan is fixed in advance.</strong> It rests on a single pilot variance component known to about 17%, so a one standard error band on that parameter spans a target of 53 to 103 (Section 5.13). Three numbers are therefore preregistered together:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col"></th><th scope="col">Enrolled N</th></tr></thead><tbody><tr><td>Interim variance re-estimation, once</td><td>40</td></tr><tr><td>Target</td><td>75</td></tr><tr><td>Hard cap</td><td>100</td></tr></tbody></table></div>
+<p>The re-estimation reads nuisance variance only, on the same blinding terms as the initial pilot, and may move the target in either direction up to the cap. It is not an interim look at any hypothesis. Section 1.7 sets out the full procedure.</p>
+<p><strong>Exclusions.</strong> No participant is excluded a priori on the basis of poor performance or poor signal. Participants who adhere poorly to the pacer, or who calibrate poorly, are informative: the question is whether that poor adherence appears similarly on both devices. Exclusion applies only to incomplete data, defined as a session missing usable signal from either device, or missing the trial-level records needed to align them. Flagged but retained cases are described in Section 5.2.</p>
+<h4 id="1-3-equipment">1.3 Equipment</h4>
+<p><strong>Accelerometer belt.</strong> Polar H10 chest strap, worn directly against the skin. Connects to the study software over Bluetooth Low Energy through a Chrome browser. Provides three-axis acceleration and heart rate.</p>
+<p><strong>Stretch belt.</strong> BioPac system: MP160 acquisition unit with a BN-RSPEC BioNomadix Respiration and ECG wireless system. The transmitter is worn by the participant and the receiver module feeds the MP160. Worn over the participant's clothing.</p>
+<p>There is no RSP100C amplifier in this setup and therefore no operator-configurable gain or filter stage. The BioNomadix system's bandwidth is fixed in hardware at DC to 10 Hz on the respiration channel, so the only signal conditioning before digitisation is whatever that hardware imposes. This matters for preprocessing: it is the sole anti-alias protection ahead of decimation. Because it is a soft corner rather than a brick wall, decimation is performed with an explicit anti-alias filter rather than by taking every Nth sample. See Section 1.6.</p>
+<p><strong>Pacer.</strong> A visual pacing stimulus, an avatar circle that expands and contracts, coded directly into the study software. Participants inhale as the circle expands and exhale as it contracts.</p>
+<p><strong>Synchronisation.</strong> The study software sends numeric event codes to the BioPac trigger channel through a parallel port interface at each event boundary. Two seat positions are supported (left and right); the seat used is recorded per session.</p>
+<p><strong>Belt order.</strong> The Polar H10 is fitted first, against the skin. The BioPac belt is then fitted over clothing. Both are worn continuously for the whole session. Order is fixed and not counterbalanced, so device differences are confounded with placement (skin versus over-clothing, inner versus outer). This is addressed in the limitations.</p>
+<h4 id="1-4-procedure">1.4 Procedure</h4>
+<h5 id="arrival-and-setup">Arrival and setup</h5>
+<ol class="num"><li><span class="n">1.</span> The Polar H10 is fitted against the skin, then the BioPac belt over clothing.</li><li><span class="n">2.</span> BioPac recording begins.</li><li><span class="n">3.</span> The Polar H10 is paired to the study software in a Chrome browser.</li><li><span class="n">4.</span> A trigger verification cascade is sent and confirmed on the BioPac channel.</li><li><span class="n">5.</span> Participant completes a compensation form, choosing course credit or payment.</li><li><span class="n">6.</span> Participant completes the pre-session mood check-in (Section 1.5).</li></ol>
+<h5 id="breath-task">Breath task</h5>
+<p>Five blocks, run consecutively in one session.</p>
+<p>Blocks are numbered 1 to 5 throughout. Note that the recorded data does not use this numbering: the accelerometer files label blocks 3 and 4 as phase2 and phase3, and belt_trials.phase codes them 2 and 3. The mapping is fixed and is given in Section 1.6.</p>
+<p><strong>Block 1: Calibration.</strong> The participant follows the pacer for four breath cycles at a 4 second period, after a 1 second fixation hold. Roughly 19 seconds in total. This block establishes how each participant's chest movement projects onto the accelerometer's three axes, which depends on body shape, posture, and exactly how the strap sits. Nothing is measured about the participant here; the block exists to derive the transformation used to turn three-axis acceleration into a single breathing signal.</p>
+<p>At the end of the block the participant is shown their reconstructed breathing signal plotted against the pacer, with a fit score, and may accept it or repeat the block.</p>
+<p><strong>Block 2: Free breathing 1 (120 s).</strong> The participant breathes normally with no pacer displayed. This block is ecological: it tests whether the accelerometer recovers natural, unpaced breathing.</p>
+<p><strong>Block 3: Fixed-rate paced breathing.</strong> Nine trials, three at each of three conditions. Each trial is four breaths: the first two always at the 4 second baseline period, the last two at the condition period. Conditions are 3 seconds (faster), 4 seconds (unchanged), and 5 seconds (slower). Participants make no response in this block. It provides a three-way comparison at known rates, across pacer, stretch belt, and accelerometer.</p>
+<p><strong>Change magnitude.</strong> The imposed change is plus or minus 25% of the baseline period: 4000 ms becomes 3000 ms or 5000 ms. The software records this as proportion_mag = (condition_period - 4000) / 4000, taking values -0.25, 0, and +0.25.</p>
+<p>This is deliberately stated in period rather than rate, because the two are not interchangeable and H3 concerns rate. A symmetric change in period is asymmetric in rate: 15 breaths per minute becomes 20 (an increase of 33%) or 12 (a decrease of 20%). Analyses of rate dependence use the realised rate, not the nominal plus or minus 25%.</p>
+<p><strong>Trial order.</strong> The nine trials are a fixed set (three same, three faster, three slower) shuffled by Fisher-Yates independently for each participant. This is randomisation without replacement within participant. It is not counterbalancing: there is no rotation of orders across participants and no constraint on run lengths, so condition order is not balanced against position by design. With nine trials and three conditions, order effects are absorbed into participant-level variance rather than controlled.</p>
+<p><strong>Block 4: Adaptive staircase.</strong> An adaptive procedure estimates each participant's threshold for detecting a change in breathing rate. Two independent staircases run interleaved, one for rate increases and one for rate decreases.</p>
+<p>Each trial is four breaths: the first two always at the 4 second baseline period, the last two shifted faster or slower by the amount the staircase currently proposes. After each trial the participant reports:</p>
+<ul class="bul"><li>whether the rate got faster, got slower, or stayed the same,</li><li>how confident they are in that judgement,</li><li>how alert they feel.</li></ul>
+<p>Trials are delivered in shuffled blocks of five: two trials on whichever staircase is currently less certain, two on the other, and one catch trial with no change. Catch trials never update either staircase.</p>
+<p>The block ends when both staircases are sufficiently certain (posterior standard deviation below 0.10 log units) and each has contributed at least 10 updating trials, or at a hard cap of 60 trials, whichever comes first. Trials are participant-initiated, so block duration varies.</p>
+<p><strong>Block 5: Free breathing 2 (120 s).</strong> Identical to Block 2. Tests whether agreement between the devices degrades over the course of wearing them.</p>
+<h5 id="questionnaires">Questionnaires</h5>
+<p>Immediately after the post block, participants repeat the mood check-in, then complete, in this fixed order:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Instrument</th><th scope="col">Content</th><th scope="col">Scale</th></tr></thead><tbody><tr><td>Positive and Negative Affect Schedule</td><td>Extent to which feeling words apply right now</td><td>1 to 5, very slightly or not at all, to extremely</td></tr><tr><td>Patient Health Questionnaire, 4-item</td><td>How often bothered by each problem over 2 weeks</td><td>0 to 3, not at all, to nearly every day</td></tr><tr><td>Multidimensional Assessment of Interoceptive Awareness, version 2, brief form</td><td>How often each statement applies in daily life</td><td>0 to 5, never, to always</td></tr><tr><td>Body Awareness and Responsiveness Questionnaire, revised</td><td>Agreement with each statement</td><td>0 to 3, completely disagree, to completely agree</td></tr><tr><td>General Self-Efficacy Scale</td><td>Agreement with statements about handling challenges</td><td>1 to 4, not at all true, to exactly true</td></tr><tr><td>Demographics</td><td>Age, gender, racialised identity, subjective social status via ladder placement</td><td>Mixed</td></tr></tbody></table></div>
+<h5 id="wrap-up">Wrap-up</h5>
+<p>Debrief form, equipment removal, compensation within one week. Total session length approximately 40 to 60 minutes.</p>
+<h4 id="1-5-rating-scales">1.5 Rating scales</h4>
+<p><strong>Mood check-in (pre and post).</strong> Two bipolar visual analogue ratings on 1 to 7 scales, positioned on the two diagonals of the affect circumplex:</p>
+<ul class="bul"><li>How good or energised do you feel? (sad to excited)</li><li>How settled or on-edge do you feel? (calm to tense)</li></ul>
+<p><strong>Coding.</strong> Each rating is centred on its neutral point of 4 and scaled by 3, placing it on [-1, +1]:</p>
+<ul class="bul"><li>PA = (pos_rating - 4) / 3, running -1 sad to +1 excited</li><li>NA = (neg_rating - 4) / 3, running -1 calm to +1 tense</li></ul>
+<p>Because the two items lie on the two diagonals of the circumplex, valence and arousal are a 45 degree rotation of that pair. The software stores the rotated coordinates as composite_x and composite_y. Note that stored composite_y is positive for high arousal; any plot drawn in screen coordinates must negate it, or alert responses render in the calm quadrant.</p>
+<p><strong>Mixedness.</strong> Reported as Griffin's ambivalence index over the positive parts of the two ratings:</p>
+<pre><code>p = max(0, PA);  n = max(0, NA)
+ambivalence = (p + n) / 2 - |p - n|</code></pre>
+<p>This peaks only when both dimensions are elevated and similar, which is the mixed-feelings construct. Values are clamped at 0 per response before averaging, not after: a consistently one-sided respondent scores -0.5, so averaging first and clamping second would collapse every summary to zero.</p>
+<p>The exported ambivalence_mag column is not used. It is the Euclidean distance between the two selected points, which measures overall intensity rather than mixedness: a maximally cheerful and maximally relaxed response (7 positive, 3 negative) scores the highest value in the data on it, while being not mixed at all. Griffin's index correctly scores that response 0.</p>
+<p><strong>Confidence (each Block 4 trial).</strong> Six-point scale, anchored "no idea" to "certain".</p>
+<p><strong>Alertness (each Block 4 trial).</strong> Six-point scale, anchored "very tired" to "very alert". The item is worded in the software as activation, and indexes the arousal construct.</p>
+<h4 id="1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</h4>
+<p><strong>Stretch belt.</strong> Recorded continuously at 2000 Hz for the whole session, alongside a derived heart rate channel and the trigger channel. The trigger channel idles at value 240 between pulses.</p>
+<p><strong>Accelerometer.</strong> Three-axis acceleration sampled at approximately 203 Hz and delivered over Bluetooth in packets of 36 samples, roughly every 177 ms. Each packet carries a timestamp corresponding to the last sample in the packet. Heart rate is delivered separately at 1 Hz. Every sample is written to a continuous session file tagged with the current block and trial.</p>
+<p><strong>Event codes.</strong> Sent to the BioPac trigger channel at each boundary: session start, block start and end for each of the five blocks, trial start, and trial end. A condition-onset code was deliberately removed from the software because emitting it disrupted pacer animation timing, which is the more critical requirement. The condition boundary within each trial is instead taken from the software's own trial record, where it is defined as trial start plus two baseline breaths.</p>
+<p><strong>Block numbering in the data.</strong> The exposition numbers blocks 1 to 5. The recorded files do not. The mapping is fixed:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Block</th><th scope="col">Name</th><th scope="col">Accelerometer phase label</th><th scope="col">belt_trials.phase</th></tr></thead><tbody><tr><td>1</td><td>Calibration</td><td>calib_fixation, calib_breathe</td><td>not applicable</td></tr><tr><td>2</td><td>Free breathing 1</td><td>baseline</td><td>not applicable</td></tr><tr><td>3</td><td>Fixed-rate paced</td><td>phase2</td><td>2</td></tr><tr><td>4</td><td>Adaptive staircase</td><td>phase3</td><td>3</td></tr><tr><td>5</td><td>Free breathing 2</td><td>post_baseline</td><td>not applicable</td></tr></tbody></table></div>
+<p>Blocks 3 and 4 are therefore off by one from the phase2 and phase3 labels. inter_trial and idle also occur as accelerometer phase labels and belong to no block.</p>
+<p><strong>Session clock.</strong> The stretch belt has no absolute clock, only time from the start of recording. The two recordings are aligned by matching trial-start event codes to the software's trial-onset times in recording order, then fitting a linear correction across all trials to absorb accumulated divergence between the two clocks.</p>
+<p><strong>Pacer signal.</strong> The pacer position is deterministic: a sine at a known period, anchored to a known onset time. It is reconstructed analytically from the software's trial records rather than read from the recorded data.</p>
+<p><strong>Amplifier.</strong> No configurable amplifier stage exists: the BN-RSPEC BioNomadix system has fixed hardware bandwidth. The respiration channel has a fixed wideband response of DC to 10 Hz, specified by the manufacturer to resolve respiratory effort up to 600 breaths per minute as well as near-static conditions such as apnoea. The ECG channel, which this study does not analyse, runs 0.05 to 150 Hz. Both are cited from the manufacturer's published specification rather than measured here.</p>
+<p><strong>Consequence for decimation.</strong> The 10 Hz corner sits below the 12.5 Hz Nyquist frequency of the 25 Hz analysis grid, so the hardware bandwidth is not in itself an aliasing hazard. It is a first-order corner rather than a brick wall, though, so out-of-band energy is attenuated and not removed. Decimation from 2000 Hz is therefore still performed with an explicit anti-alias filter rather than by taking every 80th sample.</p>
+<p><strong>AcqKnowledge template.</strong> The acquisition template defines 17 channels at 2000 Hz: two respiration, two ECG, eight digital trigger lines, one derived trigger channel, two heart rate and two respiration rate calculation channels. The template governs display and derived channels only; the two respiration channels are stored raw in Volts and are not filtered by it.</p>
+<p class="file">breathbelt_prereg_draft_2026-08-15.pdf</p>
+<h3 id="randomization">Randomization</h3>
+<p>Within-participant trial-order randomization only; no between-subject random assignment.</p>
+<p>Block 3: the 9 fixed-rate trials (3 same/3 faster/3 slower) are shuffled by Fisher-Yates independently for each participant. This is randomization without replacement within-subject, not counterbalancing. There is no rotation of orders across participants, so order effects are absorbed into participant-level variance rather than experimentally controlled.</p>
+<p>Block 4: trials are delivered in shuffled blocks of five: two trials on whichever staircase is currently less certain, two on the other, and one no-change catch trial, with catch trials never updating either staircase.</p>
+<p>Belt-wearing order is fixed, not randomized (see Study Design — Counterbalancing).</p>
+<p><strong>Trial order.</strong> The nine trials are a fixed set (three same, three faster, three slower) shuffled by Fisher-Yates independently for each participant. This is randomisation without replacement within participant. It is not counterbalancing: there is no rotation of orders across participants and no constraint on run lengths, so condition order is not balanced against position by design. With nine trials and three conditions, order effects are absorbed into participant-level variance rather than controlled.</p>
+<h2 id="sampling">Sampling</h2>
+<h3 id="data-collection-procedures">Data collection procedures</h3>
+<p>Participants are recruited through the university's SONA subject pool, from either the course-credit or paid participant pool. There is no restriction on time of day or other scheduling.</p>
+<p><strong>Eligibility.</strong> Participants must be comfortable attending to their own breathing and answering questions about mental health. Exclusion at screening: asthma, another chronic respiratory illness, or a cardiovascular condition.</p>
+<p><strong>Pre-session instructions.</strong> Participants are asked to avoid heavy meals, caffeine, and drugs or medication within 30 minutes of the session.</p>
+<p>Session procedure (single in-person session, ~40-60 minutes). On arrival, the accelerometer belt (Polar H10) is fitted against the skin, followed by the stretch belt (BioPac) over clothing; both are worn continuously for the entire session. After Bluetooth pairing and a trigger verification check, the participant completes a compensation form and a brief mood check-in, then proceeds through five task blocks: calibration, free breathing, fixed-rate paced breathing, an adaptive rate-change-detection staircase, and a second free-breathing block. Immediately afterward, participants repeat the mood check-in and complete a fixed-order questionnaire battery (PANAS, PHQ-4, Brief MAIA-2, BARQ-R, General Self-Efficacy Scale, demographics), followed by a debrief, equipment removal, and compensation within one week.</p>
+<p><strong>Exclusions.</strong> No participant is excluded a priori for poor task performance or poor signal quality — participants who adhere poorly to the pacer or calibrate poorly are informative, since the question is whether that poor adherence appears similarly on both devices. Exclusion applies only to incomplete data: a session missing usable signal from either device, or missing the trial-level records needed to align the two devices' recordings.</p>
+<p>Expected duration of data collection. [NEEDS INPUT]</p>
+<h3 id="data-collection-procedures-file-upload">Data collection procedures - File upload</h3>
+<p class="muted">No files selected</p>
+<h3 id="sample-size">Sample size</h3>
+<p>Single unit of analysis (participant), no between-subject conditions or clusters, every participant contributes to every hypothesis test via the same within-subject device comparison, so there is one sample size figure rather than per-condition figures.</p>
+<p>Target: 75 enrolled participants.</p>
+<p>Because not every session yields analyzable data, the target is stated in enrolled (not analyzable) participants. In an internal pilot of 18 participants, 5 yielded no usable matched breaths for the breath-level comparison (13/18 yield), and this attrition rate was applied in the power simulation rather than assuming enrolled = analyzable — 75 enrolled corresponds to roughly 54 analyzable participants for the breath-level analyses.</p>
+<p>Nested observation counts per participant (for hypotheses using finer-grained units than the whole participant): ~136 paced breaths, ~60 free-breathing breaths, ~42 usable breath-duration pairs after between-device matching, 9 fixed-rate trials, and a median of 25 (range 24-60) adaptive-staircase trials.</p>
+<h3 id="sample-size-rationale">Sample size rationale</h3>
+<p>Set by a power simulation (see Analysis Plan for full detail). Each of the 8 confirmatory hypotheses (H1-H8) has its own preregistered equivalence margin or agreement threshold; the simulation computes power for each across a grid of sample sizes and the overall target is set by whichever hypothesis needs the most participants to reach 80% power.</p>
+<p>The binding constraint is H6 (within-session stability): it reaches 80% power only at 75 enrolled participants (70% at 60), because it has the fewest observations per participant of any confirmatory hypothesis: exactly one pre-to-post difference score per person, so its precision comes almost entirely from participant count rather than within-participant averaging. Every other confirmatory hypothesis clears 80% power at or below 60 participants (H2 at 60, H5 at 40, H3 at 25, and H1/H4/H7/H8 at 10 or fewer).</p>
+<p>Variance parameters for the simulation were estimated from an internal pilot of 18 participants (nuisance parameters only — see Foreknowledge of Data section); all margins were derived structurally or set as stated smallest effects of practical interest from prior literature, not fitted to observed pilot effects. Because the between-participant variance driving H6 was estimated at a boundary value in the pilot, the 75-participant target is treated as the center of a plausible 60-90 range rather than a precise requirement (a sensitivity analysis is reported in the full Analysis Plan), which is why a planned interim re-estimation is built into the stopping rule below.</p>
+<h4 id="5-12-parameters-required-for-the-power-simulation">5.12 Parameters required for the power simulation</h4>
+<p>Consolidated, with the values actually used. Section 5.13 reports the resulting power.</p>
+<h5 id="design-parameters-known">Design parameters, known</h5>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Parameter</th><th scope="col">Value</th></tr></thead><tbody><tr><td>Block 3 trials per participant</td><td>9</td></tr><tr><td>Block 4 trials per participant</td><td>median 25, range 24 to 35 observed; 20 to 60 by stopping rule</td></tr><tr><td>Paced breaths per participant, nominal</td><td>~136</td></tr><tr><td>Free-breathing breaths per participant, nominal</td><td>~60</td></tr><tr><td>Total breaths per participant, nominal</td><td>~196</td></tr><tr><td>Matched breaths usable per participant</td><td>~42</td></tr><tr><td>Participant yield</td><td>13 of 18</td></tr><tr><td>Free-breathing duration</td><td>2 blocks of 120 s</td></tr><tr><td>Distinct imposed rates, Block 3</td><td>3</td></tr><tr><td>Timestamp jitter, standard deviation</td><td>35 ms</td></tr></tbody></table></div>
+<h5 id="variance-components-from-the-internal-pilot">Variance components, from the internal pilot</h5>
+<p>Nuisance parameters only. None appears in a decision rule.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Parameter</th><th scope="col">Value</th></tr></thead><tbody><tr><td>Between-participant SD of duration bias</td><td>35.3 ms, the 95% profile upper bound. The point estimate was 0, at the boundary</td></tr><tr><td>Within-participant SD of breath-level differences</td><td>308.2 ms</td></tr><tr><td>Between-participant SD of depth bias</td><td>0.152 z</td></tr><tr><td>Between-participant SD of the coefficient of variation</td><td>0.108</td></tr><tr><td>Between-participant SD of the successive-difference measure</td><td>839.5 ms</td></tr><tr><td>Alignment residual SD</td><td>median 95.2 ms</td></tr><tr><td>Calibration fit</td><td>median 0.586 uncorrected, 0.697 lag-adjusted</td></tr><tr><td>Belt-to-pacer offset</td><td>median +80 ms, range -640 to +720 ms</td></tr><tr><td>Model margin over runner-up</td><td>median 0.013</td></tr></tbody></table></div>
+<h5 id="margins-and-assumed-effects">Margins and assumed effects</h5>
+<p>One is derived; the rest are stated smallest effects of practical interest.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Hypothesis</th><th scope="col">Parameter</th><th scope="col">Value</th><th scope="col">Source</th></tr></thead><tbody><tr><td>H1</td><td>Equivalence margin, breath duration</td><td>150 ms</td><td>Set below the derived ceiling, Section 5.13</td></tr><tr><td>H1</td><td>Derived ceiling, for the record</td><td>300 ms</td><td>Derived from H7, Section 5.13</td></tr><tr><td>H2</td><td>Detection score threshold</td><td>lower bound above 0.85</td><td>Stated</td></tr><tr><td>H2</td><td>Tolerance, paced / free</td><td>150 ms / 400 ms</td><td>Jitter, plus the Section 5.1 offset</td></tr><tr><td>H2</td><td>Count agreement threshold</td><td>lower bound above 0.75</td><td>Stated</td></tr><tr><td>H3</td><td>Equivalence bound, duration by rate</td><td>0.05</td><td>Stated</td></tr><tr><td>H4</td><td>Equivalence margin, difference in mean absolute error</td><td>150 ms</td><td>Follows H1</td></tr><tr><td>H5</td><td>Agreement threshold per measure</td><td>lower bound above 0.75</td><td>Stated</td></tr><tr><td>H6</td><td>Equivalence margin, pre-to-post change</td><td>0.05 on the CV scale</td><td>Stated</td></tr><tr><td>H7</td><td>Classification agreement floor</td><td>AC1 lower bound above 0.80</td><td>Stated</td></tr><tr><td>H7</td><td>Coefficient equivalence margin</td><td>75 ms</td><td>Half of H1</td></tr><tr><td>H8</td><td>Between-device margin, alertness slope</td><td>75 ms</td><td>Half of H1</td></tr><tr><td>H7</td><td>Assumed pacer adherence</td><td>0.80</td><td>Assumed; see Section 5.13</td></tr><tr><td>All</td><td>Assumed true effect</td><td>one quarter of the margin</td><td>Fixed in advance</td></tr><tr><td>All</td><td>Alpha</td><td>0.05</td><td>Conventional</td></tr></tbody></table></div>
+<p><strong>H2's 150 ms tolerance and H1's 150 ms margin are unrelated quantities that now coincide numerically.</strong> H2's is a matching window on onset times, set by timestamp jitter. H1's is an equivalence margin on breath durations, set below the H7-derived ceiling. Neither was chosen with reference to the other, and changing one does not imply changing the other.</p>
+<h5 id="notes-for-the-simulation">Notes for the simulation</h5>
+<ol class="num"><li><span class="n">1.</span> <strong>The binding constraint is H6.</strong> This was anticipated as one of H3, H5, H6, H7 or H8, in a range of roughly 40 to 96 participants. It is H6, at 75, which sits inside that range. H6 has the fewest observations per participant of any confirmatory test, exactly one pre-to-post difference each, so its precision comes almost entirely from the number of participants.</li><li><span class="n">2.</span> <strong>Equivalence tests dominate.</strong> Six of the eight confirmatory hypotheses rest on equivalence testing, which typically needs larger samples than a difference test at the same margin. Margins should be justified as smallest effects of practical interest, not chosen for convenience.</li><li><span class="n">3.</span> Block 4 trial count is a random variable, governed by the stopping rule, not fixed. The simulation should draw it from a plausible distribution rather than fix it at 25, and should reflect that the trial cap truncates the upper tail.</li><li><span class="n">4.</span> <strong>Exploratory analyses are not part of the sample size calculation.</strong> EH1 through EH4 are reported at whatever precision the confirmatory sample affords. EH4 in particular would need well over 200 participants to test confirmatorily, which is out of scope.</li><li><span class="n">5.</span> <strong>Variance parameters come from the internal pilot; effect sizes do not.</strong> Section 1.7 sets out exactly what is extracted and what is blocked. Margins and expected effects must come from prior literature or from stated smallest effects of interest, since no effect-size quantity is observed before the confirmatory analysis.</li><li><span class="n">6.</span> <strong>Assume a non-zero true bias.</strong> Equivalence power peaks when the true difference is zero. The simulation assumes a bias of one quarter of the margin, so that the sample size does not rest on the most favourable case.</li><li><span class="n">7.</span> <strong>Power is computed on analysable, not enrolled, participants.</strong> Five of 18 pilot participants yielded no usable matched breaths. Every curve is drawn against enrolled participants but evaluated after that attrition.</li></ol>
+<hr>
+<h4 id="5-13-power-simulation-method-and-result">5.13 Power simulation: method and result</h4>
+<p>One data-generating function serves the whole study, rather than one script per hypothesis, because the hypotheses share parameters and separate scripts let those drift out of sync. Power is computed analytically for H1, H4 and H6, where a two one-sided tests procedure on a participant-level mean has a known sampling distribution and simulating would only add Monte Carlo error, and by simulation for H2, H3, H5, H7 and H8. The analytic function was verified against brute-force simulation across six configurations and agreed to within 0.004.</p>
+<h5 id="deriving-h1-s-margin-ceiling-from-h7-then-setting-the-margin-below-it">Deriving H1's margin ceiling from H7, then setting the margin below it</h5>
+<p>A systematic bias of X milliseconds is injected into one device's breath durations, the direction-correct classification is recomputed on both devices, and X is increased until between-device classification agreement falls below its acceptable level. That X is the smallest duration disagreement that would materially change a downstream conclusion.</p>
+<p>The base rate is assumed, not observed, as Section 5.12 note 5 requires. It is derived from the design and from the breath-duration noise the pilot licensed, with pacer adherence assumed at 0.80, giving a direction-correct rate near 0.95.</p>
+<p>Derived ceiling: 300 ms, the first bias at which Gwet's AC1 lower 95% bound falls below 0.80.</p>
+<p><strong>Preregistered margin: 150 ms.</strong> The derivation bounds what may be tolerated; it does not say what should be claimed. Three numbers frame the choice: the derived ceiling at 300 ms, the 0.80-power floor at roughly 27 ms, and the preregistered margin between them at 150 ms. Setting it at the ceiling would claim far less than the design supports; setting it near the floor would risk failing on a margin choice rather than on the instrument. Halving the ceiling is free in sample size, since the target is set by H6.</p>
+<p>A check is built into simulation/run_power_analysis.R: if the derivation ever returns a ceiling below the preregistered margin, the script stops rather than silently proceeding, because the margin would then be admitting biases H7 says are consequential.</p>
+<p>Percent agreement and AC1 across the swept range, both monotonic:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Injected bias</th><th scope="col">0</th><th scope="col">100</th><th scope="col">200</th><th scope="col">400</th></tr></thead><tbody><tr><td>Percent agreement</td><td>0.914</td><td>0.905</td><td>0.882</td><td>0.809</td></tr><tr><td>Gwet AC1</td><td>0.904</td><td>0.893</td><td>0.864</td><td>0.759</td></tr><tr><td>Cohen's kappa</td><td>+0.19</td><td>+0.04</td><td>+0.06</td><td>+0.14</td></tr></tbody></table></div>
+<p>The kappa row is why the decision statistic changed; see Section 5.9.</p>
+<h5 id="power-by-sample-size">Power by sample size</h5>
+<p>Enrolled participants, with attrition applied.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">N</th><th scope="col">H1</th><th scope="col">H2</th><th scope="col">H3</th><th scope="col">H4</th><th scope="col">H5</th><th scope="col">H6</th><th scope="col">H7</th><th scope="col">H8</th></tr></thead><tbody><tr><td>10</td><td>0.99</td><td>0.18</td><td>0.33</td><td>0.99</td><td>0.34</td><td>0.00</td><td>0.98</td><td>0.65</td></tr><tr><td>20</td><td>1.00</td><td>0.42</td><td>0.75</td><td>1.00</td><td>0.63</td><td>0.00</td><td>1.00</td><td>0.94</td></tr><tr><td>30</td><td>1.00</td><td>0.56</td><td>0.92</td><td>1.00</td><td>0.75</td><td>0.27</td><td>1.00</td><td>0.99</td></tr><tr class="b"><td>40</td><td>1.00</td><td>0.71</td><td>0.96</td><td>1.00</td><td>0.88</td><td>0.46</td><td>1.00</td><td>1.00</td></tr><tr><td>50</td><td>1.00</td><td>0.78</td><td>0.99</td><td>1.00</td><td>0.94</td><td>0.61</td><td>1.00</td><td>1.00</td></tr><tr><td>60</td><td>1.00</td><td>0.86</td><td>1.00</td><td>1.00</td><td>0.96</td><td>0.70</td><td>1.00</td><td>1.00</td></tr><tr class="b"><td>75</td><td>1.00</td><td>0.93</td><td>1.00</td><td>1.00</td><td>0.99</td><td>0.80</td><td>1.00</td><td>1.00</td></tr><tr><td>90</td><td>1.00</td><td>0.96</td><td>1.00</td><td>1.00</td><td>1.00</td><td>0.87</td><td>1.00</td><td>1.00</td></tr><tr class="b"><td>100</td><td>1.00</td><td>0.97</td><td>1.00</td><td>1.00</td><td>1.00</td><td>0.90</td><td>1.00</td><td>1.00</td></tr></tbody></table></div>
+<p>Bold rows are the three points fixed by the sampling plan: the interim re-estimation at 40, the target at 75, and the hard cap at 100.</p>
+<p><strong>Three columns are not what they appear, and should be read with the qualifications attached rather than at face value.</strong></p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Column</th><th scope="col">What the number actually is</th></tr></thead><tbody><tr><td>H4</td><td>H1's participant-level variance applied to H4's margin. H4's own variance is a between-device difference in error against the pacer, which is blocked, so it cannot be estimated under blinding. Read this as "not separately estimable", not as 1.00</td></tr><tr><td>H2</td><td>Precision growth at a stated match proportion. Match proportion is blocked, so this is not a prediction of the effect</td></tr><tr><td>H5</td><td>Precision growth at a stated agreement level, for the same reason</td></tr></tbody></table></div>
+<p>Only H1, H3, H6, H7 and H8 rest on a variance the pilot licensed for the quantity actually being tested.</p>
+<p>Smallest N reaching 0.80: H6 at 75, H2 at 60, H5 at 40, H3 at 25, H8 at 15, and H1, H4 and H7 at 10 or below.</p>
+<p><strong>These figures already reflect the tightened margins.</strong> H1 and H4 run at 150 ms rather than the 300 ms ceiling, and H7's coefficient test and H8 at 75 ms rather than 150 ms. Halving every margin moved exactly one hypothesis: H8, from 10 enrolled to 15. H6 is unchanged at 75, so the stronger claims cost nothing in recruitment.</p>
+<p>The target is set entirely by H6, the pre-to-post change in the coefficient of variation, and H6 depends on one pilot variance component: a between-participant CV spread of 0.1079, estimated from 18 participants.</p>
+<p>That estimate carries its own sampling error, and it is larger than it may appear. Under normal theory the relative standard error of a standard deviation estimated from n observations is approximately 1/sqrt(2(n-1)), which at n = 18 is 17.1%. The bands below are therefore multiples of that standard error rather than round percentages, so the table states the uncertainty the design actually faces:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Assumed CV spread</th><th scope="col">Power at N = 75</th><th scope="col">N for 0.80 power</th></tr></thead><tbody><tr><td>0.0894 (1 SE lower)</td><td>0.92</td><td>53</td></tr><tr><td>0.1079 (pilot estimate)</td><td>0.80</td><td>75</td></tr><tr><td>0.1264 (1 SE higher)</td><td>0.67</td><td>103</td></tr><tr><td>0.1449 (2 SE higher)</td><td>0.52</td><td>133</td></tr></tbody></table></div>
+<p><strong>A one standard error band on this single parameter spans a target of 53 to 103.</strong> That is the honest statement of what is known about the sample size at this point, and it is wider than the initial draft of this section implied by using illustrative ten per cent bands. The point estimate remains the basis for the target, since it is the best available and the design must state a number, but the width is why the interim re-estimation matters and why the hard cap must sit above 75.</p>
+<p>Note the asymmetry. Overshooting the target costs participants; undershooting costs the hypothesis. If the true spread is one standard error above the estimate, recruiting to 75 and stopping leaves H6 at 0.67 power, which is below the level at which a null result is interpretable.</p>
+<h5 id="what-precision-the-design-actually-buys">What precision the design actually buys</h5>
+<p>The flat curves invite the wrong reading, that these tests are powerful. They are not powerful; they are undemanding. The useful question is the inverse one: holding power fixed, how small a margin could this design defend?</p>
+<p>The participant-level standard deviation of the duration-bias mean is</p>
+<pre><code>sqrt( 35.3^2 + 308.2^2 / 42 ) = 59.2 ms</code></pre>
+<p>so at 75 enrolled, meaning 54 analysable, the standard error on that mean is about 8.1 ms. The smallest margin reaching each power level, on the same scale as H1 and H4:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">N enrolled</th><th scope="col">N analysable</th><th scope="col">Margin at 0.80 power</th><th scope="col">Margin at 0.90 power</th></tr></thead><tbody><tr><td>50</td><td>36</td><td>33.8 ms</td><td>39.5 ms</td></tr><tr><td>60</td><td>43</td><td>30.8 ms</td><td>36.0 ms</td></tr><tr><td>75</td><td>54</td><td>27.4 ms</td><td>32.0 ms</td></tr><tr><td>90</td><td>65</td><td>24.9 ms</td><td>29.1 ms</td></tr><tr><td>110</td><td>79</td><td>22.5 ms</td><td>26.3 ms</td></tr></tbody></table></div>
+<p>This is what moved H1's margin. The originally derived 300 ms ceiling was roughly eleven times looser than the design could support. The preregistered 150 ms is about 5.5 times the floor, which is deliberate headroom rather than slack.</p>
+<p><strong>Why not simply preregister 27 ms.</strong> The table inherits the convention of Section 5.12, that the assumed true bias is one quarter of the margin, so margin and assumed effect shrink together. If the true between-device bias is genuinely near zero, a margin near 27 ms is establishable. If the true bias is, say, 100 ms, then no margin below about 100 ms can be established at any sample size whatever, and preregistering 27 ms would convert a study that succeeds into one that fails for reasons unrelated to the instrument's adequacy. The achievable bound depends on the answer and therefore cannot be fixed in advance.</p>
+<p>There is a specific reason to expect the true duration bias to be small, which is part of why 150 ms is defensible: a constant between-device onset offset cancels in a duration, since a duration is a difference of two onsets. The block-dependent offset predicted in Section 5.1 is an onset effect, and it contaminates H1 only to the extent that it varies within a block rather than sitting at a constant value. That is an argument for a tight margin, not a guarantee, which is why the headroom is retained.</p>
+<p><strong>The commitment that remains.</strong> Alongside the preregistered decision at 150 ms, we will report the achieved equivalence bound: the smallest margin at which both one-sided tests still reject, computed as the larger of the two absolute 90% confidence limits on the participant-level mean, that being the interval corresponding to two one-sided tests at 0.05. That number is a direct readout of what the data support, it is bounded below by the table above, and it costs nothing in sample size. It converts the saturated tests from "passed a fixed test" into a quantitative statement of agreement. The 150 ms margin remains the confirmatory decision rule, so this adds information without re-tuning a preregistered claim after the fact.</p>
+<h5 id="honest-limits-of-this-analysis">Honest limits of this analysis</h5>
+<p><strong>Three curves are flat and therefore uninformative.</strong> H1, H4 and H7 are saturated across the whole range, at 0.98 or above from 10 enrolled. That follows from a between-participant standard deviation of 35.3 ms against margins of 75 to 150 ms, and it is a real consequence of those margins rather than an artefact. Halving the margins from the derived ceiling narrowed the gap without closing it: 150 ms is still several times the precision available. The achieved equivalence bound above is the intended remedy. H8 is no longer in this group, having moved to 0.65 at 10 enrolled once its margin was halved.</p>
+<p><strong>H2 and H5 rest on stated rather than observed effects.</strong> Match proportion and every agreement coefficient are blocked by Section 1.7, so no pilot value exists. Their curves show how precision grows with sample size at an assumed effect; they are not predictions of the effect itself.</p>
+<p><strong>H4 borrows H1's participant-level variance.</strong> The estimands differ, and the correct variance cannot be obtained without disclosing an error relative to the pacer, which is blocked. Because H4 is saturated at every sample size, this does not affect the target.</p>
+<p><strong>The between-participant variance was estimated at a boundary.</strong> See Section 1.7. The upper bound is used throughout; the point estimate of zero is not.</p>
+<h3 id="starting-and-stopping-rules">Starting and stopping rules</h3>
+<p>Recruitment continues until the target of 75 enrolled participants is reached, or until any hard cap set for the interim re-estimation below is hit, whichever comes later within that plan.</p>
+<p><strong>Sample size.</strong> 75 participants enrolled.</p>
+<p>Set by the power simulation in Section 5.13. The binding constraint is H6, within-session stability, which reaches 80% power at 75 enrolled and only 70% at 60. Every other confirmatory hypothesis clears 80% at or below 60: H2 at 60, H5 at 40, H3 at 25, and H1, H4, H7 and H8 at 10 or fewer.</p>
+<p>The target is stated in enrolled participants because not every session yields analysable data. In the internal pilot, 5 of 18 participants produced no matched breaths usable for the breath-level comparison, so 75 enrolled corresponds to roughly 54 analysable. The simulation applies that attrition rather than assuming enrolled and analysable are the same, which would overstate power by about a third.</p>
+<p><strong>The target is provisional by design, and the sampling plan is fixed in advance.</strong> It rests on a single pilot variance component known to about 17%, so a one standard error band on that parameter spans a target of 53 to 103 (Section 5.13). Three numbers are therefore preregistered together:</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col"></th><th scope="col">Enrolled N</th></tr></thead><tbody><tr><td>Interim variance re-estimation, once</td><td>40</td></tr><tr><td>Target</td><td>75</td></tr><tr><td>Hard cap</td><td>100</td></tr></tbody></table></div>
+<p>The re-estimation reads nuisance variance only, on the same blinding terms as the initial pilot, and may move the target in either direction up to the cap. It is not an interim look at any hypothesis.</p>
+<p>The sample size justification section sets out the full procedure.</p>
+<h2 id="variables">Variables</h2>
+<h3 id="manipulated-variables">Manipulated variables</h3>
+<p>Two manipulated variables, both within-participant, no between-subject arms:</p>
+<p>1. Imposed breathing period (Block 3 - fixed-rate paced breathing): three levels, 3000 ms, 4000 ms (baseline/unchanged), and 5000 ms, presented as 3 trials each (9 trials total), order randomized per participant via Fisher-Yates shuffle. Stated in period (ms) rather than rate (breaths/min) because a symmetric period change is asymmetric in rate (e.g., 4000-3000ms is a 33% rate increase; 4000-5000ms is only a 20% rate decrease); analyses of rate-dependence use realized rate, not nominal period.</p>
+<p>2. Rate-change magnitude (Block 4 - adaptive staircase): continuous, adaptively controlled by two independent staircases (one for rate increases, one for decreases), sampled from 46 logarithmically spaced levels between 0.1s and 2.0s change from the 4000ms baseline period. Staircase target: each participant's threshold for reliably detecting a rate change, estimated via an adaptive Bayesian procedure (prior centered at 0.5s, SD 0.25 log units; psychometric function slope 3.5, guess rate 1/3, lapse rate 0.02).</p>
+<p>Neither variable involves random assignment to conditions in the between-subjects sense, every participant experiences every level.</p>
+<p class="muted">No files selected</p>
+<h3 id="measured-variables">Measured variables</h3>
+<p>Outcome/comparison measures (both devices, unless noted):</p>
+<ul class="bul"><li>Breath onset (timing of inhale start)</li><li>Breath duration/period (ms, interval between consecutive onsets)</li><li>Breath depth (peak-to-trough amplitude, within-participant standardized)</li><li>Breath count (per block)</li><li>Breathing variability: coefficient of variation and RMSSD of breath durations (free-breathing blocks only)</li><li>Waveform shape agreement (exploratory only)</li></ul>
+<p>Task-level measures (Block 4):</p>
+<ul class="bul"><li>Direction judgement (faster/slower/no-change response per trial)</li><li>Detection threshold (per staircase direction, from adaptive procedure)</li><li>Confidence rating (6-point, per trial)</li><li>Alertness rating (6-point, per trial; indexes arousal)</li><li>Pacer adherence (continuous: correlation with pacer signal; categorical: direction-correct classification)</li></ul>
+<p>Self-report/questionnaire measures:</p>
+<ul class="bul"><li>Interoceptive sensibility (Brief MAIA-2 total score; subscales exploratory/uncorrected)</li><li>Pre- and post-session affect (PANAS; plus the 2-item mood check-in, see Indices)</li><li>PHQ-4, BARQ-R, General Self-Efficacy Scale</li><li>Demographics: age, gender, racialized/POC identity, subjective social status (ladder placement)</li></ul>
+<p>Covariates / quality-control measures (used for flagging, not exclusion, unless noted):</p>
+<ul class="bul"><li>Signal quality index (explained variance ratio, computed offline in rolling 15s windows)</li><li>Selected calibration model (which of 3 candidate transformations won per participant) and model margin</li><li>Calibration fit (correlation between reconstructed accelerometer signal and pacer, Block 1)</li><li>Belt-to-pacer offset and alignment residuals (preprocessing diagnostics)</li></ul>
+<p>Variables used for exclusion: session completeness only (usable signal from both devices; trial-level records needed for device alignment) — see Sampling section. No variable is used for a priori performance-based exclusion.</p>
+<h3 id="measured-variables-file-upload">Measured variables - File upload</h3>
+<p class="muted">No files selected</p>
+<h3 id="indices">Indices</h3>
+<p>Derived variables and their formulas</p>
+<p>Mood check-in composite. Two raw 1-7 ratings (energy/excitement; settled/on-edge) are each centered on 4 and scaled by 3: PA = (pos_rating-4)/3, NA = (neg_rating-4)/3, giving [-1,+1] scales. Valence/arousal coordinates are a 45-degree rotation of (PA, NA).</p>
+<p>Mixedness (ambivalence). Griffin's ambivalence index over the positive parts of each rating: p = max(0,PA), n = max(0,NA); ambivalence = (p+n)/2 - |p-n|. Clamping to 0 is applied per-item before averaging, not after.</p>
+<p>Breathing variability. Two measures per free-breathing block: coefficient of variation of breath durations, and root-mean-square of successive differences (RMSSD) between consecutive breath durations. (A third measure, sample entropy, was considered and dropped as unstable at this breath count.)</p>
+<p>Detection threshold. Posterior estimate from the adaptive Bayesian staircase per direction (increase/decrease), not a simple average of reversal points.</p>
+<p>Pacer adherence - Direction correct (categorical). Mean duration of breaths 3-4 minus mean duration of breaths 1-2 within a trial, compared in sign to the cued direction of change.</p>
+<p>Signal quality index. Explained variance ratio: over rolling 15s windows of band-passed 3-axis acceleration, the proportion of total movement variance lying along the calibrated breathing direction (bounded 0-1); degradation threshold still to be tuned on study data (not yet finalized - see Analysis Plan open items).</p>
+<p>Calibration weights. Multiple linear regression coefficients predicting the reconstructed pacer position from three band-passed (0.05-1.0 Hz) acceleration axes, fit on the Block 1 calibration window only, refit offline (not the live in-session weights).</p>
+<p>Belt-to-pacer offset. Time offset between a device's breathing signal and the reconstructed pacer, estimated by cross-correlation (search window +/-2000ms) on the Block 1 window; explicitly not termed "device lag" since it also reflects participant anticipation and pacer-anchor error, not just transduction delay.</p>
+<p>The complete indices table (all derived signals, breath-level measures, task measures, self-report measures, and quality/control measures, each with formal definition and source) is attached as a PDF for full reference.</p>
+<h3 id="indices-file-upload">Indices - File upload</h3>
+<p class="muted">No files selected</p>
+<h2 id="analysis-plan">Analysis Plan</h2>
+<h3 id="statistical-models">Statistical models</h3>
+<h4 id="5-data-analysis-plan">5. Data Analysis Plan</h4>
+<p>Written to supply the quantities a power simulation needs: the estimand, the unit of analysis, the number of observations available, and the parameters that must be assumed. Section 5.12 collects those parameters.</p>
+<h4 id="5-1-preprocessing">5.1 Preprocessing</h4>
+<p>Fixed in advance and applied identically to every participant.</p>
+<ol class="num"><li><span class="n">1.</span> <strong>Load and downsample.</strong> Stretch belt from 2000 Hz to 25 Hz. Accelerometer resampled to the same 25 Hz grid.</li><li><span class="n">2.</span> <strong>Reconstruct accelerometer sample times.</strong> Back-assign from each packet timestamp at 4.916 ms per sample, the measured rate. This replaces the nominal 5.000 ms, which introduces about 2.9 ms of error at the start of each packet.</li><li><span class="n">3.</span> <strong>Align the two recordings.</strong> Match trial-start event codes to software trial onsets in recording order. Discard every event code occurring before the session-start code, which removes the setup verification cascade. Fit a linear correction across all matched trials. Extract each trial anchored on its own event code, so alignment error does not accumulate.</li><li><span class="n">4.</span> <strong>Filter.</strong> Band-pass each acceleration axis from 0.05 to 1.0 Hz.<p><strong>Filter specification.</strong> Stated precisely because "fourth-order, applied forwards and backwards" is ambiguous about whether the order is counted before or after the two passes.</p><ul class="bul sub"><li><strong>Design order 4.</strong> A 4th-order Butterworth is designed, then applied twice, once forwards and once backwards.</li><li>Two passes give zero phase distortion and an effective magnitude response of order 8, i.e. roughly 48 dB per octave in the stopband, since the squared magnitude response of a 4th-order filter is that of an 8th-order one.</li><li>In R: signal::butter(n = 4, ...) followed by signal::filtfilt. The reported order is the argument to butter(), not the effective order.</li><li>The same convention applies to every other filter in the chain: the 0.6 Hz detection band and the 2.0 Hz measurement band at step 7, and the 0.6 Hz smooth used by one of the three calibration candidates at step 5.</li></ul><p>This differs from the live software, which applies 2nd-order biquad sections under the same forwards-and-backwards scheme and is therefore effectively 4th order. The offline specification above is authoritative; the live filters exist only to drive the participant's on-screen preview.</p><p><strong>Edge handling.</strong> Every zero-phase filter pass is preceded by odd-reflection padding of 15 seconds at each end, and the padding is discarded afterwards. This is not cosmetic. The calibration window is 16 s while the 0.05 Hz high-pass corner has a 20 s period, so an unpadded filter spends the entire window settling: in synthetic testing an unpadded pass recovered an injected 320 ms offset as 160 ms and failed to recover the breathing direction at all. The live software pads for the same reason. signal::filtfilt in R does not pad by default, so the padding is applied explicitly.</p></li><li><span class="n">5.</span> <strong>Calibrate.</strong> Fit multiple linear regression weights predicting the reconstructed pacer from the three band-passed axes, using the Block 1 window only.<p><strong>Candidate models: three, not six.</strong> The software offers each transformation on a wide 0.05 to 1.0 Hz band and on a narrow 0.10 to 0.4 Hz band. The narrow band is not used offline. A 0.4 Hz cutoff sits barely above the respiratory fundamental, so it symmetrises every breath and biases extremum timing, which is the same defect described at step 7 below. The consequence was measured on the designated debugging participant, whose winning model under the old rule was the narrow-band variant: its median duty cycle read between 0.48 and 0.55 in every block, pinned at 0.50 regardless of true morphology, while the stretch belt on the same breaths read 0.43 to 0.47. A reconstruction that cannot express inhale-exhale asymmetry cannot support H2's onset timing, H3's depth-by-rate interaction, or EH2's waveform shape.</p><p>Dropping it also makes participants comparable: under the old rule a narrow-band participant and a wide-band participant were not running the same measurement. The candidate set is therefore multiple regression, multiple regression with a 0.6 Hz smooth, and principal component analysis, all on 0.05 to 1.0 Hz.</p></li><li><span class="n">6.</span> <strong>Correct for the belt-to-pacer offset.</strong> Estimate it by cross-correlation over plus or minus 2000 ms, per participant, on the Block 1 window. Apply the same value throughout the session.</li><li><span class="n">7.</span> <strong>Detect breath onsets.</strong> Independently in each device's signal, using the same function with the same parameters. Per-device tuning is not permitted: it would inflate exactly the agreement H2 exists to test.<p><strong>Two filtered copies, not one.</strong> Extrema are located on a detection copy band-passed 0.05 to 0.6 Hz, then snapped onto a measurement copy band-passed 0.05 to 2.0 Hz before any time or amplitude is read from them.</p><p>Detecting and measuring on a single narrow band symmetrises the waveform and pushes extrema late. On synthetic breaths with exact ground truth, the worst single-device trough timing error over commanded periods of 2 to 6 s was 293 ms with a 0.6 Hz measurement band against 199 ms at 2.0 Hz. The 2.0 Hz cutoff also sits at the knee of the duty-cycle bias curve, which matters for EH2.</p><p><strong>Detector.</strong> Local maxima filtered by prominence, minimum prominence 0.4 in normalised units, minimum separation 1 s, with extrema then refined onto the measurement copy within a 0.5 s window. The prominence threshold was fixed by inspecting what it rejects on the designated debugging participant: the accelerometer's count of implausible inter-onset intervals falls 26, 20, 17, 12, 10 across thresholds of 0.10 to 0.40 and then plateaus at 9 through 0.80, so 0.4 sits at the knee. Below 0.3 the detector manufactures short cycles out of noise. The stretch belt is clean at every threshold, so the accelerometer sets the constraint.</p><p>Onsets are detected once on the continuous session and then assigned to blocks by time, rather than by filtering each block separately. A Block 3 or Block 4 trial is only about 16 s long while the 0.05 Hz corner has a 20 s period, so filtering trial segments individually cannot settle.</p><p><strong>This detector is shared.</strong> The same function produces the onsets used for the internal pilot variance estimation and for every confirmatory analysis. If they differed, the variance components would not describe the signal the confirmatory analysis sees.</p></li><li><span class="n">8.</span> <strong>Compute the signal quality index</strong> in rolling 15 s windows.</li></ol>
+<p><strong>Circularity control.</strong> Calibration weights are fitted against the pacer, never against the stretch belt. This keeps the stretch belt out of the accelerometer's construction, so agreement between the two devices is not inflated by shared fitting. A version fitted against the stretch belt on the pre free-breathing block will be reported as a sensitivity analysis and interpreted as an upper bound only.</p>
+<p><strong>Lag applied consistently.</strong> The software computes some trial-level agreement measures with lag correction and others without. All measures are recomputed offline with lag correction applied uniformly, so that no comparison contrasts a corrected quantity against an uncorrected one.</p>
+<p><strong>What the offset is, and is not.</strong> This quantity was previously called device lag, on the reasoning that it reflects signal transduction and processing and should therefore be positive. That reasoning is wrong and the name has been changed.</p>
+<p>The offset is measured between a device's breathing signal and the pacer, so it contains at least three components:</p>
+<ul class="bul"><li>device transduction and filter delay, positive</li><li><strong>participant anticipation of the pacer, negative.</strong> Anticipating a predictable rhythmic cue is the standard finding in sensorimotor synchronisation, where negative mean asynchrony of tens to a couple of hundred milliseconds is typical rather than exceptional</li><li>residual error in the reconstructed pacer anchor, either sign</li></ul>
+<p>A negative value is therefore an expected result, not an anomaly. No positivity expectation is preregistered. Offsets are reported as a distribution, and values beyond plus or minus 1000 ms are flagged for inspection as implausible in either direction.</p>
+<p>True device lag is not identifiable from this quantity. It would require a between-device comparison, which is reserved for the confirmatory analysis.</p>
+<h5 id="a-block-dependent-between-device-offset-predicted-in-advance">A block-dependent between-device offset, predicted in advance</h5>
+<p>The two devices do not measure the same physical quantity. The stretch belt measures displacement; the accelerometer measures acceleration, which amplifies harmonic n of the breath by n squared. For a symmetric breath that changes nothing about where the trough falls. For an asymmetric breath it reshapes the waveform and moves the trough.</p>
+<p>This has a consequence the design makes sharp, and it is preregistered here as a prediction rather than discovered later:</p>
+<ul class="bul"><li><strong>The pacer is symmetric.</strong> Its radius follows (1 minus cosine) over 2, so a participant tracking it breathes with an inspiratory fraction near 0.50. In the paced blocks the between-device onset offset from this mechanism is therefore near zero.</li><li><strong>Spontaneous breathing is not symmetric.</strong> Its inspiratory fraction runs nearer 0.43, and at that asymmetry the same mechanism produces a systematic between-device onset offset of roughly 135 to 225 ms.</li></ul>
+<p>On synthetic breaths with exact ground truth, the differential trough bias between an acceleration-derived and a displacement-derived signal was under 1 ms at an inspiratory fraction of 0.50 and between 135 and 250 ms at 0.35 to 0.45, at every measurement band tested. The band barely moves it; the asymmetry drives it entirely.</p>
+<p><strong>The Block 1 correction cannot remove it.</strong> The belt-to-pacer offset is estimated on the calibration block, which is paced and therefore symmetric, where this component is zero. Applied to the free-breathing blocks it under-corrects by the full amount. Estimating a separate free-breathing correction is not available either: with no pacer there, it could only be fitted between the two devices, which is H2's estimand and is blocked.</p>
+<p>H2's tolerance is therefore block-specific, and Section 5.4 states it. These magnitudes come from a synthetic model of asymmetry rather than a measurement of this study's data, and the inspiratory fraction is taken from an external archive of stretch-belt recordings, so the mechanism and its direction are firm while the magnitudes are order-of-magnitude.</p>
+<h5 id="decomposing-the-belt-to-pacer-offset">Decomposing the belt-to-pacer offset</h5>
+<p>The offset is modelled rather than treated as a single per-participant number, because its sources differ in how they vary and only some of them are nuisance.</p>
+<p><strong>Unit.</strong> Individual paced breath, in Blocks 3 and 4, i.e. four breaths per trial across roughly 34 trials. Approximately 136 per participant, and about 2,400 across the pilot sample. Free-breathing blocks are excluded because they have no pacer.</p>
+<p><strong>Why per breath rather than per participant.</strong> The Block 1 estimate inherits the uncertainty in the reconstructed pacer anchor, roughly plus or minus 88 ms of packet quantisation, and that error is constant within a participant. It is therefore exactly confounded with the participant-level term and inflates the between-participant variance. Trial pacers do not have this problem: each trial is anchored to a hardware trigger timestamped at 2000 Hz, so the pacer onset is known to well under a millisecond.</p>
+<p><strong>Definitions.</strong> offset is the signed difference between a detected breath onset and the corresponding commanded pacer onset, positive when the breath trails the pacer.</p>
+<p>breath_index is the breath's position within its own trial, 1 to 4, not a running count across the session. This matters: every trial is re-anchored to its own hardware trigger, so pacer overshoot accumulates within a trial and resets at the next one. A cumulative index would model a session-long drift that does not exist and would absorb the overshoot into the wrong term.</p>
+<p>rig is a two-level factor, left or right testing computer, taken from the recorded trigger codes rather than from the session record.</p>
+<p><strong>Model.</strong></p>
+<pre><code>offset ~ 1 + breath_index + rig
+         + (1 + breath_index | participant)
+         + (1 | participant:trial)</code></pre>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Term</th><th scope="col">Interprets as</th><th scope="col">Status</th></tr></thead><tbody><tr><td>intercept</td><td>display and transduction latency</td><td>blocked, see below</td></tr><tr><td>breath_index</td><td>per-breath pacer overshoot</td><td>extracted</td></tr><tr><td>rig</td><td>per-computer display latency</td><td>extracted</td></tr><tr><td>participant intercept</td><td>individual anticipation or rushing</td><td>extracted, as a variance</td></tr><tr><td>participant slope</td><td>whether overshoot differs by person</td><td>extracted, as a variance</td></tr><tr><td>participant:trial</td><td>trial-to-trial variation</td><td>extracted, as a variance</td></tr></tbody></table></div>
+<p><strong>Disclosure.</strong> Only the variance components, the breath_index slope, and the rig contrast are extracted. The fixed intercept is blocked: it is a mean signed error relative to the pacer, which is close enough to H4's estimand that it is treated as an effect rather than a nuisance. The variances and slopes carry everything the power simulation needs without it.</p>
+<p>Only the accelerometer's offset is decomposed. A parallel decomposition for the stretch belt, and any comparison of transduction terms between the two devices, is H4's between-device test and is not computed before the confirmatory analysis.</p>
+<p><strong>Expected structure, stated in advance.</strong> The breath_index slope should be positive and close to constant across participants, because the pacer overshoot arises from software timing rather than from the participant: it measures 83 to 86 ms per breath across the pilot sample. A materially non-zero participant random slope would indicate that this mechanism has been misunderstood, and is preregistered as a check on it. The participant intercept variance is expected to dominate.</p>
+<p><strong>Precision.</strong> The rig term is weakly estimated: only two participants ran on the left computer. It is reported with its interval and not relied upon.</p>
+<p><strong>Dependency.</strong> This model requires breath-onset detection, so it follows the onset detector specified for H2 and uses that same detector.</p>
+<p><strong>Filter authority.</strong> The offline parameters above are authoritative. They differ from the settings used in the live software, which exist only to drive the participant's on-screen preview.</p>
+<h4 id="5-2-flagging-without-exclusion">5.2 Flagging without exclusion</h4>
+<p>The following are recorded and reported, and used as covariates or moderators where specified, but do not trigger exclusion:</p>
+<ul class="bul"><li>Low calibration fit</li><li>Low signal quality index</li><li>Poor pacer adherence</li><li>Large alignment residuals</li><li>Staircase that did not converge before the trial cap</li></ul>
+<p>Exclusion applies only to incomplete data: a session missing usable signal from either device, or missing the trial records required for alignment.</p>
+<h4 id="5-3-h1-breath-duration-agreement">5.3 H1: Breath duration agreement</h4>
+<p><strong>Estimand.</strong> Mean difference in breath duration between devices, and its limits of agreement.</p>
+<p><strong>Unit.</strong> Individual breath, matched between devices. Approximately 42 usable per participant, not the roughly 196 nominal; see Section 4.6 and the matching rule below.</p>
+<p><strong>Matching rule.</strong> Onsets are matched between devices nearest-first, greedily, within a 500 ms tolerance, on lag-corrected onsets. A breath contributes a duration only when both devices resolve both of its ends: the opening and closing onsets are each a matched pair and each is adjacent in its own device's onset sequence.</p>
+<p>Two parts of that need justifying.</p>
+<p>Why 500 ms, and why it is a single value where H2's is block-specific. The two windows do different jobs. H2's tolerance is a test parameter: detection agreement is the hypothesis, so the window is pinned to what the recording can support and is widened in the free-breathing blocks only to absorb the offset Section 5.1 predicts there. H1's window is bookkeeping: it answers only "is this the same breath", so one value serves every block and no result depends on it. A window as tight as H2's paced value of 150 ms would admit only breaths that already agree in timing to within 150 ms, which conditions H1's duration comparison on good timing agreement and biases the within-participant standard deviation downward. 500 ms also comfortably exceeds the free-breathing offset, so H1's matching does not degrade between blocks the way H2's detection score is expected to. 500 ms cannot create false pairs: a window only mismatches if it reaches past the midpoint between adjacent breaths, and the fastest breathing in the design is Block 4's 2.0 s floor, where the half-period is 1000 ms. If a device misses a breath entirely, the neighbouring onset is a full period away and falls outside the window, so a miss stays a miss.</p>
+<p>Why both ends must be resolved. The permissive alternative, taking each device's own next onset without requiring it to be matched, admits detection misses as though they were duration disagreements: a device that misses the closing onset reports a duration spanning two breaths, contributing an error of a full breath period. Measured on the pilot, the within-participant standard deviation of the difference rose from 315 ms under the strict rule to 1460 ms under the permissive one, against a breath period near 4000 ms. That is a detection statistic wearing a duration statistic's clothes, and detection is H2's question. The cost of the strict rule is the reduced usable count in Section 4.6, and it is reported rather than hidden.</p>
+<p><strong>Primary test.</strong> Two one-sided tests procedure. Two separate one-sided tests ask whether the mean difference is meaningfully greater than the lower margin, and whether it is meaningfully less than the upper margin. Rejecting both supports equivalence.</p>
+<p><strong>Margin: 150 ms.</strong> Set against a derived ceiling of 300 ms, and deliberately tighter than it.</p>
+<p>The derivation in Section 5.13 answers the question "at what between-device duration bias do the study's downstream conclusions start to change", and returns 300 ms. That is a ceiling on what may be tolerated, not a statement of what should be claimed. The design supports far more precision than the ceiling requires: roughly 27 ms at 0.80 power at the target sample size. Preregistering the ceiling would have claimed much less than the study can support, while preregistering the floor would risk failing for reasons unrelated to the instrument.</p>
+<p><strong>150 ms</strong> sits between them, at half the derived ceiling and about 5.5 times the 0.80-power floor. Halving the margin costs nothing in sample size, because the target is set by H6 and H1 remains saturated at every N considered. Fixed in advance, 2026-08-14.</p>
+<p>Supporting descriptives, reported but not part of the decision rule:</p>
+<ul class="bul"><li>Lin's concordance correlation coefficient, which combines how tightly the two devices correlate with how close they sit to perfect one-to-one agreement.</li><li>Repeated-measures Bland-Altman analysis: mean difference against mean value, with limits of agreement computed to account for multiple breaths per participant.</li></ul>
+<p><strong>Decision rule.</strong> Equivalence is claimed if and only if the two one-sided tests both reject. The other two are descriptive.</p>
+<p><strong>Structure.</strong> Run within each block and pooled across blocks.</p>
+<p><strong>Parameters used.</strong> Margin 150 ms; within-participant standard deviation 308.2 ms; between-participant standard deviation 35.3 ms (95% upper bound); 42 usable breaths per participant. Power is 0.99 at 10 enrolled and 1.00 from 20 upward, so H1 does not constrain the design even at the tightened margin.</p>
+<h4 id="5-4-h2-cycle-level-detection">5.4 H2: Cycle-level detection</h4>
+<p><strong>Estimand.</strong> Three quantities: detection agreement, onset timing difference, and count agreement.</p>
+<p><strong>Unit.</strong> Individual breath for the first two; block for the third.</p>
+<p><strong>Tests.</strong></p>
+<ol class="num"><li><span class="n">1.</span> <strong>Detection agreement.</strong> Match each accelerometer onset to a stretch belt onset within a tolerance window. Compute a balanced detection score combining the proportion of accelerometer onsets that correspond to real ones with the proportion of real onsets the accelerometer found. Computed on lag-corrected onsets, with the lag fixed from Block 1 and not refitted.<p>The stretch belt is the reference. The tolerance window must exceed the timing precision of the recording itself. Measured accelerometer timestamp jitter is 35 ms standard deviation with a 95th percentile of 74 ms, so a tolerance tighter than about 75 ms is not supportable.</p><p><strong>The tolerance is block-specific, and this is fixed in advance.</strong></p><div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Blocks</th><th scope="col">Tolerance</th></tr></thead><tbody><tr><td>3 and 4, paced</td><td>150 ms</td></tr><tr><td>2 and 5, free breathing</td><td>400 ms</td></tr></tbody></table></div><p>The paced value is set by timestamp jitter alone, as above. The free-breathing value additionally absorbs the systematic between-device offset that Section 5.1 predicts for asymmetric breathing, roughly 135 to 225 ms, which the Block 1 correction cannot remove because Block 1 is paced and therefore symmetric.</p><p>A single tolerance would be wrong in one direction or the other. At 150 ms throughout, the free-breathing detection score would fall for a reason that is not device disagreement at all, and H2 would fail on a filter-and-physiology interaction rather than on the belts. At 400 ms throughout, the paced test would be loosened far beyond what its own timing precision requires. Both tolerances and the reasoning above are preregistered; the block difference in detection score is reported and interpreted in light of it.</p></li><li><span class="n">2.</span> <strong>Onset timing difference.</strong> Median signed difference between matched onsets, computed on uncorrected onsets, since this reports the practical offset a user of the accelerometer would face. Reported with its interquartile range.</li><li><span class="n">3.</span> <strong>Count agreement.</strong> Intraclass correlation coefficient on breath counts per block, using a two-way model treating both device and participant as random.</li></ol>
+<p><strong>Decision rule.</strong> All three must pass:</p>
+<ol class="num"><li><span class="n">1.</span> Detection score lower 95% bound above 0.85, against a stated smallest effect of interest of 0.90.</li><li><span class="n">2.</span> Median onset timing difference within the block's tolerance.</li><li><span class="n">3.</span> Count agreement coefficient lower 95% bound above 0.75.</li></ol>
+<p><strong>Note.</strong> Tests 1 and 2 deliberately use different signals. Correcting for lag before matching is necessary or the detection score collapses on signals that track each other well; but reporting timing difference on corrected onsets would be circular, since the lag was fitted to minimise exactly that quantity.</p>
+<p><strong>Parameters used.</strong> The expected match proportion is a stated smallest effect of interest, not a pilot estimate: the match proportion is blocked by Section 1.7, so no observed value exists. The simulated curve therefore shows how precision grows with sample size at that assumed effect; it is not a prediction of the effect. H2 reaches 0.80 power at 60 enrolled and 0.93 at 75.</p>
+<h4 id="5-5-h3-rate-invariance-of-timing-rate-dependence-of-depth">5.5 H3: Rate invariance of timing, rate dependence of depth</h4>
+<p><strong>Estimand.</strong> The interaction between imposed rate and device, separately for duration error and depth error.</p>
+<p><strong>Unit.</strong> Trial, nested within participant. Nine Block 3 trials plus approximately 25 Block 4 trials.</p>
+<p><strong>Tests.</strong></p>
+<ul class="bul"><li><strong>(a) Duration.</strong> Mixed-effects model with duration error as outcome, imposed rate as predictor, random intercepts and slopes by participant. The prediction is that rate has no effect. Because this is a claim of no effect, it is tested with equivalence bounds on the rate coefficient, not by failing to reject a null. Equivalence bound: 0.05, in milliseconds of between-device duration error per millisecond of imposed period change. A 1000 ms change in commanded period may move the between-device duration error by at most 50 ms. This is a stated smallest effect of interest.</li><li><strong>(b) Depth.</strong> Same model structure with depth error as outcome. The prediction is a positive relationship: error grows as the period shortens. Tested conventionally.</li></ul>
+<p><strong>Rate range caveat.</strong> Block 3 spans only three levels, 3, 4, and 5 s, so it provides limited leverage on rate dependence. Block 4 spans a wider range, from 2.0 to 6.0 s, but at unevenly sampled levels concentrated near each participant's threshold. Both blocks are pooled, with block included as a covariate, and the effective range of imposed rates achieved is reported.</p>
+<p><strong>Parameters used.</strong> Equivalence bound 0.05 on the duration-by-rate coefficient. H3(a) reaches 0.80 power at 25 enrolled and 0.995 at 60, so it does not constrain the design.</p>
+<h4 id="5-6-h4-accuracy-against-the-pacer">5.6 H4: Accuracy against the pacer</h4>
+<p><strong>Estimand.</strong> For each device, the difference between measured breath duration and commanded period. Then the difference between devices in that quantity.</p>
+<p><strong>Unit.</strong> Paced breath. Approximately 136 per participant.</p>
+<p><strong>Tests.</strong></p>
+<ol class="num"><li><span class="n">1.</span> <strong>Per-device accuracy.</strong> Mean signed error and mean absolute error against the commanded period, with participant-level random intercepts. Reported separately for each device.</li><li><span class="n">2.</span> <strong>Between-device equivalence.</strong> Two one-sided tests procedure on the difference in mean absolute error between devices. Margin: 150 ms, the same as H1. The quantity is in the same units and on the same physical scale, so the same threshold of practical interest applies. Stated, not separately derived.</li></ol>
+<p><strong>Note on what this measures.</strong> The difference between measured duration and commanded period contains two components: device measurement error, and the participant's deviation from the pacer. These cannot be separated for a single device. A participant who drifts to 4.4 s when 4.0 s was commanded produces a 400 ms error even on a perfectly accurate device.</p>
+<p>The two components do separate in the between-device contrast. Both devices record the same breaths, so the deviation component is identical for each and cancels in the difference. Accordingly:</p>
+<ul class="bul"><li><strong>Test 2 is the hypothesis test.</strong> It is a clean comparison of device accuracy.</li><li>Test 1 is descriptive only, and is reported as combined device and adherence error, not as device accuracy.</li></ul>
+<p>H4 is also logically independent of H1. Two devices can agree closely with each other and both be biased relative to the pacer.</p>
+<p>The same quantity carries the opposite role in H8. Here, deviation from the pacer is nuisance to be cancelled. There, it is the outcome of interest.</p>
+<p><strong>Parameters used.</strong> Margin 150 ms. Power is 0.99 at 10 enrolled and 1.00 from 20 upward, so H4 does not constrain the design. Note that the simulation uses H1's participant-level standard deviation for this test. The estimands differ, and a dedicated variance for the between-device difference in mean absolute error is not available without disclosing an error relative to the pacer, which is blocked. Because H4 is saturated at every sample size, this simplification does not affect the target, but the power figure below should be read as H1's precision applied to H4's margin rather than as an independent estimate of H4's own precision.</p>
+<h4 id="5-7-h5-variability-agreement">5.7 H5: Variability agreement</h4>
+<p><strong>Estimand.</strong> Agreement between devices on two variability measures.</p>
+<p><strong>Unit.</strong> Free-breathing block, i.e. Blocks 2 and 5. Two per participant, each 120 s, approximately 30 breaths each.</p>
+<p><strong>Measures.</strong> Coefficient of variation of breath durations, and the root mean square of successive differences.</p>
+<p><strong>Sample entropy is dropped.</strong> The draft previously named it as a third measure while conceding that thirty breaths is a small basis for an entropy-type statistic and that it would be demoted if a reliability check failed. Preregistering a measure that the same paragraph half-disowns is worse than not preregistering it. Two measures, both stable at this breath count and both computed by validated code, replace three. H5's decision rule is correspondingly two coefficients rather than three.</p>
+<p><strong>Test.</strong> Intraclass correlation coefficient for each measure, two-way random effects, absolute agreement, single measurement.</p>
+<p><strong>Decision rule.</strong> For each measure, the lower 95% bound of the coefficient exceeds 0.75. This is a stated smallest effect of interest: no observed agreement coefficient is available, because every agreement coefficient is blocked by Section 1.7.</p>
+<p><strong>Scope note.</strong> RQ5 asks about variability over time generally, while this test uses only the free-breathing blocks. Variability during paced blocks is constrained by the pacer and is therefore not informative about spontaneous variability. This restriction is deliberate.</p>
+<p><strong>Parameters used.</strong> Target 0.75; between-participant standard deviation of the coefficient of variation 0.108 and of the root mean square of successive differences 839.5 ms, both from the internal pilot. As with H2, the expected agreement level is stated rather than observed, so the curve shows how precision grows with sample size at that assumed effect. H5 reaches 0.80 power at 40 enrolled and 0.96 at 60.</p>
+<h4 id="5-8-h6-within-session-stability">5.8 H6: Within-session stability</h4>
+<p><strong>Estimand.</strong> Change in agreement from Block 2 to Block 5, the two free-breathing blocks, and whether that change is predicted by signal quality.</p>
+<p><strong>Unit.</strong> Block, and within-block windows.</p>
+<p><strong>Tests.</strong></p>
+<ol class="num"><li><span class="n">1.</span> <strong>Stability.</strong> Paired comparison of the agreement measure between pre and post blocks, tested for equivalence rather than for difference, since the prediction is no change. Margin: 0.05 on the coefficient of variation scale. Against a typical coefficient of variation near 0.15, that is a third of the measure: the smallest pre-to-post change that would count as the belts degrading with wear. Stated smallest effect of interest.</li><li><span class="n">2.</span> <strong>Moderation.</strong> Mixed-effects model with agreement as outcome and the signal quality index as predictor, over rolling windows across the whole session, controlling for elapsed time. The prediction is that quality carries the effect and elapsed time does not.</li></ol>
+<p><strong>Time base.</strong> Elapsed wall-clock time, not trial index. Trials are participant-initiated, and inter-trial time exceeds task time, so the two are only loosely coupled.</p>
+<p><strong>Quality index: no threshold enters the confirmatory test.</strong> Earlier drafts deferred a "tuning procedure" for the index's degradation threshold. Specifying one turned out to be the wrong problem to solve, because tuning a cut point on the same data that H6 is tested on invites exactly the leak this design exists to prevent: a threshold chosen to maximise the moderation effect would manufacture the result H6 test 2 predicts. Three commitments replace it.</p>
+<p><strong>1. The moderation test uses the index continuously.</strong> In H6 test 2 the signal quality index enters as a continuous predictor, standardised within participant, with no dichotomisation at any value. No threshold is required for the hypothesis, so none is tuned. Continuous use is also the more powerful form, so nothing is given up.</p>
+<p><strong>2. The flag in Section 5.2 uses a fixed, interpretable anchor: 0.50.</strong> The index is an explained-variance ratio, so 0.50 is the point below which less than half of the movement variance in the window lies along the calibrated breathing direction. That is a meaning, not a percentile, and it requires no reference to the data. Windows below it are flagged and reported. Flagging never excludes, per Section 5.2.</p>
+<p><strong>3. Whether 0.50 sits sensibly in this data's distribution is checked, and reported, but cannot move it.</strong> The distribution of window-level index values will be reported alongside the flag rate. The index is computed from raw acceleration and the calibration weights only, so it is a single-device signal property and involves no between-device quantity. If 0.50 turns out to fall in an uninformative part of the distribution, that is reported as a limitation of the flag. The anchor is not moved after the distribution is seen, and no alternative threshold is substituted.</p>
+<p>This closes the last [SIM] in the document.</p>
+<p><strong>H6 is the binding constraint on sample size.</strong> It reaches 0.80 power at 75 enrolled and only 0.70 at 60. Every other confirmatory hypothesis clears 0.80 at or below 60. The target in Section 1.2 is set by this test.</p>
+<p>The reason is structural rather than incidental. H6 has the fewest observations per participant of any confirmatory hypothesis: two free-breathing blocks, so exactly one pre-to-post difference per person. Where H1 averages roughly 42 breaths per participant before comparing across people, H6 has a single number each, so its precision comes almost entirely from the number of participants.</p>
+<p><strong>Parameters used.</strong> Margin 0.05; between-participant standard deviation of the coefficient of variation 0.108, from the internal pilot; assumed true change one quarter of the margin. Below about 20 enrolled the power is zero rather than merely low, because the margin is then narrower than the confidence interval and no sample can bound it at all.</p>
+<h4 id="5-9-h7-downstream-equivalence">5.9 H7: Downstream equivalence</h4>
+<p><strong>Estimand.</strong> Whether substituting one device for the other changes the study's conclusions.</p>
+<p><strong>Unit.</strong> Trial for the classification test; participant for the coefficient test.</p>
+<p><strong>Tests.</strong></p>
+<ol class="num"><li><span class="n">1.</span> <strong>Classification agreement.</strong> Compute the direction-correct classification separately from each device, for every trial where the cued change is non-zero.<p><strong>The decision statistic is Gwet's AC1, not Cohen's kappa.</strong> Decision rule: AC1 lower 95% bound above 0.80. Kappa and raw percent agreement are reported alongside as descriptives, without thresholds.</p><p>Kappa was the original rule and is degenerate for this design. The direction-correct base rate sits near 0.95, because participants are following a visible pacer and most trials classify correctly. At that prevalence, chance agreement is almost as high as observed agreement, so kappa collapses: in simulation it reads about +0.19 at zero injected between-device bias, already far below any usable floor, and it is non-monotonic in the bias it is supposed to track, reading +0.19, +0.04, +0.06 and +0.14 at biases of 0, 100, 200 and 400 ms. A rule that fails when the devices agree perfectly cannot discriminate device quality.</p><p>This possibility was anticipated. Percent agreement and AC1 were already preregistered as companion descriptives specifically so that a prevalence artefact would be diagnosable rather than fatal. It was diagnosed, and AC1 is promoted to the rule. Both companions behave monotonically: across the same bias range percent agreement runs 0.914, 0.905, 0.882, 0.809 and AC1 runs 0.904, 0.893, 0.864, 0.759.</p></li><li><span class="n">2.</span> <strong>Coefficient equivalence.</strong> Fit the same model twice, once with each device supplying the breath-duration predictor. Test whether the two coefficients are equivalent within a margin, using the two one-sided tests procedure on the difference. Margin: 75 ms, half of H1's. A coefficient shift smaller than that cannot move a conclusion if the durations themselves are equivalent to within 150 ms. Stated smallest effect of interest, and it tracks H1: when H1's margin was tightened from the 300 ms ceiling to 150 ms, this followed to 75 ms rather than being re-chosen.</li><li><span class="n">3.</span> <strong>Device-specific missingness.</strong> The rate at which one device yields a classification and the other does not is reported as part of the decision, not as a footnote.<p>This matters more than it appears. The classification is undefined when the breaths it needs were not detected, and in a two-device comparison the accelerometer may fail where the stretch belt succeeds. Any agreement coefficient needs complete pairs, so those trials drop silently out of the very analysis meant to detect them. A device that yields no answer is not equivalent to one that yields the right answer. Note also that averaging with missing values removed lets a pair mean be computed from a single detected breath, so partial detection degrades quietly rather than becoming missing. Both the missingness rate and the rate of single-breath pair means are reported.</p></li></ol>
+<p><strong>Note.</strong> This is the decisive hypothesis for the study's practical claim. H1 through H5 can all pass while H7 fails, if the disagreements happen to fall where they matter.</p>
+<p><strong>Trial count is smaller than it looks.</strong> Catch trials carry no cued change and therefore never receive a classification. Trials arrive in shuffled blocks of five with one catch trial, so H7 rests on roughly four fifths of Block 4, not all of it. In Block 3 the unchanged condition is excluded for the same reason, leaving 6 of 9 trials. Simulating 25 Block 4 trials per participant would overstate H7's information by about 20%, and the simulation excludes them explicitly.</p>
+<p><strong>Base rate is assumed, not observed.</strong> Section 5.12 note 5 forbids taking an effect size from the internal pilot, and the prior study's data is not available to this project, only its scripts. The base rate is therefore derived from the design and from the breath-duration noise the pilot did license, with participant adherence to the pacer assumed at 0.80. The derivation and its sensitivity are in Section 5.13.</p>
+<p><strong>Parameters used.</strong> AC1 floor 0.80; coefficient margin 75 ms. Power is 0.98 at 10 enrolled and 1.00 from 20 upward, so H7 does not constrain the design.</p>
+<h4 id="5-10-h8-alertness-and-adherence">5.10 H8: Alertness and adherence</h4>
+<p><strong>Estimand.</strong> Within-participant relationship between trial-level alertness and trial-level pacer adherence, and whether it differs by device.</p>
+<p><strong>Unit.</strong> Block 4 trial. Approximately 25 per participant.</p>
+<p><strong>Test.</strong> Mixed-effects model with adherence as outcome and alertness as predictor, alertness centred within participant to isolate within-person fluctuation from between-person differences. Random intercepts and slopes by participant. Fitted separately for each device, then tested for equivalence of the alertness coefficient across devices. Margin: 75 ms of adherence per standard deviation of alertness, half of H1's, on the same reasoning as H7's coefficient test. Stated smallest effect of interest.</p>
+<p><strong>Note on what is and is not tested.</strong> The equivalence test concerns the between-device difference in the alertness coefficient. Whether alertness predicts adherence at all is reported per device but is not the confirmatory claim, since a relationship that is absent on both devices is still equivalent across them.</p>
+<p><strong>Parameters used.</strong> Margin 75 ms; Block 4 trial count drawn per participant rather than fixed. H8 reaches 0.80 power at 15 enrolled and 1.00 from 40 upward, so it does not constrain the design. H8 is the one test the margin tightening moved materially: at the former 150 ms margin it cleared 0.80 by 10 enrolled, and at 75 ms it needs 15. That is still far below the target.</p>
+<h4 id="5-11-exploratory-analyses">5.11 Exploratory analyses</h4>
+<p>No corrections for multiple comparisons; reported as exploratory throughout.</p>
+<p><strong>EH1 (serves ERQ2).</strong> Correlations between interoceptive sensibility and each of mean breath duration, breathing variability, and mean pacer adherence. Breath duration and variability are taken from the free-breathing blocks (2 and 5); adherence is taken from the paced blocks (3 and 4), since adherence is undefined without a pacer. Reported with confidence intervals and as directional consistency only, per the limits on ERQ2.</p>
+<p><strong>EH2. Waveform shape.</strong></p>
+<p>To compare shape fairly, the derivative relationship must first be undone. Two routes:</p>
+<ul class="bul"><li><strong>(a) Double-integrate the acceleration</strong> to recover a displacement-like waveform, with high-pass filtering to control the drift that integration introduces.</li><li><strong>(b) Band-pass both signals narrowly</strong> around the breathing fundamental, so that only one frequency component survives and the derivative relationship reduces to a scale factor and a fixed phase shift, both of which normalise away.</li></ul>
+<p>Route (b) is not appropriate for this hypothesis. Narrow band-passing discards exactly the harmonic content that constitutes waveform shape, which would make shape agreement near-trivially high. Route (a) is preregistered for EH2. The narrow band-pass remains in use for the timing and rate hypotheses, where it is appropriate.</p>
+<p><strong>Measure.</strong> Magnitude-squared coherence across the respiratory band, a frequency-resolved measure bounded 0 to 1 that asks whether the two signals hold a consistent amplitude ratio and phase relationship at each frequency.</p>
+<p><strong>Estimation parameters, fixed in advance.</strong> Coherence is biased upward when few independent segments are available: with K segments, the expected coherence between two unrelated signals is approximately 1/K, not zero. At 0.25 Hz, 120 s of free breathing yields few enough segments that this bias is the dominant estimation concern, so the parameters are chosen to trade frequency resolution against it explicitly.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Table"><table><thead><tr><th scope="col">Parameter</th><th scope="col">Value</th><th scope="col">Consequence</th></tr></thead><tbody><tr><td>Sampling rate</td><td>25 Hz</td><td>120 s block gives 3,000 samples</td></tr><tr><td>Segment length</td><td>512 samples, 20.5 s</td><td>Frequency resolution 0.049 Hz</td></tr><tr><td>Overlap</td><td>50%</td><td>About 10 segments per block</td></tr><tr><td>Window</td><td>Hann</td><td>Standard sidelobe control</td></tr></tbody></table></div>
+<p>At a respiratory fundamental near 0.25 Hz this places roughly five bins below the fundamental, which is enough to separate it from the 0.05 Hz high-pass corner, while ten segments hold the null coherence near 0.1 rather than the 0.2 that a 40 s segment would give.</p>
+<p>Longer segments were rejected: 1,024 samples would sharpen resolution to 0.024 Hz but leave only about five segments, doubling the upward bias in the quantity being interpreted. Shorter segments were rejected in the other direction: 256 samples gives 0.098 Hz resolution, which is too coarse to separate the fundamental from the filter corner.</p>
+<p><strong>Significance is assessed against a phase-randomised null, not against a fixed threshold.</strong> One signal is phase-randomised with its amplitude spectrum preserved, the coherence is recomputed, and this is repeated 1,000 times to build a per-frequency null distribution. The 95th percentile of that distribution is the reference. This absorbs the segment-count bias directly, because the surrogate coherences carry the same bias as the observed one.</p>
+<p>Individual Block 3 and Block 4 trials are too short to support coherence at all, at roughly 16 s against a 20.5 s segment. For those, shape is assessed instead by correlating time-normalised individual breath cycles between devices.</p>
+<p><strong>Free by-product.</strong> The phase spectrum of the coherence gives a frequency-resolved lag estimate. If the device offset is a true time delay, phase rises linearly with frequency. If it is a fixed mechanical phase shift, phase is flat. Reported either way, as it bears on how lag should be corrected.</p>
+<p><strong>Duty cycle carries a rate-dependent bias, and EH2 must control for it.</strong> Measuring the inspiratory fraction through a band-limited signal inflates it, and the inflation grows with breathing rate: at a true duty cycle of 0.30 the measured value runs from about 0.31 at 7.5 breaths per minute to about 0.34 at 30. Any manipulation that also changes breathing rate therefore produces a duty-cycle change of the same sign for free. Blocks 3 and 4 change rate by design, and EH2 predicts an inverted U across rate, so imposed rate is included as a covariate in every shape analysis and the uncorrected values are reported alongside. This is preregistered because it would otherwise be indistinguishable from the predicted effect.</p>
+<p><strong>EH3. Calibration model as hidden moderator.</strong></p>
+<ul class="bul"><li>Descriptive: how often each of the three candidate models is selected, across participants, and the distribution of the winner's margin over the runner-up.</li><li>Test: whether the selected model predicts subsequent agreement between devices, and whether calibration fit predicts agreement independently of which model won.</li><li>Rationale: participants running under different transformations are not running the same measurement, so this checks whether that heterogeneity matters.</li></ul>
+<p><strong>EH3 is interpreted only where selection is meaningful, and on this pilot it largely is not.</strong> The three accelerometer axes are projections of one chest movement and are therefore strongly collinear, so many weight vectors reconstruct the breathing about equally well and the models score within noise of each other. In the internal pilot the winning model's margin over the runner-up had a median of 0.013, and 17 of 18 participants selected the same model. On that evidence the selected label is close to arbitrary and EH3 is expected to find nothing regardless of whether the underlying idea is right. It is retained as descriptive, with the margin reported alongside, and no result from it is interpreted where the margin is small.</p>
+<p>Note also that nothing is interpreted from the calibration coefficients themselves. Under collinear axes the weights are not identified even when the reconstruction is excellent.</p>
+<p><strong>EH4. Directional consistency with prior findings.</strong></p>
+<p><strong>Unit.</strong> Participant. One observation per person, and the threshold estimate itself carries measurement error, so this is the least precise analysis in the study.</p>
+<p><strong>Reported quantities.</strong></p>
+<ol class="num"><li><span class="n">1.</span> Correlation between detection threshold and interoceptive sensibility, with confidence interval.</li><li><span class="n">2.</span> Correlation between mean confidence and interoceptive sensibility, with confidence interval.</li><li><span class="n">3.</span> The contrast between the two, tested as a difference between dependent correlations sharing a common variable.</li></ol>
+<p><strong>Threshold handling.</strong> Each participant has two thresholds, one per staircase direction. The primary figure uses their mean; the two directions are also reported separately. Participants whose staircases did not converge before the trial cap are retained, and their posterior uncertainty is carried forward as a weight.</p>
+<p><strong>Sensibility scoring.</strong> Total score by default. Subscale correlations are reported uncorrected.</p>
+<p><strong>Directional consistency.</strong> Reported explicitly for each part: for (b), whether the point estimate is positive; for (a), whether the confidence interval falls inside, overlaps, or excludes a region of practical equivalence of plus or minus 0.20. The region is a descriptive reference, not a decision rule.</p>
+<p><strong>Interpretive limits, fixed in advance.</strong> No claim of dissociation will be made from a non-significant threshold correlation. The study is not powered to support a null. No result here is described as reproducing the prior finding, in either direction. This section is descriptive.</p>
+<h3 id="statistical-models-file-upload">Statistical models - File upload</h3>
+<p class="muted">No files selected</p>
+<h3 id="transformations">Transformations</h3>
+<p>Breath depth is compared after within-participant standardization (z-scoring), since raw units are not commensurable between the accelerometer and stretch belt.</p>
+<p>Alertness ratings are centered within-participant before entering H8's mixed model, to isolate within-person trial-to-trial fluctuation from between-person differences.</p>
+<p>Change magnitude in Block 3 is coded as proportion_mag = (condition_period - 4000)/4000, i.e., -0.25/0/+0.25, rather than as a categorical faster/unchanged/slower factor, since analyses of rate-dependence (H3) use realized rate rather than nominal condition.</p>
+<p>All acceleration signals are band-pass/low-pass filtered (zero-phase Butterworth) as described under Statistical Models before any measure is derived; the accelerometer carries two parallel filtered copies (0.05-0.6Hz for onset detection, 0.05-2.0Hz for amplitude/timing measurement) to avoid symmetrizing the waveform.</p>
+<p>No other recoding of measured variables is performed; questionnaire scores use each instrument's standard total-score scoring (e.g., MAIA-2 total; subscales reported exploratory/uncorrected).</p>
+<h3 id="inference-criteria">Inference criteria</h3>
+<p>Confirmatory hypotheses (H1-H8) use preregistered equivalence margins or agreement thresholds (listed in Measured Variables/Statistical Models above), each derived structurally from a downstream analysis or set as a stated smallest effect of practical interest — not fitted to observed pilot data. Alpha = 0.05 throughout (conventional). Equivalence tests (H1, H3a, H4, H6a, H7b, H8) use the two one-sided tests (TOST) procedure: both one-sided tests must reject for equivalence to be claimed. Threshold-based tests (H2, H5, H6b, H7a) require the relevant statistic's lower 95% confidence bound to exceed its preregistered floor.</p>
+<p>No correction for multiple comparisons is applied across H1-H8, since each addresses a logically distinct construct (duration agreement, cycle detection, rate-dependence, pacer accuracy, variability, stability, downstream equivalence, alertness) rather than repeated tests of the same question. [This is implicit in the draft rather than stated as an explicit multiplicity policy — worth confirming with Farb whether he wants this reasoning stated explicitly in the registration, since a reviewer may ask.]</p>
+<p>Alongside the preregistered 300ms decision on H1, the achieved equivalence bound (the smallest margin at which both TOST tests would still reject, from the confidence limits on the participant-level mean) will also be reported, as a supplementary quantitative readout — this does not alter or re-tune the preregistered decision rule.</p>
+<p>Exploratory analyses (EH1-EH4) are reported descriptively with confidence intervals, without correction for multiplicity, and are explicitly not subject to a pass/fail decision rule (see Other Planned Analyses).</p>
+<h3 id="data-inclusion-and-exclusion">Data inclusion and exclusion</h3>
+<p>No participant is excluded a priori based on task performance, poor pacer adherence, or poor calibration fit — these are informative (the question is whether such issues appear similarly on both devices) and are flagged/retained as covariates rather than excluded. Flagged-but-retained conditions: low calibration fit, low signal-quality index, poor pacer adherence, large alignment residuals, staircases not converged before the trial cap.</p>
+<p>Exclusion applies only to incomplete data: a session missing usable signal from either device, or missing the trial-level records required to align the two devices' recordings.</p>
+<p>At the breath level, a breath contributes to the duration comparison (H1) only when both devices resolve both of its boundary onsets within a 500ms matching tolerance (this is bookkeeping to confirm "same breath," not a quality filter — the wider 500ms window is deliberately looser than H2's detection tolerance so it doesn't bias H1's variance estimate).</p>
+<p>Device-specific missingness in the classification analysis (H7) is reported as part of that result, not treated as a separate exclusion.</p>
+<h3 id="missing-data">Missing data</h3>
+<p>Session-level missingness (incomplete data, defined above) results in exclusion of that session from the affected analyses.</p>
+<p>Below the session level, missing detections are handled per-hypothesis rather than by a single global rule: H1's breath-duration comparison requires both boundary onsets resolved (see Data Inclusion/Exclusion); H2's detection score is explicitly designed to quantify missed/extra onsets rather than to exclude around them; H7's classification analysis reports device-specific missingness rates directly rather than silently dropping incomplete pairs (partial detection, e.g., a pair mean computed from a single detected breath, is flagged and its rate reported, since it degrades quietly otherwise).</p>
+<p>No imputation is planned for any measure.</p>
+<h3 id="other-planned-analysis">Other planned analysis</h3>
+<p>Four exploratory analyses (EH1-EH4), reported with no correction for multiple comparisons, explicitly descriptive rather than subject to a confirmatory decision rule:</p>
+<p>EH1: Correlations between interoceptive sensibility (MAIA-2) and mean breath duration/variability (free-breathing blocks) and mean pacer adherence (paced blocks), reported with confidence intervals.</p>
+<p>EH2: Waveform-shape agreement via magnitude-squared coherence across the respiratory band, after undoing the accelerometer's derivative relationship (double-integration with high-pass drift control). Imposed rate is included as a covariate to separate the predicted inverted-U effect from a known rate-dependent duty-cycle measurement bias. Coherence significance assessed against a phase-randomization null rather than a fixed threshold.</p>
+<p>EH3: Whether the calibration model selected per participant (of 3 candidates) predicts subsequent device agreement; noted in advance as likely uninformative given near-arbitrary model selection in the internal pilot (median margin over runner-up: 0.013).</p>
+<p>EH4: Correlation between detection threshold and interoceptive sensibility (predicted weak/near-zero) and between mean confidence and interoceptive sensibility (predicted substantial), plus the contrast between the two correlations. Explicitly not powered for confirmatory testing (would require &gt;200 participants); reported only as directional consistency with prior literature, with an explicit commitment that a non-significant result will not be read as evidence of dissociation.</p>
+<h2 id="other">Other</h2>
+<h3 id="context-and-additional-information">Context and additional information</h3>
+<p>*** Please read the attached pdf for a much better formatted and clearly laid out pre-registration, the boxes here are filled out for completeness ***</p>
+<section class="added" aria-labelledby="data-analysis">
+<p class="eyebrow">Added after registration · not part of the OSF record</p>
+<h2 id="data-analysis">Data analysis</h2>
+<p class="status-line">Last updated 17 November 2026. The confirmatory run was started on 17 November 2026. No results are reported here, and the data stay blinded until the run completes.</p>
+
+<h3 id="da-status">Status and how to read this section</h3>
+<ul>
+<li>Everything above this section is the registered text. This section is not part of the registration, and the OSF registration stays the record.</li>
+<li>The section lists two kinds of entry. A <strong>deviation</strong> departs from the registered text. A <strong>clarification</strong> reads a passage the registered text leaves open or ambiguous, without departing from it.</li>
+<li>The analysis plan was fixed before unblinding, in two documents kept in the analysis repository (private): a full specification of the analyses of H1 to H8 and of the secondary and exploratory analyses, and a deviations log, DV1 to DV22.</li>
+<li>Every entry was decided without results. No outcome had been computed when the entries were decided, and the quantities the registration blocks stay blocked until the confirmatory run completes.</li>
+<li>Where the registered text was silent, ambiguous or in conflict with the code, each case was written up as a numbered question and answered by Norm Farb before the run. The answers are written into the deviations below.</li>
+<li>The confirmatory run happens once, and Norm runs it. It takes a lock before computing anything and refuses to run a second time. It prints progress only, never an estimate or a decision, until every analysis has finished.</li>
+<li>Norm decided the eleven rulings below on 17 November 2026, and each is written into the deviations log; no entry is pending. The final structural precheck ran on 17 November 2026 and found all 92 analysed sessions ready. The sample list is frozen, and its SHA-256 checksum is recorded in the deviations log: <code>3bf4def36cbb6efd8efe71c9eb4f3b921a66677c0442c5c017dec9aa09808722</code>. The confirmatory run was started on 17 November 2026.</li>
+<li>Each entry links to the registered passage it affects. Results will be reported with these deviations.</li>
+</ul>
+
+<h3 id="da-sample">Final sample</h3>
+<p>Recruitment closed on 11 November 2026. Preprocessing of 17 November 2026 classified every session; none failed for a reason outside the rules of <a href="#dv7">DV7</a>.</p>
+<div class="tbl" role="region" tabindex="0" aria-label="Final sample"><table><thead><tr><th>Sessions</th><th>n</th></tr></thead><tbody>
+<tr class="b"><td>Completed</td><td>107</td></tr>
+<tr class="b"><td>Analysed (complete data)</td><td>92</td></tr>
+<tr><td class="ind">Aligned by trigger codes</td><td>83</td></tr>
+<tr><td class="ind">Aligned by wall clock (<a href="#dv4">DV4</a>), duration analyses only</td><td>9</td></tr>
+<tr class="b"><td>Excluded as incomplete (<a href="#dv7">DV7</a>)</td><td>15</td></tr>
+<tr><td class="ind">No stretch-belt recording</td><td>3</td></tr>
+<tr><td class="ind">Flat stretch-belt signal</td><td>1</td></tr>
+<tr><td class="ind">Start of calibration pacing not recorded by the accelerometer</td><td>9</td></tr>
+<tr><td class="ind">Left-seat session with no trigger codes (<a href="#dv4">DV4</a>)</td><td>2</td></tr>
+</tbody></table></div>
+<ul>
+<li>One of the three sessions with no stretch-belt recording is the account the draft preregistration names as a test account. It has a web session and no recording.</li>
+<li>17 sessions have no trigger codes. 15 are from the right-hand seat: 9 of them are complete and aligned by wall clock, and 6 are among the 9 excluded because the start of calibration pacing was not recorded. The other 2 are from the left-hand seat and are excluded (<a href="#dv4">DV4</a>).</li>
+<li>All 18 pilot participants are complete and in the analysed sample, as registered.</li>
+<li>No session is excluded for performance or signal quality. The registered flags (low calibration fit, low signal quality, poor pacer adherence, large alignment residuals, staircases that did not converge) are reported, and flagged participants stay in.</li>
+</ul>
+<h4 class="da-h4">Which sessions decide which hypothesis</h4>
+<div class="tbl" role="region" tabindex="0" aria-label="Analysis sets"><table><thead><tr><th>Analysis</th><th>Decides on</th><th>Reported beside it</th></tr></thead><tbody>
+<tr><td>H1, H3, H4, H5, H6, H7, H8</td><td>Triggered sessions (83)</td><td>Triggered plus wall-clock sessions (92)</td></tr>
+<tr><td>H2, ways 1 and 2 (<a href="#dv5">DV5</a>)</td><td>Triggered sessions (83)</td><td>None: wall-clock sessions never enter H2</td></tr>
+<tr><td>H2, way 3</td><td>Triggered sessions recorded on the later trigger helper, from 29 September 2026</td><td>None</td></tr>
+</tbody></table></div>
+<ul>
+<li>The triggered-only run is the analysis as registered, and it decides. The run with the wall-clock sessions added is a sensitivity analysis and never replaces it.</li>
+<li>Every analysis, and every rerun, is also reported without the participant retained under <a href="#dv9">DV9</a>. That version never decides.</li>
+</ul>
+
+<h3 id="da-deviations">Deviations and clarifications</h3>
+<p>One entry per item of the deviations log. Dates are the dates Norm decided or the entry was recorded.</p>
+
+<article class="dv" id="dv1">
+<p class="dv-top"><span class="dv-id">DV1</span><span class="badge ok">Decided</span></p>
+<h4>The interim re-estimation ran late</h4>
+<p class="dv-meta">Decided 28 October 2026 · Affects <a href="#the-interim-re-estimation-fixed-in-advance">The interim re-estimation, fixed in advance</a></p>
+<p><span class="lbl">Registered.</span> Exactly one re-estimation, when the 40th participant had been enrolled.</p>
+<p><span class="lbl">Change.</span> It ran once, on 28 October 2026, over every participant whose preprocessing was complete; about 85 sessions had been completed by then. For most of the time after the 40th enrolment, the stretch-belt recordings from August to early October sat on a lab computer's local disk and were found the day the interim ran, so running at 40 would have used whichever subset happened to have files. No outcome had been computed, so nothing observed about any hypothesis influenced the timing. The extraction script was unchanged apart from the larger sample, and the interim set the target at 70 enrolled.</p>
+</article>
+
+<article class="dv" id="dv2">
+<p class="dv-top"><span class="dv-id">DV2</span><span class="badge ok">Decided</span></p>
+<h4>The pacer overshoot is 5 to 7 ms per breath, not 83 to 86</h4>
+<p class="dv-meta">Decided 27 October 2026 · Affects <a href="#decomposing-the-belt-to-pacer-offset">Decomposing the belt-to-pacer offset</a></p>
+<p><span class="lbl">Registered.</span> The pilot was said to show a pacer overshoot of 83 to 86 ms per breath.</p>
+<p><span class="lbl">Change.</span> That figure was the trigger hardware's input and output latency, not the pacer. Measured from timing metadata, the overshoot is 5 to 7 ms per breath, and preprocessing uses each session's measured value. It changes any expectation stated in terms of breath index; no decision rule changes.</p>
+</article>
+
+<article class="dv" id="dv3">
+<p class="dv-top"><span class="dv-id">DV3</span><span class="badge ok">Decided</span></p>
+<h4>A misread trigger code is corrected as data</h4>
+<p class="dv-meta">Decided 28 October 2026 · Affects <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a></p>
+<p><span class="lbl">Registered.</span> Alignment matches trial-start codes to trial records in recording order.</p>
+<p><span class="lbl">Change.</span> In one session, one trial-start code was recorded with a single dropped bit, at the moment its trial record predicts. It is corrected through a listed correction that preprocessing applies and flags, and the session then aligns like any other. This restores one session under the registered method and creates no second method.</p>
+</article>
+
+<article class="dv" id="dv4">
+<p class="dv-top"><span class="dv-id">DV4</span><span class="badge ok">Decided</span></p>
+<h4>Sessions without trigger codes are aligned by wall clock, for duration analyses only</h4>
+<p class="dv-meta">Decided 28 October 2026; revised 13 November; confirmed 17 November · Affects <a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a>, <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a></p>
+<p><span class="lbl">Registered.</span> Alignment uses trial-start codes. A session missing the trial-level records needed to align it is incomplete and excluded.</p>
+<p><span class="lbl">Change.</span> 17 sessions have complete web records and a stretch-belt recording but no session codes, because the browser was set to a trigger output the recording rig did not receive; that setting has since been disabled. They are aligned from the recording's own wall-clock stamp against the browser's clock, using no breathing signal, so the alignment cannot be tuned to an outcome. Small alignment errors are negligible against breaths of 3 to 5 s but enter onset timing directly, which sets the rules:</p>
+<ul>
+<li>A session is aligned this way only if it lies wholly inside one recording segment, chosen from the stamps alone.</li>
+<li>Its clock constant comes from triggered sessions with the same seat and segment position.</li>
+<li>It enters H1 and H3 to H8, never H2, and every analysis it enters is reported with and without these sessions.</li>
+<li>The left-hand seat's computer clock moves too far between synchronisations for any check to verify its alignment, so its 2 sessions are excluded.</li>
+<li>A planned check against ECG heart rate was dropped: the recordings carry no usable ECG, and no other independent check exists that avoids a blocked quantity.</li>
+<li>An alternative that fits each session's offset by matching breath troughs was rejected. It uses the stretch belt's error against the pacer, which is blocked, and would bias between-device comparisons by construction.</li>
+</ul>
+</article>
+
+<article class="dv" id="dv5">
+<p class="dv-top"><span class="dv-id">DV5</span><span class="badge ok">Decided</span></p>
+<h4>Trigger alignment is corrected for the helper's send time</h4>
+<p class="dv-meta">Decided 29 October 2026 · Affects <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a>, <a href="#5-4-h2-cycle-level-detection">5.4 H2</a></p>
+<p><span class="lbl">Registered.</span> Trial-start codes are matched to trial records, and a linear fit of the offset over trials gives the alignment.</p>
+<p><span class="lbl">Change.</span> The fit placed each code at the browser time taken before the trigger was sent, so the stretch belt sat early by each code's landing delay; on the trigger helper used before 29 September 2026 that delay varied from trial to trial and grew across a session. The alignment now adds each trial's measured send time, drops trials more than 4 median absolute deviations (at least 10 ms) from a first fit and refits, and stops if that would drop more than 30% of trials. Sessions on the older helper are shifted by one constant to put them on the same footing as later ones. Because that constant rests on an assumption about the recording software, H2 is run three ways: with that shift (primary), with the alternative shift implied by the registered alignment, and on later-helper sessions alone. A conclusion about H2 holds only if it holds in all three ways; duration analyses do not depend on the shift.</p>
+</article>
+
+<article class="dv" id="dv6">
+<p class="dv-top"><span class="dv-id">DV6</span><span class="badge ok">Decided</span></p>
+<h4>Recruitment ran past the target and the hard cap</h4>
+<p class="dv-meta">Decided 13 November 2026 · Affects <a href="#starting-and-stopping-rules">Starting and stopping rules</a>, <a href="#sample-size">Sample size</a></p>
+<p><span class="lbl">Registered.</span> Recruit to 75 enrolled, with the target re-estimated once within a hard cap of 100. The interim set it at 70.</p>
+<p><span class="lbl">Change.</span> About 85 sessions were already complete when the interim ran, and 107 were completed by 11 November 2026, when recruitment closed. Usable sessions lagged enrolments by more than the registered assumption of 13 in 18, because of missing recordings (<a href="#dv1">DV1</a>) and sessions without trigger codes (<a href="#dv4">DV4</a>), so recruitment ran until the number of complete sessions was secure, and sessions already booked went ahead. The decision to stop used counts only; no outcome existed. Every complete session is analysed with no selection among them, and the pilot participants stay in, as registered.</p>
+</article>
+
+<article class="dv" id="dv7">
+<p class="dv-top"><span class="dv-id">DV7</span><span class="badge ok">Decided</span></p>
+<h4>What “incomplete data” means in practice</h4>
+<p class="dv-meta">Decided 13 November 2026; revised 17 November · Affects <a href="#data-inclusion-and-exclusion">Data inclusion and exclusion</a></p>
+<p><span class="lbl">Registered.</span> Exclusion applies only to incomplete data: a session missing usable signal from either device, or the records needed to align them. No one is excluded for poor performance or poor signal.</p>
+<p><span class="lbl">Change.</span> The rule is applied as an explicit list of hardware or storage failures, each identified without reference to results: no stretch-belt recording, a flat stretch-belt channel, no accelerometer file, or a calibration whose start of pacing the accelerometer did not record. Without the start of pacing, the strap cannot be calibrated against the pacer as registered, so it yields no breathing signal. The cause was the website: its calibration timer did not wait for the strap's accelerometer stream, which can start well after the heart-rate stream. One rule applies to every session, decided from the stream's packet order and phase labels alone with no duration threshold: the final calibration run must be preceded in the stream by at least one packet with another label.</p>
+</article>
+
+<article class="dv" id="dv8">
+<p class="dv-top"><span class="dv-id">DV8</span><span class="badge ok">Decided</span></p>
+<h4>Each device is lag-corrected by its own Block 1 offset</h4>
+<p class="dv-meta">Decided 13 November 2026 · Affects <a href="#5-1-preprocessing">5.1 Preprocessing</a>, <a href="#5-3-h1-breath-duration-agreement">5.3 H1</a>, <a href="#5-4-h2-cycle-level-detection">5.4 H2</a></p>
+<p><span class="lbl">Registered.</span> H1 matches lag-corrected onsets, and H2's detection score uses the lag fixed from Block 1. The offset is measured between a device's breathing signal and the pacer. The text does not say whether the stretch belt's onsets are corrected.</p>
+<p><span class="lbl">Change.</span> Each device's onsets are corrected by that device's own Block 1 offset against the pacer, following the registered definition. The stretch belt's offset is computed inside the confirmatory run and not before, because the registration reserves it for that run. A constant alignment error within a session falls into the stretch belt's offset and cancels, so the <a href="#dv5">DV5</a> shift no longer affects H1's matching or H2's detection score. H2's onset timing difference stays on uncorrected onsets, as registered.</p>
+</article>
+
+<article class="dv" id="dv9">
+<p class="dv-top"><span class="dv-id">DV9</span><span class="badge ok">Decided</span></p>
+<h4>A participant who reported a screening condition is retained</h4>
+<p class="dv-meta">Decided 10 November 2026; reporting decided 17 November · Affects <a href="#1-2-participants">1.2 Participants</a></p>
+<p><span class="lbl">Registered.</span> Listed conditions are exclusions at screening.</p>
+<p><span class="lbl">Change.</span> A participant who reported a condition named in the screening questions was retained after confirming they could take part safely; results are reported with and without them. Norm decided before any outcome had been computed. The registered exclusions at analysis cover incomplete data only, and their data are complete, so they stay in the main sample.</p>
+</article>
+
+<article class="dv" id="dv10">
+<p class="dv-top"><span class="dv-id">DV10</span><span class="badge ok">Decided</span></p>
+<h4>Block 1 offsets are estimated after removing the window's mean, for both devices</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-1-preprocessing">5.1 Preprocessing</a></p>
+<p><span class="lbl">Registered.</span> The offset is estimated by cross-correlation over plus or minus 2000 ms on the Block 1 window, after a band-pass filter of design order 4 with 15 s odd-reflection padding. The text does not say whether the window's mean is removed first.</p>
+<p><span class="lbl">Change.</span> On synthetic signals, a large constant level in the window leaves a filter start-up transient that biases the offset, and the two devices carry different constant levels (strap tension sets the stretch belt's, gravity the accelerometer's). Both devices' offsets are therefore estimated with the window mean subtracted before the band-pass, so the two corrections stay comparable. The accelerometer's offset is recomputed in the run, with the value preprocessing stored reported beside it. The decision rested on synthetic signals only; no stretch-belt offset had been computed.</p>
+</article>
+
+<article class="dv" id="dv11">
+<p class="dv-top"><span class="dv-id">DV11</span><span class="badge ok">Decided</span></p>
+<h4>The onset detector is kept as implemented; the registered filter sentence misdescribes it</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-1-preprocessing">5.1 Preprocessing</a></p>
+<p><span class="lbl">Registered.</span> Step 4 gives design order 4 and 15 s padding for every filter, including the onset detection and measurement bands. Step 7 commits to the same onset function for the pilot and every confirmatory analysis.</p>
+<p><span class="lbl">Change.</span> The onset function uses filter order 2 with 60 s odd-reflection padding. It was committed on the registration date and produced the pilot and interim variance components and the 0.4 prominence threshold, so it is kept: step 7's commitment is to the same function, and changing the filter would change every onset and leave the threshold tuned on another filter. No onset and no decision rule changes, and the calibration filter is as registered.</p>
+</article>
+
+<article class="dv" id="dv12">
+<p class="dv-top"><span class="dv-id">DV12</span><span class="badge ok">Decided</span></p>
+<h4>The pacer is reconstructed with send time and overshoot; H4 is tested against the realised period</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-6-h4-accuracy-against-the-pacer">5.6 H4</a>, <a href="#5-1-preprocessing">5.1 Preprocessing</a></p>
+<p><span class="lbl">Registered.</span> The pacer is reconstructed from the software's trial records, and H4 compares each device's durations with the commanded period (the period the pacer was set to).</p>
+<p><span class="lbl">Change.</span> Each paced trial's pacer begins at the trial start plus that trial's measured send time (<a href="#dv5">DV5</a>), and each pacer breath lasts its commanded period plus the session's measured overshoot (<a href="#dv2">DV2</a>). Both terms were measured from timing metadata, and leaving them out would misplace the pacer by known amounts. H4 is decided against this realised period, and the version against the commanded period is reported beside it. It moves the pacer onsets to which H3, H4, H7 and H8 assign breaths; no margin changes.</p>
+</article>
+
+<article class="dv" id="dv13">
+<p class="dv-top"><span class="dv-id">DV13</span><span class="badge ok">Decided</span></p>
+<h4>H6 test 2 is defined here and carries no pass or fail; H6 is decided on test 1</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-8-h6-within-session-stability">5.8 H6</a>, <a href="#inference-criteria">Inference criteria</a></p>
+<p><span class="lbl">Registered.</span> Test 2 is a mixed model of agreement on the signal quality index over rolling windows, controlling for elapsed time. Window-level agreement, the window step, the random structure and a decision rule are not stated, although Inference criteria lists H6b among the threshold-based tests.</p>
+<p><span class="lbl">Change.</span> Window agreement is the Fisher-z correlation of the two devices' lag-corrected signals, in non-overlapping 15 s windows from the start of Block 2 to the end of Block 5, with uncorrelated random intercept and slopes. Test 2 is reported as consistent with the prediction when the quality coefficient is positive with its 95% interval excluding 0 and the elapsed-time interval includes 0. It carries no pass or fail, because no floor was registered and setting one now would be a new rule. H6 is decided on test 1, the registered stability test.</p>
+</article>
+
+<article class="dv" id="dv14">
+<p class="dv-top"><span class="dv-id">DV14</span><span class="badge ok">Decided</span></p>
+<h4>The model for H7 test 2</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-9-h7-downstream-equivalence">5.9 H7</a></p>
+<p><span class="lbl">Registered.</span> Fit the same model twice, once with each device supplying the breath-duration predictor, and test the two coefficients for equivalence with two one-sided tests at a 75 ms margin. The model is not specified in the registration, the draft, the power simulation or any script.</p>
+<p><span class="lbl">Change.</span> For each device, the outcome is the trial's change in breath duration (mean of pacer breaths 3 and 4 minus mean of breaths 1 and 2, in ms), and the predictor is the cued direction (+1 for a slower cue, −1 for a faster one). The between-device test is a difference-score model on trials where both devices give a value, with two one-sided tests at plus or minus 75 ms on the cue coefficient; the per-device models are reported. It is the one model found whose coefficient is in ms, the margin's unit, and it uses the same trials and breaths as test 1. In it duration is the outcome, where the registered text names duration as the predictor.</p>
+</article>
+
+<article class="dv" id="dv15">
+<p class="dv-top"><span class="dv-id">DV15</span><span class="badge ok">Decided</span></p>
+<h4>A fallback for mixed models, stated in advance</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#statistical-models">Statistical models</a></p>
+<p><span class="lbl">Registered.</span> H3, H6 test 2, H7 test 2 and H8 are mixed-effects models. No inference method and no fallback for a failed or singular fit is stated.</p>
+<p><span class="lbl">Change.</span> Fixed-effect intervals and tests use Satterthwaite degrees of freedom. A failed or singular fit falls back in one fixed order, the same everywhere and logged: (1) the registered random structure; (2) the same with uncorrelated random effects; (3) one ordinary least squares coefficient per participant, tested across participants, as in the power simulation. The first rung that fits without a singular fit is used, and the rung is reported with every result, so a failed fit cannot force a choice after it is seen.</p>
+<p><span class="lbl">Confirmed for H3(b).</span> H3(b) z-scores depth within participant and device, which leaves the random intercept almost no variance, so the first two rungs are singular by construction. H3(b) is decided at rung 3, as the ladder provides (<a href="#r4">R4</a>).</p>
+</article>
+
+<article class="dv" id="dv16">
+<p class="dv-top"><span class="dv-id">DV16</span><span class="badge ok">Decided</span></p>
+<h4>The amendment of 24 August 2026 is analysed as secondary</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#5-4-h2-cycle-level-detection">5.4 H2</a>, <a href="#5-8-h6-within-session-stability">5.8 H6</a></p>
+<p><span class="lbl">Registered.</span> Neither addition is in the registration. The draft preregistration gained both five days after registration: a second onset detector based on zero crossings, reported beside the primary detector for detection yield, and a split of the signal quality index into postural drift angle and band-limited motion power, with two H6 secondary analyses.</p>
+<p><span class="lbl">Change.</span> Both are analysed and reported as secondary analyses, labelled as an amendment made after registration. The registered prominence detector decides every hypothesis, and the composite quality index stays H6 test 2's predictor. “Total postural drift across the session” is read as the mean drift angle over the Block 5 window.</p>
+</article>
+
+<article class="dv" id="dv17">
+<p class="dv-top"><span class="dv-id">DV17</span><span class="badge ok">Recorded</span></p>
+<h4>The registered pilot list has errata; the pilot stays as registered</h4>
+<p class="dv-meta">Recorded 17 November 2026 · Affects <a href="#pilot-participant-list">Pilot participant list</a></p>
+<p><span class="lbl">Registered.</span> The pilot is 18 named participants. Six further identifiers are listed as having no accelerometer file.</p>
+<p><span class="lbl">Change.</span> Three of those six do have an accelerometer file in storage, and one more participant met the pilot criteria but is not on the list. The pilot list stays as registered, and its variance components were computed on those 18. The four are in the confirmatory sample like anyone else, subject to <a href="#dv7">DV7</a>.</p>
+</article>
+
+<article class="dv" id="dv18">
+<p class="dv-top"><span class="dv-id">DV18</span><span class="badge ok">Decided</span></p>
+<h4>Two rulings on trigger lines</h4>
+<p class="dv-meta">Decided 17 November 2026 · Affects <a href="#1-6-data-recording-and-synchronisation">1.6 Data recording and synchronisation</a></p>
+<p><span class="lbl">Registered.</span> Alignment matches a session's trial-start codes to its trial records, and a session missing them is incomplete.</p>
+<p><span class="lbl">Change.</span> Two sessions recorded with the neighbouring seat empty carry one or two stray events on the empty seat's trigger lines. Those events are listed as noise; preprocessing removes only the listed events and stops if anything else remains, and both sessions were then excluded under <a href="#dv7">DV7</a> in any case. A lone setup-check cascade (codes 1 to 13, fired once each before a session) with nothing else on a rig's lines does not count as that rig's session codes, which keeps one session aligned by wall clock. Neither ruling aligns a session to codes it did not send, and both were decided from the trigger channel and the seat map alone.</p>
+</article>
+
+<article class="dv" id="dv19">
+<p class="dv-top"><span class="dv-id">DV19</span><span class="badge ok">Decided</span></p>
+<h4>Clarifications of passages the registered text leaves open</h4>
+<p class="dv-meta">Approved 17 November 2026; final block confirmed 17 November (<a href="#r2">R2</a>, <a href="#r6">R6</a> to <a href="#r11">R11</a>) · Affects <a href="#statistical-models">Statistical models</a>, <a href="#inference-criteria">Inference criteria</a></p>
+<p>None of these departs from the registered text. The ones that shape a decision:</p>
+<ul>
+<li>A “lower 95% bound” is the one-sided 95% bound, the lower end of a two-sided 90% interval. The two-sided 95% bound is reported beside it.</li>
+<li>H1's pooled test decides; the four per-block tests are reported.</li>
+<li>H1's two one-sided tests are a one-sample t procedure on unweighted participant means.</li>
+<li>A participant-level summary needs at least 5 units, and durations are limited to 1500 to 12000 ms, as in the code that produced the variance components.</li>
+<li>H1's margin is 150 ms. The “300ms decision on H1” in Inference criteria is text left over from before the margin was tightened on 14 August 2026.</li>
+<li>H2's detection score is one score per participant over all four blocks, with a t-based bound.</li>
+<li>H2's timing test takes the breath-level median per block, and all four blocks must lie within their tolerance.</li>
+<li>H2's count agreement is one ICC per block, and all four must pass.</li>
+<li>Across the three ways of <a href="#dv5">DV5</a>, H2 is supported, not supported or unresolved.</li>
+<li>H3(a) uses the period in ms, trial-level outcomes from pacer breaths 3 and 4, signed error, and includes trials with no change.</li>
+<li>H3(b) z-scores depth within participant and device over all paced breaths and requires a negative period coefficient (error rising as the period shortens) with two-sided p below 0.05.</li>
+<li>H4 and H8 use breaths matched between devices, mapped to the pacer by the stretch belt's opening onset.</li>
+<li>H5 uses each device's own durations, pools both free-breathing blocks with a participant-cluster bootstrap, and computes RMSSD over adjacent retained breaths only, needing at least 5 such pairs (<a href="#r7">R7</a>).</li>
+<li>H6 test 1 uses the absolute between-device difference in coefficient of variation; the signed version is reported.</li>
+<li>H7 test 1 uses each device's own breaths, with a participant-cluster bootstrap interval of 10,000 resamples.</li>
+<li>H7 test 3's missingness rates are reported in the H7 decision table with no threshold, beside a sensitivity agreement coefficient that counts a one-device classification as a disagreement.</li>
+<li>H8's adherence is the trial's mean absolute deviation from the pacer's realised period, in ms, the unit of its margin; alertness is centred within participant and scaled by the pooled within-participant SD.</li>
+<li>The triggered-only sample decides H1 and H3 to H8, with the wall-clock sessions added reported beside it.</li>
+<li>No correction for multiplicity is applied across H1 to H8, as registered.</li>
+<li>The circularity sensitivity analysis reruns H1 and H2.</li>
+</ul>
+<p><span class="lbl">Final block, confirmed.</span> About twenty further rules, recorded after a review of the confirmatory code on synthetic data, fill gaps the specification left: minimum counts for each statistic, how windows are tiled, a fixed bootstrap seed, and that a decision whose statistic does not exist is “not computable” rather than a fail. None departs from the registered text or used outcome data. Norm confirmed them on 17 November 2026 (<a href="#r2">R2</a>) with one change: an RMSSD needs at least 5 adjacent pairs, not 1 (<a href="#r7">R7</a>). <a href="#r10">R10</a> added how a rerun records a decision the data cannot support.</p>
+</article>
+
+<article class="dv" id="dv20">
+<p class="dv-top"><span class="dv-id">DV20</span><span class="badge ok">Decided</span></p>
+<h4>A pacer breath's duration needs both of its ends</h4>
+<p class="dv-meta">Recorded 17 November 2026; confirmed 17 November (<a href="#r1">R1</a>) · Affects <a href="#5-3-h1-breath-duration-agreement">5.3 H1</a> (“Why both ends must be resolved”), <a href="#5-9-h7-downstream-equivalence">5.9 H7</a></p>
+<p><span class="lbl">Registered.</span> A device that misses a closing onset must not report a duration spanning two breaths, and a classification is undefined when the breaths it needs were not detected.</p>
+<p><span class="lbl">Change.</span> The code review found that each device's breath was taken to its next onset whatever pacer breath that onset belonged to, so one missed onset produced a two-breath duration that passed the 12000 ms filter. A pacer breath has a duration for a device only when the device resolved both ends: for breaths 1 to 3 the closing onset must be the one mapped to the next pacer breath and the device's next onset; for breath 4 it must be the next onset and lie within 1000 ms of the breath's expected close. Both onsets lie in the trial window, extended under <a href="#dv21">DV21</a>. Otherwise the breath is missing for that device, and the miss shows in H7 test 3's missingness instead of as a duration disagreement. Only H7 changes. The defect was found on synthetic data.</p>
+</article>
+
+<article class="dv" id="dv21">
+<p class="dv-top"><span class="dv-id">DV21</span><span class="badge ok">Decided</span></p>
+<h4>Trial windows are extended so that first and last breaths are complete</h4>
+<p class="dv-meta">Decided 17 November 2026 (<a href="#r3">R3</a>) · Affects <a href="#5-3-h1-breath-duration-agreement">5.3 H1</a> (“Why both ends must be resolved”), <a href="#5-5-h3-rate-invariance-of-timing-rate-dependence-of-depth">5.5 H3</a>, <a href="#5-6-h4-accuracy-against-the-pacer">5.6 H4</a>, <a href="#5-9-h7-downstream-equivalence">5.9 H7</a>, <a href="#5-10-h8-alertness-and-adherence">5.10 H8</a></p>
+<p><span class="lbl">Registered.</span> A trial's window runs from its trial-start trigger to its trial-end trigger send, and a duration belongs to a window only if both of its onsets do. A breath's duration needs both of its ends.</p>
+<p><span class="lbl">Change.</span> The window can end before the onset that closes a trial's fourth breath, and start after the onset that opens its first, so those breaths had no duration. On synthetic sessions 20 to 40% of first and fourth breaths were lost this way, on both devices alike. Every analysis that uses trial windows for breaths now uses each trial window extended by up to 1000 ms before its start and after its end:</p>
+<ul>
+<li>an extension stops 1 ms short of a neighbouring window, and where two trial windows are less than 2000 ms apart the gap between them is split at its midpoint, so extended windows never overlap;</li>
+<li>the free-breathing blocks keep their windows, and a trial window next to one stops 1 ms short of it;</li>
+<li>H1, H3, H4, H7 and H8 decide on the extended windows; H2 stays on the registered windows, because its unit is the onset, which a window boundary does not cut, and its counts are per trigger window;</li>
+<li>H1, H3, H4, H7 and H8 are also run on the registered windows and reported beside each decision, deciding nothing; and the run counts, per device, the breaths left without a duration under each window definition.</li>
+</ul>
+<p>Decided from synthetic sessions and the code, before any result.</p>
+</article>
+
+<article class="dv" id="dv22">
+<p class="dv-top"><span class="dv-id">DV22</span><span class="badge ok">Decided</span></p>
+<h4>H3(b): the opposite outcome is named in advance, and absolute depth error is exploratory</h4>
+<p class="dv-meta">Decided 17 November 2026 (<a href="#r5">R5</a>) · Affects <a href="#5-5-h3-rate-invariance-of-timing-rate-dependence-of-depth">5.5 H3</a></p>
+<p><span class="lbl">Registered.</span> “The prediction is a positive relationship: error grows as the period shortens. Tested conventionally.”</p>
+<p><span class="lbl">Change.</span> The signed reading decides, as already approved: supported if the period coefficient is negative with two-sided p below 0.05. A reliably positive coefficient (two-sided p below 0.05) is reported as its own outcome, not as a plain “not supported”: depth agreement depends on rate, opposite to the predicted mechanism, and H3(b) as registered is not supported. Beside H3(b), an exploratory analysis fits the same model, with the same fallback ladder, to the absolute depth error. It decides nothing, because absolute error mixes bias with noise: short breaths have fewer samples and noisier peak and trough detection, so absolute error can grow with rate without any change in agreement.</p>
+</article>
+
+<h3 id="da-hypotheses">Hypothesis by hypothesis</h3>
+<p>A summary of the analysis specification. Rules that apply to every hypothesis:</p>
+<ul>
+<li>Signs are accelerometer minus stretch belt.</li>
+<li>An equivalence test passes when the 90% interval lies inside the margin, so both one-sided tests reject at 0.05. The achieved equivalence bound is reported with it.</li>
+<li>A floor rule (“lower 95% bound above X”) uses the one-sided 95% bound.</li>
+<li>Mixed models follow the fallback ladder of <a href="#dv15">DV15</a>, and the rung used is reported.</li>
+<li>H1, H3, H4, H7 and H8 use trial windows extended by up to 1000 ms at each end, so that first and last breaths are complete; H2 uses the registered windows (<a href="#dv21">DV21</a>). The results on the registered windows are reported beside each decision and decide nothing.</li>
+<li>A decision whose statistic does not exist is “not computable”, not a fail. If one the registration needs is not computable, the run stops before showing anything. Norm then records a deviation: a code fault is fixed and the rerun computes the decision; if the cause is the data, the rerun records that decision as not computable (<a href="#r10">R10</a>).</li>
+</ul>
+<div class="tbl" role="region" tabindex="0" aria-label="Hypotheses H1 to H8"><table class="hyp"><thead><tr><th>Hypothesis</th><th>Registered test</th><th>Decision rule as specified</th><th>Touched by</th></tr></thead><tbody>
+<tr><td><a href="#5-3-h1-breath-duration-agreement">H1</a> Breath duration agrees (primary)</td><td>Two one-sided tests on the between-device duration difference, margin 150 ms, in each block and pooled.</td><td>Matched breaths, in Blocks 3 and 4 on the extended trial windows; one mean per participant (at least 5 breaths); one-sample two one-sided tests at plus or minus 150 ms. The pooled test decides; the four per-block tests and the registered-window result are reported.</td><td><a href="#dv4">DV4</a>, <a href="#dv8">DV8</a>, <a href="#dv10">DV10</a>, <a href="#dv11">DV11</a>, <a href="#dv19">DV19</a>, <a href="#dv21">DV21</a>; <a href="#r2">R2</a>, <a href="#r3">R3</a></td></tr>
+<tr><td><a href="#5-4-h2-cycle-level-detection">H2</a> The belts find the same breaths, at the same times</td><td>All three must pass: detection score bound above 0.85; median onset timing difference within the block's tolerance (150 ms paced, 400 ms free); count agreement bound above 0.75.</td><td>Detection score per participant over all four blocks, t-based bound above 0.85. Breath-level median timing difference on uncorrected onsets, within tolerance in every block. Count ICC per block, bound above 0.75 in every block. Run three ways: supported if it passes in all three, not supported if it fails in all three, unresolved otherwise. Triggered sessions only, on the registered trial windows.</td><td><a href="#dv4">DV4</a>, <a href="#dv5">DV5</a>, <a href="#dv8">DV8</a>, <a href="#dv10">DV10</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a>, <a href="#r9">R9</a>, <a href="#r11">R11</a></td></tr>
+<tr><td><a href="#5-5-h3-rate-invariance-of-timing-rate-dependence-of-depth">H3</a> Timing survives rate changes; depth does not</td><td>(a) Mixed model of duration error on imposed rate, equivalence bound 0.05 ms per ms. (b) Same structure for depth error, predicted to grow as the period shortens, tested conventionally.</td><td>Trials of Blocks 3 and 4, pooled with block as a covariate, outcomes from pacer breaths 3 and 4 on the extended trial windows, the period as predictor. (a) The period coefficient's 90% interval inside plus or minus 0.05. (b) Depth z-scored within participant and device, decided at rung 3 of the ladder; supported if the period coefficient is negative with two-sided p below 0.05. A positive coefficient with two-sided p below 0.05 is a third outcome, named in advance: depth agreement depends on rate, opposite to the predicted mechanism, so H3(b) as registered is not supported. Beside it, an exploratory model of absolute depth error, deciding nothing.</td><td><a href="#dv12">DV12</a>, <a href="#dv15">DV15</a>, <a href="#dv19">DV19</a>, <a href="#dv21">DV21</a>, <a href="#dv22">DV22</a>; <a href="#r2">R2</a>, <a href="#r3">R3</a>, <a href="#r4">R4</a>, <a href="#r5">R5</a></td></tr>
+<tr><td><a href="#5-6-h4-accuracy-against-the-pacer">H4</a> Neither belt tracks the pacer better</td><td>Two one-sided tests on the between-device difference in mean absolute error against the commanded period, margin 150 ms. Per-device errors are descriptive.</td><td>Matched paced breaths on the extended trial windows; per participant (at least 5 breaths), the difference in mean absolute error against the realised period; two one-sided tests at plus or minus 150 ms. The commanded-period version is reported beside it.</td><td><a href="#dv2">DV2</a>, <a href="#dv12">DV12</a>, <a href="#dv19">DV19</a>, <a href="#dv21">DV21</a>; <a href="#r3">R3</a></td></tr>
+<tr><td><a href="#5-7-h5-variability-agreement">H5</a> The belts agree about variability</td><td>ICC (two-way random, absolute agreement, single measurement) for the coefficient of variation and RMSSD in the free-breathing blocks; each bound above 0.75.</td><td>Each device's own durations; Blocks 2 and 5 pooled as rows, with a participant-cluster bootstrap bound. An RMSSD needs at least 5 pairs of adjacent retained breaths. Passes only if both measures pass.</td><td><a href="#dv19">DV19</a>; <a href="#r2">R2</a>, <a href="#r7">R7</a></td></tr>
+<tr><td><a href="#5-8-h6-within-session-stability">H6</a> Agreement is stable across the session</td><td>(1) Equivalence of agreement between the pre and post free-breathing blocks, margin 0.05 on the coefficient of variation scale. (2) Mixed model of agreement on signal quality, controlling for elapsed time.</td><td>Decided on test 1: two one-sided tests at plus or minus 0.05 on each participant's change, Block 2 to Block 5, in the absolute between-device difference in coefficient of variation. Test 2 is reported with no pass or fail.</td><td><a href="#dv13">DV13</a>, <a href="#dv15">DV15</a>, <a href="#dv16">DV16</a>, <a href="#dv19">DV19</a>; <a href="#r2">R2</a></td></tr>
+<tr><td><a href="#5-9-h7-downstream-equivalence">H7</a> Conclusions do not depend on the belt (decisive)</td><td>(1) Agreement coefficient (AC1) on direction-correct classification, bound above 0.80. (2) Two one-sided tests on the coefficient difference, margin 75 ms. (3) Device-specific missingness reported as part of the decision.</td><td>(1) Each device classifies from its own breaths on the extended trial windows; AC1 over trials both classify, participant-cluster bootstrap bound above 0.80. (2) The difference-score model of <a href="#dv14">DV14</a>, plus or minus 75 ms. (3) Rates reported in the decision table with no threshold, beside each device's breaths lost under each window definition. Passes if tests 1 and 2 pass.</td><td><a href="#dv14">DV14</a>, <a href="#dv15">DV15</a>, <a href="#dv19">DV19</a>, <a href="#dv20">DV20</a>, <a href="#dv21">DV21</a>; <a href="#r1">R1</a>, <a href="#r2">R2</a>, <a href="#r3">R3</a></td></tr>
+<tr><td><a href="#5-10-h8-alertness-and-adherence">H8</a> Alertness predicts adherence, equally on both belts</td><td>Mixed model of adherence on alertness centred within participant, per device; equivalence of the coefficient across devices, margin 75 ms per SD of alertness.</td><td>Block 4 trials; adherence is the mean absolute deviation from the realised period over matched breaths on the extended trial windows; alertness centred within participant and scaled by the pooled within-participant SD. Difference-score model; the coefficient's 90% interval inside plus or minus 75 ms.</td><td><a href="#dv12">DV12</a>, <a href="#dv15">DV15</a>, <a href="#dv19">DV19</a>, <a href="#dv21">DV21</a>; <a href="#r2">R2</a>, <a href="#r3">R3</a>, <a href="#r6">R6</a></td></tr>
+</tbody></table></div>
+<h4 class="da-h4">Secondary and exploratory analyses</h4>
+<ul>
+<li>None of these makes a confirmatory decision.</li>
+<li>The zero-crossing detector and the split of the signal quality index are secondary analyses, labelled as the post-registration amendment (<a href="#dv16">DV16</a>).</li>
+<li>Flagged conditions are reported as counts and proportions, and flagged participants stay in.</li>
+<li>The belt-to-pacer offset decomposition is fitted as registered for both devices, without the wall-clock sessions, and is descriptive.</li>
+<li>The circularity sensitivity analysis refits the calibration against the stretch belt and reruns H1 and H2, read as an upper bound only.</li>
+<li>H1, H3, H4, H7 and H8 are rerun on the registered trial windows, and each device's breaths left without a duration are counted under both window definitions (<a href="#dv21">DV21</a>).</li>
+<li>Beside H3(b), an exploratory model of absolute depth error, labelled exploratory (<a href="#dv22">DV22</a>).</li>
+<li>EH3 (calibration model as moderator) runs with the confirmatory analysis. EH1, EH2 and EH4 are not yet implemented and will be run later, as exploratory analyses.</li>
+</ul>
+
+<h3 id="da-rulings">Rulings R1 to R11</h3>
+<p>These eleven came from an independent review of the H1 to H8 code, done on synthetic data only. Norm decided all eleven on 17 November 2026, before any result. Each card shows the options as they were put, with the one chosen marked. The run refuses to start while any deviation entry is pending; none is.</p>
+
+<article class="dv" id="r1">
+<p class="dv-top"><span class="dv-id">R1</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>A breath's duration needs both of its ends (<a href="#dv20">DV20</a>)</h4>
+<p class="q">Confirm DV20 as a clarification that follows the registered text?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> Confirm DV20.</li><li>Reject; the alternative comes back built.</li></ul>
+<p><span class="lbl">Decided.</span> Approved: <a href="#dv20">DV20</a> is confirmed.</p>
+</article>
+
+<article class="dv" id="r2">
+<p class="dv-top"><span class="dv-id">R2</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>The gap-filling rules at the end of <a href="#dv19">DV19</a></h4>
+<p>Examples: H2's detection test enters only participants with onsets on a device; a coefficient of variation needs at least 5 durations; H7's cued trials have a change and a period other than 4000 ms; overlapping windows or an unknown trial phase stop a session.</p>
+<p class="q">Confirm the remaining DV19 clarifications as written?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> Confirm as written.</li><li>Reject; the alternative comes back built.</li></ul>
+<p><span class="lbl">Decided.</span> Approved, except where the rulings below change an item (<a href="#r7">R7</a>).</p>
+</article>
+
+<article class="dv" id="r3">
+<p class="dv-top"><span class="dv-id">R3</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>Trial windows cut off some first and last breaths</h4>
+<p>A trial window ends at the trial's last trigger send. A fourth breath that closes late, or a first breath that opens early, falls outside it, and both devices lose the same breaths. It affects H7, and the counts of first and fourth breaths in H3, H4 and H8.</p>
+<p class="q">Keep the registered windows, or extend them?</p>
+<ul class="opts"><li>(a) Keep the windows as registered, and report how many breaths were lost (the review's recommendation).</li><li><span class="rec">Chosen</span> (b) Extend the trial windows at both ends: a first breath's opening onset may fall up to 1000 ms before the window, and a fourth breath's closing onset up to 1000 ms after it, never into a neighbouring window (a deviation).</li></ul>
+<p><span class="lbl">Decided.</span> Option (b), extended to both ends: “extend both windows, I don't want to throw out 20-40% of the data” (the share lost on synthetic sessions), and “compare as registered to finding complete breaths”. The analyses on the registered windows are reported beside each decision, and the breaths lost under each definition are counted (<a href="#dv21">DV21</a>).</p>
+</article>
+
+<article class="dv" id="r4">
+<p class="dv-top"><span class="dv-id">R4</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>H3(b) will be decided by the simplest model</h4>
+<p>H3(b) z-scores depth within each participant, which leaves the random intercept almost no variance, so the mixed model is singular by construction. The approved ladder (<a href="#dv15">DV15</a>) then decides H3(b) at rung 3: one fit per participant, summarised with a t interval.</p>
+<p class="q">How is H3(b) fitted?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> (a) Accept rung 3, as the approved ladder provides.</li><li>(b) Drop the random intercept and fit slopes only (a deviation).</li></ul>
+<p><span class="lbl">Decided.</span> Option (a): H3(b) is decided at rung 3 (<a href="#dv15">DV15</a>).</p>
+</article>
+
+<article class="dv" id="r5">
+<p class="dv-top"><span class="dv-id">R5</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>Which reading of “error grows” decides H3(b)</h4>
+<p>The approved reading is signed: support requires the accelerometer's depth error to grow in one direction as the rate rises. The registered wording could also mean the absolute error, in either direction.</p>
+<p class="q">Which reading decides H3(b)?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> (a) Keep the signed reading already approved.</li><li>(b) Use absolute error, in either direction.</li></ul>
+<p><span class="lbl">Decided.</span> Option (a), with two additions (<a href="#dv22">DV22</a>): a reliably positive coefficient is reported as its own outcome, depth agreement depending on rate opposite to the predicted mechanism, not as a plain “not supported”; and the same model on absolute depth error is reported beside H3(b) as an exploratory analysis that decides nothing.</p>
+</article>
+
+<article class="dv" id="r6">
+<p class="dv-top"><span class="dv-id">R6</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>H8 when alertness ratings do not vary</h4>
+<p>H8's margin is per standard deviation of alertness. If the pooled within-participant SD is zero, the test cannot be scaled. The first version of the code recorded that as a fail.</p>
+<p class="q">A zero alertness SD makes H8 not computable, not failed. Confirm?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> Confirm.</li><li>Reject; the alternative comes back built.</li></ul>
+<p><span class="lbl">Decided.</span> Approved.</p>
+</article>
+
+<article class="dv" id="r7">
+<p class="dv-top"><span class="dv-id">R7</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>Minimum data for a participant's RMSSD</h4>
+<p>H5 computes RMSSD from adjacent retained breaths in each free-breathing block. The code needed one adjacent pair. Every other participant-level summary needs at least 5 units, and the coefficient of variation already needs 5 durations.</p>
+<p class="q">How many adjacent pairs does a participant's RMSSD need?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> (a) At least 5, matching the minimum-data rule and the coefficient of variation.</li><li>(b) At least 1, as the code did.</li></ul>
+<p><span class="lbl">Decided.</span> Option (a): at least 5 adjacent pairs (<a href="#dv19">DV19</a>).</p>
+</article>
+
+<article class="dv" id="r8">
+<p class="dv-top"><span class="dv-id">R8</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>A broken-device check before the run starts</h4>
+<p>Before the run takes its lock, it checks that each device gives at least 60 breath onsets across the session, which catches only a dead or flat stream. A failing session stops the run, named by session and device only, for Norm to classify under <a href="#dv7">DV7</a> before any result exists. Onset counts per device are on the registration's list of quantities that may be extracted, and the check shows only pass or fail.</p>
+<p class="q">Keep the 60-onset check as a stop before the lock?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> Keep it.</li><li>Reject; the alternative comes back built.</li></ul>
+<p><span class="lbl">Decided.</span> Approved: the check stays, before the lock.</p>
+</article>
+
+<article class="dv" id="r9">
+<p class="dv-top"><span class="dv-id">R9</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>Count agreement when both devices give identical counts</h4>
+<p>H2's count test is an ICC per block. When both devices give exactly the same counts for everyone, the ICC software returns no interval, and the first version of the code recorded a fail. The fix takes the limit: an ICC of 1 with bounds of 1, a pass. If counts do not vary between participants at all, the ICC is not computable.</p>
+<p class="q">Identical counts score an ICC of 1, a pass. Confirm?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> Confirm.</li><li>Reject; the alternative comes back built.</li></ul>
+<p><span class="lbl">Decided.</span> Approved.</p>
+</article>
+
+<article class="dv" id="r10">
+<p class="dv-top"><span class="dv-id">R10</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>What happens if a hypothesis cannot be computed from the data</h4>
+<p>The run stops before it writes or shows any decision if a primary test cannot be computed, for example when a block has fewer than 3 participants. The message names only the analysis. That stops a code fault from producing a full set of plausible fails, but if the data truly cannot support a test, a rerun would stop in the same place.</p>
+<p class="q">What happens after such a stop?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> (a) Norm logs a deviation. A code fault is fixed; if the cause is the data, the rerun records that hypothesis as not computable.</li><li>(b) Never stop: record “not computable” and carry on.</li></ul>
+<p><span class="lbl">Decided.</span> Option (a). A rerun can record a decision as not computable only when it names the deviation entry, and that entry names the decision and says it is not computable; any other decision that cannot be computed still stops the run.</p>
+</article>
+
+<article class="dv" id="r11">
+<p class="dv-top"><span class="dv-id">R11</span><span class="badge ok">Decided 17 November 2026</span></p>
+<h4>H2's timing test when no breath in a block is matched</h4>
+<p>H2's timing test compares matched breaths, per block. If the stretch belt found breaths in a block but the accelerometer matched none of them, there is no timing to test. The code records that block as a fail, a detection failure. A block with no stretch-belt breaths at all is not computable.</p>
+<p class="q">A block with reference breaths but no matches fails H2's timing test. Confirm?</p>
+<ul class="opts"><li><span class="rec">Chosen</span> Confirm.</li><li>Reject; the alternative comes back built.</li></ul>
+<p><span class="lbl">Decided.</span> Approved.</p>
+</article>
+</section>
+  </main>
+  <p class="foot">Reproduced from the OSF registration at <a href="https://osf.io/4ms3c">osf.io/4ms3c</a>. The registration is the record.</p>
+</div>
+</body>
+</html>

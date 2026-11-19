@@ -20,6 +20,11 @@ const SERIF = '"DM Serif Display", Georgia, serif'
 // Preview mode (staff, from the console) renders the same screens from the
 // staff preview RPC with a local clock and saves nothing.
 //
+// Take-home mode (class_tests.due_at, 20261117 migration): no countdown, the due date
+// instead; students leave and come back until it, and anything saved is submitted
+// for them when it passes. An MC item flagged unscored (the RCT reflection's "which
+// practice were you assigned?") is asked and saved but never marked.
+//
 // Up to three sections, each shown only if the test has items in it: multiple
 // choice (extended-matching cases arrive together, their option list in a fixed
 // order), short typed answers (one or two words, marked automatically: 20261001
@@ -68,7 +73,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
         sections: [...new Set(data.items.map((i) => i.section))],
         items: data.items.map((i) => ({ item_id: i.item_id, section: i.section, answer: i.answer, ...i.content })),
         attempt: { started_at: startedAt.toISOString(),
-                   deadline: new Date(startedAt.getTime() + data.duration_minutes * 60000).toISOString() },
+                   deadline: data.due_at ?? new Date(startedAt.getTime() + data.duration_minutes * 60000).toISOString() },
       })
       return
     }
@@ -213,6 +218,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
   if (test === null) return shell(<><h1 style={S.title}>This test isn't available.</h1><p style={S.sub}>{loadError}</p></>)
 
   const minutes = test.duration_minutes + (test.extra_minutes ?? 0)
+  const takeHome = Boolean(test.take_home)
 
   // submitted
   if (test.attempt?.submitted_at) {
@@ -221,8 +227,10 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
         <p style={S.eyebrow}>{test.title}</p>
         <h1 style={S.title}>Submitted.</h1>
         <p style={S.sub}>
-          Your test was {test.attempt.submit_kind === 'auto' ? 'submitted automatically when time ran out' : 'submitted'} at{' '}
-          <strong>{fmtTime(test.attempt.submitted_at)}</strong>. Every answer you gave was saved as you went.
+          Your {takeHome ? 'answers were' : 'test was'} {test.attempt.submit_kind === 'auto'
+            ? (takeHome ? 'submitted automatically at the due date' : 'submitted automatically when time ran out')
+            : 'submitted'} at{' '}
+          <strong>{takeHome ? fmtDue(test.attempt.submitted_at) : fmtTime(test.attempt.submitted_at)}</strong>. Every answer you gave was saved as you went.
           You can close this page.
         </p>
         {!preview && <Results testId={test.id} reviewTo={`${loungePath(slug)}/test/${test.id}/review`} />}
@@ -236,21 +244,32 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
     const open = test.status === 'open'
     return shell(
       <div style={S.startCard}>
-        <p style={S.eyebrow}>Term test</p>
+        <p style={S.eyebrow}>{takeHome ? 'Take-home' : 'Term test'}</p>
         <h1 style={S.title}>{test.title}</h1>
         {!open ? (
-          <p style={S.sub}>{test.status === 'closed' ? 'This test is closed.' : 'This test is not open yet. Your instructor will open it at the start of the test.'}</p>
+          <p style={S.sub}>{test.status === 'closed' ? 'This test is closed.' : takeHome ? 'This is not open yet.' : 'This test is not open yet. Your instructor will open it at the start of the test.'}</p>
+        ) : takeHome ? (
+          <ul style={S.facts}>
+            <li><strong>Due {fmtDue(test.due_at)}</strong>. There is no timer.</li>
+            <li><strong>{test.item_count} questions</strong>{sectionList(test.sections)}.</li>
+            <li>Every answer saves as you type. Leave and come back as often as you like before the due date.</li>
+            <li>Submit when you&apos;re finished; after that you can&apos;t change anything. If you haven&apos;t submitted by the due date, what you&apos;ve saved is submitted for you.</li>
+          </ul>
         ) : (
+          <ul style={S.facts}>
+            <li><strong>{minutes} minutes</strong>{test.extra_minutes ? ` (including your ${test.extra_minutes} extra minutes)` : ''}. The timer starts when you press Start and keeps running if you close the page.</li>
+            <li><strong>{test.item_count} questions</strong>{sectionList(test.sections)}. You can move between them and change answers until you submit.</li>
+            <li>Every answer saves automatically. At the end of your time the test submits itself.</li>
+            <li>One attempt. Closed book.</li>
+          </ul>
+        )}
+        {open && (
           <>
-            <ul style={S.facts}>
-              <li><strong>{minutes} minutes</strong>{test.extra_minutes ? ` (including your ${test.extra_minutes} extra minutes)` : ''}. The timer starts when you press Start and keeps running if you close the page.</li>
-              <li><strong>{test.item_count} questions</strong>{sectionList(test.sections)}. You can move between them and change answers until you submit.</li>
-              <li>Every answer saves automatically. At the end of your time the test submits itself.</li>
-              <li>One attempt. Closed book.</li>
-            </ul>
             <label style={S.agree}>
               <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-              <span>I confirm that my conduct during this test adheres to the Code of Behaviour on Academic Matters. I will not use unauthorized aids or assistance, impersonate another person, or commit plagiarism.</span>
+              <span>{takeHome
+                ? 'I confirm that what I submit is my own work and adheres to the Code of Behaviour on Academic Matters.'
+                : 'I confirm that my conduct during this test adheres to the Code of Behaviour on Academic Matters. I will not use unauthorized aids or assistance, impersonate another person, or commit plagiarism.'}</span>
             </label>
             {test.code_required && (
               <input style={S.codeInput} value={code} onChange={(e) => setCode(e.target.value)}
@@ -264,7 +283,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
                 if (error) { setStartError(error.message); throw error }
                 adopt(data)
               }).catch(() => {})}>
-              {start.busy ? 'Starting…' : 'Start the test'}
+              {start.busy ? 'Starting…' : takeHome ? 'Begin' : 'Start the test'}
             </button>
           </>
         )}
@@ -276,7 +295,7 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
   // in progress
   const unsaved = Object.values(saveState).some((s) => s === 'saving' || s === 'error')
   const errored = Object.values(saveState).some((s) => s === 'error')
-  const low = remainingMs != null && remainingMs < 5 * 60000
+  const low = !takeHome && remainingMs != null && remainingMs < 5 * 60000
   const current = sections.find((s) => s.key === tab) ?? sections[0]
   const shown = current?.items ?? []
   const at = sections.indexOf(current)
@@ -287,7 +306,9 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
     <>
       <div style={S.bar}>
         <span style={S.barTitle}>{test.title}</span>
-        <span style={S.clock(low)} aria-live="polite">{fmtRemaining(remainingMs)}</span>
+        {takeHome
+          ? <span style={S.due}>Due {fmtDue(test.attempt.deadline)}</span>
+          : <span style={S.clock(low)} aria-live="polite">{fmtRemaining(remainingMs)}</span>}
         <span style={S.saveNote(errored)}>{errored ? 'Not saved: reconnecting…' : unsaved ? 'Saving…' : 'All answers saved'}</span>
       </div>
 
@@ -302,8 +323,9 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
 
       {shown.map((item, idx) => (
         <div key={item.item_id} style={S.card} id={`q-${item.item_id}`}>
-          <p style={S.qNo}>{item.section === 'mc' ? `Question ${idx + 1} of ${shown.length}`
+          <p style={S.qNo}>{item.section === 'mc' ? `Question ${idx + 1} of ${shown.length}${item.unscored ? ' · not marked' : ''}`
             : item.section === 'vsa' ? `Short typed ${idx + 1} of ${shown.length} · 1 mark`
+            : takeHome ? `Written answer ${idx + 1} of ${shown.length}`
             : `Short answer ${idx + 1} of ${shown.length} · ${item.parts.length} marks`}
             {saveState[item.item_id] === 'saved' && <span style={S.savedTag}> · saved</span>}</p>
           <Md text={item.stem} style={S.stem} />
@@ -336,10 +358,12 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
               return (
                 <div key={p.label} style={S.part}>
                   <Md text={`**${p.label}.** ${p.prompt}`} style={S.partPrompt} />
-                  <textarea style={S.textarea} rows={4} value={text}
+                  <textarea style={S.textarea} rows={takeHome ? 7 : 4} value={text}
+                    aria-label={`Answer, part ${p.label}`}
                     onChange={(e) => answer(item.item_id,
                       { parts: { ...(answers[item.item_id]?.parts ?? {}), [p.label]: e.target.value } }, 1200)}
                     onBlur={() => { if (pending.current[item.item_id]) { clearTimeout(timers.current[item.item_id]); save(item.item_id) } }} />
+                  {takeHome && <p style={S.wordCount}>{wordCount(text)} words{p.words ? ` · aim for ${p.words}` : ''}</p>}
                   {model && <Md text={model} style={S.model} />}
                 </div>
               )
@@ -350,19 +374,24 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
 
       <div style={S.footer}>
         {at > 0 ? <button style={S.secondaryBtn} onClick={() => go(sections[at - 1])}>← Back to {sections[at - 1].tab.toLowerCase()}</button> : <span />}
-        {at < sections.length - 1 && <button style={S.secondaryBtn} onClick={() => go(sections[at + 1])}>Go to {sections[at + 1].tab.toLowerCase()} →</button>}
-        <button style={S.primaryBtn} onClick={() => setConfirming(true)}>Submit test</button>
+        {/* Submit lives only on the last section. Beside "Go to …" it read as the way forward, and a
+            student submitted the RCT reflection with the written section unseen (Nov 18). The tabs
+            still reach the last section from anywhere. */}
+        {at < sections.length - 1
+          ? <button style={S.primaryBtn} onClick={() => go(sections[at + 1])}>Go to {sections[at + 1].tab.toLowerCase()} →</button>
+          : <button style={S.primaryBtn} onClick={() => setConfirming(true)}>{takeHome ? 'Submit' : 'Submit test'}</button>}
       </div>
 
       {confirming && (
         <div style={S.overlay} role="dialog" aria-modal="true">
           <div style={S.dialog}>
-            <h2 style={S.dialogTitle}>Submit your test?</h2>
+            <h2 style={S.dialogTitle}>{takeHome ? 'Submit your answers?' : 'Submit your test?'}</h2>
             <p style={S.sub}>
               You have answered {sections.map((s, i) => (
                 <span key={s.key}>{i === 0 ? '' : i === sections.length - 1 ? ' and ' : ', '}<strong>{s.done} of {s.items.length}</strong> {s.noun}</span>
               ))} questions.
               {missing ? ' Unanswered questions will score zero.' : ''} After you submit you can't change anything.
+              {takeHome ? ` Not finished? Close the page instead: everything is saved, and you can come back before ${fmtDue(test.attempt.deadline)}.` : ''}
             </p>
             {submitError && (
               <p role="alert" style={{ margin: '0 0 16px', padding: '8px 16px', borderRadius: 12, fontSize: 14,
@@ -371,8 +400,9 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
               </p>
             )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button style={S.secondaryBtn} onClick={() => { setConfirming(false); setSubmitError(null) }}>Keep working</button>
-              <button style={S.primaryBtn} disabled={finish.busy}
+              {/* With questions unanswered, staying is the emphasized choice. */}
+              <button style={missing ? S.primaryBtn : S.secondaryBtn} onClick={() => { setConfirming(false); setSubmitError(null) }}>Keep working</button>
+              <button style={missing ? S.secondaryBtn : S.primaryBtn} disabled={finish.busy}
                 onClick={() => finish.submit(async () => {
                   setSubmitError(null)
                   if (preview) { setTest((p) => ({ ...p, attempt: { ...p.attempt, submitted_at: new Date().toISOString() } })); return }
@@ -452,6 +482,9 @@ function fmtRemaining(ms) {
   return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')} left`
 }
 const fmtTime = (d) => new Date(d).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' })
+// "Tue, Dec 8, 11:59 p.m.", Toronto time
+const fmtDue = (d) => (d ? new Date(d).toLocaleString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' }) : '')
+const wordCount = (t) => (String(t ?? '').trim().match(/\S+/g) ?? []).length
 
 const S = {
   wrap: { maxWidth: 760, margin: '0 auto', padding: '20px 16px 80px' },
@@ -473,6 +506,8 @@ const S = {
   bar: { position: 'sticky', top: 0, zIndex: 4, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', background: 'var(--bgc)', border: '1px solid var(--bd)', borderRadius: 12, padding: '10px 14px', margin: '0 0 12px' },
   barTitle: { fontWeight: 600, fontSize: 14.5, color: 'var(--tx)', marginRight: 'auto' },
   clock: (low) => ({ fontFamily: MONO, fontSize: 18, fontWeight: 700, color: low ? '#c04a4a' : 'var(--tx)' }),
+  due: { fontFamily: MONO, fontSize: 14, fontWeight: 700, color: 'var(--tx)' },
+  wordCount: { fontFamily: MONO, fontSize: 12, color: 'var(--tx3)', margin: '4px 0 0', textAlign: 'right' },
   saveNote: (err) => ({ fontFamily: MONO, fontSize: 12, color: err ? '#c04a4a' : '#2e7d32' }),
   tabs: { display: 'flex', gap: 6, margin: '0 0 8px', borderBottom: '1px solid var(--bd)' },
   tabBtn: (active) => ({ padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: MONO, fontSize: 12.5, color: active ? 'var(--pkd)' : 'var(--tx3)', borderBottom: active ? '2px solid var(--pk)' : '2px solid transparent', marginBottom: -1 }),

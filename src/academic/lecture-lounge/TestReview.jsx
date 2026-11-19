@@ -93,7 +93,7 @@ export default function TestReview({ session, testId: testIdProp, attemptId = nu
   }
 
   // ---- totals
-  const mcItems = items.filter((i) => i.section === 'mc')
+  const mcItems = items.filter((i) => i.section === 'mc' && !i.unscored)   // an unscored question is asked, never marked
   const vsaItems = items.filter((i) => i.section === 'vsa')
   const saParts = items.filter((i) => i.section === 'sa').flatMap((i) => i.parts ?? [])
   const saScore = saParts.reduce((s, p) => s + (p.score == null ? 0 : Number(p.score)), 0)
@@ -176,6 +176,22 @@ export default function TestReview({ session, testId: testIdProp, attemptId = nu
 }
 
 function McReview({ item, why, onWhy }) {
+  if (item.unscored) {
+    return (
+      <>
+        <div style={S.optionCol}>
+          {item.options.map((opt, i) => (
+            <div key={i} style={S.option(false, false)}>
+              <span style={S.letter}>{LETTERS[i]}</span>
+              <span style={{ flex: 1 }}>{opt}</span>
+              {i === item.choice && <span style={S.optTag(true)}>your answer</span>}
+            </div>
+          ))}
+        </div>
+        <p style={S.verdict(true)}>Not marked: this question only asked about you.</p>
+      </>
+    )
+  }
   const keyLetter = LETTERS[item.key]
   const answered = typeof item.choice === 'number'
   const verdict = item.credit_all
@@ -266,6 +282,7 @@ function missed(i) {
   return !i.correct
 }
 function chipState(i) {
+  if (i.unscored) return 'right'
   if (i.section !== 'sa') return i.correct ? 'right' : 'wrong'
   const s = partsScore(i)
   return s >= i.parts.length ? 'right' : s > 0 ? 'part' : 'wrong'
