@@ -273,7 +273,9 @@ Speech duration in seconds, onset to offset, af_heart at 0.80:
 - **Within a set** the versions differ by 0.37 s on average. Ten sets differ by more than 0.5 s (the most is T31, 0.94 s). The ±5% time-stretch closes these gaps.
 - **Word screen across all 36 sets:** swap-word valence 6.9 / 5.7 / 4.0, and arousal for pleasant and unpleasant 4.4 and 4.3 (neutral 3.5). The unpleasant words are again less frequent (Zipf 4.1, against 4.4 and 4.6).
 - **Word norms that disagree with context** (T7, T20, T32, T35, T36) are all cases where the words are mild or missing from the norms but the scene is clearly good or bad. The ratings will settle them.
-- **The voice the PSY240 trial chose,** af_nicole at 0.80 (Handbook course voice, 2026-10-05), reads these passages at 2.2 syllables a second, 13.9 s on average. That is too long for an 11 s breath. At 1.3 it reaches 9 s, but that is far from its tuned speed, and a near-whisper voice is a poor fit for listening in phase 5. af_heart at 0.80 is the radlab breath practice voice (0.88 there) slowed slightly.
+- **The voice the PSY240 trial chose,** af_nicole at 0.80 (Handbook course voice, 2026-10-05), reads these passages at 2.2 syllables a second, 13.9 s on average, too long for an 11 s breath. **Norm ruled it out on 2026-11-18 as too breathy.**
+- **Voice survey (2026-11-19).** All 19 North American Kokoro voices read T1 and T22 (neutral) at 0.80. Breathiness was measured as the harmonics-to-noise ratio (HNR, autocorrelation, voiced frames; lower is breathier). af_nicole scores lowest of the female voices (10.1 dB); af_heart 13.6, af_bella 15.6. Male voices are compared only with each other, because pitch shifts the measure: am_puck 12.7, am_fenrir 11.0, am_michael 10.5.
+- **Candidates on the listening page:** af_heart (0.80), af_bella (0.83), am_puck (0.76) and am_michael (0.88). Each reads T1 and T22 in all three versions, with speed set so the passages match af_heart's length. af_bella is Kokoro's second-best voice by its own quality grade; the male voices all grade lower than the two female ones.
 
 ## 6. Decided and open
 
@@ -286,7 +288,7 @@ Speech duration in seconds, onset to offset, af_heart at 0.80:
 - a reserve big enough that sessions stay novel
 
 **Open:**
-1. **The voice.** af_heart at 0.80 (proposed), or another Kokoro voice; listen to the samples first.
+1. **The voice.** af_heart (0.80), af_bella (0.83), am_puck (0.76) or am_michael (0.88); see the listening page. af_nicole is out (too breathy).
 2. **The reserve.** Four extra sessions (360 normed frames) as proposed, or another number.
 3. **Neutral versions in the samples that read as slightly off.** For example, T13 "at six fifteen" is mildly late, and T28 "stayed the same" mildly disappointing. Mark any while listening.
 4. **The order inside a round.** Fully random, or no two of the same valence back to back.

@@ -109,7 +109,7 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - **Each passage starts just after begin** (0–1.5 s), runs about 9 s for the pilot, and ends before the rating.
   - **One comprehension question per passage, asked after each phase 5 round.** It is about the shared scene, so all three versions have the same answer.
   - **A large reserve, so sessions stay novel.** Nobody hears a frame twice. The proposal is 360 normed frames (1,080 passages, ten sessions' worth), drafted from about 470.
-  - **Voice.** The lab's voice is Kokoro-82M, run locally. The PSY240 trial's pick, af_nicole at 0.80, reads these passages in about 14 s, too slow for the breath. af_heart at 0.80 gives 8.7 s and is proposed; Norm to listen.
+  - **Voice.** The lab's voice is Kokoro-82M, run locally. The PSY240 trial's pick, af_nicole, is out: too slow for the breath and, Norm's ruling of 2026-11-18, too breathy. The candidates are af_heart, af_bella, am_puck and am_michael (`breath_training_passages.md` §5); Norm to choose.
   - (Answers P4-2 and P5-3's timing; P4-3, the on-screen indicator, is still open.)
 
 ## Open questions
