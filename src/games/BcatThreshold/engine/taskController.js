@@ -23,6 +23,7 @@ export function makeTaskController(now) {
   const clock = now || (() => performance.now())
   const handle = makeController(now)
   return function task(msg) {
+    if (msg.type === 'hello') return { type: 'hello' }   // engineClient.ready(): is the worker up? (review item 9)
     if (msg.type !== 'restore') return handle(msg)
     if (!Array.isArray(msg.trials)) throw new TypeError('restore: trials must be an array')
     if (msg.expect === undefined) throw new TypeError('restore: expect (the run row\'s engine_version and config_hash) is required')

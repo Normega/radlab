@@ -18,6 +18,13 @@
 // only, as the test build: it is the one text shown while the circle pulses). Main and repeat trials show
 // nothing but the circle while it pulses, in every arm. The gate comes first, so a line asked for is always
 // shown for the whole fixation.
+// Focus at onset (review item 1): the presenter keeps whether the window has the focus (blur and focus events, any
+// key-down; document.hasFocus() at attach). A trial that starts without it is interrupted ('unfocused_at_start').
+// Lost key-ups (review item 10): a key-up of Meta lets go of every key (macOS sends none for keys let go while
+// Cmd is down); an auto-repeat of a key the tracker had let go after a blur counts as down again, and is logged
+// as a key-down flagged resumed_by_repeat. Answers (review item 10): an arrow press stamped before the question
+// was painted is ignored and counted (timing.answers_ignored_early); the answer is the first press after onset.
+// Clocks (review item 8): wallclock_start is the participant's clock at fixation onset, timeOrigin + t0.
 // Focus: window blur and page hide are kept per trial on the trial clock from fixation onset to the answer;
 // a blur or hide during the circle makes the trial interrupted (sequence.js). On blur the tracker lets go of
 // every key and the key log closes its open presses (keyLog.js: log.blur), so no phantom hold survives.
@@ -74,6 +81,8 @@ export function createLivePresenter(o) {
   const { cfg, arm, els, setCue, isCancelled, runStart, onUi = () => {} } = o
   const rafImpl = o.raf || (cb => requestAnimationFrame(cb))
   const now = o.now || (() => performance.now())
+  const timeOrigin = o.timeOrigin !== undefined ? o.timeOrigin : (typeof performance !== 'undefined' ? performance.timeOrigin : undefined)
+  let focused = true
   const doc = () => o.doc || globalThis.document
   const win = () => o.win || globalThis.window
   const showCue = c => {
@@ -93,8 +102,9 @@ export function createLivePresenter(o) {
   const handlers = {
     keydown(ev) {
       if (onTrialScreen && TASK_KEYS.has(ev.key)) ev.preventDefault()
-      tracker.keydown(ev)
-      if (log) log.keydown({ key: ev.key, code: ev.code, t: rel(ev.timeStamp), repeat: ev.repeat, tHandler: rel(now()) })
+      focused = true                              // a key event proves the window has the focus
+      const kind = tracker.keydown(ev)
+      if (log) log.keydown({ key: ev.key, code: ev.code, t: rel(ev.timeStamp), repeat: ev.repeat, tHandler: rel(now()), resumed: kind === 'resumed' })
       if (onAnswer && !ev.repeat && answerOf[ev.key]) onAnswer(ev)
     },
     keyup(ev) {
@@ -103,12 +113,13 @@ export function createLivePresenter(o) {
       if (onRelease) onRelease()
     },
     blur(ev) {
+      focused = false
       if (log) log.blur({ t: rel(ev.timeStamp), tHandler: rel(now()), tracker })
       else tracker.releaseAll()
       if (focus) focus.push({ type: 'blur', t: rel(now()) })
       if (onRelease) onRelease()
     },
-    focus() { if (focus) focus.push({ type: 'focus', t: rel(now()) }) },
+    focus() { focused = true; if (focus) focus.push({ type: 'focus', t: rel(now()) }) },
     visibilitychange() {
       const hidden = doc().visibilityState === 'hidden'
       if (hidden) {
@@ -151,8 +162,8 @@ export function createLivePresenter(o) {
     onTrialScreen = true
     // 2. the circle
     const maxScale = cfg.display.circle_max_size
-    let ended = null, questionOnset = null, hiddenAtStart = false, frameTs = null, moving = false, reminderOffMs = null, fullscreenAtOnset = null
-    const wallclockStart = new Date().toISOString()
+    let ended = null, questionOnset = null, hiddenAtStart = false, unfocusedAtStart = false, frameTs = null, moving = false, reminderOffMs = null, fullscreenAtOnset = null
+    let wallclockStart = null, earlyAnswers = 0
     let durs = spec ? spec.pulse_durations_s : null
     if (!spec && specPromise) specPromise.then(s => { if (s) { durs = s.pulse_durations_s; onUi({ what: 'circle', phase, t0, durs, cell: s.cell, reminder: !!reminder }) } }, () => {})
     const rec = await presentCircle({
@@ -171,6 +182,8 @@ export function createLivePresenter(o) {
         t0 = ts
         focus = []
         hiddenAtStart = doc().visibilityState === 'hidden'
+        unfocusedAtStart = !focused
+        wallclockStart = new Date(Number.isFinite(timeOrigin) ? timeOrigin + ts : Date.now()).toISOString()
         fullscreenAtOnset = o.fullscreen ? o.fullscreen.isActive() : null
         log = createKeyLog(cfg.keys)
         log.begin(0, tracker.held())
@@ -188,6 +201,8 @@ export function createLivePresenter(o) {
     // 3. the answer
     const answer = await new Promise(resolve => {
       onAnswer = ev => {
+        // stamped before the question was painted (delivered late): not an answer to it
+        if (ev.timeStamp < questionOnset) { earlyAnswers += 1; return }
         onAnswer = null
         resolve({ response: answerOf[ev.key], key: ev.key, rtMs: ev.timeStamp - questionOnset, questionOnsetMs: questionOnset - t0 })
       }
@@ -196,11 +211,11 @@ export function createLivePresenter(o) {
     onTrialScreen = false
     const focusEvents = focus
     focus = null
-    const reasons = interruptionReasons(focusEvents, { startMs: 0, endMs: rec.t_end, hiddenAtStart })
+    const reasons = interruptionReasons(focusEvents, { startMs: 0, endMs: rec.t_end, hiddenAtStart, unfocusedAtStart })
     const interrupted = reasons.length > 0
     onUi({ what: 'between', phase })
     return {
-      pres: { ...rec, reminder_off_ms: reminderOffMs },
+      pres: { ...rec, reminder_off_ms: reminderOffMs, answers_ignored_early: earlyAnswers },
       answer,
       interrupted,
       interruptionReasons: reasons,
@@ -217,6 +232,7 @@ export function createLivePresenter(o) {
     tracker,
     attach() {
       const w = win(), d = doc()
+      focused = typeof d.hasFocus === 'function' ? !!d.hasFocus() : true
       w.addEventListener('keydown', handlers.keydown, true)
       w.addEventListener('keyup', handlers.keyup, true)
       w.addEventListener('blur', handlers.blur)

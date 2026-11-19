@@ -5,7 +5,9 @@
 //
 // A trial is interrupted when the window lost focus, the page was hidden, or full screen was left
 // (fullscreen.js) at any time from fixation onset to the end of the last pulse (the circle), or the page was
-// already hidden when the circle started. Leaving while the question is up is allowed: the instructions tell
+// already hidden when the circle started ('hidden_at_start'), or the window did not have the focus when it
+// started ('unfocused_at_start'; review item 1, 2026-11-19: a blur that let go of W and S could open the keys-up
+// gate and start the circle in an unfocused window). Leaving while the question is up is allowed: the instructions tell
 // people to take breaks before answering. Several losses in one trial (a blur and a full-screen exit together)
 // are one interruption: the trial is flagged, withheld and repeated once, and every reason is recorded.
 //
@@ -23,12 +25,21 @@
 //
 // With repeatOnce false the interrupted trial is flagged only and nothing is shown again; with
 // withholdFromEngine false its answer goes to the engine as given. The two switches are independent.
+//
+// The cap (review item 2, 2026-11-19): each withheld change trial makes the engine add one, so a participant whose
+// every trial is interrupted would never finish (a 9-trial demo was still running after 300 trials). Past
+// maxWithheld withheld main trials in a session (a resume chain counts as one), mainAnswered says `capped`, the
+// trial is not queued again, and session.js ends the run with status 'interruption_cap' (records.js). Repeats are
+// at most one per withheld trial, so they are capped with it. The 60-minute time limit (sessionRules.js) bounds
+// the session as well; both stay.
 
 export const INTERRUPTION_POLICY = Object.freeze({
   /** show an interrupted main trial once more after the last engine trial (data only) */
   repeatOnce: true,
   /** send an interrupted main trial to the engine as unanswered (response null) */
   withholdFromEngine: true,
+  /** end the run once more than this many main trials have been withheld (null: no cap) */
+  maxWithheld: 10,
 })
 
 /** The focus events that interrupt a circle. A 'focus', 'visible' or 'fullscreen_enter' alone does not. */
@@ -41,9 +52,10 @@ export const LOSS_EVENTS = Object.freeze(['blur', 'hidden', 'fullscreen_exit'])
  * trial clock (ms from fixation onset).
  * @param {{ startMs?: number, endMs: number, hiddenAtStart?: boolean }} window  the circle's span
  */
-export function interruptionReasons(focusEvents, { startMs = 0, endMs, hiddenAtStart = false }) {
+export function interruptionReasons(focusEvents, { startMs = 0, endMs, hiddenAtStart = false, unfocusedAtStart = false }) {
   if (typeof endMs !== 'number' || Number.isNaN(endMs)) throw new Error('interruptionReasons: endMs is required')
   const out = hiddenAtStart ? ['hidden_at_start'] : []
+  if (unfocusedAtStart) out.push('unfocused_at_start')
   for (const e of focusEvents || []) {
     if (LOSS_EVENTS.includes(e.type) && e.t >= startMs && e.t <= endMs && !out.includes(e.type)) out.push(e.type)
   }
@@ -51,8 +63,8 @@ export function interruptionReasons(focusEvents, { startMs = 0, endMs, hiddenAtS
 }
 
 /** Was the circle interrupted? (interruptionReasons is not empty) */
-export function wasInterrupted(focusEvents, { startMs = 0, endMs, hiddenAtStart = false }) {
-  if (hiddenAtStart) return true
+export function wasInterrupted(focusEvents, { startMs = 0, endMs, hiddenAtStart = false, unfocusedAtStart = false }) {
+  if (hiddenAtStart || unfocusedAtStart) return true
   if (typeof endMs !== 'number' || Number.isNaN(endMs)) throw new Error('wasInterrupted: endMs is required')
   return interruptionReasons(focusEvents, { startMs, endMs }).length > 0
 }
@@ -69,6 +81,7 @@ export function createTrialSequence(policy = INTERRUPTION_POLICY, restored = nul
   const repeated = new Set()    // trial_index values already queued (each at most once)
   // Resume (resume.js): the repeats the chain had queued and not yet shown, and every trial_index already queued.
   // seq starts again at 1: it numbers what is shown in THIS run (records.js).
+  let withheldN = restored && Number.isInteger(restored.withheld) ? restored.withheld : 0
   if (restored) {
     for (const t of restored.repeated || []) repeated.add(t)
     for (const p of restored.pending || []) { queue.push({ spec: p.spec, repeatOf: p.repeatOf }); repeated.add(p.repeatOf) }
@@ -86,14 +99,18 @@ export function createTrialSequence(policy = INTERRUPTION_POLICY, restored = nul
       if (!spec || typeof spec.trial_index !== 'number') throw new Error('mainAnswered: spec with a trial_index is required')
       if (response === undefined) throw new Error('mainAnswered: response is required (null when unanswered)')
       const engineResponse = interrupted && pol.withholdFromEngine ? null : response
+      if (interrupted && pol.withholdFromEngine) withheldN += 1
+      const capped = pol.maxWithheld !== null && pol.maxWithheld !== undefined && withheldN > pol.maxWithheld
       let repeatQueued = false
-      if (interrupted && pol.repeatOnce && !repeated.has(spec.trial_index)) {
+      if (interrupted && pol.repeatOnce && !capped && !repeated.has(spec.trial_index)) {
         repeated.add(spec.trial_index)
         queue.push({ spec, repeatOf: spec.trial_index })
         repeatQueued = true
       }
-      return { engineResponse, withheld: engineResponse === null && response !== null, repeatQueued }
+      return { engineResponse, withheld: engineResponse === null && response !== null, repeatQueued, ...(capped ? { capped: true } : {}) }
     },
+    /** Main trials withheld from the engine so far (interrupted ones, whatever was answered). */
+    get withheldCount() { return withheldN },
     /** The next repeat to show once the engine has finished, or null. A repeat is never queued again. */
     takeRepeat() { return queue.length ? queue.shift() : null },
     get pendingRepeats() { return queue.length },

@@ -180,6 +180,12 @@ export const PRACTICE_FAILED = {
   paragraphs: ['Sorry, but you cannot continue with the study.', RETURN_ON_PROLIFIC],
 }
 
+/** The run stopped after more than INTERRUPTION_POLICY.maxWithheld interrupted trials (review item 2). First
+ *  sentence NEW; second as PRACTICE_FAILED's. */
+export const INTERRUPTION_CAP = {
+  paragraphs: ['Sorry, this part of the session has stopped, because it was interrupted too many times.', RETURN_ON_PROLIFIC],
+}
+
 export const TIME_LIMIT = {
   paragraphs: ['The time limit for this task has been reached, so the task has ended.', RETURN_ON_PROLIFIC],
 }

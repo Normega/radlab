@@ -6,8 +6,8 @@ import { INTERRUPTION_POLICY, wasInterrupted, createTrialSequence } from './sequ
 
 const spec = i => ({ trial_index: i, cell: 'speeding', placement: 'infogain', magnitude: 0.2 })
 
-test('the default policy is flag, withhold from the engine, and repeat once', () => {
-  assert.deepStrictEqual({ ...INTERRUPTION_POLICY }, { repeatOnce: true, withholdFromEngine: true })
+test('the default policy is flag, withhold from the engine, repeat once, and end the run past 10 withheld trials', () => {
+  assert.deepStrictEqual({ ...INTERRUPTION_POLICY }, { repeatOnce: true, withholdFromEngine: true, maxWithheld: 10 })
   assert.ok(Object.isFrozen(INTERRUPTION_POLICY))
 })
 

@@ -141,7 +141,7 @@ async function takeBreak({ breakPage, afterMain, afterSeq, clock }) {
  * @param {() => Promise<void>} [o.breakPage]
  * @param {ReturnType<typeof createMovingCompliance>} [o.moving]
  * @param {ReturnType<typeof createTimeLimit>} [o.timeLimit]
- * @returns {Promise<{ init: object, n: number, stopped: null|'timed_out', break: object } | { cancelled: true }>}
+ * @returns {Promise<{ init: object, n: number, stopped: null|'timed_out'|'interruption_cap', break: object } | { cancelled: true }>}
  */
 export async function runEngineTrials(o) {
   const saves = []
@@ -183,8 +183,9 @@ async function engineTrials({ engine, cfg, seed, present, sequence, saveTrial, r
       answer: { response: null, key: null, rtMs: null, questionOnsetMs: null }, interrupted: true, interruptionReasons: ['page_closed'],
       focusEvents: [], keys: null, engineResponse: decision.engineResponse, reply: r, repeatQueued: decision.repeatQueued,
       compliance: comp, moving: mv, lostOnReload: true }))
-    source = reply.finished ? null : { spec: reply.next_trial }
+    source = reply.finished || decision.capped ? null : { spec: reply.next_trial }
     lastFlag = reply.last_trial
+    if (decision.capped) stopped = 'interruption_cap'
   }
   while (source) {
     if (isCancelled()) return cancelledAfterSaves()
@@ -212,6 +213,7 @@ async function engineTrials({ engine, cfg, seed, present, sequence, saveTrial, r
       engineResponse: decision.engineResponse, reply, repeatQueued: decision.repeatQueued, tStartMs: shown.tStartMs,
       wallclockStart: shown.wallclockStart, compliance: comp, reminder, fullscreenReturn, ...shownFacts(shown),
       moving: mv, breakBefore }))
+    if (decision.capped) { await replyP.catch(() => {}); stopped = 'interruption_cap'; break }   // review item 2
     if (prestart && lastFlag === false) {
       source = { specPromise: replyP.then(r => { lastFlag = r.last_trial; return r.next_trial }) }
     } else {

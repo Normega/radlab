@@ -63,7 +63,7 @@ export const COLUMNS = Object.freeze({
   bcat_threshold_runs: Object.freeze([
     'id', 'schema', 'started_at', 'kind', 'arm', 'mode', 'demo', 'engine_version', 'config_hash', 'config', 'seed',
     'planned_trials', 'interruption_policy', 'engine_mode', 'frame_period_ms', 'client', 'fullscreen', 'resumed_from',
-    'resume_state',
+    'resume_state', 'run_start_perf_ms', 'perf_time_origin_ms',
   ]),
   bcat_threshold_trials: Object.freeze([
     'run_id', 'schema', 'seq', 'phase', 'trial_index', 'repeat_of', 'trial_type', 'cell', 'placement', 'direction',

@@ -174,6 +174,15 @@ const BASE = {
 const DEMO_BASE = { exclusion: { moving_window: 3 } }
 
 /**
+ * makeConfig, but a bad option (an unknown `mode` prop, say) comes back as { error } for the step's error screen
+ * instead of throwing where nothing catches it (review item 10).
+ * @returns {{ cfg: object } | { error: Error }}
+ */
+export function tryMakeConfig(opts) {
+  try { return { cfg: makeConfig(opts) } } catch (error) { return { error } }
+}
+
+/**
  * @param {{ mode?: 'online'|'lab', demo?: boolean, catchTrials?: boolean, changeTrialsPerDirection?: number,
  *           practice?: boolean, fixationMs?: number, reminders?: boolean, fullscreen?: boolean,
  *           maxTotalMs?: number|null, practiceGate?: boolean, breakAtHalf?: boolean, movingWindow?: number }} [opts]

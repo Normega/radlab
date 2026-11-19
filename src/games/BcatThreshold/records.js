@@ -43,8 +43,14 @@
 //   moving average every main row: `coverage_moving_avg` (touch, breath) or `ws_press_moving_share` (vision), and
 //                  `moving_window_n`. Result: `moving_window`, `coverage_moving_avg_min`, `exclusion_flag_coverage`,
 //                  `ws_press_moving_share_max`, `moving_n_full_windows`.
-// Result `status`: 'completed', 'timed_out', 'practice_failed', or 'engine_changed' (a resume refused because the
-// engine version or config hash changed: the old run is not continued).
+// Result `status`: 'completed', 'timed_out', 'practice_failed', 'engine_changed' (a resume refused because the
+// engine version or config hash changed: the old run is not continued), or 'interruption_cap' (more interrupted
+// main trials than cfg.session.max_withheld: sequence.js).
+//
+// Clocks (review item 8). Trial times are on performance.now()'s clock: `timing.t_start_ms` counts from the run's
+// `run_start_perf_ms`; `perf_time_origin_ms` (performance.timeOrigin) turns any of them into the participant's
+// Unix clock. `wallclock_start` is that clock at fixation onset. Full-screen events (`fullscreen.events[].t_ms`)
+// count from run_start_perf_ms too.
 //
 // Resume (resume.js, Stage C). A resumed run is a new run row: `resumed_from` (the run it continues; same seed,
 // engine version, config hash, arm and mode) and `resume_state` (what was rebuilt: replayed engine trials,
@@ -121,6 +127,8 @@ export function makeRunRecord(o) {
     frame_period_ms: o.framePeriodMs ?? null,
     client: o.client ?? null,
     fullscreen: o.fullscreen ?? null,
+    run_start_perf_ms: o.runStartPerfMs ?? null,
+    perf_time_origin_ms: o.perfTimeOriginMs ?? null,
     resumed_from: o.resumedFrom ?? null,
     resume_state: o.resumeState ?? null,
   })
@@ -237,6 +245,8 @@ export function makeTrialRecord(o) {
       level_ready_ms: pres.level_ready_ms ?? null,
       level_wait_ms: pres.level_wait_ms ?? null,
       reminder_off_ms: pres.reminder_off_ms ?? null,
+      answers_ignored_early: pres.answers_ignored_early ?? null,
+      level_hold_shifted: !!(pres.timeline && pres.timeline.heldMs),
       simulated: !!pres.simulated,
     },
     wallclock_start: o.wallclockStart ?? null,
@@ -254,7 +264,7 @@ export function hiddenTime(focusEvents, endMs) {
   return total
 }
 
-export const RESULT_STATUSES = Object.freeze(['completed', 'timed_out', 'practice_failed', 'engine_changed'])
+export const RESULT_STATUSES = Object.freeze(['completed', 'timed_out', 'practice_failed', 'engine_changed', 'interruption_cap'])
 
 /**
  * The end of a run: the engine's readout and counts of what was shown (compliance counts over every row).

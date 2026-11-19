@@ -137,6 +137,7 @@ export function planResume({ runs, results, trialsByRun, cfg, arm, nowMs }) {
     lostTrial: practiceCompleted && mains.length > 0,
     pending: queued.filter(r => !repeatedOf.has(r.trial_index)).map(r => ({ spec: specFromRow(r, cfg), repeatOf: r.trial_index })),
     repeated: queued.map(r => r.trial_index),
+    withheld: mains.filter(r => r.interrupted && r.engine_response === null).length,
     mainShown: mains.length,
     breakTaken: rows.some(r => r.break_before),
     breakFacts: rows.find(r => r.break_before)?.break_before ?? null,

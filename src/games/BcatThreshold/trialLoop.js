@@ -38,6 +38,16 @@ export function provisionalTimeline(cfg) {
   })
 }
 
+/**
+ * The schedule as it ran when the level came late: every pulse from the first changed one on (index >= prefixN)
+ * starts holdMs later. Compliance and the key summary are scored against this one (review item 7).
+ */
+export function shiftTimeline(timeline, prefixN, holdMs) {
+  if (!(holdMs > 0)) return timeline
+  const pulses = timeline.pulses.map((p, i) => (i < prefixN ? p : { ...p, startMs: p.startMs + holdMs, midMs: p.midMs + holdMs, endMs: p.endMs + holdMs }))
+  return { ...timeline, pulses, totalMs: timeline.totalMs + holdMs, heldMs: holdMs }
+}
+
 /** [fixation onset, each pulse start, the end], in ms from fixation onset. */
 export function plannedBoundaries(timeline) {
   return [0, ...timeline.pulses.map(p => p.startMs), timeline.totalMs]
@@ -118,7 +128,8 @@ export function presentCircle(o) {
         const plannedPulses = plannedAbs.slice(1).map((b, i, a) => (i + 1 < a.length ? a[i + 1] - b : null)).slice(0, -1)
         const deliveredPulses = delivered.slice(1).map((b, i, a) => (i + 1 < a.length ? a[i + 1] - b : null)).slice(0, -1)
         resolve({
-          spec, timeline, t0, t_end: ts - t0,
+          // `timeline` is the schedule as it ran (shifted by any hold); `planned_timeline` the one planned
+          spec, timeline: shiftTimeline(timeline, prefixN, hold), planned_timeline: timeline, t0, t_end: ts - t0,
           planned_boundaries_ms: plannedAbs,
           delivered_boundaries_ms: delivered.slice(),
           boundary_error_ms: delivered.map((d, i) => d - plannedAbs[i]),

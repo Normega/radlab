@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './bcatThreshold.css'
 import Circle from './Circle'
-import { makeConfig } from './config.js'
+import { makeConfig, tryMakeConfig } from './config.js'
 import { buildTrialPlan } from './trialPlan.js'
 import { createEngineClient } from './engineClient.js'
 import { pickStore, StoreError } from './dbStore.js'
@@ -15,12 +15,13 @@ import { runSession } from './session.js'
 import { createLivePresenter, measureFramePeriod, nextPaint } from './presenter.js'
 import { createSimulatedPresenter, SIM_SCENARIOS } from './simulate.js'
 import { deviceProblem, readDeviceEnv } from './device.js'
+import { pageContinueAllowed } from './pageInput.js'
 import { initialChoice } from './options.js'
 import { isDemoMode } from '../../lib/demoMode'
 import {
   richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder, ANSWER_QUESTION, ANSWER_LABELS,
   releaseKeysCue, complianceLine, armReminderPage, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS, FULLSCREEN,
-  BREAK, practiceRetryPage, PRACTICE_FAILED, TIME_LIMIT, ENGINE_CHANGED, RESTORING, SAVING, SAVE_FAILED,
+  BREAK, practiceRetryPage, PRACTICE_FAILED, TIME_LIMIT, INTERRUPTION_CAP, ENGINE_CHANGED, RESTORING, SAVING, SAVE_FAILED,
 } from './texts.js'
 
 // BCAT threshold task (Stages B and C): the participant-facing screens of the adaptive breathing-pace threshold
@@ -159,8 +160,14 @@ export default function BcatThreshold({
     let cancelled = false
     const isCancelled = () => cancelled
     const show = v => { if (!cancelled) setView(v) }
-    const cfg = makeConfig({ mode, demo: preview && choice.demo, practice: choice.practice !== false,
+    const made = tryMakeConfig({ mode, demo: preview && choice.demo, practice: choice.practice !== false,
       ...(preview && choice.limitS ? { maxTotalMs: choice.limitS * 1000 } : {}) })
+    if (made.error) {
+      console.error('bcat threshold: the configuration was refused', made.error)
+      setView({ kind: 'error', message: ERRORS.start })
+      return
+    }
+    const cfg = made.cfg
     // Where the rows go (dbStore.js, pickStore): a preview and every simulated run keep them in this tab; a real
     // study step writes them to the database and refuses to start without an enrollment or a client.
     const db = studyMode && !isSimMode ? (supabaseClient ?? supabase) : null
@@ -177,7 +184,8 @@ export default function BcatThreshold({
     const runStart = performance.now()
     let framePeriod = 1000 / 60
     const onUi = preview ? ui => { window.__bcatThreshold = { ...(window.__bcatThreshold || {}), ui: { ...ui, at: performance.now() } } } : () => {}
-    const fullscreen = createFullscreen({ enabled: cfg.fullscreen.enabled, simulated: sim })
+    // one clock (review item 8): full-screen events count from the run's start, as trial times do
+    const fullscreen = createFullscreen({ enabled: cfg.fullscreen.enabled, simulated: sim, now: () => performance.now() - runStart })
     fullscreen.attach()
     const live = createLivePresenter({
       cfg, arm, runStart, onUi, isCancelled, fullscreen,
@@ -268,7 +276,7 @@ export default function BcatThreshold({
       const resuming = plan.action === 'resume'
       const seed = resuming ? Number(plan.tip.seed) : newSeed()
       const runId = newRunId()
-      const sequence = createTrialSequence(undefined, resuming ? { pending: plan.pending, repeated: plan.repeated } : null)
+      const sequence = createTrialSequence(undefined, resuming ? { pending: plan.pending, repeated: plan.repeated, withheld: plan.withheld } : null)
       if (preview) window.__bcatThreshold = { runId, ui: { what: 'start' }, snapshot: () => store.snapshot(runId) }
       const kind = studyMode ? 'study' : sim ? 'simulated' : cfg.demo ? 'demo' : 'preview'
       const simulated = sim ? createSimulatedPresenter({ cfg, arm, seed, ...(choice.sim ? SIM_SCENARIOS[choice.sim] : {}) }) : null
@@ -290,11 +298,13 @@ export default function BcatThreshold({
         }
       }
       const measured = await framesP
+      await engine.ready()   // review item 9: the run records where the engine will run
       if (cancelled) return
       const plannedTrials = buildTrialPlan(cfg, seed).counts.total
       await store.saveRun(makeRunRecord({
         id: runId, arm, cfg, seed, kind, plannedTrials, policy: sequence.policy,
         engineMode: engine.mode, framePeriodMs: measured, client: clientFacts(measured), fullscreen: fullscreen.runFacts(),
+        runStartPerfMs: runStart, perfTimeOriginMs: typeof performance.timeOrigin === 'number' ? performance.timeOrigin : null,
         resumedFrom: resuming ? plan.tip.id : null,
         resumeState: resuming ? { from_run: plan.tip.id, chain_runs: plan.chain.length, n_saved_rows: plan.rows.length,
           n_replayed: plan.engineTrials.length, practice_completed: plan.practiceCompleted, lost_trial: !!(plan.lostTrial && restored && restored.trial),
@@ -361,7 +371,7 @@ export default function BcatThreshold({
     const onKey = ev => {
       if (ev.code !== 'Space' && ev.key !== ' ') return
       ev.preventDefault()
-      if (ev.repeat || performance.now() - view.shownAt < 250) return
+      if (ev.repeat || !pageContinueAllowed({ detail: 1, shownAt: view.shownAt, now: performance.now() })) return
       view.onContinue()
     }
     window.addEventListener('keydown', onKey)
@@ -401,7 +411,8 @@ export default function BcatThreshold({
         {view.heading && <h2>{view.heading}</h2>}
         {view.paragraphs.map((p, i) => <p key={i}><Rich text={p} /></p>)}
         <div className="bt-actions">
-          <button type="button" className="bt-btn" onClick={() => view.onContinue()}>{CONTINUE}</button>
+          <button type="button" className="bt-btn"
+            onClick={e => { if (pageContinueAllowed({ detail: e.detail, shownAt: view.shownAt, now: performance.now() })) view.onContinue() }}>{CONTINUE}</button>
           <p className="bt-hint"><Rich text={view.hint || CONTINUE_HINT} /></p>
         </div>
       </Page>
@@ -423,7 +434,7 @@ export default function BcatThreshold({
     // completed: the done page and Continue (the step completes). Practice failed or timed out: that page, and
     // no Continue: the step does not complete.
     const ended = view.status === 'practice_failed' ? PRACTICE_FAILED : view.status === 'timed_out' ? TIME_LIMIT
-      : view.status === 'engine_changed' ? ENGINE_CHANGED : null
+      : view.status === 'engine_changed' ? ENGINE_CHANGED : view.status === 'interruption_cap' ? INTERRUPTION_CAP : null
     screen = (
       <Page>
         {ended ? ended.paragraphs.map((p, i) => <p key={i} role={i === 0 ? 'alert' : undefined}>{p}</p>) : (

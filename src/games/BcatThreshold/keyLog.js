@@ -52,15 +52,21 @@
 export const MERGE_GAP_MS = 300   // = Kite's MERGE_GAP_MS (breathShapes.js)
 export const MIN_HOLD_MS = 300    // = Kite's MIN_HOLD_MS
 
-/** 'grow' | 'shrink' | 'other': by the character typed, by the physical key only if the browser gives none. */
+/**
+ * 'grow' | 'shrink' | 'other'. When the browser reports a single Latin letter as the character typed, that letter
+ * decides (so an AZERTY board's W, at the physical KeyZ, still counts as W). Otherwise (a Cyrillic or Greek layout
+ * typing another letter, Dvorak's ',' on the W key, an IME's 'Process', no key at all) the physical key decides:
+ * KeyW is grow and KeyS is shrink, the keys the instructions name (review item 3, 2026-11-19).
+ */
 export function roleOf(key, code, keys) {
   const k = String(key || '').toLowerCase()
-  if (k === keys.grow.key) return 'grow'
-  if (k === keys.shrink.key) return 'shrink'
-  if (!k || k === 'unidentified') {
-    if (code === keys.grow.code) return 'grow'
-    if (code === keys.shrink.code) return 'shrink'
+  if (/^[a-z]$/.test(k)) {
+    if (k === keys.grow.key) return 'grow'
+    if (k === keys.shrink.key) return 'shrink'
+    return 'other'
   }
+  if (code === keys.grow.code) return 'grow'
+  if (code === keys.shrink.code) return 'shrink'
   return 'other'
 }
 
@@ -71,11 +77,24 @@ export function roleOf(key, code, keys) {
 /** How one physical key is told apart: its code, or its character when the browser gives no code ('' counts as none). */
 export const keyId = (key, code) => code || key || null
 
+// Two lost-key-up cases (review item 10, 2026-11-19):
+//   - macOS sends no key-up for a key let go while Cmd (Meta) is down. When Meta comes up, every other key is
+//     counted as released (a key still physically down shows itself again by its auto-repeat, below).
+//   - after a blur lets go of every key, a key still held is seen again only through its auto-repeat key-downs;
+//     a repeat of a key the tracker does not hold counts as down again (keydown returns 'resumed').
 export function createKeyTracker() {
   const down = new Map()   // keyId -> { key, code }
   return {
-    keydown({ key, code, repeat }) { if (!repeat) down.set(keyId(key, code), { key, code }) },
-    keyup({ key, code }) { down.delete(keyId(key, code)) },
+    keydown({ key, code, repeat }) {
+      const id = keyId(key, code)
+      if (!repeat) { down.set(id, { key, code }); return 'down' }
+      if (!down.has(id)) { down.set(id, { key, code }); return 'resumed' }
+      return 'repeat'
+    },
+    keyup({ key, code }) {
+      down.delete(keyId(key, code))
+      if (key === 'Meta' || code === 'MetaLeft' || code === 'MetaRight') down.clear()
+    },
     /** Window blur: every key let go (Kite's releaseAll), so the next trial logs no phantom held_at_onset. */
     releaseAll() { down.clear() },
     clear() { down.clear() },
@@ -117,10 +136,12 @@ export function createKeyLog(keys) {
       state = 'open'
       for (const h of held) push('held_at_onset', h.key, h.code, t, t)
     },
-    keydown({ key, code, t, repeat = false, tHandler }) {
+    /** resumed: an auto-repeat of a key the tracker had let go (after a blur): logged as a key-down, flagged. */
+    keydown({ key, code, t, repeat = false, tHandler, resumed = false }) {
       if (state !== 'open') return false
-      if (repeat) { repeats += 1; return false }
+      if (repeat && !resumed) { repeats += 1; return false }
       push('keydown', key, code, t, tHandler)
+      if (resumed) events[events.length - 1].resumed_by_repeat = true
       return true
     },
     keyup({ key, code, t, tHandler }) {
