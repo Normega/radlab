@@ -14,6 +14,21 @@
 // from 500 ms after the first pulse starts. The random draws are the same either way, so an off-task trial gets
 // the same answer and the same timing as the on-task one would have. present() ignores `reminder` (nothing is
 // shown); the rows record that one was asked for.
+//
+// The clock (Stage C). The presenter keeps a simulated clock, present.now(), in ms from the first trial: each
+// trial advances it by its circle, its response time and `pauseMs`. A simulated run's time limit and break run on
+// it, so a run that "takes" an hour costs a second. SIM_SCENARIOS names the participants the tests and the
+// preview (?simulate=1&sim=<name>) can ask for; the default passes the practice gate and finishes in time.
+
+/** Named simulated participants: options for createSimulatedPresenter. */
+export const SIM_SCENARIOS = Object.freeze({
+  // every practice trial off task (touch, breath: no key held), so every set misses the gate
+  fail_practice: Object.freeze({ offTask: (n, phase) => phase === 'practice' }),
+  // the first practice set off task, the second on task: the gate is missed once, then passed
+  fail_practice_once: Object.freeze({ offTask: (n, phase) => phase === 'practice' && n <= 3 }),
+  // a minute of dawdling before every answer: past a 60-minute limit after about 48 trials
+  timeout: Object.freeze({ pauseMs: 60 * 1000 }),
+})
 
 import { SimulatedObserver, makeRng } from './engine/adaptive.js'
 import { timelineForTrial, halfPulses } from './pacerClock.js'
@@ -25,17 +40,20 @@ export const SIM_TIMING = Object.freeze({ rt_median_ms: 1200, key_lag_ms: 250, k
 
 /**
  * @param {{ cfg: object, arm: string, seed: number, observer?: object, timing?: object,
- *           offTask?: number[] | ((n: number, phase: string) => boolean) }} o
+ *           offTask?: number[] | ((n: number, phase: string) => boolean), pauseMs?: number }} o
  *   offTask — which trials are non-compliant: 1-based numbers in the order shown (practice included), or a test
- * @returns {(req: { phase: string, spec?: object, specPromise?: Promise<object|null>, reminder?: boolean }) => Promise<object>}
+ *   pauseMs — extra simulated time before each answer (the clock only; nothing waits)
+ * @returns {((req: { phase: string, spec?: object, specPromise?: Promise<object|null>, reminder?: boolean }) => Promise<object>) & { now: () => number }}
  */
-export function createSimulatedPresenter({ cfg, arm, seed, observer = SIM_OBSERVER, timing = SIM_TIMING, offTask = null }) {
+export function createSimulatedPresenter({ cfg, arm, seed, observer = SIM_OBSERVER, timing = SIM_TIMING, offTask = null, pauseMs = 0 }) {
   const rng = makeRng((seed ^ 0x5bd1e995) >>> 0)
   const obs = new SimulatedObserver({ ...observer })
   const answerKey = cfg.keys.answers
   const isOff = typeof offTask === 'function' ? offTask : Array.isArray(offTask) ? (n => offTask.includes(n)) : () => false
   let clock = 0, shownN = 0
-  return async function present({ phase, spec, specPromise }) {
+  present.now = () => clock
+  return present
+  async function present({ phase, spec, specPromise }) {
     if (!spec) spec = await specPromise
     if (!spec) return { no_trial: true }
     shownN += 1
@@ -66,7 +84,7 @@ export function createSimulatedPresenter({ cfg, arm, seed, observer = SIM_OBSERV
     const rtMs = timing.rt_median_ms * Math.exp(0.35 * rng.normal())
     const pulses = planned.slice(1, -1).map((b, i) => planned[i + 2] - b)
     const t0 = clock
-    clock += total + rtMs
+    clock += total + rtMs + pauseMs
     return {
       pres: {
         spec, timeline: tl, t0, t_end: total,

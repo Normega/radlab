@@ -21,6 +21,9 @@
 // Focus: window blur and page hide are kept per trial on the trial clock from fixation onset to the answer;
 // a blur or hide during the circle makes the trial interrupted (sequence.js). On blur the tracker lets go of
 // every key and the key log closes its open presses (keyLog.js: log.blur), so no phantom hold survives.
+// Full screen, before the circle: if the participant is out of full screen when the trial would start (they left
+// it while the keys-up gate waited, or after the return page), present() starts nothing and resolves
+// { fullscreen_lost: true }; session.js then shows the return page and asks again (Stage C; the Stage B gap).
 // Full screen (fullscreen.js, when o.fullscreen is passed): a full-screen exit or entry is logged among the same
 // focus events ('fullscreen_exit', 'fullscreen_enter'), and an exit during the circle interrupts the trial as a
 // blur does (sequence.js). Keys are not let go on an exit: the window keeps the focus, so no key-up is lost.
@@ -80,8 +83,11 @@ export function createLivePresenter(o) {
   }
   const tracker = createKeyTracker()
   const answerOf = Object.fromEntries(Object.entries(cfg.keys.answers).map(([resp, key]) => [key, resp]))
-  let log = null, t0 = null, focus = null, onAnswer = null, onRelease = null, onTrialScreen = false, unsubscribe = null
-  const onFullscreen = type => { if (focus) focus.push({ type, t: rel(now()) }) }
+  let log = null, t0 = null, focus = null, onAnswer = null, onRelease = null, onGateExit = null, onTrialScreen = false, unsubscribe = null
+  const onFullscreen = type => {
+    if (focus) focus.push({ type, t: rel(now()) })
+    if (type === 'fullscreen_exit' && onGateExit) onGateExit()   // the keys-up gate stops waiting: the return page comes first
+  }
 
   const rel = ts => (t0 === null ? null : ts - t0)
   const handlers = {
@@ -126,9 +132,18 @@ export function createLivePresenter(o) {
       showCue({ kind: 'release' })
       onUi({ what: 'gate', phase })
       await new Promise(resolve => {
-        onRelease = () => { if (!mustWaitForRelease(arm, tracker.held(), cfg.keys)) { onRelease = null; resolve() } }
+        const done = () => { onRelease = null; onGateExit = null; resolve() }
+        onRelease = () => { if (!mustWaitForRelease(arm, tracker.held(), cfg.keys)) done() }
+        onGateExit = done
       })
       if (isCancelled()) return { cancelled: true }
+    }
+    // Out of full screen now (left it while the keys-up gate waited, or since the return page): start nothing.
+    // session.js shows the return page and asks for this trial again, so no trial starts windowed.
+    if (o.fullscreen && typeof o.fullscreen.needsReturn === 'function' && o.fullscreen.needsReturn()) {
+      showCue(null)
+      onUi({ what: 'fullscreen_lost', phase })
+      return { fullscreen_lost: true }
     }
     const movingCue = phase === 'practice' ? { kind: 'practice' } : null
     showCue(reminder ? { kind: 'compliance' } : movingCue)
@@ -217,7 +232,7 @@ export function createLivePresenter(o) {
       w.removeEventListener('focus', handlers.focus)
       d.removeEventListener('visibilitychange', handlers.visibilitychange)
       if (unsubscribe) { unsubscribe(); unsubscribe = null }
-      onAnswer = null; onRelease = null; log = null; focus = null
+      onAnswer = null; onRelease = null; onGateExit = null; log = null; focus = null
     },
   }
 }

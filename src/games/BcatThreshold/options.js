@@ -8,7 +8,8 @@
 //
 // In a preview (the Task Library's no-save player, website.md section 25a, or the dev route) the URL may set
 // them:  ?arm=vision|touch|breath   &demo=1 (about 9 trials)   &simulate=1 (a simulated observer, no display)
-//        &practice=0 (skip the practice).
+//        &practice=0 (skip the practice)   &limit_s=N (a time limit of N seconds instead of 60 minutes)
+//        &sim=fail_practice|fail_practice_once|timeout (with simulate=1: simulate.js's SIM_SCENARIOS).
 // A share link with the short version on (quick_demo) counts as demo=1. No seed parameter exists: every run
 // draws its own (records.js, newSeed).
 
@@ -26,13 +27,18 @@ export function armFromAssignments(assignments) {
 export function previewOptions(search, { quickDemo = false } = {}) {
   const q = new URLSearchParams(search || '')
   const arm = ARMS.includes(q.get('arm')) ? q.get('arm') : null
+  const limit = Number(q.get('limit_s'))
   return {
     arm,
     demo: quickDemo || q.get('demo') === '1',
     simulate: q.get('simulate') === '1',
     practice: q.get('practice') !== '0',
+    limitS: q.has('limit_s') && Number.isFinite(limit) && limit > 0 ? limit : null,
+    sim: SIM_NAMES.includes(q.get('sim')) ? q.get('sim') : null,
   }
 }
+
+const SIM_NAMES = ['fail_practice', 'fail_practice_once', 'timeout']
 
 /**
  * What a mounted step runs.
@@ -41,7 +47,7 @@ export function previewOptions(search, { quickDemo = false } = {}) {
 export function initialChoice({ studyMode, preview, assignments, search, quickDemo }) {
   if (studyMode) {
     const arm = armFromAssignments(assignments)
-    return arm ? { arm, demo: false, simulate: false, practice: true } : { error: 'no_arm' }
+    return arm ? { arm, demo: false, simulate: false, practice: true, limitS: null, sim: null } : { error: 'no_arm' }
   }
   if (preview) {
     const o = previewOptions(search, { quickDemo })

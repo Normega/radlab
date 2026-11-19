@@ -9,21 +9,24 @@ import { createTrialSequence } from './sequence.js'
 import { createCompliance } from './compliance.js'
 import { createFullscreen, createReturnGate } from './fullscreen.js'
 import { newSeed, newRunId, makeRunRecord, makeResultRecord } from './records.js'
-import { runPractice, runEngineTrials, runRepeats } from './session.js'
+import { runSession } from './session.js'
 import { createLivePresenter, measureFramePeriod, nextPaint } from './presenter.js'
-import { createSimulatedPresenter } from './simulate.js'
+import { createSimulatedPresenter, SIM_SCENARIOS } from './simulate.js'
 import { deviceProblem, readDeviceEnv } from './device.js'
 import { initialChoice } from './options.js'
 import { isDemoMode } from '../../lib/demoMode'
 import {
   richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder, ANSWER_QUESTION, ANSWER_LABELS,
   releaseKeysCue, complianceLine, armReminderPage, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS, FULLSCREEN,
+  BREAK, practiceRetryPage, PRACTICE_FAILED, TIME_LIMIT,
 } from './texts.js'
 
-// BCAT threshold task (Stage B): the participant-facing screens of the adaptive breathing-pace threshold task
-// (NextStudy/Thresholds/7_radlab_site_plan/PLAN.md). One study step: device check, the full-screen page, three
-// instruction pages by arm, three practice rounds with feedback, a "ready" page, the adaptive trials, done.
-// Consent and debrief are separate study steps.
+// BCAT threshold task (Stages B and C): the participant-facing screens of the adaptive breathing-pace threshold
+// task (NextStudy/Thresholds/7_radlab_site_plan/PLAN.md). One study step: device check, the full-screen page, three
+// instruction pages by arm, practice rounds with feedback in sets (touch and breath: the practice gate may ask for
+// another set, after the arm's key instruction, or end the session), a "ready" page, the adaptive trials with one
+// break at the midpoint, done. Past the time limit no new trial starts and the step ends on the time-limit page.
+// A failed practice gate ends on its own page. Neither completes the step. Consent and debrief are separate steps.
 //
 //   study step (GameStepWrapper, studyMode): the arm is the assignment slot bcat_arm, nothing else; without
 //     one the step shows an error and stops (options.js). Never demo, never simulated.
@@ -104,18 +107,31 @@ function clientFacts(framePeriodMs) {
 
 function fmt(v, d = 3) { return typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : '–' }
 
+function sessionText(counts) {
+  const s = counts.session || {}, p = s.practice, b = s.break, m = s.moving || {}
+  return [
+    `status: ${counts.status}; elapsed ${fmt((s.elapsedMs ?? 0) / 60000, 1)} of ${s.timeLimitMs ? fmt(s.timeLimitMs / 60000, 1) : '–'} min`,
+    p ? `practice: sets ${p.sets_used}; ${p.gated ? `gate ${p.passed === true ? 'passed' : p.passed === false ? 'FAILED' : 'not decided'}; window means ${p.sets.map(x => fmt(x.mean, 2)).join(', ')}` : 'no gate (vision)'}` : 'practice: off',
+    b ? `break: ${b.taken ? `after main ${b.after_main} (seq ${b.after_seq}), ${fmt(b.duration_ms / 1000, 1)} s${b.shown ? '' : ', not shown (simulated)'}` : `not reached (due after ${b.due_after_main})`}` : 'break: –',
+    `moving window ${m.moving_window}: ${m.coverage_moving_avg_min !== null && m.coverage_moving_avg_min !== undefined ? `min coverage ${fmt(m.coverage_moving_avg_min, 2)}; exclusion flag ${m.exclusion_flag_coverage ? 'YES' : 'no'}`
+      : m.ws_press_moving_share_max !== null && m.ws_press_moving_share_max !== undefined ? `max W/S share ${fmt(m.ws_press_moving_share_max, 2)}` : 'no full window'}`,
+  ].join('\n')
+}
+
 function readoutText(readout, counts) {
-  if (!readout) return ''
+  if (!readout) return `no readout\n${sessionText(counts)}`
   const c = readout.cells, f = readout.flags || {}
   const line = (name, x) => `${name}: d′=2 at ${fmt(x.threshold.x)} [${fmt(x.threshold.x_ci_low)}, ${fmt(x.threshold.x_ci_high)}] (${fmt(x.threshold_pct_pulse_change, 1)}% pulse)`
   return [
+    readout.aborted ? 'ABORTED (time limit): the readout of what existed' : null,
     line('speeding', c.speeding), line('slowing ', c.slowing),
     `quality flag: ${f.quality_flag ? 'YES' : 'no'}; censored: speeding ${f.censored?.speeding ? 'YES' : 'no'}, slowing ${f.censored?.slowing ? 'YES' : 'no'}`,
     `engine trials ${readout.n_trials_total}; unanswered or withheld ${readout.n_missing_responses}; false alarms ${readout.false_alarms.n_false_alarms}/${readout.false_alarms.n_no_change}`,
     `rows ${counts.rows}; interrupted ${counts.interrupted}; repeats ${counts.repeats}; engine ${counts.engineMode}`,
     `non-compliant ${counts.noncompliant}; reminder lines ${counts.lines}; reminder pages ${counts.pages}`,
     `full screen: ${counts.fullscreen}`,
-  ].join('\n')
+    sessionText(counts),
+  ].filter(x => x !== null).join('\n')
 }
 
 export default function BcatThreshold({
@@ -141,7 +157,8 @@ export default function BcatThreshold({
     let cancelled = false
     const isCancelled = () => cancelled
     const show = v => { if (!cancelled) setView(v) }
-    const cfg = makeConfig({ mode, demo: preview && choice.demo, practice: choice.practice !== false })
+    const cfg = makeConfig({ mode, demo: preview && choice.demo, practice: choice.practice !== false,
+      ...(preview && choice.limitS ? { maxTotalMs: choice.limitS * 1000 } : {}) })
     const engine = createEngineClient()
     const store = createMemoryStore(studyMode ? { userId, studyId, scheduleId, isTest: !!isSimMode } : { preview: true })
     const sequence = createTrialSequence()
@@ -185,7 +202,8 @@ export default function BcatThreshold({
       const runId = newRunId()
       if (preview) window.__bcatThreshold = { runId, ui: { what: 'start' }, snapshot: () => store.snapshot(runId) }
       const kind = studyMode ? 'study' : sim ? 'simulated' : cfg.demo ? 'demo' : 'preview'
-      const present = sim ? createSimulatedPresenter({ cfg, arm, seed }) : live.present
+      const simulated = sim ? createSimulatedPresenter({ cfg, arm, seed, ...(choice.sim ? SIM_SCENARIOS[choice.sim] : {}) }) : null
+      const present = sim ? simulated : live.present
       if (fullscreen.wanted) {
         // the test build's page: Continue (or the space bar) switches to full screen; if refused, windowed
         let req = null
@@ -204,28 +222,36 @@ export default function BcatThreshold({
       }
       const measured = await framesP
       if (cancelled) return
+      const plannedTrials = buildTrialPlan(cfg, seed).counts.total
       await store.saveRun(makeRunRecord({
-        id: runId, arm, cfg, seed, kind, plannedTrials: buildTrialPlan(cfg, seed).counts.total, policy: sequence.policy,
+        id: runId, arm, cfg, seed, kind, plannedTrials, policy: sequence.policy,
         engineMode: engine.mode, framePeriodMs: measured, client: clientFacts(measured), fullscreen: fullscreen.runFacts(),
       }))
-      if (cfg.practice.enabled) {
-        if (!sim) await page({ id: 'practice_intro', paragraphs: [PRACTICE_INTRO] })
-        const r = await runPractice({
-          cfg, sequence, saveTrial, runId, isCancelled, compliance, gate,
-          present: sim ? present : async req => { await toTrialScreen(); return present(req) },
-          afterEach: sim ? null : spec => page({ id: 'practice_feedback', paragraphs: [PRACTICE_FEEDBACK[spec.cell]] }),
-        })
-        if (r.cancelled) return
-        if (!sim) await page({ id: 'ready', paragraphs: [READY] })
+      // In a simulated run nothing is shown: the practice pages and the break are skipped (the break is recorded
+      // as not shown), and the rules run on the simulated presenter's clock.
+      const pages = sim ? {
+        beforeMain: async () => { onUi({ what: 'simulating' }); show({ kind: 'simulating' }) },
+      } : {
+        practiceIntro: () => page({ id: 'practice_intro', paragraphs: [PRACTICE_INTRO] }),
+        practiceFeedback: spec => page({ id: 'practice_feedback', paragraphs: [PRACTICE_FEEDBACK[spec.cell]] }),
+        practiceRetry: () => page({ id: 'practice_retry', ...practiceRetryPage(arm, cfg.keys) }),
+        ready: () => page({ id: 'ready', paragraphs: [READY] }),
+        beforeMain: toTrialScreen,
+        breakPage: async () => { await page({ id: 'break', ...BREAK }); await toTrialScreen() },
       }
-      if (sim) { onUi({ what: 'simulating' }); show({ kind: 'simulating' }) } else await toTrialScreen()
-      const main = await runEngineTrials({ engine, cfg, seed, present, sequence, saveTrial, runId, isCancelled, compliance, gate })
-      if (main.cancelled) return
-      const reps = await runRepeats({ present, sequence, saveTrial, runId, isCancelled, compliance, gate })
-      if (reps.cancelled) return
-      const { readout } = await engine.call({ type: 'readout' })
+      const outcome = await runSession({
+        cfg, arm, seed, engine, sequence, saveTrial, runId, isCancelled, compliance, gate, pages, plannedTrials,
+        present: sim ? present : async req => { await toTrialScreen(); return present(req) },
+        clock: sim ? simulated.now : () => performance.now(),
+      })
+      if (outcome.cancelled) return
+      const { status } = outcome
+      // the readout: the engine's, complete; after the time limit, what existed (the engine's abort readout,
+      // readout.aborted true); with no engine trials (practice failed, or timed out in practice), none
+      const readout = status === 'completed' ? (await engine.call({ type: 'readout' })).readout
+        : outcome.engineStarted ? (await engine.call({ type: 'abort' })).readout : null
       const fs = fullscreen.summary()
-      await store.saveResult(makeResultRecord({ runId, trials: rows, readout, engineMode: engine.mode, fullscreen: fs }))
+      await store.saveResult(makeResultRecord({ runId, trials: rows, readout, status, engineMode: engine.mode, fullscreen: fs, session: outcome }))
       const { unsaved } = await store.flush()
       engine.terminate()
       if (cancelled) return
@@ -235,9 +261,10 @@ export default function BcatThreshold({
         noncompliant: rows.filter(r => r.compliant === false).length, lines: rows.filter(r => r.reminder_shown).length,
         pages: rows.filter(r => r.reminder_page_shown).length,
         fullscreen: `${fs.windowed_reason ? `windowed (${fs.windowed_reason})` : 'asked'}; entered ${fs.entered ? 'yes' : 'no'}; exits ${fs.exits}; `
-          + `return pages ${rows.filter(r => r.fullscreen_return_shown).length}; interrupted by an exit ${rows.filter(r => r.interruption_reasons?.includes('fullscreen_exit')).length}` }
-      onUi({ what: 'done' })
-      setView({ kind: 'done', runId, arm, readout, counts, data: preview ? store.snapshot(runId) : null })
+          + `return pages ${rows.filter(r => r.fullscreen_return_shown).length}; interrupted by an exit ${rows.filter(r => r.interruption_reasons?.includes('fullscreen_exit')).length}`,
+        status, session: outcome }
+      onUi({ what: 'done', status })
+      setView({ kind: 'done', status, runId, arm, readout, counts, data: preview ? store.snapshot(runId) : null })
     })().catch(err => {
       if (cancelled) return
       console.error('bcat threshold: the run stopped', err)
@@ -303,10 +330,17 @@ export default function BcatThreshold({
   } else if (view.kind === 'simulating') {
     screen = <Page><p className="bt-counter">Preview</p><p>Simulated run under way: a simulated observer answers every trial, nothing is shown.</p></Page>
   } else if (view.kind === 'done') {
+    // completed: the done page and Continue (the step completes). Practice failed or timed out: that page, and
+    // no Continue: the step does not complete.
+    const ended = view.status === 'practice_failed' ? PRACTICE_FAILED : view.status === 'timed_out' ? TIME_LIMIT : null
     screen = (
       <Page>
-        <h2>{DONE.heading}</h2>
-        {DONE.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+        {ended ? ended.paragraphs.map((p, i) => <p key={i} role={i === 0 ? 'alert' : undefined}>{p}</p>) : (
+          <>
+            <h2>{DONE.heading}</h2>
+            {DONE.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+          </>
+        )}
         {preview ? (
           <>
             <h3>Preview only</h3>
@@ -316,7 +350,7 @@ export default function BcatThreshold({
               <button type="button" className="bt-btn quiet" onClick={() => window.location.reload()}>Start again</button>
             </div>
           </>
-        ) : (
+        ) : ended ? null : (
           <div className="bt-actions">
             <button type="button" className="bt-btn" onClick={complete}>{CONTINUE}</button>
           </div>

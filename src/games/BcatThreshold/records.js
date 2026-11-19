@@ -28,6 +28,22 @@
 // `interruption_reasons` (all of them, once each). Result: `n_fullscreen_exits` over the whole run (pages too;
 // an exit the task makes at the end is not counted), `n_fullscreen_return_pages`, and the run's `fullscreen`
 // summary with its time-stamped events.
+//
+// The session's own rules (sessionRules.js, Stage C), facts only, never in the replay. The run row is saved before
+// practice, and rows are never updated, so what is only known later is on the trial row where it happened and on
+// the result:
+//   practice gate  every practice row: `practice_set` (1, 2, 3 ...); the last row of each set: `practice_gate` (the
+//                  set's verdict: window of coverages, its mean, 'passed' | 'retry' | 'failed' | 'not_gated') and
+//                  `practice_completed` (true when practice is done: passed, or the vision set ended). Result:
+//                  `practice_completed`, `practice_passed` (null for vision: no gate), `practice_sets`, `practice_gate`.
+//   break          the first main row after the break: `break_before` { after_main, after_seq, shown, started_at,
+//                  ended_at, duration_ms }. Result: `break_taken`, `break_after_main`, `break_duration_ms`, `break_facts`.
+//   time limit     result: `status` 'timed_out', `timed_out` true, `elapsed_ms`, `time_limit_ms`; its readout is the
+//                  engine's after an abort (readout.aborted true), what existed when the limit stopped the run.
+//   moving average every main row: `coverage_moving_avg` (touch, breath) or `ws_press_moving_share` (vision), and
+//                  `moving_window_n`. Result: `moving_window`, `coverage_moving_avg_min`, `exclusion_flag_coverage`,
+//                  `ws_press_moving_share_max`, `moving_n_full_windows`.
+// Result `status`: 'completed', 'timed_out' or 'practice_failed'.
 
 import { configHash } from './config.js'
 import { interruptionReasons } from './sequence.js'
@@ -123,6 +139,10 @@ export function makeRunRecord(o) {
  * @param {string[]} [o.interruptionReasons]  the presenter's (sequence.interruptionReasons); else from focusEvents
  * @param {boolean|null} [o.fullscreenAtOnset]  in full screen at fixation onset (null: not known, simulated)
  * @param {boolean} [o.fullscreenReturn]  the return-to-full-screen page was shown just before this trial
+ * @param {number|null} [o.practiceSet]   practice: which set this trial belongs to
+ * @param {object|null} [o.practiceGate]  practice, the last trial of a set: sessionRules' closeSet() verdict
+ * @param {object|null} [o.moving]        main: sessionRules' createMovingCompliance().add() after this trial
+ * @param {object|null} [o.breakBefore]   main: the break, on the first trial after it
  */
 export function makeTrialRecord(o) {
   const { spec, pres, answer, phase } = o
@@ -189,6 +209,13 @@ export function makeTrialRecord(o) {
     noncompliant_streak: o.compliance ? o.compliance.streak ?? null : null,
     reminder_shown: !!o.reminder?.line,
     reminder_page_shown: !!o.reminder?.page,
+    practice_set: phase === 'practice' ? o.practiceSet ?? null : null,
+    practice_gate: phase === 'practice' ? o.practiceGate ?? null : null,
+    practice_completed: phase === 'practice' && o.practiceGate ? !!o.practiceGate.completed : null,
+    coverage_moving_avg: main ? o.moving?.coverage_moving_avg ?? null : null,
+    ws_press_moving_share: main ? o.moving?.ws_press_moving_share ?? null : null,
+    moving_window_n: main ? o.moving?.moving_window_n ?? null : null,
+    break_before: main ? o.breakBefore ?? null : null,
     timing: {
       t_start_ms: o.tStartMs ?? null,
       circle_end_ms: pres.t_end ?? null,
@@ -217,12 +244,18 @@ export function hiddenTime(focusEvents, endMs) {
   return total
 }
 
+export const RESULT_STATUSES = Object.freeze(['completed', 'timed_out', 'practice_failed'])
+
 /**
  * The end of a run: the engine's readout and counts of what was shown (compliance counts over every row).
  * `fullscreen`: fullscreen.js's summary() (null when there was none, as in the node tests).
+ * `session`: what session.js's runSession returned ({ practice, break, moving, elapsedMs, timeLimitMs }), or null.
  */
-export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null, fullscreen = null }) {
+export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null, fullscreen = null, session = null }) {
+  if (!RESULT_STATUSES.includes(status)) throw new Error(`makeResultRecord: unknown status ${JSON.stringify(status)}`)
   const rows = trials || []
+  const s = session || {}
+  const pr = s.practice || null, br = s.break || null, mv = s.moving || null
   return plain({
     schema: RESULT_SCHEMA,
     run_id: runId,
@@ -244,5 +277,21 @@ export function makeResultRecord({ runId, trials, readout, status = 'completed',
     n_interrupted_fullscreen: rows.filter(r => (r.interruption_reasons || []).includes('fullscreen_exit')).length,
     fullscreen: fullscreen ?? null,
     readout: readout ?? null,
+    timed_out: status === 'timed_out',
+    elapsed_ms: s.elapsedMs ?? null,
+    time_limit_ms: s.timeLimitMs ?? null,
+    practice_completed: pr ? !!pr.completed : null,
+    practice_passed: pr ? pr.passed ?? null : null,
+    practice_sets: pr ? pr.sets_used ?? null : null,
+    practice_gate: pr,
+    break_taken: br ? !!br.taken : null,
+    break_after_main: br && br.taken ? br.after_main ?? null : null,
+    break_duration_ms: br && br.taken ? br.duration_ms ?? null : null,
+    break_facts: br,
+    moving_window: mv ? mv.moving_window ?? null : null,
+    moving_n_full_windows: mv ? mv.moving_n_full_windows ?? null : null,
+    coverage_moving_avg_min: mv ? mv.coverage_moving_avg_min ?? null : null,
+    exclusion_flag_coverage: mv ? mv.exclusion_flag_coverage ?? null : null,
+    ws_press_moving_share_max: mv ? mv.ws_press_moving_share_max ?? null : null,
   })
 }

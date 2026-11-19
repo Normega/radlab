@@ -13,23 +13,35 @@ test('a study run takes the arm from bcat_arm and fails closed without a valid o
   for (const bad of [null, undefined, {}, { bcat_arm: '' }, { bcat_arm: 'Touch' }, { bcat_arm: 'smell' }, { arm: 'touch' }, 'touch']) {
     assert.equal(armFromAssignments(bad), null, JSON.stringify(bad))
   }
-  assert.deepStrictEqual(initialChoice({ studyMode: true, assignments: { bcat_arm: 'breath' } }), { arm: 'breath', demo: false, simulate: false, practice: true })
+  assert.deepStrictEqual(initialChoice({ studyMode: true, assignments: { bcat_arm: 'breath' } }), { arm: 'breath', demo: false, simulate: false, practice: true, limitS: null, sim: null })
   assert.deepStrictEqual(initialChoice({ studyMode: true, assignments: null }), { error: 'no_arm' })
 })
 
 test('a study run ignores the URL entirely, even inside a preview client', () => {
   const c = initialChoice({ studyMode: true, preview: true, assignments: { bcat_arm: 'vision' }, search: '?arm=touch&demo=1&simulate=1&practice=0', quickDemo: true })
-  assert.deepStrictEqual(c, { arm: 'vision', demo: false, simulate: false, practice: true })
+  assert.deepStrictEqual(c, { arm: 'vision', demo: false, simulate: false, practice: true, limitS: null, sim: null })
   assert.deepStrictEqual(initialChoice({ studyMode: true, assignments: {}, search: '?arm=touch' }), { error: 'no_arm' })
 })
 
 test('a preview reads arm, demo, simulate and practice from the URL, or offers the chooser', () => {
-  assert.deepStrictEqual(previewOptions('?arm=touch&demo=1'), { arm: 'touch', demo: true, simulate: false, practice: true })
-  assert.deepStrictEqual(previewOptions('?arm=breath&simulate=1&practice=0'), { arm: 'breath', demo: false, simulate: true, practice: false })
+  assert.deepStrictEqual(previewOptions('?arm=touch&demo=1'), { arm: 'touch', demo: true, simulate: false, practice: true, limitS: null, sim: null })
+  assert.deepStrictEqual(previewOptions('?arm=breath&simulate=1&practice=0'), { arm: 'breath', demo: false, simulate: true, practice: false, limitS: null, sim: null })
   assert.deepStrictEqual(previewOptions('', { quickDemo: true }).demo, true, 'a short-version share link is the demo')
   assert.equal(previewOptions('?arm=TOUCH').arm, null)
-  assert.deepStrictEqual(initialChoice({ preview: true, search: '?demo=1' }), { arm: null, demo: true, simulate: false, practice: true, chooser: true })
+  assert.deepStrictEqual(initialChoice({ preview: true, search: '?demo=1' }), { arm: null, demo: true, simulate: false, practice: true, limitS: null, sim: null, chooser: true })
   assert.deepStrictEqual(initialChoice({ preview: false, studyMode: false, search: '?arm=touch' }), { error: 'no_arm' }, 'neither study nor preview')
+})
+
+test('a preview may shorten the time limit and name a simulated participant; a study run never', () => {
+  const o = previewOptions('?arm=touch&simulate=1&sim=fail_practice&limit_s=90')
+  assert.equal(o.limitS, 90)
+  assert.equal(o.sim, 'fail_practice')
+  assert.equal(previewOptions('?limit_s=0').limitS, null)
+  assert.equal(previewOptions('?limit_s=abc').limitS, null)
+  assert.equal(previewOptions('?sim=cheat').sim, null)
+  const c = initialChoice({ studyMode: true, preview: true, assignments: { bcat_arm: 'touch' }, search: '?limit_s=5&sim=timeout' })
+  assert.equal(c.limitS, null)
+  assert.equal(c.sim, null)
 })
 
 test('instruction texts: three pages per arm, key caps parsed, the test build wording', () => {

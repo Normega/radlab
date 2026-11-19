@@ -121,5 +121,11 @@ export function createComplianceTracker(cfg) {
       else if (assessment.compliant) { previousNonCompliant = false; streak = 0 } else { previousNonCompliant = true; streak += 1 }
       return { ...assessment, streak }
     },
+    /**
+     * A page with the arm's instruction was just shown by something else (the practice gate's retry page, which
+     * has the same sentences): it counts as the page reminder, so the run count starts again and the same
+     * sentences are not shown twice in a row. The line at the next fixation is unchanged.
+     */
+    pageShownElsewhere() { streak = 0 },
   }
 }

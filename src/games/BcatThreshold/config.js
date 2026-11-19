@@ -128,7 +128,22 @@ const BASE = {
     enabled: true,
     feedback: true,             // after each practice trial, say what the circle did
     // ln 1.5: 4-s pulses become 2.67 s or 6 s. Was ln 2 (2 s or 8 s), which Norm found excessive (2026-11-12).
+    // One practice set is these three trials; the gate below may ask for another set.
     trials: [{ cell: 'speeding', magnitude: LN_1_5 }, { cell: 'slowing', magnitude: LN_1_5 }, { cell: 'no_change' }],
+    // The practice gate (sessionRules.js; Norm, 2026-11-19, ruling 12), touch and breath arms only: after each set,
+    // the mean coverage of the last `window` assessed practice trials must be at least compliance.min_coverage
+    // (the exclusion criterion; that value is the one threshold, it is not repeated here). Not met: the arm's key
+    // instruction again and another set, up to `max_sets` sets; then the session ends.
+    gate: {
+      enabled: true,
+      window: 3,                // assessed practice trials in the moving window (older ones drop out)
+      max_sets: 3,              // sets of practice before the session ends unpassed
+    },
+  },
+  // The session's own rules (sessionRules.js; Norm, 2026-11-19, rulings 5 and 10). Outside `engine`.
+  session: {
+    break_at_half: true,        // one break after half the planned main trials (the trial plan's count, rounded)
+    max_total_ms: 60 * 60 * 1000,   // from the first practice trial's start; past it no new trial starts
   },
   // Compliance reminders (compliance.js; Norm, 2026-11-12). Outside `engine`: they never change what the engine
   // is told, and configHash(cfg.engine) does not include them. Compliance is scored and recorded on every
@@ -139,6 +154,13 @@ const BASE = {
     vision_min_press_ms: 0,     // vision: a W or S press during the pulses of at least this length is non-compliant (0: any press)
     page_after: 3,              // this many non-compliant trials in a row bring the page reminder before the next trial
   },
+  // The mid-session exclusion flag (sessionRules.js; Norm, 2026-11-19, ruling 8): a moving average over the last
+  // `moving_window` assessed main trials. Touch and breath: mean coverage, flagged below compliance.min_coverage
+  // (the one threshold). Vision: the share of those trials with any W or S press, recorded with no threshold. A
+  // flag only: it never stops the session. Outside `engine`.
+  exclusion: {
+    moving_window: 10,
+  },
   // Full screen (fullscreen.js; the test build's online.require_fullscreen; Norm, 2026-11-12). Outside `engine`:
   // configHash(cfg.engine) does not include it. Asked for in both modes; a browser that cannot or will not go
   // full screen runs the task windowed, and the run records why.
@@ -147,9 +169,15 @@ const BASE = {
   },
 }
 
+// The demo's shorter non-engine settings: a moving window that fills within its 9 or so trials. The break (at
+// half the demo's own plan) and the practice gate (sets of the same three trials) need nothing shorter.
+const DEMO_BASE = { exclusion: { moving_window: 3 } }
+
 /**
  * @param {{ mode?: 'online'|'lab', demo?: boolean, catchTrials?: boolean, changeTrialsPerDirection?: number,
- *           practice?: boolean, fixationMs?: number, reminders?: boolean, fullscreen?: boolean }} [opts]
+ *           practice?: boolean, fixationMs?: number, reminders?: boolean, fullscreen?: boolean,
+ *           maxTotalMs?: number|null, practiceGate?: boolean, breakAtHalf?: boolean, movingWindow?: number }} [opts]
+ *   maxTotalMs: null switches the time limit off (tests only)
  */
 export function makeConfig(opts = {}) {
   const mode = opts.mode === undefined ? 'online' : opts.mode
@@ -167,8 +195,17 @@ export function makeConfig(opts = {}) {
   if (opts.catchTrials !== undefined) engine.design.catch_trials.enabled = !!opts.catchTrials
   validateConfig(engine)
 
-  const cfg = deepCopy(BASE)
+  let cfg = deepCopy(BASE)
+  if (opts.demo) cfg = deepMerge(cfg, DEMO_BASE)
   if (opts.practice !== undefined) cfg.practice.enabled = !!opts.practice
+  if (opts.practiceGate !== undefined) cfg.practice.gate.enabled = !!opts.practiceGate
+  if (opts.breakAtHalf !== undefined) cfg.session.break_at_half = !!opts.breakAtHalf
+  if (opts.maxTotalMs !== undefined) {
+    const t = opts.maxTotalMs === null ? null : Number(opts.maxTotalMs)
+    if (t !== null && !(t > 0)) throw new Error('maxTotalMs must be > 0 (or null for no limit).')
+    cfg.session.max_total_ms = t
+  }
+  if (opts.movingWindow !== undefined) cfg.exclusion.moving_window = Number(opts.movingWindow)
   if (opts.fixationMs !== undefined) {
     const f = Number(opts.fixationMs)
     if (!(f >= 0)) throw new Error('fixationMs must be >= 0.')
@@ -180,5 +217,9 @@ export function makeConfig(opts = {}) {
   if (!(cc.min_coverage >= 0 && cc.min_coverage <= 1)) throw new Error('compliance.min_coverage must be in [0, 1].')
   if (!Number.isInteger(cc.page_after) || cc.page_after < 1) throw new Error('compliance.page_after must be a whole number >= 1.')
   if (!(cc.vision_min_press_ms >= 0)) throw new Error('compliance.vision_min_press_ms must be >= 0.')
+  if (!Number.isInteger(cfg.exclusion.moving_window) || cfg.exclusion.moving_window < 1) throw new Error('exclusion.moving_window must be a whole number >= 1.')
+  const pg = cfg.practice.gate
+  if (!Number.isInteger(pg.window) || pg.window < 1) throw new Error('practice.gate.window must be a whole number >= 1.')
+  if (!Number.isInteger(pg.max_sets) || pg.max_sets < 1) throw new Error('practice.gate.max_sets must be a whole number >= 1.')
   return { mode, demo: !!opts.demo, engine_version: ENGINE_VERSION, engine, ...cfg }
 }

@@ -3,9 +3,12 @@
 //
 //   1. start the app with Supabase pointed at nowhere, so nothing can reach a database:
 //        VITE_SUPABASE_URL=http://127.0.0.1:9 VITE_SUPABASE_ANON_KEY=offline npx vite --port 5199 --strictPort
+//      (another port: BCAT_BASE=http://localhost:<port>)
 //   2. node src/games/BcatThreshold/e2e/drive.mjs <outDir> [scenario ...]
 //        scenarios: simulate (all three arms), demo_touch, blur_vision, reminder_touch, reminder_vision,
-//                   fullscreen_vision, fullscreen_iframe, fullscreen_noapi, fullscreen_rejected   (default: all)
+//                   fullscreen_vision, fullscreen_iframe, fullscreen_noapi, fullscreen_rejected,
+//                   gate_once_touch, gate_fail_touch, timeout_vision, simulate_c (Stage C)   (default: all)
+//        Stage C runs save bt_c_*.png and stage_c_<tag>.json in <outDir>.
 //        reminder_* save screenshots bt_reminder_*.png in <outDir>; fullscreen_* save bt_fullscreen_*.png
 //        Full screen in headless Chrome: entry is a real request from a trusted space-bar press; an "exit" is
 //        document.exitFullscreen() (Esc cannot be sent to the browser itself); no API and a refused request are
@@ -74,15 +77,16 @@ async function waitFor(page, pred, ms = 60000) {
  *     from 3.0 to 3.8 s after fixation onset (during the first pulse)
  *   onPage(u)  awaited on every page before it presses the space bar
  */
-async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBeforeAnswerOn = null, offTaskOn = [], onPage = null, onQuestion = null, stopAt = null, log = () => {} }) {
-  let held = null, last = null, nMain = 0, gateSeen = false
+async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBeforeAnswerOn = null, exitFullscreenInGate = false, offTaskOn = [], practiceOff = null,
+  onPage = null, onQuestion = null, stopAt = null, log = () => {} }) {
+  let held = null, last = null, nMain = 0, nPractice = 0, gateSeen = false, gateExit = null
   const t0 = Date.now()
   while (Date.now() - t0 < 20 * 60 * 1000) {
     const u = await ui(page)
     if (!u) { await sleep(50); continue }
     if (u.what !== last) { log(`[${((Date.now() - t0) / 1000).toFixed(0)} s] ${u.what}${u.id ? ' ' + u.id : ''}${u.phase ? ' ' + u.phase : ''}`); last = u.what }
-    if (u.what === 'done') return { nMain, gateSeen }
-    if (stopAt && stopAt(u, nMain)) return { nMain, gateSeen, stopped: true }
+    if (u.what === 'done') return { nMain, nPractice, gateSeen, gateExit, status: u.status }
+    if (stopAt && stopAt(u, nMain)) return { nMain, nPractice, gateSeen, gateExit, stopped: true }
     if (u.what === 'error' || u.what === 'device') throw new Error('stopped: ' + JSON.stringify(u))
     if (u.what === 'gate') gateSeen = true
     if (u.what === 'page') {
@@ -93,7 +97,7 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
     }
     if (u.what === 'circle') {
       if (onCircle) await onCircle(u, nMain)
-      const off = u.phase === 'main' && offTaskOn.includes(nMain + 1)
+      const off = (u.phase === 'main' && offTaskOn.includes(nMain + 1)) || (u.phase === 'practice' && !!practiceOff && practiceOff(nPractice + 1))
       if (off) {
         const el = u.now - u.t0
         const want = arm === 'vision' && el >= 3000 && el < 3800 ? 'KeyW' : null
@@ -120,6 +124,7 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
     } else if (u.what === 'question') {
       if (held) { await page.keyboard.up(held); held = null }
       if (u.phase === 'main') nMain += 1
+      if (u.phase === 'practice') nPractice += 1
       if (onQuestion) await onQuestion(u, nMain)
       const holdW = holdWBeforeAnswerOn !== null && u.phase === 'main' && nMain === holdWBeforeAnswerOn
       if (holdW) await page.keyboard.down('KeyW')
@@ -131,6 +136,15 @@ async function participant(page, { arm, lagMs = 150, onCircle = null, holdWBefor
         await sleep(600)
         const g = await ui(page)
         if (g.what === 'gate') gateSeen = true
+        if (exitFullscreenInGate && g.what === 'gate') {
+          // leave full screen while the keys-up gate waits (the API's exit, as Esc would): the return page must come
+          // before the trial, and the trial must not start windowed
+          await page.evaluate(() => document.exitFullscreen())
+          await sleep(400)
+          const after = await ui(page)
+          gateExit = { ui_after_exit: after.what, page_id: after.id ?? null, fullscreen_now: await page.evaluate(() => !!document.fullscreenElement) }
+          if (page.screenshot) await page.screenshot({ path: path.join(OUT, 'bt_c_fullscreen_return_from_gate.png') })
+        }
         await sleep(600)
         await page.keyboard.up('KeyW')
       }
@@ -295,7 +309,77 @@ async function windowedRun(browser, { tag, url, inIframe = false, beforeLoad = n
   return res
 }
 
+// ── Stage C: the practice gate, the break, the time limit ──
+const shot = (page, name) => page.screenshot({ path: path.join(OUT, name) })
+function stageCSummary(snap) {
+  const rows = snap.trials, r = snap.result
+  return {
+    status: r.status, timed_out: r.timed_out, elapsed_s: r.elapsed_ms === null ? null : +(r.elapsed_ms / 1000).toFixed(1), time_limit_s: r.time_limit_ms / 1000,
+    practice: { completed: r.practice_completed, passed: r.practice_passed, sets: r.practice_sets,
+      per_set: (r.practice_gate?.sets || []).map(s => ({ set: s.set, verdict: s.verdict, n: s.n, mean: s.mean === null ? null : +s.mean.toFixed(3), window: s.window.map(x => +x.toFixed(3)) })) },
+    practice_rows: rows.filter(x => x.phase === 'practice').map(x => ({ seq: x.seq, set: x.practice_set, trial: x.trial_index, compliant: x.compliant,
+      coverage: x.compliance_coverage === null ? null : +x.compliance_coverage.toFixed(3), verdict: x.practice_gate?.verdict ?? null, completed: x.practice_completed })),
+    n_main: r.n_main, n_repeats: r.n_repeats,
+    break: r.break_facts, break_row: rows.filter(x => x.break_before).map(x => ({ seq: x.seq, trial_index: x.trial_index, ...x.break_before })),
+    moving: { window: r.moving_window, full_windows: r.moving_n_full_windows, min: r.coverage_moving_avg_min, flag: r.exclusion_flag_coverage, vision_max: r.ws_press_moving_share_max,
+      per_main: rows.filter(x => x.phase === 'main').map(x => x.coverage_moving_avg ?? x.ws_press_moving_share) },
+    readout: r.readout ? { aborted: r.readout.aborted, n_trials_total: r.readout.n_trials_total, n_missing: r.readout.n_missing_responses } : null,
+    last_trial_start_s: rows.length ? +(Math.max(...rows.map(x => x.timing.t_start_ms)) / 1000).toFixed(1) : null,
+    fullscreen_at_onset_all: rows.every(x => x.fullscreen_at_onset !== false),
+    return_pages: rows.filter(x => x.fullscreen_return_shown).map(x => x.seq),
+  }
+}
+async function stageCRun(browser, { tag, url, arm, practiceOff = null, holdWBeforeAnswerOn = null, exitFullscreenInGate = false, shots = {} }) {
+  const { page, blocked, log } = await openPage(browser, url)
+  const seen = {}
+  const p = await participant(page, {
+    arm, practiceOff, holdWBeforeAnswerOn, exitFullscreenInGate, log: m => console.log(`  ${tag} ` + m),
+    onPage: async u => {
+      seen[u.id] = (seen[u.id] || 0) + 1
+      const name = shots[u.id]
+      if (name && seen[u.id] === 1) { await shot(page, name); seen[`${u.id}_text`] = await pageText(page) }
+    },
+  })
+  await sleep(300)
+  if (shots.done) { await shot(page, shots.done); seen.done_text = await pageText(page) }
+  seen.done_buttons = await page.evaluate(() => [...document.querySelectorAll('.bt-card button')].map(b => b.textContent))
+  const snap = await snapshot(page)
+  fs.writeFileSync(path.join(OUT, `stage_c_${tag}.json`), JSON.stringify(snap))
+  const res = { participant: p, pages_seen: seen, summary: stageCSummary(snap), blocked: blocked.length,
+    errors: log.filter(l => /error/i.test(l) && !/Failed to load resource/.test(l)) }
+  console.log(`${tag}:`, JSON.stringify(res, null, 1))
+  await page.close()
+  return res
+}
+
 const SCENARIOS = {
+  // touch demo: no keys held in practice set 1 (the gate is missed), held in set 2 (passed); the break page; on
+  // main trial 2, W held after the answer and full screen left while the keys-up gate waits
+  gate_once_touch: browser => stageCRun(browser, { tag: 'gate_once_touch', arm: 'touch', url: `${BASE}/dev/bcat-threshold?arm=touch&demo=1`,
+    practiceOff: n => n <= 3, holdWBeforeAnswerOn: 2, exitFullscreenInGate: true,
+    shots: { practice_retry: 'bt_c_practice_retry.png', break: 'bt_c_break.png', fullscreen_return: 'bt_c_fullscreen_return_page.png', done: 'bt_c_done_after_gate.png' } }),
+  // touch demo: no keys held in any practice trial: three sets, then the end page
+  gate_fail_touch: browser => stageCRun(browser, { tag: 'gate_fail_touch', arm: 'touch', url: `${BASE}/dev/bcat-threshold?arm=touch&demo=1`,
+    practiceOff: () => true, shots: { done: 'bt_c_practice_failed.png' } }),
+  // vision demo with a 90-second limit: practice, then main trials until the limit, then the time-limit page
+  timeout_vision: browser => stageCRun(browser, { tag: 'timeout_vision', arm: 'vision', url: `${BASE}/dev/bcat-threshold?arm=vision&demo=1&limit_s=90`,
+    shots: { done: 'bt_c_time_limit.png' } }),
+  // the simulated observers: default, failing practice, timing out (fake clock)
+  async simulate_c(browser) {
+    const out = {}
+    for (const [arm, sim] of [['touch', null], ['breath', 'fail_practice'], ['touch', 'fail_practice_once'], ['vision', 'timeout']]) {
+      const { page, blocked, log } = await openPage(browser, `${BASE}/dev/bcat-threshold?arm=${arm}&simulate=1${sim ? `&sim=${sim}` : ''}`)
+      await waitFor(page, u => u.what === 'done', 180000)
+      const snap = await snapshot(page)
+      const s = stageCSummary(snap)
+      out[`${arm}_${sim || 'default'}`] = { status: s.status, practice: { sets: s.practice.sets, passed: s.practice.passed }, n_main: s.n_main, break: s.break,
+        elapsed_min: s.elapsed_s === null ? null : +(s.elapsed_s / 60).toFixed(1), readout: s.readout, moving: { min: s.moving.min, flag: s.moving.flag, vision_max: s.moving.vision_max },
+        blocked: blocked.length, errors: log.filter(l => /error/i.test(l) && !/Failed to load resource/.test(l)) }
+      console.log(`simulate_c ${arm} ${sim}:`, JSON.stringify(out[`${arm}_${sim || 'default'}`]))
+      await page.close()
+    }
+    return out
+  },
   // Entry by the space bar on the full-screen page (a trusted key press); an exit during main trial 2 (the API's
   // exitFullscreen, as Esc would); a blur and an exit together during main trial 3; an exit while the question of
   // main trial 4 is up (no interruption, but the page before trial 5); each page answered with the space bar. The

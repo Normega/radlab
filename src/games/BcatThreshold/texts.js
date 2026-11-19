@@ -153,6 +153,37 @@ export const ANSWER_LABELS = { slowed: 'slower', same: 'same', sped_up: 'faster'
 /** What the answer screen shows, for screen readers. */
 export const ANSWER_PICTURE_ALT = 'Did you sense a change? Left arrow: slower. Up arrow: same. Right arrow: faster.'
 
+// ── Stage C: the break, the practice gate and the time limit (Norm, 2026-11-19) ──
+// The test build had no break page, no practice gate and no time limit. Sources, sentence by sentence:
+//   BREAK                    NEW.
+//   PRACTICE_RETRY           first sentence NEW; then the arm's key instruction, armReminderPage (instruction-page
+//                            sentences, word for word, as the compliance page uses them).
+//   PRACTICE_FAILED          first sentence NEW, opening as the consent decline message does ("Sorry, but you ...");
+//                            second sentence: that decline message's own ending, as in the draft-2 consent for
+//                            Protocol #49227 (8_consent_debrief_49227/build_forms_docx_draft2.py: "Otherwise,
+//                            please just close the browser window to exit and return your submission on Prolific."),
+//                            with "Otherwise," dropped.
+//   TIME_LIMIT               first sentence NEW; second as PRACTICE_FAILED's.
+
+export const BREAK = {
+  paragraphs: ['You are halfway through. Take a break if you like, and continue when you are ready.'],
+}
+
+/** The page before another practice set: one new line, then the arm's own instruction sentences. */
+export function practiceRetryPage(arm, keys) {
+  return { paragraphs: ['Let’s do the practice rounds once more.', ...armReminderPage(arm, keys).paragraphs] }
+}
+
+const RETURN_ON_PROLIFIC = 'Please just close the browser window to exit and return your submission on Prolific.'
+
+export const PRACTICE_FAILED = {
+  paragraphs: ['Sorry, but you cannot continue with the study.', RETURN_ON_PROLIFIC],
+}
+
+export const TIME_LIMIT = {
+  paragraphs: ['The time limit for this task has been reached, so the task has ended.', RETURN_ON_PROLIFIC],
+}
+
 // ── NEW: not in the test build ─────────────────────────────────────────────
 
 /** Touch and breath arms: the next round waits until W and S are up. */
