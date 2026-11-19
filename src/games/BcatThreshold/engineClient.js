@@ -1,15 +1,15 @@
 // ── BCAT threshold: talking to the engine ──────────────────────────────────
 //
 // The engine runs in a Web Worker (engine/engine.worker.js) so an update never holds up a frame. Messages and
-// replies are the controller's (engine/adaptive.js, makeController): init, respond, readout, abort. Every
-// call returns a promise of the reply.
+// replies are the controller's (engine/adaptive.js, makeController): init, respond, readout, abort, plus restore
+// for a resume (engine/taskController.js). Every call returns a promise of the reply.
 //
 // If the worker cannot start, or fails before init has answered, the same controller runs on the main thread
 // (as the test build did), and `mode` says so; the run records it. A main-thread reply shares arrays with the
 // running session (Stage A notes), so it is cloned before it is handed back. createEngineClient({ worker:
 // false }) forces the main thread (node, and the simulated run in tests).
 
-import { makeController } from './engine/adaptive.js'
+import { makeTaskController } from './engine/taskController.js'
 
 export function createEngineClient({ worker: useWorker = true } = {}) {
   let worker = null, nextId = 1, fallback = null, initDone = false
@@ -44,7 +44,7 @@ export function createEngineClient({ worker: useWorker = true } = {}) {
   const viaMain = msg => new Promise((resolve, reject) => {
     setTimeout(() => {
       try {
-        if (!fallback) fallback = makeController()
+        if (!fallback) fallback = makeTaskController()
         resolve(structuredClone(fallback(msg)))
       } catch (e) { reject(e) }
     }, 0)
@@ -58,9 +58,9 @@ export function createEngineClient({ worker: useWorker = true } = {}) {
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject })
       worker.postMessage({ ...msg, id })
-    }).then(r => { if (msg.type === 'init') initDone = true; return r }, err => {
+    }).then(r => { if (msg.type === 'init' || msg.type === 'restore') initDone = true; return r }, err => {
       // the worker could not load: run the session on the main thread instead (only before it has a session)
-      if (!worker && msg.type === 'init' && !initDone) return client.call(msg)
+      if (!worker && (msg.type === 'init' || msg.type === 'restore') && !initDone) return client.call(msg)
       throw err
     })
   }

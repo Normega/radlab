@@ -92,6 +92,10 @@ export function createCompliance({ cfg, arm, showPage = null }) {
     after(shown) {
       return tracker.after(assessCompliance({ arm, cfg, keys: shown.keys, pres: shown.pres, interrupted: !!shown.interrupted }))
     },
+    /** A trial that was not shown in this tab (lost on a reload): not assessed, so only the line changes. */
+    notAssessed(reason) { return tracker.after(NOT_ASSESSED(reason)) },
+    /** Resume: the reminder state after the last saved row of the chain (resume.js). */
+    restore(rows) { tracker.restoreFrom(rows) },
   }
 }
 
@@ -127,5 +131,15 @@ export function createComplianceTracker(cfg) {
      * sentences are not shown twice in a row. The line at the next fixation is unchanged.
      */
     pageShownElsewhere() { streak = 0 },
+    /**
+     * Resume: the state after the last of these saved rows (chain order). A row records the run count including
+     * itself (noncompliant_streak), before any page reset: the tracker's state right after after() for it.
+     */
+    restoreFrom(rows) {
+      const last = (rows || []).filter(r => r && ['practice', 'main', 'repeat'].includes(r.phase)).at(-1)
+      if (!last) return
+      previousNonCompliant = last.compliant === false
+      streak = Number.isInteger(last.noncompliant_streak) ? last.noncompliant_streak : 0
+    },
   }
 }

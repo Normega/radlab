@@ -208,3 +208,23 @@ export const ERRORS = {
   no_arm: 'This part of the session could not start. Please reload the page. If it happens again, contact the research team.',
   engine: 'Sorry, something went wrong and this part of the session stopped. Please contact the research team.',
 }
+// The same words as no_arm, for a step that cannot read or save its data (Stage C: no enrollment, tables missing,
+// the saved session could not be read). Not new text.
+ERRORS.start = ERRORS.no_arm
+
+// ── Stage C: saving and resume. NEW except where noted. ──
+/** While a saved session is replayed after a reload (a full session takes about 8 s). NEW. */
+export const RESTORING = 'Picking up where you left off…'
+/** While the last rows are saved. NEW. */
+export const SAVING = 'Saving your answers…'
+/** Rows still unsaved: the step waits here until they are. "Please check your connection and try again." and
+ *  "Try again" are SaveRetryBanner's (src/components/study/SaveRetryBanner.jsx); the first sentence is NEW. */
+export const SAVE_FAILED = {
+  message: 'Some of your answers have not been saved yet. Please check your connection and try again.',
+  retry: 'Try again',
+}
+/** A resume refused because the task changed after the session started (engine version or config). First
+ *  sentence NEW; the second is ERRORS.engine's last sentence. */
+export const ENGINE_CHANGED = {
+  paragraphs: ['Sorry, this part of the session cannot be continued, because the task was updated after you started it.', 'Please contact the research team.'],
+}

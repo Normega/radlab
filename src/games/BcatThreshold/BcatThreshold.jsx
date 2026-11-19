@@ -4,7 +4,9 @@ import Circle from './Circle'
 import { makeConfig } from './config.js'
 import { buildTrialPlan } from './trialPlan.js'
 import { createEngineClient } from './engineClient.js'
-import { createMemoryStore } from './store.js'
+import { pickStore, StoreError } from './dbStore.js'
+import { loadSession, planResume } from './resume.js'
+import { supabase } from '../../lib/supabase'
 import { createTrialSequence } from './sequence.js'
 import { createCompliance } from './compliance.js'
 import { createFullscreen, createReturnGate } from './fullscreen.js'
@@ -18,7 +20,7 @@ import { isDemoMode } from '../../lib/demoMode'
 import {
   richParts, instructionPages, CONTINUE_HINT, CONTINUE, PRACTICE_INTRO, PRACTICE_FEEDBACK, READY, pacerReminder, ANSWER_QUESTION, ANSWER_LABELS,
   releaseKeysCue, complianceLine, armReminderPage, ANSWER_PICTURE_ALT, DONE, DEVICE, ERRORS, FULLSCREEN,
-  BREAK, practiceRetryPage, PRACTICE_FAILED, TIME_LIMIT,
+  BREAK, practiceRetryPage, PRACTICE_FAILED, TIME_LIMIT, ENGINE_CHANGED, RESTORING, SAVING, SAVE_FAILED,
 } from './texts.js'
 
 // BCAT threshold task (Stages B and C): the participant-facing screens of the adaptive breathing-pace threshold
@@ -136,7 +138,7 @@ function readoutText(readout, counts) {
 
 export default function BcatThreshold({
   studyMode = false, userId = null, studyId = null, scheduleId = null, onSessionComplete = null,
-  supabaseClient = null, isSimMode = false, assignments = null, mode = 'online',
+  supabaseClient = null, isSimMode = false, assignments = null, mode = 'online', enrollmentId = null,
 }) {
   const preview = !studyMode && !!supabaseClient?.isPreviewClient
   const [choice, setChoice] = useState(() => initialChoice({
@@ -159,9 +161,17 @@ export default function BcatThreshold({
     const show = v => { if (!cancelled) setView(v) }
     const cfg = makeConfig({ mode, demo: preview && choice.demo, practice: choice.practice !== false,
       ...(preview && choice.limitS ? { maxTotalMs: choice.limitS * 1000 } : {}) })
+    // Where the rows go (dbStore.js, pickStore): a preview and every simulated run keep them in this tab; a real
+    // study step writes them to the database and refuses to start without an enrollment or a client.
+    const db = studyMode && !isSimMode ? (supabaseClient ?? supabase) : null
+    const picked = pickStore({ studyMode, isSimMode, simulate: sim, db, userId, studyId, scheduleId, enrollmentId })
+    if (picked.error) {
+      console.error('bcat threshold: the step cannot save, so it does not start:', picked.error)
+      setView({ kind: 'error', message: ERRORS.start })
+      return
+    }
+    const store = picked.store
     const engine = createEngineClient()
-    const store = createMemoryStore(studyMode ? { userId, studyId, scheduleId, isTest: !!isSimMode } : { preview: true })
-    const sequence = createTrialSequence()
     const rows = []
     const saveTrial = row => { rows.push(row); return store.saveTrial(row) }
     const runStart = performance.now()
@@ -192,14 +202,73 @@ export default function BcatThreshold({
     // the page reminder (compliance.js), then back to the trial screen; a simulated run shows nothing
     const compliance = createCompliance({ cfg, arm,
       showPage: sim ? null : async () => { await page({ id: 'compliance_reminder', ...armReminderPage(arm, cfg.keys) }); await toTrialScreen() } })
+    // Saving until nothing is left unsaved: the "saving" screen, then, while rows stay unsaved, the retry screen.
+    // A permanent failure stops the step (thrown). The participant is never told they are done before this returns.
+    const saveUntilDone = async () => {
+      show({ kind: 'saving' })
+      for (;;) {
+        const f = await store.flush()
+        if (f.problem) throw f.problem
+        if (!f.unsaved) return
+        await new Promise(resolve => show({ kind: 'save_failed', onRetry: () => { show({ kind: 'saving' }); resolve() } }))
+        if (cancelled) return
+      }
+    }
+    // before every trial (review item 5): a failed save stops the step at once; a stalled queue is waited for
+    const beforeTrial = picked.kind !== 'database' ? null : async () => {
+      if (store.problem) throw store.problem
+      if (store.stalled) { await saveUntilDone(); await toTrialScreen() }
+    }
+    const ended = async status => { await saveUntilDone(); if (cancelled) return; fullscreen.exit(); onUi({ what: 'done', status }); show({ kind: 'done', status, arm }) }
 
     ;(async () => {
       if (!sim) {
         const problem = deviceProblem(readDeviceEnv())
         if (problem) { onUi({ what: 'device', problem }); show({ kind: 'device', problem }); return }
       }
-      const seed = newSeed()
+      // Resume (resume.js): what this participant already saved for this session. A failed read stops the step.
+      let plan = { action: 'fresh' }, restored = null
+      if (picked.kind === 'database') {
+        show({ kind: 'blank' })
+        const saved = await loadSession(db, { userId, studyId, scheduleId })
+        if (cancelled) return
+        plan = planResume({ ...saved, cfg, arm, nowMs: Date.now() })
+        if (plan.action === 'complete') {
+          // a finished session reopened: the step completes at once
+          if (!completedRef.current) { completedRef.current = true; onSessionComplete?.({ run_id: plan.result.run_id, arm, status: 'completed', reopened: true }) }
+          return
+        }
+        if (plan.action === 'ended') { show({ kind: 'done', status: plan.status, arm }); return }
+        const chainRows = plan.rows || []
+        if (plan.action === 'refuse') {
+          console.error('bcat threshold: the saved run cannot be continued:', plan.reason)
+          store.adoptSavedRun(plan.tip.id)
+          await store.saveResult(makeResultRecord({ runId: plan.tip.id, trials: chainRows, readout: null, status: 'engine_changed', engineMode: null,
+            nRuns: plan.chain.length, session: { elapsedMs: plan.elapsedMs ?? null, timeLimitMs: cfg.session.max_total_ms } }))
+          await ended('engine_changed')
+          return
+        }
+        if (plan.practiceCompleted && (plan.action === 'resume' || plan.engineTrials.length)) {
+          onUi({ what: 'restoring' })
+          show({ kind: 'restoring' })
+          restored = await engine.call({ type: 'restore', cfg: cfg.engine, seed: Number(plan.tip.seed), trials: plan.engineTrials,
+            expect: { engine_version: plan.tip.engine_version, config_hash: plan.tip.config_hash } })
+          if (cancelled) return
+        }
+        if (plan.action === 'timed_out') {
+          // past the time limit: cannot be resumed or completed. The chain is closed with what exists.
+          const readout = restored ? (await engine.call({ type: 'abort' })).readout : null
+          store.adoptSavedRun(plan.tip.id)
+          await store.saveResult(makeResultRecord({ runId: plan.tip.id, trials: chainRows, readout, status: 'timed_out', engineMode: engine.mode,
+            nRuns: plan.chain.length, session: { elapsedMs: plan.elapsedMs, timeLimitMs: cfg.session.max_total_ms } }))
+          await ended('timed_out')
+          return
+        }
+      }
+      const resuming = plan.action === 'resume'
+      const seed = resuming ? Number(plan.tip.seed) : newSeed()
       const runId = newRunId()
+      const sequence = createTrialSequence(undefined, resuming ? { pending: plan.pending, repeated: plan.repeated } : null)
       if (preview) window.__bcatThreshold = { runId, ui: { what: 'start' }, snapshot: () => store.snapshot(runId) }
       const kind = studyMode ? 'study' : sim ? 'simulated' : cfg.demo ? 'demo' : 'preview'
       const simulated = sim ? createSimulatedPresenter({ cfg, arm, seed, ...(choice.sim ? SIM_SCENARIOS[choice.sim] : {}) }) : null
@@ -226,6 +295,11 @@ export default function BcatThreshold({
       await store.saveRun(makeRunRecord({
         id: runId, arm, cfg, seed, kind, plannedTrials, policy: sequence.policy,
         engineMode: engine.mode, framePeriodMs: measured, client: clientFacts(measured), fullscreen: fullscreen.runFacts(),
+        resumedFrom: resuming ? plan.tip.id : null,
+        resumeState: resuming ? { from_run: plan.tip.id, chain_runs: plan.chain.length, n_saved_rows: plan.rows.length,
+          n_replayed: plan.engineTrials.length, practice_completed: plan.practiceCompleted, lost_trial: !!(plan.lostTrial && restored && restored.trial),
+          lost_trial_index: plan.lostTrial && restored && restored.trial ? restored.trial.trial_index : null, pending_repeats: plan.pending.length,
+          break_taken: plan.breakTaken, elapsed_ms_at_resume: plan.elapsedMs, replay_ms: restored ? restored.replay_ms ?? null : null } : null,
       }))
       // In a simulated run nothing is shown: the practice pages and the break are skipped (the break is recorded
       // as not shown), and the rules run on the simulated presenter's clock.
@@ -240,9 +314,10 @@ export default function BcatThreshold({
         breakPage: async () => { await page({ id: 'break', ...BREAK }); await toTrialScreen() },
       }
       const outcome = await runSession({
-        cfg, arm, seed, engine, sequence, saveTrial, runId, isCancelled, compliance, gate, pages, plannedTrials,
+        cfg, arm, seed, engine, sequence, saveTrial, runId, isCancelled, compliance, gate, pages, plannedTrials, beforeTrial,
         present: sim ? present : async req => { await toTrialScreen(); return present(req) },
         clock: sim ? simulated.now : () => performance.now(),
+        restore: resuming ? { ...plan, engineStart: restored ? async () => restored : null } : null,
       })
       if (outcome.cancelled) return
       const { status } = outcome
@@ -251,15 +326,18 @@ export default function BcatThreshold({
       const readout = status === 'completed' ? (await engine.call({ type: 'readout' })).readout
         : outcome.engineStarted ? (await engine.call({ type: 'abort' })).readout : null
       const fs = fullscreen.summary()
-      await store.saveResult(makeResultRecord({ runId, trials: rows, readout, status, engineMode: engine.mode, fullscreen: fs, session: outcome }))
-      const { unsaved } = await store.flush()
+      // a resumed session's result counts the whole chain, as its readout does
+      const chain = resuming ? [...plan.rows, ...rows] : rows
+      await store.saveResult(makeResultRecord({ runId, trials: chain, readout, status, engineMode: engine.mode, fullscreen: fs, session: outcome,
+        nRuns: resuming ? plan.chain.length + 1 : 1 }))
+      await saveUntilDone()
       engine.terminate()
       if (cancelled) return
       fullscreen.exit()
-      const counts = { rows: rows.length, interrupted: rows.filter(r => r.interrupted).length,
-        repeats: rows.filter(r => r.phase === 'repeat').length, engineMode: engine.mode, unsaved,
-        noncompliant: rows.filter(r => r.compliant === false).length, lines: rows.filter(r => r.reminder_shown).length,
-        pages: rows.filter(r => r.reminder_page_shown).length,
+      const counts = { rows: chain.length, interrupted: chain.filter(r => r.interrupted).length,
+        repeats: chain.filter(r => r.phase === 'repeat').length, engineMode: engine.mode, unsaved: store.unsaved ?? 0,
+        noncompliant: chain.filter(r => r.compliant === false).length, lines: chain.filter(r => r.reminder_shown).length,
+        pages: chain.filter(r => r.reminder_page_shown).length,
         fullscreen: `${fs.windowed_reason ? `windowed (${fs.windowed_reason})` : 'asked'}; entered ${fs.entered ? 'yes' : 'no'}; exits ${fs.exits}; `
           + `return pages ${rows.filter(r => r.fullscreen_return_shown).length}; interrupted by an exit ${rows.filter(r => r.interruption_reasons?.includes('fullscreen_exit')).length}`,
         status, session: outcome }
@@ -270,7 +348,8 @@ export default function BcatThreshold({
       console.error('bcat threshold: the run stopped', err)
       fullscreen.exit()
       onUi({ what: 'error', message: String(err && err.message) })
-      setView({ kind: 'error', message: ERRORS.engine })
+      const lookup = err instanceof StoreError && ['missing', 'lookup', 'no_context', 'no_run'].includes(err.kind)
+      setView({ kind: 'error', message: lookup ? ERRORS.start : ERRORS.engine })
     })
 
     return () => { cancelled = true; live.detach(); fullscreen.exit(); fullscreen.detach(); engine.terminate() }
@@ -327,12 +406,24 @@ export default function BcatThreshold({
         </div>
       </Page>
     )
+  } else if (view.kind === 'restoring') {
+    screen = <Page><p role="status">{RESTORING}</p></Page>
+  } else if (view.kind === 'saving') {
+    screen = <Page><p role="status">{SAVING}</p></Page>
+  } else if (view.kind === 'save_failed') {
+    screen = (
+      <Page>
+        <p className="bt-err" role="alert">{SAVE_FAILED.message}</p>
+        <div className="bt-actions"><button type="button" className="bt-btn" onClick={() => view.onRetry()}>{SAVE_FAILED.retry}</button></div>
+      </Page>
+    )
   } else if (view.kind === 'simulating') {
     screen = <Page><p className="bt-counter">Preview</p><p>Simulated run under way: a simulated observer answers every trial, nothing is shown.</p></Page>
   } else if (view.kind === 'done') {
     // completed: the done page and Continue (the step completes). Practice failed or timed out: that page, and
     // no Continue: the step does not complete.
-    const ended = view.status === 'practice_failed' ? PRACTICE_FAILED : view.status === 'timed_out' ? TIME_LIMIT : null
+    const ended = view.status === 'practice_failed' ? PRACTICE_FAILED : view.status === 'timed_out' ? TIME_LIMIT
+      : view.status === 'engine_changed' ? ENGINE_CHANGED : null
     screen = (
       <Page>
         {ended ? ended.paragraphs.map((p, i) => <p key={i} role={i === 0 ? 'alert' : undefined}>{p}</p>) : (
@@ -341,7 +432,7 @@ export default function BcatThreshold({
             {DONE.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
           </>
         )}
-        {preview ? (
+        {preview && view.counts ? (
           <>
             <h3>Preview only</h3>
             <pre className="bt-readout">{readoutText(view.readout, view.counts)}</pre>

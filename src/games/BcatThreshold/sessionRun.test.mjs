@@ -219,3 +219,33 @@ test('the practice retry page stands in for the compliance page: the same senten
   assert.equal(set2[0].reminder_page_shown, false)
   assert.equal(set2[0].reminder_shown, true, 'the fixation line still comes')
 })
+
+test('review item 4: an engine failure on respond still saves the answered trial, then stops the run', async () => {
+  const cfg = makeConfig({ demo: true })
+  const engine = createEngineClient({ worker: false })
+  const real = engine.call
+  let responds = 0
+  engine.call = msg => (msg.type === 'respond' && ++responds === 2 ? Promise.reject(new Error('worker died')) : real(msg))
+  const present = createSimulatedPresenter({ cfg, arm: 'vision', seed: 9 })
+  const rows = []
+  await assert.rejects(runSession({ cfg, arm: 'vision', seed: 9, engine, present, sequence: createTrialSequence(), runId: 'r',
+    saveTrial: async r => { rows.push(r) }, plannedTrials: buildTrialPlan(cfg, 9).counts.total, clock: present.now }), /worker died/)
+  engine.terminate()
+  const mains = rows.filter(r => r.phase === 'main')
+  assert.equal(mains.length, 2, 'the trial whose engine call failed was saved')
+  assert.equal(mains[1].posterior, null, 'saved without the engine reply')
+  assert.ok(mains[1].response, 'with the answer')
+})
+
+test('review item 5: beforeTrial runs before every trial, and a failure there stops the run at once', async () => {
+  const cfg = makeConfig({ demo: true })
+  const engine = createEngineClient({ worker: false })
+  const present = createSimulatedPresenter({ cfg, arm: 'vision', seed: 9 })
+  let calls = 0
+  const rows = []
+  await assert.rejects(runSession({ cfg, arm: 'vision', seed: 9, engine, present, sequence: createTrialSequence(), runId: 'r',
+    saveTrial: async r => { rows.push(r) }, plannedTrials: buildTrialPlan(cfg, 9).counts.total, clock: present.now,
+    beforeTrial: async () => { calls += 1; if (calls === 5) throw new Error('trial row not saved') } }), /not saved/)
+  engine.terminate()
+  assert.equal(rows.length, 4, 'no fifth trial was shown')
+})

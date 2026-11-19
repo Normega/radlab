@@ -62,11 +62,17 @@ export function wasInterrupted(focusEvents, { startMs = 0, endMs, hiddenAtStart 
  * included) and the queue of repeats. One per run.
  * @param {{ repeatOnce?: boolean, withholdFromEngine?: boolean }} [policy]
  */
-export function createTrialSequence(policy = INTERRUPTION_POLICY) {
+export function createTrialSequence(policy = INTERRUPTION_POLICY, restored = null) {
   const pol = { ...INTERRUPTION_POLICY, ...policy }
   let seq = 0
   const queue = []              // repeats still to show: { spec, repeatOf }
   const repeated = new Set()    // trial_index values already queued (each at most once)
+  // Resume (resume.js): the repeats the chain had queued and not yet shown, and every trial_index already queued.
+  // seq starts again at 1: it numbers what is shown in THIS run (records.js).
+  if (restored) {
+    for (const t of restored.repeated || []) repeated.add(t)
+    for (const p of restored.pending || []) { queue.push({ spec: p.spec, repeatOf: p.repeatOf }); repeated.add(p.repeatOf) }
+  }
   return {
     policy: Object.freeze({ ...pol }),
     /** The next row number. Every trial shown gets one, in order. */

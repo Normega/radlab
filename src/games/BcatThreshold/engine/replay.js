@@ -44,7 +44,8 @@ export class ReplayMismatchError extends Error {
   }
 }
 
-function checkExpect(expect, cfg) {
+/** The stored-header check (exported for engine/taskController.js's `restore`). Throws on any difference. */
+export function checkExpect(expect, cfg) {
   if (expect === undefined) return
   if (!expect || typeof expect !== 'object') throw new TypeError('replay: opts.expect must be { engine_version, config_hash }')
   const { engine_version: version, config_hash: hash } = expect

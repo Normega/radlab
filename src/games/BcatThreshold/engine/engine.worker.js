@@ -5,14 +5,15 @@
 //   {type:'init', cfg, seed}                 -> {type:'trial', trial, finished, init_ms, prior_running, ...}
 //   {type:'respond', trial_index, response}  -> {type:'result', scoring, running, next_trial, finished, procedure_ms, history, ...}
 //   {type:'readout'} / {type:'abort'}        -> {type:'readout', readout}
+//   {type:'restore', cfg, seed, trials, expect} -> {type:'trial', trial, restored: true, ...}  (resume; taskController.js)
 // An exception comes back as {id, type:'error', message}.
 //
 // Start it with:  new Worker(new URL('./engine/engine.worker.js', import.meta.url), { type: 'module' })
 // Not node-tested (it is only this wrapper); the controller it runs is, in engine.test.mjs.
 
-import { makeController } from './adaptive.js'
+import { makeTaskController } from './taskController.js'
 
-const handle = makeController()
+const handle = makeTaskController()
 
 self.onmessage = (ev) => {
   const msg = ev.data

@@ -49,6 +49,7 @@ export default function GameStepWrapper({ slug, enrollment, scheduleId = null, o
         userId={enrollment.profile_id ?? enrollment.user_id}
         studyId={enrollment.studies?.id ?? enrollment.study_id}
         externalId={enrollment.external_id}
+        enrollmentId={enrollment.id ?? null}
         scheduleId={scheduleId}
         onSessionComplete={result => onComplete({ game_slug: slug, ...result })}
         supabaseClient={supabaseClient}

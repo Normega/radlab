@@ -43,7 +43,15 @@
 //   moving average every main row: `coverage_moving_avg` (touch, breath) or `ws_press_moving_share` (vision), and
 //                  `moving_window_n`. Result: `moving_window`, `coverage_moving_avg_min`, `exclusion_flag_coverage`,
 //                  `ws_press_moving_share_max`, `moving_n_full_windows`.
-// Result `status`: 'completed', 'timed_out' or 'practice_failed'.
+// Result `status`: 'completed', 'timed_out', 'practice_failed', or 'engine_changed' (a resume refused because the
+// engine version or config hash changed: the old run is not continued).
+//
+// Resume (resume.js, Stage C). A resumed run is a new run row: `resumed_from` (the run it continues; same seed,
+// engine version, config hash, arm and mode) and `resume_state` (what was rebuilt: replayed engine trials,
+// elapsed time, whether practice was completed, the lost trial). seq starts again at 1. The engine trial on
+// screen when the page closed is the new run's first main row, with `lost_on_reload` true, interruption_reason
+// 'page_closed', no answer and engine_response null. The result of a resumed session counts the whole chain's
+// rows (`n_runs` says how many runs), as its readout does.
 
 import { configHash } from './config.js'
 import { interruptionReasons } from './sequence.js'
@@ -113,7 +121,8 @@ export function makeRunRecord(o) {
     frame_period_ms: o.framePeriodMs ?? null,
     client: o.client ?? null,
     fullscreen: o.fullscreen ?? null,
-    resumed_from: null,
+    resumed_from: o.resumedFrom ?? null,
+    resume_state: o.resumeState ?? null,
   })
 }
 
@@ -216,6 +225,7 @@ export function makeTrialRecord(o) {
     ws_press_moving_share: main ? o.moving?.ws_press_moving_share ?? null : null,
     moving_window_n: main ? o.moving?.moving_window_n ?? null : null,
     break_before: main ? o.breakBefore ?? null : null,
+    lost_on_reload: !!o.lostOnReload,
     timing: {
       t_start_ms: o.tStartMs ?? null,
       circle_end_ms: pres.t_end ?? null,
@@ -244,14 +254,14 @@ export function hiddenTime(focusEvents, endMs) {
   return total
 }
 
-export const RESULT_STATUSES = Object.freeze(['completed', 'timed_out', 'practice_failed'])
+export const RESULT_STATUSES = Object.freeze(['completed', 'timed_out', 'practice_failed', 'engine_changed'])
 
 /**
  * The end of a run: the engine's readout and counts of what was shown (compliance counts over every row).
  * `fullscreen`: fullscreen.js's summary() (null when there was none, as in the node tests).
  * `session`: what session.js's runSession returned ({ practice, break, moving, elapsedMs, timeLimitMs }), or null.
  */
-export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null, fullscreen = null, session = null }) {
+export function makeResultRecord({ runId, trials, readout, status = 'completed', completedAt, engineMode = null, fullscreen = null, session = null, nRuns = 1 }) {
   if (!RESULT_STATUSES.includes(status)) throw new Error(`makeResultRecord: unknown status ${JSON.stringify(status)}`)
   const rows = trials || []
   const s = session || {}
@@ -293,5 +303,6 @@ export function makeResultRecord({ runId, trials, readout, status = 'completed',
     coverage_moving_avg_min: mv ? mv.coverage_moving_avg_min ?? null : null,
     exclusion_flag_coverage: mv ? mv.exclusion_flag_coverage ?? null : null,
     ws_press_moving_share_max: mv ? mv.ws_press_moving_share_max ?? null : null,
+    n_runs: nRuns,
   })
 }

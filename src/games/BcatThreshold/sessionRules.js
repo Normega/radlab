@@ -79,6 +79,22 @@ export function createPracticeGate({ cfg, arm }) {
       else if (v.verdict === 'failed') passed = false
       return v
     },
+    /** Resume: replay saved practice rows (chain order) into the gate; a set counts once it has a verdict. */
+    restore(rows) {
+      for (const r of rows || []) {
+        if (r.phase !== 'practice') continue
+        api.add({ compliant: r.compliant, coverage: r.compliance_coverage })
+        const pg = r.practice_gate
+        if (pg && typeof pg === 'object' && pg.verdict) {
+          setsDone = Math.max(setsDone + 1, Number(pg.set) || 0)
+          sets.push(pg)
+          if (pg.completed) completed = true
+          if (pg.verdict === 'passed') passed = true
+          else if (pg.verdict === 'failed') passed = false
+        }
+      }
+      return api
+    },
     /** For the result row. */
     summary() {
       return { gated, sets_used: setsDone, completed, passed: gated ? passed : null, sets: sets.map(s => ({ ...s, window: [...(s.window || [])] })) }
@@ -92,13 +108,15 @@ export function createPracticeGate({ cfg, arm }) {
  * @param {{ limitMs: number|null, now: () => number }} o
  */
 export function createTimeLimit({ limitMs, now }) {
-  let origin = null
-  const elapsed = () => (origin === null ? 0 : now() - origin)
+  let origin = null, carried = 0
+  const elapsed = () => carried + (origin === null ? 0 : now() - origin)
   return {
     get limitMs() { return limitMs },
     get started() { return origin !== null },
     /** The first practice (or main) trial starts now. Later calls do nothing. */
     start() { if (origin === null) origin = now() },
+    /** Resume: this much had passed since the chain's first trial; the limit keeps running from there. */
+    resumeFrom(elapsedMs) { carried = Math.max(0, Number(elapsedMs) || 0); origin = now() },
     elapsed,
     /** Past the limit: no new trial may start. */
     exceeded() { return limitMs !== null && limitMs !== undefined && origin !== null && elapsed() >= limitMs },
@@ -132,6 +150,11 @@ export function createMovingCompliance({ cfg, arm }) {
         if (pacer && m < threshold) everBelow = true
       }
       return { coverage_moving_avg: pacer ? m : null, ws_press_moving_share: pacer ? null : m, moving_window_n: w.length }
+    },
+    /** Resume: replay the saved main rows (chain order). */
+    restore(rows) {
+      for (const r of rows || []) if (r.phase === 'main') api.add({ compliant: r.compliant, coverage: r.compliance_coverage, ws_presses: r.compliance_ws_presses })
+      return api
     },
     /** For the result row. */
     summary() {
