@@ -184,7 +184,7 @@ test('every insert in dbStore.js reads its error (the rule responseInsertsChecke
   assert.equal(inserts.length, 3, 'one literal insert per table')
   for (const m of inserts) {
     const lead = text.slice(Math.max(0, m.index - 120), m.index)
-    assert.match(lead, /const \{ error \} = await db\s*$/, `${m[1]}: destructures error`)
+    assert.match(lead, /const \{ error, status \} = await db\s*$/, `${m[1]}: destructures error`)
   }
 })
 
@@ -204,4 +204,15 @@ test('pickStore: previews and simulated runs use the memory store and write noth
   assert.deepStrictEqual(pickStore({ studyMode: true, ...ctx, enrollmentId: null }), { error: 'no_enrollment' }, 'no enrollment: the run is refused')
   assert.deepStrictEqual(pickStore({ studyMode: true, ...ctx, db: null }), { error: 'no_database' }, 'a study step never runs on the memory store')
   assert.deepStrictEqual(pickStore({ studyMode: true, ...ctx, scheduleId: null }), { error: 'no_context' })
+})
+
+test('classify: a duplicate main trial_index is a conflict, not saved; the response status reaches classify', async () => {
+  const dup = name => ({ code: '23505', message: `duplicate key value violates unique constraint "${name}"` })
+  assert.equal(classify(TABLES.trials, dup('bcat_threshold_trials_run_id_seq_key')), 'saved')
+  assert.equal(classify(TABLES.trials, dup('bcat_threshold_trials_run_main_trial')), 'conflict')
+  // A 503 whose body carries a code classify does not know: transient only if the status is passed on.
+  const db = fakeDb((table, row, n) => (n === 1 ? { error: { code: 'XX000', message: 'upstream' }, status: 503 } : { error: null, status: 201 }))
+  const store = createDatabaseStore({ db, ...CTX, sleep: noSleep })
+  await store.saveRun(records().run)
+  assert.equal(db.inserts.filter(i => i.table === TABLES.runs).length, 2, 'the 503 was retried')
 })

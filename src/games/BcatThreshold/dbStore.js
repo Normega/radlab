@@ -16,8 +16,8 @@
 //
 // Errors. supabase-js returns { error } and never throws on a database error, so every insert reads its error
 // (src/lib/responseInsertsChecked.test.mjs). An error is classed by classify():
-//   saved      23505 on a key a retry of this same row would hit: the run's primary key, a trial's (run_id, seq)
-//              or its main trial_index, a result's run_id. The row is already stored.
+//   saved      23505 on a key a retry of this same row would hit: the run's primary key, a trial's (run_id, seq),
+//              a result's run_id. The row is already stored.
 //   conflict   23505 on another key: a second tab resuming the same run (runs.resumed_from) or finishing the same
 //              session (results.root_run_id). Permanent; the step stops.
 //   missing    the table is not there (PGRST205, 42P01): the migration is not applied. Permanent.
@@ -124,7 +124,9 @@ const constraintOf = e => {
 // The keys whose duplicate means "this very row is already stored" (a retry of an insert that landed).
 const SAVED_ON = {
   bcat_threshold_runs: ['bcat_threshold_runs_pkey'],
-  bcat_threshold_trials: ['bcat_threshold_trials_run_id_seq_key', 'bcat_threshold_trials_run_main_trial', 'bcat_threshold_trials_pkey'],
+  // Not run_main_trial: an identical retry always trips (run_id, seq) first, so a duplicate main trial_index is
+  // a different row and must not be dropped as saved (PGlite check, 2026-11-19). It is a conflict.
+  bcat_threshold_trials: ['bcat_threshold_trials_run_id_seq_key'],
   bcat_threshold_results: ['bcat_threshold_results_run_id_key'],
 }
 
@@ -142,18 +144,19 @@ export function classify(table, error) {
 
 // Each table's insert, written out so the result's `error` is read where the insert is made (one statement per
 // table, which is what responseInsertsChecked.test.mjs looks for once these tables are in its RESPONSE_TABLES).
+// supabase-js puts the HTTP status on the response, not on the error, so it is copied over for classify().
 async function insertInto(db, table, row) {
   if (table === 'bcat_threshold_runs') {
-    const { error } = await db.from('bcat_threshold_runs').insert(row)
-    return error ?? null
+    const { error, status } = await db.from('bcat_threshold_runs').insert(row)
+    return error ? { ...error, status: error.status ?? status } : null
   }
   if (table === 'bcat_threshold_trials') {
-    const { error } = await db.from('bcat_threshold_trials').insert(row)
-    return error ?? null
+    const { error, status } = await db.from('bcat_threshold_trials').insert(row)
+    return error ? { ...error, status: error.status ?? status } : null
   }
   if (table === 'bcat_threshold_results') {
-    const { error } = await db.from('bcat_threshold_results').insert(row)
-    return error ?? null
+    const { error, status } = await db.from('bcat_threshold_results').insert(row)
+    return error ? { ...error, status: error.status ?? status } : null
   }
   throw new Error(`insertInto: unknown table ${table}`)
 }
