@@ -359,7 +359,7 @@ Deno.serve(async (req) => {
         return json({ error: 'Something went wrong. Please try again in a few minutes.' }, 500)
       }
       if (blockReason === 'enrollment_full') {
-        return json({ error: 'Sorry, but study enrollment is now full, thanks for your interest!' }, 409)
+        return json({ error: 'Recruitment for this study is now complete. Thanks for your interest!' }, 409)
       }
       if (blockReason) {
         return json({ error: 'This study is not available to you at the moment. Please contact the research team if you have any questions.' }, 409)

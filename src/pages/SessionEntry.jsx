@@ -923,7 +923,7 @@ async function hasAwaitingDate(sb, studyId) {
 function gateClosedMessage(reason) {
   switch (reason) {
     case 'enrollment_full':
-      return 'Sorry, but study enrollment is now full, thanks for your interest!'
+      return 'Recruitment for this study is now complete. Thanks for your interest!'
     case 'withdrawn':
       return 'You have withdrawn from this study, so this session is no longer available. Please contact the research team if you have any questions.'
     case 'study_inactive':
