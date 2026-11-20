@@ -22,8 +22,8 @@
 **Onset:** a passage starts 0–1.5 s after begin. It plays over the rest, the in-breath, the pause and most of the out-breath, and it is over before the rating, so nobody rates while someone is talking. Because the rest differs by plan, the passage starts in the rest on the square sail (3 s rest) and early in the in-breath on long-tail and drifter (0.5 s rest).
 
 **Length: about 9 s for the pilot,** which is two sentences of 22–27 words.
-- **Measured on the test render (section 5):** Kokoro's af_heart voice at speed 0.80 reads at 3.55 syllables a second. The 36 sample sets run 7.5–10.0 s, 8.7 s on average.
-- **The three valences come out the same length:** 8.8, 8.7 and 8.7 s.
+- **Measured on the test render (section 5):** the two voices (W19), Kokoro's af_bella at speed 0.83 and am_michael at 0.88, both read at 3.7 syllables a second. The 36 sample sets run 7.3–9.7 s, 8.4 s on average in both voices.
+- **The three valences come out the same length:** pleasant, neutral and unpleasant average 8.4, 8.3 and 8.4 s in Bella and 8.5, 8.4 and 8.4 s in Michael.
 
 ## 2. How big the set has to be
 
@@ -73,7 +73,7 @@ The script also flags slot word counts that differ, valence out of order, swap w
 - **Why draft 30% extra:** if 9 in 10 passages pass on their own, only about 3 in 4 sets pass whole. Failed versions can also be rewritten and normed again.
 
 **Then the audio:**
-- **Render once.** The surviving passages are rendered once, in one voice with one delivery (W17). Kokoro runs locally and gives the same file for the same text, so a render can be reproduced.
+- **Render once.** The surviving passages are rendered once, in each of the two voices, with one delivery per voice (W17, W19). Kokoro runs locally and gives the same file for the same text, so a render can be reproduced.
 - **Match duration within each set.** A time-stretch of up to ±5% is not audible, and it brings the three versions of a frame to the same length. Loudness is normalised to −18 LUFS, as the lab's other voice clips are.
 - **Check the voice.** A smaller group rates a sample of the audio, to check the voice adds no valence of its own.
 
@@ -85,7 +85,7 @@ The script also flags slot word counts that differ, valence out of order, swap w
 
 ## 5. Sample set: 36 frames, one session's worth
 
-Batch 1 (T1–T9, 2026-11-10) and batch 2 (T10–T36, 2026-11-17). Test audio for all 108 passages: Kokoro-82M, voice af_heart, speed 0.80, −18 LUFS. The audio and a listening page stay outside the repo until the voice is chosen.
+Batch 1 (T1–T9, 2026-11-10) and batch 2 (T10–T36, 2026-11-17). Test audio for all 108 passages in both voices (W19): Kokoro-82M, af_bella at 0.83 and am_michael at 0.88, −18 LUFS. The audio is on the unlisted listening page, radlab.zone/prototypes/windward-passages/.
 
 The swapped words are shown as **pleasant / neutral / unpleasant**.
 
@@ -228,54 +228,56 @@ Words and syllables are for the whole passage; the duration estimate assumes 3.6
 
 ### Test audio (all 36 sets)
 
-Speech duration in seconds, onset to offset, af_heart at 0.80:
+Speech duration in seconds, onset to offset: Bella is af_bella at 0.83, Michael is am_michael at 0.88.
 
-| Set | P | N | U |
-|---|---|---|---|
-| T1 | 10.0 | 10.0 | 10.0 |
-| T2 | 8.2 | 8.2 | 8.2 |
-| T3 | 8.4 | 8.5 | 8.9 |
-| T4 | 8.4 | 8.1 | 8.5 |
-| T5 | 9.4 | 9.4 | 9.3 |
-| T6 | 9.1 | 9.2 | 9.1 |
-| T7 | 8.3 | 8.5 | 8.5 |
-| T8 | 8.3 | 8.5 | 8.3 |
-| T9 | 8.7 | 8.2 | 8.5 |
-| T10 | 9.8 | 9.6 | 9.8 |
-| T11 | 9.7 | 9.2 | 9.5 |
-| T12 | 8.4 | 8.5 | 8.8 |
-| T13 | 8.7 | 8.7 | 8.3 |
-| T14 | 7.7 | 8.0 | 7.9 |
-| T15 | 8.8 | 8.4 | 8.6 |
-| T16 | 9.3 | 9.3 | 9.5 |
-| T17 | 9.3 | 9.2 | 8.9 |
-| T18 | 7.8 | 7.7 | 7.5 |
-| T19 | 7.9 | 7.5 | 7.7 |
-| T20 | 8.4 | 8.8 | 8.9 |
-| T21 | 8.5 | 8.3 | 8.3 |
-| T22 | 8.4 | 8.7 | 8.7 |
-| T23 | 9.0 | 8.5 | 8.6 |
-| T24 | 9.6 | 9.7 | 9.5 |
-| T25 | 9.0 | 8.2 | 8.8 |
-| T26 | 9.8 | 9.2 | 9.7 |
-| T27 | 8.9 | 8.8 | 9.1 |
-| T28 | 8.2 | 8.3 | 8.4 |
-| T29 | 9.5 | 9.5 | 8.8 |
-| T30 | 9.2 | 9.0 | 8.6 |
-| T31 | 8.6 | 7.9 | 7.7 |
-| T32 | 8.4 | 8.3 | 8.6 |
-| T33 | 8.2 | 8.0 | 8.1 |
-| T34 | 8.9 | 8.6 | 8.3 |
-| T35 | 8.1 | 8.3 | 8.0 |
-| T36 | 9.4 | 9.0 | 9.3 |
+| Set | Bella P | Bella N | Bella U | Michael P | Michael N | Michael U |
+|---|---|---|---|---|---|---|
+| T1 | 9.5 | 9.4 | 9.5 | 9.6 | 9.4 | 9.6 |
+| T2 | 7.8 | 7.8 | 7.9 | 7.9 | 7.9 | 7.9 |
+| T3 | 8.1 | 8.5 | 8.8 | 8.1 | 8.3 | 8.4 |
+| T4 | 7.9 | 7.7 | 8.1 | 8.4 | 8.0 | 8.3 |
+| T5 | 9.1 | 9.1 | 9.2 | 9.0 | 9.1 | 9.0 |
+| T6 | 8.8 | 9.0 | 8.7 | 8.6 | 8.9 | 8.7 |
+| T7 | 8.0 | 8.3 | 8.2 | 7.9 | 8.2 | 8.1 |
+| T8 | 8.1 | 8.1 | 8.1 | 8.2 | 8.2 | 8.1 |
+| T9 | 8.6 | 8.0 | 8.3 | 8.5 | 8.0 | 8.2 |
+| T10 | 9.6 | 9.7 | 9.6 | 9.4 | 9.5 | 9.5 |
+| T11 | 8.8 | 8.6 | 8.9 | 9.2 | 8.9 | 9.0 |
+| T12 | 7.9 | 7.9 | 8.2 | 8.3 | 8.3 | 8.6 |
+| T13 | 8.3 | 8.1 | 7.9 | 8.0 | 8.0 | 7.6 |
+| T14 | 7.3 | 7.5 | 7.6 | 7.6 | 7.7 | 7.5 |
+| T15 | 8.6 | 8.2 | 8.2 | 8.5 | 8.2 | 8.3 |
+| T16 | 9.1 | 9.0 | 9.1 | 8.9 | 8.8 | 9.0 |
+| T17 | 8.7 | 8.7 | 8.4 | 8.6 | 8.7 | 8.5 |
+| T18 | 7.4 | 7.4 | 7.3 | 7.6 | 7.7 | 7.4 |
+| T19 | 7.8 | 7.4 | 7.6 | 7.6 | 7.5 | 7.6 |
+| T20 | 8.2 | 8.5 | 8.4 | 8.1 | 8.4 | 8.4 |
+| T21 | 8.2 | 8.2 | 7.9 | 8.1 | 8.3 | 8.2 |
+| T22 | 8.1 | 8.3 | 8.3 | 8.1 | 8.2 | 8.3 |
+| T23 | 8.8 | 8.3 | 8.3 | 8.9 | 8.4 | 8.4 |
+| T24 | 9.0 | 9.2 | 9.0 | 9.2 | 9.4 | 9.1 |
+| T25 | 8.7 | 8.1 | 8.7 | 8.7 | 8.0 | 8.6 |
+| T26 | 9.2 | 8.6 | 9.1 | 9.3 | 8.9 | 9.3 |
+| T27 | 8.6 | 8.6 | 8.7 | 8.8 | 8.8 | 8.8 |
+| T28 | 8.1 | 7.9 | 7.9 | 7.9 | 8.0 | 7.9 |
+| T29 | 9.1 | 9.1 | 8.4 | 9.3 | 9.1 | 8.6 |
+| T30 | 9.0 | 8.7 | 8.3 | 8.9 | 8.8 | 8.2 |
+| T31 | 8.2 | 7.7 | 7.4 | 8.4 | 7.7 | 7.5 |
+| T32 | 8.1 | 8.0 | 8.5 | 8.0 | 7.8 | 8.4 |
+| T33 | 7.8 | 7.5 | 7.8 | 8.0 | 7.7 | 8.0 |
+| T34 | 8.7 | 8.4 | 8.1 | 8.7 | 8.4 | 8.3 |
+| T35 | 7.7 | 7.8 | 7.8 | 7.7 | 8.0 | 7.7 |
+| T36 | 9.2 | 8.7 | 9.2 | 9.2 | 8.6 | 9.2 |
 
-- **Overall:** 8.7 s on average (7.5–10.0 s), 3.55 syllables a second. Pleasant, neutral and unpleasant average 8.8, 8.7 and 8.7 s.
-- **Within a set** the versions differ by 0.37 s on average. Ten sets differ by more than 0.5 s (the most is T31, 0.94 s). The ±5% time-stretch closes these gaps.
+- **Overall:** 8.4 s on average in both voices (Bella 7.3–9.7 s, Michael 7.4–9.6 s), 3.7 syllables a second.
+- **Between voices** the same passage differs by 0.03 s on average (at most 0.51 s), so the two speeds match the voices for length.
+- **Within a set** the versions differ by 0.35 s on average in Bella and 0.33 s in Michael. Ten sets in Bella and eight in Michael differ by more than 0.5 s (the most is T31: 0.80 s and 0.96 s). The ±5% time-stretch closes these gaps.
+- **The first test render,** af_heart at 0.80 (2026-11-17), averaged 8.7 s; it is retired.
 - **Word screen across all 36 sets:** swap-word valence 6.9 / 5.7 / 4.0, and arousal for pleasant and unpleasant 4.4 and 4.3 (neutral 3.5). The unpleasant words are again less frequent (Zipf 4.1, against 4.4 and 4.6).
 - **Word norms that disagree with context** (T7, T20, T32, T35, T36) are all cases where the words are mild or missing from the norms but the scene is clearly good or bad. The ratings will settle them.
 - **The voice the PSY240 trial chose,** af_nicole at 0.80 (Handbook course voice, 2026-10-05), reads these passages at 2.2 syllables a second, 13.9 s on average, too long for an 11 s breath. **Norm ruled it out on 2026-11-18 as too breathy.**
 - **Voice survey (2026-11-19).** All 19 North American Kokoro voices read T1 and T22 (neutral) at 0.80. Breathiness was measured as the harmonics-to-noise ratio (HNR, autocorrelation, voiced frames; lower is breathier). af_nicole scores lowest of the female voices (10.1 dB); af_heart 13.6, af_bella 15.6. Male voices are compared only with each other, because pitch shifts the measure: am_puck 12.7, am_fenrir 11.0, am_michael 10.5.
-- **Candidates on the listening page:** af_heart (0.80), af_bella (0.83), am_puck (0.76) and am_michael (0.88). Each reads T1 and T22 in all three versions, with speed set so the passages match af_heart's length. af_bella is Kokoro's second-best voice by its own quality grade; the male voices all grade lower than the two female ones.
+- **Chosen (Norm, 2026-11-20, W19):** af_bella and am_michael, out of the four candidates on the listening page (af_heart, af_bella, am_puck, am_michael). Each speed was set to match af_heart's length on T1 and T22.
 
 ## 6. Decided and open
 
@@ -287,8 +289,10 @@ Speech duration in seconds, onset to offset, af_heart at 0.80:
 - one comprehension question per passage, asked after each phase 5 round
 - a reserve big enough that sessions stay novel
 
+**Decided (W19, 2026-11-20):** two voices, af_bella (speed 0.83) and am_michael (speed 0.88).
+
 **Open:**
-1. **The voice.** af_heart (0.80), af_bella (0.83), am_puck (0.76) or am_michael (0.88); see the listening page. af_nicole is out (too breathy).
+1. **How the two voices are assigned.** Recommended: one voice per participant, assigned in rotation and crossed with the valence list (six cells). Each person then hears one consistent voice, as W17 intended, and voice is balanced across participants. The alternative, both voices within a session, needs voice balanced against valence inside every round.
 2. **The reserve.** Four extra sessions (360 normed frames) as proposed, or another number.
 3. **Neutral versions in the samples that read as slightly off.** For example, T13 "at six fifteen" is mildly late, and T28 "stayed the same" mildly disappointing. Mark any while listening.
 4. **The order inside a round.** Fully random, or no two of the same valence back to back.
