@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>OSSLT Practice Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, clear, encouraging exam room; nothing to distract a nervous reader.
+   IDEA: an answer sheet beside a reading booklet; pencil-yellow cover, bubbled answers.
+   PICTURE: the test itself, passage left and questions right, starting under a slim header.
+   COLOUR and TYPE: pencil yellow cover band, white paper, black ink, red-pen and green marks; Atkinson Hyperlegible UI, Literata passages.
+   LAYOUT: sticky passage column beside questions above 900px; stacked passage then questions on phones. */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#131417);--ink:light-dark(#16181b,#efede6);--soft:light-dark(#5b5f66,#a9adb5);--line:light-dark(#d9dadd,#34373d);--paper:light-dark(#f6f6f4,#1b1d21);--pen:#ffc83d;--ok:light-dark(#1d7a46,#4cc483);--bad:light-dark(#c4213a,#ff6b7f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Atkinson Hyperlegible",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,56px) max(5vw,16px)}
+html{scroll-padding-top:120px}
+header{background:var(--pen);color:#16181b;padding:18px max(5vw,16px) 0;position:sticky;top:0;z-index:5}
+.hrow{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;max-width:1240px;margin:0 auto}
+h1{font-size:clamp(24px,3.4vw,34px);line-height:1.05;margin:0;text-wrap:balance}
+.sub{margin:4px 0 0;font-size:15px}
+.timer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.clock{font:700 22px/1 "Atkinson Hyperlegible";font-variant-numeric:tabular-nums;min-width:4.2ch;white-space:nowrap}
+.timer select,.timer button,.tabs button,.btn{font:inherit;font-size:16px;min-height:44px;border-radius:10px;cursor:pointer}
+.timer select{border:2px solid #16181b;background:#fff;color:#16181b;padding:0 8px}
+.timer button{border:2px solid #16181b;background:#16181b;color:var(--pen);padding:0 14px;font-weight:700}
+.timer button.ghost{background:transparent;color:#16181b}
+.tabs{display:flex;gap:6px;max-width:1240px;margin:14px auto 0;overflow-x:auto}
+.tabs button{border:0;border-radius:10px 10px 0 0;background:transparent;color:#16181b;padding:0 18px;font-weight:700;flex:none}
+.tabs button[aria-selected=true]{background:var(--bg);color:var(--ink)}
+button:focus-visible,select:focus-visible,textarea:focus-visible,.opt:has(input:focus-visible),.chk:has(input:focus-visible){outline:3px solid #2a6df4;outline-offset:2px}
+main{max-width:1240px;margin:0 auto}
+.lead{color:var(--soft);font-size:15px;margin:0 0 8px}
+.sec{border-top:2px solid var(--ink);padding-top:22px;margin-top:40px}
+.sec:first-child{margin-top:8px}
+.kind{font-size:14px;font-weight:700;color:var(--soft);margin:0}
+h2{font-size:28px;line-height:1.1;margin:4px 0 18px;text-wrap:balance}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:36px;align-items:start}
+.passage{background:var(--paper);border-radius:14px;padding:22px 24px;font:17px/1.7 Literata,Georgia,serif}
+.passage p{margin:0 0 14px}.passage p:last-child{margin:0}
+.passage h3{font:600 23px/1.2 Literata,Georgia,serif;margin:0 0 4px}
+.passage .by{font:15px "Atkinson Hyperlegible";color:var(--soft);margin-bottom:14px}
+.passage .sp{font-weight:600;font-family:"Atkinson Hyperlegible"}
+.intro{background:var(--paper);border-radius:14px;padding:20px 22px}
+.intro p{margin:0 0 10px}.intro p:last-child{margin:0}
+@media(min-width:900px){.passage,.intro{position:sticky;top:150px;max-height:calc(100vh - 170px);overflow:auto}}
+@media(max-width:899px){.grid{grid-template-columns:minmax(0,1fr);gap:24px}}
+.q{margin:0 0 30px}
+.qt{font-weight:700;margin:0 0 10px;display:flex;gap:10px}
+.qn{flex:none;background:var(--ink);color:var(--bg);border-radius:6px;min-width:28px;height:28px;display:grid;place-items:center;font-size:14px;margin-top:-1px}
+.note{font-weight:400;color:var(--soft);font-size:15px}
+.opt{position:relative;display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;margin:0 0 8px;min-height:44px}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.bub{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font-weight:700;font-size:14px}
+.multi .bub{border-radius:7px}
+.opt:has(input:checked){border-color:var(--ink)}
+.opt:has(input:checked) .bub{background:var(--ink);color:var(--bg)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 11%,transparent)}
+.opt.missed{border:2px dashed var(--ok)}
+.done .opt{cursor:default}
+.why{display:none;border-left:4px solid var(--soft);padding:6px 0 6px 12px;font-size:15px;margin-top:6px}
+.done .why{display:block}
+.why b.r{color:var(--ok)}.why b.w{color:var(--bad)}
+textarea{width:100%;min-height:220px;font:17px/1.6 Literata,Georgia,serif;padding:14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);resize:vertical}
+textarea.long{min-height:420px}
+.wc{font-size:14px;color:var(--soft);margin:6px 0 14px;font-variant-numeric:tabular-nums}
+.selfcheck{display:none;margin-top:8px}
+.done .selfcheck{display:block}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer;min-height:44px}
+.chk input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--ink)}
+details{border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;margin-top:12px}
+summary{cursor:pointer;font-weight:700;min-height:28px}
+details .model{font:16px/1.65 Literata,Georgia,serif;margin-top:10px}
+details .model p{margin:0 0 10px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;margin:36px 0 0;padding-top:22px;border-top:2px solid var(--ink)}
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--bg);font-weight:700;padding:0 20px}
+.btn.ghost{background:transparent;color:var(--ink)}
+.who{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700;flex:1 1 220px;max-width:320px}
+.who input{font:inherit;font-size:16px;font-weight:400;min-height:44px;border:1.5px solid var(--line);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)}
+.bar{align-items:flex-end}
+.sent{margin:12px 0 0;font-weight:700}.sent.err{color:var(--bad)}
+.result{display:none;margin-top:22px;background:var(--paper);border-radius:14px;padding:22px 24px}
+.result.show{display:block}
+.big{font-size:clamp(40px,7vw,52px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.rows{margin:16px 0 0;display:grid;gap:10px}
+.row{display:grid;grid-template-columns:minmax(0,12em) minmax(0,1fr) 4.5em;gap:12px;align-items:center;font-size:15px}
+.track{height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.fill{height:100%;background:var(--ink);border-radius:6px}
+.row span:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fine{font-size:14px;color:var(--soft);margin:18px 0 0}
+@media(max-width:600px){.row{grid-template-columns:minmax(0,1fr) 4em}.track{grid-column:1/-1;grid-row:2}.passage{padding:18px}}
+@media(prefers-reduced-motion:no-preference){.fill{transition:width .8s ease}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div>
+      <h1>OSSLT Practice Test</h1>
+      <p class="sub">Ontario Secondary School Literacy Test format: 2 sessions, 31 multiple-choice and 2 written questions.</p>
+    </div>
+    <div class="timer" aria-label="Session timer">
+      <span class="clock" id="clock" aria-live="polite">75:00</span>
+      <select id="mins" aria-label="Timer length"><option value="75">75 min</option><option value="60">60 min</option><option value="30">30 min</option></select>
+      <button id="tgo" type="button">Start</button>
+      <button id="treset" class="ghost" type="button">Reset</button>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-a" data-s="a" type="button">Session A</button>
+    <button role="tab" id="tab-b" data-s="b" type="button">Session B</button>
+  </nav>
+</header>
+<main class="band" id="view"></main>
+
+<script>
+{
+const DATA={
+a:{name:'Session A',lead:'Read each selection, then answer the questions. You can look back at the reading at any time. Answers save automatically in this browser. When you finish, enter your first name and tap Submit.',sections:[
+{id:'rln',kind:'Real-life narrative',title:'Flour on My Shoes',passage:`<h3>Flour on My Shoes</h3><div class="by">A true-to-life story</div>
+<p>The summer I turned fifteen, I got my first job at Rosa's Bakery on Main Street. The sign in the window said "Help Wanted: Early Riser," and since I was usually awake before my alarm anyway, I figured I was perfect for it.</p>
+<p>Mrs. Rosa Ferreira had run the bakery for twenty-two years. She was small, quick, and never seemed to stop moving. On my first morning, she handed me an apron and said, "In this kitchen, we have one rule. If you make a mistake, you tell me right away. Mistakes I can fix. Secrets I cannot."</p>
+<p>For three weeks, everything went smoothly. I learned to fold croissant dough, to wipe down the counters before the morning rush, and to greet the regular customers by name. Mr. Patel liked his rye bread sliced thin. The twins from the apartment upstairs always argued over the last cinnamon bun.</p>
+<p>Then came the Saturday of the Harvest Festival. Mrs. Ferreira had taken an order for two hundred butter tarts, and she trusted me to watch the ovens while she went to the bank. I set the timer, checked the first tray, and then got distracted helping a customer who couldn't decide between two birthday cakes. By the time I smelled smoke, it was too late. Forty tarts were black around the edges.</p>
+<p>My stomach dropped. I thought about scraping off the burnt parts and mixing the tarts in with the good ones. Nobody would notice, I told myself. But then I remembered her rule.</p>
+<p>When Mrs. Ferreira came back, I was standing by the counter holding the ruined tray. "I burned them," I said. "It was my fault. I wasn't paying attention."</p>
+<p>She looked at the tray for a long moment. Then, to my surprise, she laughed. "My first week here, I burned an entire wedding cake," she said. "Come. We have two hours. We start again."</p>
+<p>We worked side by side, rolling pastry and filling shells, and we finished the order with ten minutes to spare. At the end of the day, she gave me a small box with one slightly burnt tart inside. "So you remember," she said, "that the truth is always easier to carry."</p>
+<p>I still have that box on my shelf. The tart is long gone, but the lesson isn't.</p>`,
+qs:[
+{q:'Why does the narrator think they are "perfect" for the job?',o:['They love to bake.','They usually wake up early.','They live close to the bakery.','They have worked in a kitchen before.'],a:[1],why:'The narrator says they were "usually awake before my alarm anyway," which matches the sign asking for an "Early Riser."'},
+{q:'What does Mrs. Ferreira\'s rule, "Mistakes I can fix. Secrets I cannot," suggest about her?',o:['She values honesty more than perfection.','She expects her workers never to make mistakes.','She prefers to do all the work herself.','She is worried about losing customers.'],a:[0],why:'She accepts that mistakes happen but cannot deal with problems that are hidden from her. Honesty matters most.'},
+{q:'Why does the writer include details about Mr. Patel and the twins?',o:['To introduce characters who cause the problem later','To explain why the bakery was so busy during the festival','To show that the narrator had become comfortable and familiar with the bakery','To show that the narrator found the customers annoying'],a:[2],why:'Knowing customers\' habits by name shows the narrator had settled into the job during those first three weeks.'},
+{q:'What causes the tarts to burn?',o:['The oven was not working properly.','Mrs. Ferreira set the timer incorrectly.','The order was too large to finish on time.','The narrator was distracted by helping a customer.'],a:[3],why:'The narrator "got distracted helping a customer who couldn\'t decide between two birthday cakes."'},
+{q:'The narrator says, "My stomach dropped." This shows that the narrator felt',o:['hungry.','relieved.','sick with worry.','angry at the customer.'],a:[2],why:'"My stomach dropped" is an expression for a sudden feeling of dread or worry.'},
+{q:'Why does Mrs. Ferreira give the narrator a burnt tart at the end of the day?',o:['As a reminder of the lesson about telling the truth','As a punishment for ruining the order','Because the burnt tarts could not be sold','As a reward for finishing the order on time'],a:[0],why:'She says, "So you remember... that the truth is always easier to carry." The tart is a symbol of the lesson.'},
+{q:'Which TWO statements best express the lessons of this story?',multi:true,o:['Being honest makes a mistake easier to deal with.','Baking takes many years of training.','Owning up to a mistake can build trust.','It is better to work alone than with others.'],a:[0,2],why:'The narrator chooses honesty and is rewarded with help and understanding, which builds trust between them.'}
+]},
+{id:'inp',kind:'Information paragraph',title:'Falcons of the City',passage:`<h3>Falcons of the City</h3><div class="by">Information paragraph</div>
+<p>Peregrine falcons are among the fastest animals on Earth. When diving to catch prey, they can reach speeds of more than 300 kilometres per hour. Yet by the 1970s, these remarkable birds had nearly disappeared from eastern North America. The cause was a pesticide called DDT, which built up in the bodies of the birds and made their eggshells so thin that they cracked before the chicks could hatch. After Canada and the United States restricted the use of DDT in the early 1970s, scientists and volunteers began raising young falcons and releasing them into the wild. Surprisingly, many of the birds chose to nest not on cliffs, their natural home, but on the ledges of tall city buildings. To a falcon, a skyscraper looks much like a cliff, and cities offer a steady supply of pigeons to eat. Today, peregrine falcons nest in several Canadian cities, including Toronto, Ottawa, and Hamilton, where volunteers watch the nests through online cameras. The falcons' comeback shows that, with the right help, a species close to vanishing can recover.</p>`,
+qs:[
+{q:'What is the main idea of this paragraph?',o:['Peregrine falcons are the fastest birds in the world.','Peregrine falcons recovered after nearly disappearing and adapted to life in cities.','DDT is still a serious danger to birds today.','Cities have too many pigeons.'],a:[1],why:'The paragraph traces the falcons\' decline, their recovery, and their move into cities. The last sentence sums this up.'},
+{q:'According to the paragraph, how did DDT harm peregrine falcons?',o:['It poisoned the pigeons they ate.','It destroyed the cliffs where they nested.','It made their eggshells too thin.','It slowed down their diving speed.'],a:[2],why:'DDT "made their eggshells so thin that they cracked before the chicks could hatch."'},
+{q:'Which word signals that the falcons\' choice of nesting place was unexpected?',o:['Yet','After','Surprisingly','Today'],a:[2],why:'"Surprisingly" tells the reader that nesting on buildings was not what people expected.'},
+{q:'Why does the writer compare a skyscraper to a cliff?',o:['To explain why falcons nest on tall buildings','To show that cities are dangerous for birds','To describe how skyscrapers are built','To argue that cliffs should be protected'],a:[0],why:'The comparison explains that a tall building gives falcons the same kind of high ledge a cliff would.'},
+{q:'Which detail best supports the idea that people helped the falcons recover?',o:['"they can reach speeds of more than 300 kilometres per hour"','"cities offer a steady supply of pigeons to eat"','"scientists and volunteers began raising young falcons and releasing them into the wild"','"many of the birds chose to nest not on cliffs"'],a:[2],why:'This is the only choice that describes people taking action to help the falcons.'},
+{q:'What is the purpose of the last sentence of the paragraph?',o:['To introduce a new topic','To summarize the main point of the paragraph','To give a statistic about falcons','To argue against building skyscrapers'],a:[1],why:'A concluding sentence often restates the main idea. This one sums up what the falcons\' story shows.'}
+]},
+{id:'nr',kind:'News report',title:'Students Turn Lunch Leftovers into Garden Gold',passage:`<h3>Students Turn Lunch Leftovers into Garden Gold</h3><div class="by">MISSISSAUGA</div>
+<p>A group of Grade 10 students at Riverside Secondary School has found a way to keep cafeteria waste out of the landfill while helping their neighbours grow food.</p>
+<p>Since September, the school's Green Team has collected fruit peels, vegetable scraps, and coffee grounds from the cafeteria every day. The scraps go into six large compost bins behind the school, where the students turn them weekly. After about three months, the scraps become dark, rich soil.</p>
+<p>"At first people thought it was gross," said 15-year-old team leader Maya Chen. "Now kids actually come and ask if they can help."</p>
+<p>The team estimates it has kept more than 900 kilograms of food waste out of the garbage so far this year. That has also cut the school's waste-collection costs, according to principal David Okoro.</p>
+<p>"The students did the research, wrote the proposal, and presented it to the school council," Okoro said. "They did all of this themselves."</p>
+<p>The finished compost does not stay at the school. Each spring, the Green Team donates it to the Elm Street Community Garden, where local families grow vegetables. Garden coordinator Linda Morales said the donation means families no longer have to buy soil.</p>
+<p>"Good soil is expensive," Morales said. "This gift lets more families plant a garden who might not have been able to afford it."</p>
+<p>The Green Team hopes to expand the program next year by adding bins for paper towels from the washrooms. The students are also planning a workshop to teach younger students at nearby elementary schools how to start their own compost projects.</p>`,
+qs:[
+{q:'What is the purpose of the first paragraph of this news report?',o:['To give the reporter\'s opinion about composting','To summarize the most important information in the story','To describe how compost is made','To introduce the school principal'],a:[1],why:'A news report\'s first paragraph (the lead) sums up who, what, and why so readers get the key facts first.'},
+{q:'Why does the reporter include the quotation from Maya Chen?',o:['To show how students\' attitudes toward the project changed','To explain how long composting takes','To prove that the project saves money','To describe the community garden'],a:[0],why:'Her words show students went from thinking it was "gross" to asking to help.'},
+{q:'Which detail shows that the project saves the school money?',o:['The students turn the bins weekly.','The compost is donated each spring.','The project has cut the school\'s waste-collection costs.','The students presented to the school council.'],a:[2],why:'Principal Okoro says the reduced waste "cut the school\'s waste-collection costs."'},
+{q:'What happens to the finished compost?',o:['It is sold to raise money for the school.','It is used in the school\'s flower beds.','It is donated to a community garden.','It is sent to a landfill.'],a:[2],why:'"Each spring, the Green Team donates it to the Elm Street Community Garden."'},
+{q:'Which TWO are future plans for the Green Team?',multi:true,o:['Adding bins for paper towels from the washrooms','Selling compost to local stores','Teaching a workshop for elementary students','Building a greenhouse behind the school'],a:[0,2],why:'The last paragraph names both plans: paper-towel bins and a workshop for younger students.'}
+],
+open:{id:'nr-open',prompt:'Explain how the Green Team\'s project helps both the school and the community. Use specific details from the news report to support your answer.',target:'Aim for one well-developed paragraph (about 6 to 10 sentences).',
+checklist:['My first sentence answers the question directly.','I explained at least one way the project helps the school, with a detail from the report.','I explained at least one way the project helps the community, with a detail from the report.','I used my own words and did not just copy sentences.','I wrote in complete sentences and checked spelling and punctuation.'],
+model:`<p>The Green Team's project helps the school by reducing waste and saving money, and it helps the community by giving families free soil for their gardens. At school, the students have kept more than 900 kilograms of food waste out of the garbage this year. According to the principal, this has lowered the school's waste-collection costs. The project also teaches students to take responsibility, since they did the research and planning themselves. In the community, the Green Team donates the finished compost to the Elm Street Community Garden. Because good soil is expensive, this donation means families no longer have to buy it. As a result, more families can afford to grow their own vegetables.</p>`}}
+]},
+b:{name:'Session B',lead:'This session has a dialogue, writing questions that are not based on a reading, and an opinion essay. Answers save automatically in this browser. When you finish, enter your first name and tap Submit.',sections:[
+{id:'dia',kind:'Dialogue',title:'Counting the Hours',passage:`<h3>Counting the Hours</h3><div class="by">Dev, a Grade 10 student, meets with his guidance counsellor, Ms. Okafor.</div>
+<p><span class="sp">Ms. Okafor:</span> Come in, Dev. I see from your file that you have sixteen community involvement hours so far. You need forty to graduate.</p>
+<p><span class="sp">Dev:</span> I know. I keep meaning to do more, but between hockey and homework, I never have time.</p>
+<p><span class="sp">Ms. Okafor:</span> That's common. Let's start with what you already enjoy. You play hockey. Have you thought about helping with a youth team?</p>
+<p><span class="sp">Dev:</span> Coaching little kids? I don't know. They'd probably spend the whole practice falling over.</p>
+<p><span class="sp">Ms. Okafor:</span> (smiling) That's sort of the point. You remember what it was like to learn. That can make you a good teacher.</p>
+<p><span class="sp">Dev:</span> I guess. My old coach used to say the best players aren't always the best coaches.</p>
+<p><span class="sp">Ms. Okafor:</span> True. But the best coaches are usually patient. Are you patient?</p>
+<p><span class="sp">Dev:</span> With my little sister? Not really. With hockey? Yeah, actually. I'll spend an hour practising one shot.</p>
+<p><span class="sp">Ms. Okafor:</span> Then you already have the most important skill. The Westdale Minor Hockey League needs volunteer assistants on Saturday mornings. Each session is two hours, and it runs from January to the end of March.</p>
+<p><span class="sp">Dev:</span> Saturday mornings... that's when I usually sleep in.</p>
+<p><span class="sp">Ms. Okafor:</span> If you went every week, you'd have all forty hours by spring.</p>
+<p><span class="sp">Dev:</span> (pausing) Okay. What do I need to do?</p>
+<p><span class="sp">Ms. Okafor:</span> Fill out this form, and ask the league coordinator to sign your log each week. Bring it to me in April, and we'll make it official.</p>
+<p><span class="sp">Dev:</span> Fine. But if a six-year-old scores on me, I'm blaming you.</p>`,
+qs:[
+{q:'What is Dev\'s main problem at the start of the dialogue?',o:['He does not like playing hockey anymore.','He needs more community involvement hours but feels too busy.','He is failing one of his courses.','He does not get along with his sister.'],a:[1],why:'He has sixteen of forty hours and says, "I never have time."'},
+{q:'When Ms. Okafor says, "That\'s sort of the point," she means that',o:['coaching is easy because children rarely listen.','Dev should not worry about volunteering.','learning involves mistakes, and Dev can help children through them.','young players need to be more serious.'],a:[2],why:'She is responding to Dev\'s joke about kids falling over. Struggling is part of learning, and Dev remembers that.'},
+{q:'Why does Ms. Okafor conclude that Dev "already has the most important skill"?',o:['He says he is patient with his little sister.','He is willing to practise one hockey shot for an hour.','He played for a very good coach.','He wants to sleep in on Saturdays.'],a:[1],why:'Practising one shot for an hour shows patience, the skill she says good coaches need.'},
+{q:'Which TWO steps must Dev take to get his hours approved?',multi:true,o:['Fill out a form','Call Ms. Okafor every week','Have the league coordinator sign his log each week','Coach a team on his own'],a:[0,2],why:'Ms. Okafor tells him to fill out the form and have the coordinator sign his log weekly.'},
+{q:'What does Dev\'s last line show about his attitude?',o:['He refuses to volunteer.','He is angry with Ms. Okafor.','He has agreed, and he is using humour to show it.','He is worried about getting hurt.'],a:[2],why:'He says "Fine" and then jokes. He has accepted the idea in a light-hearted way.'}
+]},
+{id:'wms',kind:'Writing: multiple choice',title:'Writing Questions',intro:`<p><b>About this part</b></p><p>These questions test sentence structure, word choice, punctuation, and how ideas are organized. They are not based on a reading.</p><p>Tip: read each choice in your head. The correct answer usually sounds clear and complete.</p>`,
+qs:[
+{q:'Which sentence is written correctly?',o:['The bus was late, we missed first period.','The bus was late, so we missed first period.','The bus was late so, we missed first period.','The bus was late we missed first period.'],a:[1],why:'Two complete thoughts need a joining word such as "so" after the comma. A alone is a comma splice; D is a run-on.'},
+{q:'Which word correctly completes the sentence? "The students handed in ____ projects on time."',o:['there','they\'re','their','there\'s'],a:[2],why:'"Their" shows ownership. "There" is a place and "they\'re" means "they are."'},
+{q:'Which word or phrase best connects these ideas? "Maria studied every night for a week. ____, she passed the test with a high mark."',o:['However','As a result','For example','Meanwhile'],a:[1],why:'Passing the test was the result of studying, so "As a result" shows cause and effect.'},
+{q:'Which sentence does NOT belong in this paragraph?<br><span class="note">(1) Walking to school is a simple way for students to stay active. (2) A twenty-minute walk each way adds up to more than three hours of exercise a week. (3) My cousin has a red bicycle with ten gears. (4) Students who walk also arrive at school more alert and ready to learn.</span>',o:['Sentence 1','Sentence 2','Sentence 3','Sentence 4'],a:[2],why:'The paragraph is about walking to school. The cousin\'s bicycle does not support that main idea.'},
+{q:'Which is the best topic sentence for a paragraph with these details: libraries offer free internet, host homework clubs, and lend laptops?',o:['Libraries are usually quiet places.','I went to the library yesterday.','Public libraries help students in many ways.','Some libraries are very old.'],a:[2],why:'All three details are ways libraries help students, so this sentence covers them all.'},
+{q:'Which word correctly completes the sentence? "Each of the players ____ a new jersey."',o:['have','has','are having','were having'],a:[1],why:'"Each" is singular, so it takes the singular verb "has."'},
+{q:'Which revision combines these sentences most effectively? "The storm was strong. It knocked down power lines. It closed several roads."',o:['The storm was strong, it knocked down power lines, it closed several roads.','The strong storm knocked down power lines and closed several roads.','The storm, which was strong, and it knocked down power lines and closed roads.','Strong was the storm, knocking power lines, closing roads.'],a:[1],why:'B is clear, correct, and removes repeated words. A is a run-on and C and D are awkward.'},
+{q:'Which sentence is most appropriate for a formal letter to the principal?',o:['Hey, the cafeteria food is kind of gross.','The cafeteria is the worst, lol.','I would like to suggest adding healthier options to the cafeteria menu.','Fix the cafeteria food now.'],a:[2],why:'Formal writing is polite and avoids slang. C makes the point respectfully.'}
+]},
+{id:'op',kind:'Opinion essay',title:'Series of Paragraphs Expressing an Opinion',intro:`<p><b>Topic</b></p><p>Some people think high schools should start later in the morning, around 9:30 a.m., so teenagers can get more sleep. Others think the school day should start at the usual time.</p><p><b>Is a later start time a good idea?</b> Write a series of paragraphs expressing your opinion. Support it with reasons and specific details.</p><p><b>Plan first (5 minutes):</b> your opinion, three reasons, one detail or example for each.</p>`,
+open:{id:'op-open',prompt:'Write your series of paragraphs below.',target:'Aim for about 5 paragraphs: introduction, three body paragraphs, conclusion.',long:true,
+checklist:['My introduction states my opinion clearly.','I have at least three body paragraphs, each with one reason.','Each reason is supported with specific details, facts, or examples.','I used transitions (First, In addition, Finally, However) to connect ideas.','My conclusion restates my opinion in new words.','I kept a consistent, formal tone (no slang).','I checked spelling, grammar, and punctuation.'],
+model:`<p>Most teenagers know the feeling of dragging themselves out of bed before sunrise. In my opinion, high schools should start later in the morning, because students would be healthier, learn more, and be safer.</p>
+<p>First, a later start would help students get the sleep they need. During the teenage years, the body clock naturally shifts later, so many students cannot fall asleep before 11 p.m. If school starts at 8 a.m., they may get only six or seven hours of rest. Starting at 9:30 would give them time to sleep longer.</p>
+<p>In addition, well-rested students learn better. When students are tired, it is hard to focus on a math lesson or remember what they have read. With more sleep, students would be more alert in class, participate more, and likely earn better marks.</p>
+<p>Finally, a later start could make mornings safer. In winter, many students walk or wait for the bus in the dark. A later start would mean more students travel in daylight, when drivers can see them more easily.</p>
+<p>Some people argue that a later start would make it harder to fit in sports and part-time jobs. However, schedules can be adjusted, and students' health and learning are more important.</p>
+<p>In conclusion, starting high school later would help students sleep more, learn better, and stay safer. Schools should make this change so that students can begin each day ready to succeed.</p>`}}
+]}
+};
+
+const KEY='osslt-practice-v1';
+let st={ans:{},open:{},chk:{},done:{},sent:{},name:''};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)st=Object.assign(st,s)}catch(e){}
+st.sent=st.sent||{};st.name=st.name||'';
+const CFG={supa:'https://qajrlfqoicfcfhthsfay.supabase.co',anon:'sb_publishable_sG1jw9_yLUSgv0mUxmJZsA_FiSUcjM0'};
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let sending=false,sendErr='';
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const L='ABCD';
+const view=document.getElementById('view');
+let cur='a';
+const words=t=>(t.trim().match(/\S+/g)||[]).length;
+const same=(x,y)=>x&&x.length===y.length&&y.every(v=>x.includes(v));
+
+function qHtml(sec,q,i,n,done){
+  const id=sec.id+'-'+i,pick=st.ans[id]||[];
+  const opts=q.o.map((t,j)=>{
+    let c='';
+    if(done){const isA=q.a.includes(j),isP=pick.includes(j);c=isA&&isP?'right':!isA&&isP?'wrong':isA?'missed':''}
+    return `<label class="opt ${c}"><input type="${q.multi?'checkbox':'radio'}" name="${id}" value="${j}" data-q="${id}" ${pick.includes(j)?'checked':''} ${done?'disabled':''}><span class="bub">${L[j]}</span><span>${t}</span></label>`}).join('');
+  const ok=same(pick,q.a);
+  return `<div class="q ${q.multi?'multi':''}" id="q-${id}"><p class="qt"><span class="qn">${n}</span><span>${q.q}${q.multi?' <span class="note">(Select two.)</span>':''}</span></p>${opts}
+  <div class="why">${ok?'<b class="r">Correct.</b>':'<b class="w">Not quite.</b> Answer: '+q.a.map(k=>L[k]).join(' and ')+'.'} ${q.why}</div></div>`}
+
+function openHtml(o,n){
+  const v=st.open[o.id]||'';
+  const cl=o.checklist.map((t,j)=>{const k=o.id+'-'+j;return `<label class="chk"><input type="checkbox" data-chk="${k}" ${st.chk[k]?'checked':''}><span>${t}</span></label>`}).join('');
+  return `<div class="q"><p class="qt"><span class="qn">${n}</span><span>${o.prompt} <span class="note">${o.target}</span></span></p>
+  <textarea class="${o.long?'long':''}" data-open="${o.id}" ${st.done[cur]?'readonly':''} aria-label="Written response" placeholder="Type your answer here...">${v.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
+  <div class="wc" id="wc-${o.id}">${words(v)} words</div>
+  <div class="selfcheck"><p class="qt" style="margin-top:8px"><span>Self-check: tick each item your answer does.</span></p>${cl}
+  <details><summary>Show a sample strong answer</summary><div class="model">${o.model}</div></details></div></div>`}
+
+function render(){
+  const s=DATA[cur],done=!!st.done[cur];let n=0;
+  const secs=s.sections.map(sec=>{
+    const left=sec.passage?`<article class="passage" aria-label="Reading: ${sec.title}">${sec.passage}</article>`:`<aside class="intro">${sec.intro}</aside>`;
+    const right=(sec.qs||[]).map((q,i)=>qHtml(sec,q,i,++n,done)).join('')+(sec.open?openHtml(sec.open,++n):'');
+    return `<section class="sec ${done?'done':''}" id="${sec.id}"><p class="kind">${sec.kind}</p><h2>${sec.title}</h2><div class="grid">${left}<div>${right}</div></div></section>`}).join('');
+  view.innerHTML=`<p class="lead">${s.lead}</p>${secs}
+  <div class="bar">${done?'':`<label class="who">First name<input id="sname" autocomplete="given-name" maxlength="60" value="${esc(st.name)}"></label>`}<button class="btn" id="check" type="button" ${done?'disabled':''}>${done?'Submitted':'Submit and see results'}</button><button class="btn ghost" id="reset" type="button">Clear ${s.name}</button>${cur==='a'?'<button class="btn ghost" id="next" type="button">Go to Session B</button>':''}</div>
+  <p class="sent ${sendErr?'err':''}" id="sendmsg" aria-live="polite">${sentLine()}</p>
+  <div class="result ${done?'show':''}" id="result" aria-live="polite">${done?resultHtml():''}</div>
+  <p class="fine">All passages and names are original and fictional, written for practice. This is not an official EQAO test. Submitting sends your first name and answers to Professor Farb for grading. For the official practice test, visit <a href="https://www.eqao.com/the-assessments/osslt/">eqao.com</a>.</p>`;
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.s===cur));
+  if(done)requestAnimationFrame(()=>document.querySelectorAll('.fill').forEach(f=>f.style.width=f.dataset.w));
+}
+
+function resultHtml(){
+  const s=DATA[cur];let tot=0,got=0;
+  const rows=s.sections.filter(x=>x.qs).map(sec=>{
+    const g=sec.qs.filter((q,i)=>same(st.ans[sec.id+'-'+i],q.a)).length;tot+=sec.qs.length;got+=g;
+    return `<div class="row"><span>${sec.kind}</span><div class="track"><div class="fill" style="width:0" data-w="${Math.round(g/sec.qs.length*100)}%"></div></div><span>${g} / ${sec.qs.length}</span></div>`}).join('');
+  const pct=Math.round(got/tot*100);
+  const msg=pct>=80?'Strong work. Review any misses below, then finish your written answers.':pct>=65?'Close. Look at each explanation below to see why the right answer works.':'Keep practising. Re-read the passages and the explanations below.';
+  return `<div class="big">${got} / ${tot}</div><p style="margin:6px 0 0"><b>${pct}% on multiple choice.</b> ${msg}</p><div class="rows">${rows}</div>
+  <p class="fine" style="margin-top:14px">Written answers are not auto-scored. Use the self-check list under each one and compare with the sample answer. On the real test, written answers count for a large part of the result, so practise them fully.</p>`}
+
+function sentLine(){
+  if(sendErr)return sendErr+' <button class="btn ghost" id="resend" type="button">Try sending again</button>';
+  if(st.sent[cur])return 'Sent for grading. Your written answers will be marked and returned to you.';
+  if(st.done[cur])return 'Not sent yet. <button class="btn ghost" id="resend" type="button">Send for grading</button>';
+  return '';
+}
+function score(k){let got=0,tot=0;DATA[k].sections.forEach(sec=>(sec.qs||[]).forEach((q,i)=>{tot++;if(same(st.ans[sec.id+'-'+i],q.a))got++}));return{got,tot}}
+async function send(){
+  if(sending||st.sent[cur])return;
+  sending=true;sendErr='';
+  const k=cur,mc={},written={};
+  DATA[k].sections.forEach(sec=>{(sec.qs||[]).forEach((q,i)=>{const id=sec.id+'-'+i;mc[id]=st.ans[id]||[]});if(sec.open)written[sec.open.id]=st.open[sec.open.id]||''});
+  const sc=score(k),el=started?(+mins.value*60-Math.max(left,0)):null;
+  try{
+    const r=await fetch(CFG.supa+'/rest/v1/rpc/osslt_submit',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anon},
+      body:JSON.stringify({p_name:st.name,p_session:k,p_mc:mc,p_written:written,p_correct:sc.got,p_total:sc.tot,p_elapsed:el})});
+    if(!r.ok)throw new Error(r.status);
+    const j=await r.json();st.sent[k]=j.id||true;save();
+  }catch(e){sendErr='Your answers could not be sent (check your internet connection).'}
+  finally{sending=false}
+  if(cur===k){const m=document.getElementById('sendmsg');if(m){m.className='sent'+(sendErr?' err':'');m.innerHTML=sentLine()}}
+}
+function go(k,scroll){cur=k;if(location.hash!=='#session-'+k)history.replaceState(null,'','#session-'+k);render();if(scroll)window.scrollTo(0,0)}
+
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.q){const id=t.dataset.q;st.ans[id]=[...document.querySelectorAll(`input[data-q="${id}"]:checked`)].map(x=>+x.value);save()}
+  if(t.dataset.chk){st.chk[t.dataset.chk]=t.checked;save()}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='sname'){st.name=t.value.trim();save()}
+  if(t.dataset.open){st.open[t.dataset.open]=t.value;save();const w=document.getElementById('wc-'+t.dataset.open);if(w)w.textContent=words(t.value)+' words'}
+});
+let armed=false;
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.s)go(t.dataset.s,true);
+  if(t.id==='check'&&!st.done[cur]){
+    const n=document.getElementById('sname');
+    if(!st.name){n.focus();n.setAttribute('aria-invalid','true');const m=document.getElementById('sendmsg');m.className='sent err';m.textContent='Please enter your first name first.';return}
+    st.done[cur]=true;save();render();send();document.getElementById('result').scrollIntoView({behavior:'smooth',block:'center'})}
+  if(t.id==='resend')send();
+  if(t.id==='next')go('b',true);
+  if(t.id==='reset'){
+    if(!armed){armed=true;t.textContent='Tap again to clear';setTimeout(()=>{armed=false;if(t.isConnected)t.textContent='Clear '+DATA[cur].name},3000);return}
+    armed=false;
+    DATA[cur].sections.forEach(sec=>{(sec.qs||[]).forEach((q,i)=>delete st.ans[sec.id+'-'+i]);if(sec.open){delete st.open[sec.open.id];sec.open.checklist.forEach((c,j)=>delete st.chk[sec.open.id+'-'+j])}});
+    delete st.done[cur];delete st.sent[cur];sendErr='';save();render();window.scrollTo(0,0)}
+});
+
+const clock=document.getElementById('clock'),mins=document.getElementById('mins'),tgo=document.getElementById('tgo');
+let left=75*60,tick=null,started=false;
+const show=()=>{const m=Math.floor(left/60),s=left%60;clock.textContent=left>0?m+':'+String(s).padStart(2,'0'):"Time's up"};
+tgo.addEventListener('click',()=>{
+  if(tick){clearInterval(tick);tick=null;tgo.textContent='Resume';return}
+  if(left<=0)left=+mins.value*60;
+  started=true;
+  tick=setInterval(()=>{left--;show();if(left<=0){clearInterval(tick);tick=null;tgo.textContent='Start'}},1000);tgo.textContent='Pause'});
+document.getElementById('treset').addEventListener('click',()=>{clearInterval(tick);tick=null;started=false;left=+mins.value*60;tgo.textContent='Start';show()});
+mins.addEventListener('change',()=>{if(!tick){left=+mins.value*60;show()}});
+
+const fromHash=()=>{const h=location.hash.replace('#session-','');go(DATA[h]?h:'a',false)};
+window.addEventListener('hashchange',fromHash);
+fromHash();
+}
+</script>
+</body>
+</html>
