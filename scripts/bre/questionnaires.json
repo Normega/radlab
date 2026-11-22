@@ -1,0 +1,1495 @@
+{
+  "bfi": {
+    "name": "Characteristics",
+    "slug": "bfi2-ne-om",
+    "questionnaire_type": "composable",
+    "instructions": "Here are a number of characteristics that may or may not apply to you. For example, do you agree that you are someone who likes to spend time with others? Please write a number next to each statement to indicate the extent to which you agree or disagree with that statement.",
+    "pages": [
+      {
+        "id": "bfi_p1",
+        "components": [
+          {
+            "id": "bfi2_04",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is relaxed, handles stress well.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_05",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… has few artistic interests.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_09",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… stays optimistic after experiencing a setback.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_10",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is curious about many different things.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_14",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is moody, has up and down mood swings.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_15",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is inventive, finds clever ways to do things.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      },
+      {
+        "id": "bfi_p2",
+        "components": [
+          {
+            "id": "bfi2_19",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… can be tense.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_20",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is fascinated by art, music, or literature.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_24",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… feels secure, comfortable with self.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_25",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… avoids intellectual, philosophical discussions.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_29",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is emotionally stable, not easily upset.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_30",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… has little creativity.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      },
+      {
+        "id": "bfi_p3",
+        "components": [
+          {
+            "id": "bfi2_34",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… worries a lot.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_35",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… values art and beauty.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_39",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… often feels sad.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_40",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is complex, a deep thinker.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_44",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… keeps their emotions under control.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_45",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… has difficulty imagining things.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      },
+      {
+        "id": "bfi_p4",
+        "components": [
+          {
+            "id": "bfi2_49",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… rarely feels anxious or afraid.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_50",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… thinks poetry and plays are boring.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_54",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… tends to feel depressed, blue.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_55",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… has little interest in abstract ideas.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_59",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is temperamental, gets emotional easily.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "bfi2_60",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "Disagree strongly",
+                "value": 1
+              },
+              {
+                "label": "Disagree a little",
+                "value": 2
+              },
+              {
+                "label": "Neutral; no opinion",
+                "value": 3
+              },
+              {
+                "label": "Agree a little",
+                "value": 4
+              },
+              {
+                "label": "Agree strongly",
+                "value": 5
+              }
+            ],
+            "question": "I am someone who… is original, comes up with new ideas.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      }
+    ],
+    "scoring": {
+      "method": "mean",
+      "note": "Soto & John (2017), BFI-2 Negative Emotionality and Open-Mindedness domains (24 items). Item ids keep the original 60-item BFI-2 numbering, so the Open-Mindedness items match sf2-bfi2-om. Reverse-keyed items are recoded 6 - x; Prefer not to answer is scored as missing. Domain = mean of 12 items, facet = mean of 4.",
+      "reverse_items": [
+        "bfi2_04",
+        "bfi2_09",
+        "bfi2_24",
+        "bfi2_29",
+        "bfi2_44",
+        "bfi2_49",
+        "bfi2_05",
+        "bfi2_25",
+        "bfi2_30",
+        "bfi2_45",
+        "bfi2_50",
+        "bfi2_55"
+      ],
+      "subscales": [
+        {
+          "name": "Negative Emotionality",
+          "item_ids": [
+            "bfi2_04",
+            "bfi2_09",
+            "bfi2_14",
+            "bfi2_19",
+            "bfi2_24",
+            "bfi2_29",
+            "bfi2_34",
+            "bfi2_39",
+            "bfi2_44",
+            "bfi2_49",
+            "bfi2_54",
+            "bfi2_59"
+          ]
+        },
+        {
+          "name": "Anxiety",
+          "item_ids": [
+            "bfi2_04",
+            "bfi2_19",
+            "bfi2_34",
+            "bfi2_49"
+          ]
+        },
+        {
+          "name": "Depression",
+          "item_ids": [
+            "bfi2_09",
+            "bfi2_24",
+            "bfi2_39",
+            "bfi2_54"
+          ]
+        },
+        {
+          "name": "Emotional Volatility",
+          "item_ids": [
+            "bfi2_14",
+            "bfi2_29",
+            "bfi2_44",
+            "bfi2_59"
+          ]
+        },
+        {
+          "name": "Open-Mindedness",
+          "item_ids": [
+            "bfi2_05",
+            "bfi2_10",
+            "bfi2_15",
+            "bfi2_20",
+            "bfi2_25",
+            "bfi2_30",
+            "bfi2_35",
+            "bfi2_40",
+            "bfi2_45",
+            "bfi2_50",
+            "bfi2_55",
+            "bfi2_60"
+          ]
+        },
+        {
+          "name": "Aesthetic Sensitivity",
+          "item_ids": [
+            "bfi2_05",
+            "bfi2_20",
+            "bfi2_35",
+            "bfi2_50"
+          ]
+        },
+        {
+          "name": "Intellectual Curiosity",
+          "item_ids": [
+            "bfi2_10",
+            "bfi2_25",
+            "bfi2_40",
+            "bfi2_55"
+          ]
+        },
+        {
+          "name": "Creative Imagination",
+          "item_ids": [
+            "bfi2_15",
+            "bfi2_30",
+            "bfi2_45",
+            "bfi2_60"
+          ]
+        }
+      ]
+    }
+  },
+  "asi": {
+    "name": "Body sensations",
+    "slug": "asi-3",
+    "questionnaire_type": "composable",
+    "instructions": "Enter the number from the scale below that best describes how typical or characteristic each item is of you, putting the number next to the item. You should make your ratings in terms of how much you agree or disagree with the statement as a general description of yourself.",
+    "pages": [
+      {
+        "id": "asi_p1",
+        "components": [
+          {
+            "id": "asi_01",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "It is important for me not to appear nervous.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_02",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I cannot keep my mind on a task, I worry that I might be going crazy.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_03",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "It scares me when my heart beats rapidly.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_04",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When my stomach is upset, I worry that I might be seriously ill.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_05",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "It scares me when I am unable to keep my mind on a task.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_06",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I tremble in the presence of others, I fear what people might think of me.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      },
+      {
+        "id": "asi_p2",
+        "components": [
+          {
+            "id": "asi_07",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When my chest feels tight, I get scared that I won't be able to breathe properly.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_08",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I feel pain in my chest, I worry that I'm going to have a heart attack.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_09",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "I worry that other people will notice my anxiety.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_10",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I feel \"spacey\" or spaced out I worry that I may be mentally ill.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_11",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "It scares me when I blush in front of people.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_12",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I notice my heart skipping a beat, I worry that there is something seriously wrong with me.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      },
+      {
+        "id": "asi_p3",
+        "components": [
+          {
+            "id": "asi_13",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I begin to sweat in a social situation, I fear people will think negatively of me.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_14",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When my thoughts seem to speed up, I worry that I might be going crazy.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_15",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When my throat feels tight, I worry that I could choke to death.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_16",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When I have trouble thinking clearly, I worry that there is something wrong with me.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_17",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "I think it would be horrible for me to faint in public.",
+            "required": true,
+            "allow_pna": true
+          },
+          {
+            "id": "asi_18",
+            "type": "likert",
+            "scale": [
+              {
+                "label": "0 Very little",
+                "value": 0
+              },
+              {
+                "label": "1 A little",
+                "value": 1
+              },
+              {
+                "label": "2 Some",
+                "value": 2
+              },
+              {
+                "label": "3 Much",
+                "value": 3
+              },
+              {
+                "label": "4 Very much",
+                "value": 4
+              }
+            ],
+            "question": "When my mind goes blank, I worry there is something terribly wrong with me.",
+            "required": true,
+            "allow_pna": true
+          }
+        ]
+      }
+    ],
+    "scoring": {
+      "method": "sum",
+      "range": "0-72",
+      "source": "ASI-3, Taylor et al. (2007). Items 0-4, none reverse-keyed. Total = sum of 18 (0-72); subscales are sums (0-24). Ids match sf2b-asi3-pc for the six Physical Concerns items. Prefer not to answer is scored as missing.",
+      "reverse_items": [],
+      "subscales": [
+        {
+          "name": "Physical Concerns",
+          "item_ids": [
+            "asi_03",
+            "asi_04",
+            "asi_07",
+            "asi_08",
+            "asi_12",
+            "asi_15"
+          ]
+        },
+        {
+          "name": "Cognitive Concerns",
+          "item_ids": [
+            "asi_02",
+            "asi_05",
+            "asi_10",
+            "asi_14",
+            "asi_16",
+            "asi_18"
+          ]
+        },
+        {
+          "name": "Social Concerns",
+          "item_ids": [
+            "asi_01",
+            "asi_06",
+            "asi_09",
+            "asi_11",
+            "asi_13",
+            "asi_17"
+          ]
+        }
+      ]
+    }
+  },
+  "help": {
+    "name": "Final questions",
+    "slug": "bre-helpfulness",
+    "questionnaire_type": "composable",
+    "instructions": "Almost done. Please answer a few last questions about the breathing approach you used.",
+    "pages": [
+      {
+        "id": "help_p1",
+        "components": [
+          {
+            "id": "bre_help_rating",
+            "type": "likert",
+            "required": true,
+            "scale": [
+              {
+                "value": 1,
+                "label": "Not at all helpful"
+              },
+              {
+                "value": 2,
+                "label": ""
+              },
+              {
+                "value": 3,
+                "label": ""
+              },
+              {
+                "value": 4,
+                "label": ""
+              },
+              {
+                "value": 5,
+                "label": ""
+              },
+              {
+                "value": 6,
+                "label": ""
+              },
+              {
+                "value": 7,
+                "label": "Extremely helpful"
+              }
+            ],
+            "question": "How helpful was this strategy for dealing with the feelings the clips brought up?"
+          },
+          {
+            "id": "bre_help_why",
+            "type": "open_text",
+            "required": false,
+            "multiline": true,
+            "rows": 4,
+            "placeholder": "",
+            "max_words": null,
+            "min_words": null,
+            "question": "What, if anything, made it helpful or unhelpful?"
+          },
+          {
+            "id": "bre_help_alt",
+            "type": "open_text",
+            "required": false,
+            "multiline": true,
+            "rows": 4,
+            "placeholder": "",
+            "max_words": null,
+            "min_words": null,
+            "question": "Is there another strategy you think would have worked better for you?"
+          }
+        ]
+      }
+    ],
+    "scoring": {
+      "method": "none",
+      "note": "bre_help_rating is a single item (1-7); the two open-text answers are coded qualitatively."
+    }
+  }
+}

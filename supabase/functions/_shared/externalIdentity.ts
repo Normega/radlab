@@ -21,16 +21,34 @@
 
 const ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789' // 31 symbols, no 0/o/1/l/i
 
-export function randomSurrogate(random: (n: number) => Uint8Array = n => crypto.getRandomValues(new Uint8Array(n))): string {
+type Random = (n: number) => Uint8Array
+const cryptoRandom: Random = n => crypto.getRandomValues(new Uint8Array(n))
+
+function randomChars(length: number, random: Random): string {
   let out = ''
-  while (out.length < 12) {
+  while (out.length < length) {
     for (const b of random(16)) {
       if (b >= 248) continue // 248 = 8 * 31: reject so every symbol is equally likely
       out += ALPHABET[b % 31]
-      if (out.length === 12) break
+      if (out.length === length) break
     }
   }
-  return `P-${out}`
+  return out
+}
+
+export function randomSurrogate(random: Random = cryptoRandom): string {
+  return `P-${randomChars(12, random)}`
+}
+
+// A short study code for an in-person study (studies.study_code_prefix), which
+// the RA reads off the screen to name the physiology file: "MB-7KQ3D". It is the
+// surrogate itself, so external_identities is exactly the "SONA ID <-> study
+// code" linking table the consent form describes, and deleting the row breaks
+// the link. 5 symbols from 31 = 28.6 M codes; a collision with another study's
+// code is retried by surrogateFor. Never shaped like a SONA id (digits only).
+export function randomStudyCode(prefix: string, random: Random = cryptoRandom): string {
+  if (!/^[A-Z]{1,4}$/.test(prefix)) throw new Error('study code prefix must be 1-4 capital letters')
+  return `${prefix}-${randomChars(5, random).toUpperCase()}`
 }
 
 // Minimal shape of the supabase-js call used, so tests can pass a fake.
@@ -47,13 +65,16 @@ export async function surrogateFor(
   externalId: string,
   mint: () => string = randomSurrogate,
 ): Promise<string | null> {
-  // Two tries: a first click racing another for the same person can find the
-  // row locked by the other's insert and, in the same statement, not yet see it.
-  // The second statement does.
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // Three tries. A first click racing another for the same person can find the
+  // row locked by the other's insert and, in the same statement, not yet see it;
+  // the next statement does. And a candidate can collide with a surrogate that
+  // already exists (UNIQUE, 23505) -- likelier for a short study code than for a
+  // 12-character surrogate -- so that retries with a fresh candidate.
+  for (let attempt = 0; attempt < 3; attempt++) {
     const { data, error } = await db.rpc('external_identity_surrogate', {
       p_study_id: studyId, p_external_id: externalId, p_candidate: mint(),
     })
+    if (error?.code === '23505') continue
     if (error) {
       // The message never contains the id (it was in the body, not the SQL text).
       console.error('external identity lookup failed:', error.code ?? error.message)
@@ -61,6 +82,6 @@ export async function surrogateFor(
     }
     if (typeof data === 'string' && data) return data
   }
-  console.error('external identity lookup returned nothing twice')
+  console.error('external identity lookup returned nothing three times')
   return null
 }

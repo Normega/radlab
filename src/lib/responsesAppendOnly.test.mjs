@@ -38,6 +38,9 @@ const RESPONSE_TABLES = [
   'foggy_valleys_pictures',
   // …and its questions after each picture (20261105_foggy_valleys_picture_ratings.sql)
   'foggy_valleys_picture_ratings',
+  // OSSLT practice test (20261122_osslt_practice.sql): written only by osslt_submit(),
+  // which flags a provable double-submit in resubmission_of.
+  'osslt_submissions',
 ]
 
 let pass = 0, fail = 0

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { todayInLabTz } from '../_shared/labDate.ts'
+import { randomStudyCode, randomSurrogate, surrogateFor } from '../_shared/externalIdentity.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -50,8 +51,43 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // 0. Separate identity (studies.separate_external_identity). The SONA ID goes
+    // into external_identities and nowhere else; the enrollment, the profile and
+    // the display name carry a study code instead (_shared/externalIdentity.ts).
+    // With studies.study_code_prefix the code is short ("MB-7KQ3D") so the RA can
+    // name the physiology file with it; the RA panel and the end screen show it.
+    // Anonymous links in such a study (pilots) get a code too, with no identity row.
+    const { data: study, error: studyErr } = await admin
+      .from('studies')
+      .select('separate_external_identity, study_code_prefix')
+      .eq('id', studyId)
+      .single()
+    if (studyErr || !study) throw new Error(`Study fetch failed: ${studyErr?.message ?? 'not found'}`)
+
+    let studyCode: string | null = null
+    if (study.separate_external_identity) {
+      const mint = study.study_code_prefix
+        ? () => randomStudyCode(study.study_code_prefix)
+        : () => randomSurrogate()
+      studyCode = sonaId ? await surrogateFor(admin, studyId, String(sonaId).trim(), mint) : mint()
+      // Refuse rather than fall back to writing the SONA ID where it must not go.
+      if (!studyCode) return json({ error: 'Could not assign a study code. Nothing was created; try again.' }, 500)
+
+      // The same SONA ID maps to the same code, so a second link for that person
+      // would make two participants share one code. Refuse; re-issue the link instead.
+      const { data: existing } = await admin
+        .from('study_enrollments')
+        .select('id')
+        .eq('study_id', studyId)
+        .eq('external_id', studyCode)
+        .limit(1)
+      if (existing?.length) {
+        return json({ error: `This SONA ID already has study code ${studyCode} in this study. Use that participant's existing link instead of creating a second one.` }, 409)
+      }
+    }
+
     // 1. Create a real auth user (triggers the handle_new_user profile row creation)
-    const displayName   = sonaId ? `SONA-${sonaId}` : 'Participant'
+    const displayName   = studyCode ?? (sonaId ? `SONA-${sonaId}` : 'Participant')
     const syntheticEmail = `anon-${crypto.randomUUID()}@radlab.internal`
 
     const { data: { user: authUser }, error: createUserErr } = await admin.auth.admin.createUser({
@@ -69,7 +105,7 @@ Deno.serve(async (req) => {
       role:         'participant',
       is_anonymous: true,
       display_name: displayName,
-      sona_id:      sonaId ?? null,
+      sona_id:      studyCode ? null : (sonaId ?? null),
     })
     if (profileErr) throw new Error(`Profile update failed: ${profileErr.message}`)
 
@@ -79,7 +115,7 @@ Deno.serve(async (req) => {
     const { error: enrollErr } = await admin.from('study_enrollments').insert({
       study_id:     studyId,
       profile_id:   participantId,
-      external_id:  sonaId ?? null,
+      external_id:  studyCode ?? sonaId ?? null,
       enrolled_at:  new Date().toISOString(),
       status:       'enrolled',
     })
@@ -138,7 +174,7 @@ Deno.serve(async (req) => {
       .update({ status: 'link_sent' })
       .eq('id', day1ScheduleId)
 
-    return json({ token: link.token, participantId })
+    return json({ token: link.token, participantId, studyCode })
   } catch (e) {
     console.error(e)
     return json({ error: e.message }, 500)

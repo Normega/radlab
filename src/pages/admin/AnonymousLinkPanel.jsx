@@ -30,6 +30,9 @@ export default function AnonymousLinkPanel({ study, qc }) {
   const [sonaId,   setSonaId]   = useState('')
   const [genError, setGenError] = useState(null)
   const [copied,   setCopied]   = useState(null)
+  // The study code of the link just created (studies.study_code_prefix). The RA
+  // names the physiology file with it, so it is shown large until the next link.
+  const [lastCode, setLastCode] = useState(null)
 
   async function callEdgeFunction(sonaIdValue) {
     const { data: { session } } = await supabase.auth.getSession()
@@ -53,9 +56,10 @@ export default function AnonymousLinkPanel({ study, qc }) {
 
   const generateLink = useMutation({
     mutationFn: () => callEdgeFunction(null),
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['anon-links', studyId] })
       setGenError(null)
+      setLastCode(res?.studyCode ?? null)
     },
     onError: (e) => setGenError(e.message),
   })
@@ -66,10 +70,11 @@ export default function AnonymousLinkPanel({ study, qc }) {
       if (!id) throw new Error('Enter a SONA participant ID.')
       return callEdgeFunction(id)
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['anon-links', studyId] })
       setSonaId('')
       setGenError(null)
+      setLastCode(res?.studyCode ?? null)
     },
     onError: (e) => setGenError(e.message),
   })
@@ -140,6 +145,14 @@ export default function AnonymousLinkPanel({ study, qc }) {
 
       {genError && <p style={S.errMsg}>{genError}</p>}
 
+      {lastCode && (
+        <div style={S.codeCard}>
+          <div style={S.cardLabel}>Study code</div>
+          <div style={S.codeValue}>{lastCode}</div>
+          <p style={S.muted}>Name the physiology recording with this code. The SONA ID is not shown here again.</p>
+        </div>
+      )}
+
       {isLoading ? (
         <p style={S.muted}>Loading…</p>
       ) : links.length === 0 ? (
@@ -159,7 +172,13 @@ export default function AnonymousLinkPanel({ study, qc }) {
             <tbody>
               {links.map(l => {
                 const profile   = l.profiles
-                const label     = profile?.sona_id ? `SONA-${profile.sona_id}` : (profile?.id?.slice(0, 8) ?? '—')
+                // A separate-identity study stores no SONA ID on the profile; its
+                // display name is the study code.
+                const label     = profile?.sona_id
+                  ? `SONA-${profile.sona_id}`
+                  : (profile?.display_name && profile.display_name !== 'Participant'
+                      ? profile.display_name
+                      : (profile?.id?.slice(0, 8) ?? '—'))
                 const isRevoked = l.status === 'revoked'
                 const isUsed    = l.status === 'used'
                 const url       = `${SITE_ROOT}/s/${l.token}`
@@ -230,6 +249,8 @@ const S = {
   cardLabel:     { fontFamily: '"Space Mono",monospace', fontSize: 12, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
   btnPrimary:    { background: 'var(--pkd)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: '"DM Sans",system-ui,sans-serif', whiteSpace: 'nowrap' },
   input:         { fontSize: 14, fontFamily: '"DM Sans",system-ui,sans-serif', border: '1px solid var(--bd)', borderRadius: 7, padding: '7px 10px', color: 'var(--tx)', background: '#fff', minWidth: 90 },
+  codeCard:      { background: '#fff', border: '1px solid var(--bd)', borderRadius: 12, padding: '16px 24px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 },
+  codeValue:     { fontFamily: '"Space Mono",monospace', fontSize: 36, color: 'var(--tx)', letterSpacing: '0.08em' },
   errMsg:        { fontSize: 14, color: '#e04', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '8px 14px', marginBottom: 12 },
   muted:         { fontSize: 14, color: 'var(--tx3)', fontFamily: '"DM Sans",system-ui,sans-serif' },
   empty:         { textAlign: 'center', padding: '28px 0', border: '1px dashed var(--bd)', borderRadius: 10 },

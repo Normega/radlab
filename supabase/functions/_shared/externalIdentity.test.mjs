@@ -4,12 +4,13 @@
 // travels in an RPC body (never a URL, which the API gateway logs).
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { randomSurrogate, surrogateFor } from './externalIdentity.ts'
+import { randomStudyCode, randomSurrogate, surrogateFor } from './externalIdentity.ts'
 
 // A fake of the external_identity_surrogate RPC (find-or-create).
-function fakeDb({ fail = false, emptyOnce = false } = {}) {
+function fakeDb({ fail = false, emptyOnce = false, collideOnce = false } = {}) {
   const rows = new Map()
   let empty = emptyOnce
+  let collide = collideOnce
   const calls = []
   return {
     rows, calls,
@@ -18,6 +19,7 @@ function fakeDb({ fail = false, emptyOnce = false } = {}) {
       calls.push({ fn, args })
       assert.equal(fn, 'external_identity_surrogate')
       if (fail) return { data: null, error: { code: '42501', message: 'permission denied' } }
+      if (collide) { collide = false; return { data: null, error: { code: '23505', message: 'duplicate key' } } }
       const key = `${args.p_study_id}|${args.p_external_id}`
       if (!rows.has(key)) rows.set(key, args.p_candidate)
       if (empty) { empty = false; return { data: null, error: null } }
@@ -65,4 +67,22 @@ test('the platform id goes only in the RPC body', async () => {
   const db = fakeDb()
   await surrogateFor(db, 'study-1', '5f2a9c1b7e4d3a0012345678')
   assert.deepEqual(Object.keys(db.calls[0].args).sort(), ['p_candidate', 'p_external_id', 'p_study_id'])
+})
+
+test('a study code is the prefix plus 5 unambiguous capitals, never digits only', () => {
+  for (let i = 0; i < 500; i++) {
+    const c = randomStudyCode('MB')
+    assert.match(c, /^MB-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{5}$/)
+    assert.doesNotMatch(c, /^[0-9]+$/, 'never shaped like a SONA id')
+  }
+  assert.throws(() => randomStudyCode('mb'))
+  assert.throws(() => randomStudyCode('TOOLONG'))
+})
+
+test('a code that collides with an existing one is retried with a fresh candidate', async () => {
+  const db = fakeDb({ collideOnce: true })
+  const s = await surrogateFor(db, 'study-1', '12345', () => randomStudyCode('MB'))
+  assert.match(s, /^MB-/)
+  assert.equal(db.calls.length, 2)
+  assert.notEqual(db.calls[0].args.p_candidate, db.calls[1].args.p_candidate)
 })
