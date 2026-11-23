@@ -24,6 +24,8 @@ import DailyWelcomeStep        from './DailyWelcomeStep'
 import DailyFarewellStep       from './DailyFarewellStep'
 import AssignmentStep          from './AssignmentStep'
 import BrePhysioSetupStep      from './bre/BrePhysioSetupStep'
+import BreTask                 from './bre/BreTask'
+import BreEndStep              from './bre/BreEndStep'
 
 /**
  * Props:
@@ -66,7 +68,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
   // day/slot content piped in via studyDay/sendTime.
   const PREVIEWABLE_FORMS = ['mood_checkin', 'mood_checkin_reflective', 'wellness_tip']
   if (demoMode && (
-    category === 'game' || category === 'physio' ||
+    category === 'game' || category === 'physio' || category === 'bre_task' ||
     (category === 'form' && !PREVIEWABLE_FORMS.includes(subcategory))
   )) {
     return <DemoSkipCard category={category} subcategory={subcategory} label={label} onComplete={onComplete} />
@@ -332,6 +334,27 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         demoMode={demoMode || isSimMode}
       />
     )
+  }
+
+  // Breath Attention and Emotional Recovery: the coded tasks and Screen 12 (bre/)
+  if (category === 'bre_task') {
+    if (subcategory === 'bre_end') {
+      return <BreEndStep enrollment={enrollment} scheduleId={scheduleId} supabaseClient={supabaseClient} onComplete={onComplete} isSimMode={isSimMode} />
+    }
+    if (subcategory === 'bre_baseline' || subcategory === 'bre_main') {
+      return (
+        <BreTask
+          key={subcategory}
+          step={subcategory}
+          enrollment={enrollment}
+          scheduleId={scheduleId}
+          assignments={assignments}
+          supabaseClient={supabaseClient}
+          onComplete={onComplete}
+          isSimMode={isSimMode}
+        />
+      )
+    }
   }
 
   // Breath Attention and Emotional Recovery: RA sensor hold + marker box (bre/BrePhysioSetupStep.jsx)
