@@ -119,7 +119,11 @@ export default function BrePhysioSetupStep({ enrollment, scheduleId, supabaseCli
             {status === 'connected' && device !== 'none' && <button style={R.button} onClick={testPulse}>Send test pulse (200)</button>}
           </div>
           {statusMsg && <p style={status === 'error' ? R.bad : R.ok}>{statusMsg}</p>}
-          {test && <p style={test.sent ? R.ok : R.bad}>{test.sent ? 'Test pulse sent. Check that 200 appears in AcqKnowledge.' : `Test pulse not sent: ${test.error}`}</p>}
+          {test && <p style={test.sent ? R.ok : R.bad}>{test.sent
+            ? (test.detail?.wire_value != null
+              ? `Test pulse sent: ${test.detail.wire_value} on the trigger channel (code 200 as its 4-bit type, 15, on this seat's lines). Check it appears in AcqKnowledge.`
+              : 'Test pulse sent. Check that 200 appears in AcqKnowledge.')
+            : `Test pulse not sent: ${test.error}`}</p>}
           {status === 'connected' && device !== 'none' && (
             <label style={{ ...R.note, display: 'flex', gap: 8, alignItems: 'center' }}>
               <input type="checkbox" checked={recording} onChange={e => setRecording(e.target.checked)} />

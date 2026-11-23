@@ -54,6 +54,30 @@ export const CLIP_ONSET = Object.freeze({
   P1: 61, P2: 62,
 })
 
+// The lab's Biopac seats each reach only 4 STP inputs through their parallel port (right seat 0–3,
+// left seat 4–7: Lab Guides, BreathBelt). A full byte would spill onto the other seat's lines, so on a
+// Biopac device every code is sent as its 4-bit event type below. The exact code (which clip, which
+// segment) is still in the event log beside the time, so the pulse only has to say what kind of event
+// it was and when. The serial boxes carry the full byte.
+export function compactCode(code) {
+  const c = Number(code)
+  if (c === 0) return 0
+  if (c === 1) return 1                         // sync
+  if (c === 2 || c === 3) return c              // baseline fixation on / off
+  if (c === 10 || c === 12) return 4            // training audio on (or replay)
+  if (c === 11 || c === 13) return 5            // training audio off
+  if (c === 14) return 6                        // guided practice on
+  if (c === 15) return 7                        // guided practice off
+  if (c >= 31 && c <= 62) return 8              // clip onset (any clip)
+  if (c === 99) return 9                        // clip offset
+  if (c === 70 || c === 80) return 10           // break / recovery segment on
+  if (c === 71 || c === 81) return 11           // break / recovery segment off
+  if (c === 90) return 12                       // rating shown
+  if (c === 91) return 13                       // rating answered
+  if (c === 92) return 14                       // cue onset
+  return 15                                     // RA pause / resume / skip, test pulse, task end
+}
+
 /** What goes on the wire to set the lines to `code` (0 clears), for one device. */
 export function encodeMarker(device, code) {
   const c = Math.max(0, Math.min(255, Math.round(Number(code)))) | 0
@@ -61,7 +85,7 @@ export function encodeMarker(device, code) {
   if (!dev || dev.transport === 'none') return null
   if (device === 'bbtk') return { kind: 'text', data: c.toString(16).toUpperCase().padStart(2, '0') }
   if (device === 'raw_byte') return { kind: 'bytes', data: Uint8Array.of(c) }
-  return { kind: 'lpt', address: dev.address, value: Math.min(255, c * dev.shift) }
+  return { kind: 'lpt', address: dev.address, value: compactCode(c) * dev.shift }
 }
 
 /**
@@ -96,7 +120,9 @@ export function createMarkerBus({
     const p = chain.then(async () => {
       const deviceAtSend = dev
       const { sent, error } = await pulse(code)
-      const entry = { code, name, device: deviceAtSend, requestedAt, sentAt: sent ? now() : null, sent, error, detail }
+      const wire = encodeMarker(deviceAtSend, code)
+      const entry = { code, name, device: deviceAtSend, requestedAt, sentAt: sent ? now() : null, sent, error,
+        detail: wire?.kind === 'lpt' ? { ...(detail ?? {}), wire_value: wire.value } : detail }
       try { onLog(entry) } catch (e) { console.error('marker log failed:', e) }
       return entry
     })

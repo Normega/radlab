@@ -16,7 +16,9 @@ test('BBTK gets two upper-case hex characters, never decimal', () => {
   assert.deepEqual(encodeMarker('bbtk', 0), { kind: 'text', data: '00' })
   assert.deepEqual(encodeMarker('bbtk', 255), { kind: 'text', data: 'FF' })
   assert.deepEqual([...encodeMarker('raw_byte', 99).data], [99])
-  assert.deepEqual(encodeMarker('biopac_left', 15), { kind: 'lpt', address: 0xDFF8, value: 240 })
+  // Biopac seats get the 4-bit event type, on their own nibble
+  assert.deepEqual(encodeMarker('biopac_left', 15), { kind: 'lpt', address: 0xDFF8, value: 7 * 16 })
+  assert.deepEqual(encodeMarker('biopac_right', 52), { kind: 'lpt', address: 0xD030, value: 8 })
   assert.equal(encodeMarker('none', 5), null)
 })
 
@@ -66,7 +68,7 @@ test('the parallel-port helper transport posts address and value, and fails loud
   const calls = []
   const t = lptTransport('http://h', async (url, init) => { calls.push([url, JSON.parse(init.body)]); return { ok: true } })
   await t.write(encodeMarker('biopac_right', 52))
-  assert.deepEqual(calls, [['http://h/send', { address: 0xD030, value: 52 }]])
+  assert.deepEqual(calls, [['http://h/send', { address: 0xD030, value: 8 }]])
   const down = lptTransport('http://h', async () => ({ ok: false, status: 503 }))
   await assert.rejects(down.write(encodeMarker('biopac_right', 1)), /503/)
 })
@@ -76,4 +78,17 @@ test('every clip has a distinct onset code that collides with no event code', ()
   assert.equal(new Set(clipCodes).size, clipCodes.length)
   const eventCodes = new Set(Object.values(MARKERS))
   for (const c of clipCodes) assert.ok(!eventCodes.has(c), `clip code ${c} collides`)
+})
+
+test('on a Biopac seat every code fits its own four lines, and the event types stay distinct', async () => {
+  const { compactCode, MARKERS, CLIP_ONSET } = await import('./physioMarkers.js')
+  const all = [...Object.values(MARKERS), ...Object.values(CLIP_ONSET)]
+  for (const c of all) {
+    assert.ok(compactCode(c) >= 1 && compactCode(c) <= 15, `code ${c}`)
+    assert.ok(encodeMarker('biopac_right', c).value <= 15, `right seat, code ${c}`)
+    assert.equal(encodeMarker('biopac_left', c).value % 16, 0, `left seat, code ${c}`)
+  }
+  assert.notEqual(compactCode(MARKERS.clip_off), compactCode(CLIP_ONSET.A1))
+  assert.notEqual(compactCode(MARKERS.rating_shown), compactCode(MARKERS.rating_answered))
+  assert.equal(compactCode(MARKERS.sync), 1)
 })

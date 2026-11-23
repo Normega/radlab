@@ -42,7 +42,9 @@ Deno.serve(async (req) => {
       return json({ error: 'Forbidden — lab role required' }, 403)
     }
 
-    const { studyId, sonaId } = await req.json()
+    // isTest: a pilot or staff run. The enrollment is flagged is_test, so it does not count towards
+    // baseline_cap (study_baselines_completed excludes it) and exports as test data.
+    const { studyId, sonaId, isTest } = await req.json()
     if (!studyId) return json({ error: 'studyId required' }, 400)
 
     // Use service role key to bypass RLS for profile creation
@@ -118,6 +120,7 @@ Deno.serve(async (req) => {
       external_id:  studyCode ?? sonaId ?? null,
       enrolled_at:  new Date().toISOString(),
       status:       'enrolled',
+      is_test:      isTest === true,
     })
     if (enrollErr) throw new Error(`Enrollment insert failed: ${enrollErr.message}`)
 
@@ -147,8 +150,18 @@ Deno.serve(async (req) => {
       .select('id')
     if (schedErr) throw new Error(`Schedule insert failed: ${schedErr.message}`)
 
-    // 4. Issue link for day 1
+    // 4. Ask the gate before minting a link (CLAUDE.md "Hard gates", rule 1): an inactive or full
+    // study gets no link at all, rather than one that refuses to open. Fail closed on an error.
     const day1ScheduleId     = inserted![0].id
+    const { data: blockReason, error: gateErr } = await admin.rpc('schedule_row_block_reason', { p_schedule_id: day1ScheduleId })
+    if (gateErr || blockReason) {
+      await admin.from('participant_schedule').update({ status: 'blocked' }).eq('id', day1ScheduleId)
+      return gateErr
+        ? json({ error: 'Could not check whether this session may open, so no link was made. Try again.' }, 500)
+        : json({ error: `No link was made: the session is closed (${blockReason}).`, blockReason }, 409)
+    }
+
+    // 5. Issue link for day 1
     const expiresHours       = sessions[0].link_expires_hours ?? 48
     const expiresAt          = new Date(Date.now() + expiresHours * 3600 * 1000).toISOString()
 

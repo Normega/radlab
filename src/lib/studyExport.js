@@ -29,6 +29,7 @@ import { splitResubmissions, createRepeatNamer, putCell } from './exportIntegrit
 import { instrumentColumns } from './instrumentColumns'
 import { CREDIT_ONLY, partitionCreditOnly, scheduleIdsForEnrollments, dropExcludedRows } from './creditOnlyExport.js'
 import { isSensingPauseRecord, sensingPauseColumns } from './sensingPauseColumns.js'
+import { breWideByProfile, BRE_COLUMN_NOTES } from './breExport.js'
 
 const PAGE = 1000
 const IN_CHUNK = 100
@@ -76,6 +77,10 @@ export const EXPORT_TABLES = [
   { table: 'breath_guardian_sessions', category: 'Games',         label: 'Breath Guardian — Sessions', strategy: 'session' },
   { table: 'safari_exhibit_sessions',  category: 'Games',         label: 'Night Safari — Exhibit sessions', strategy: 'session' },
   { table: 'safari_pause_events',      category: 'Games',         label: 'Night Safari — Pauses',      strategy: 'session' },
+  // Breath Attention and Emotional Recovery (Maya Alves): every rating, and every event and marker
+  // with its timing, for lining the session up with the AcqKnowledge file.
+  { table: 'bre_ratings',              category: 'Games',         label: 'Breath Attention — Ratings', strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
+  { table: 'bre_events',               category: 'Games',         label: 'Breath Attention — Events and markers', strategy: 'study', ownerSpace: 'profile', ownerCol: 'user_id' },
   { table: 'pond_watch_results',       category: 'Games',         label: 'Pond Watch',                 strategy: 'study',    ownerSpace: 'profile',  ownerCol: 'user_id' },
   // Foggy Valleys (Sandy Study 4): a row per valley, per picture, and per
   // picture's questions; join the last two on run_id + picture_number
@@ -1052,6 +1057,11 @@ export function buildMasterWithIntegrity(context, resultsByTable) {
   const qWide   = questionnaireWideByProfile(resultsByTable.questionnaire_responses ?? [], context, tools)
   const instWide = instrumentWideByProfile(resultsByTable.instrument_responses ?? [], context, tools)
   const vasWide = vasWideByProfile(resultsByTable.vas_responses ?? [], context.vasScaleSlugById ?? new Map(), context, tools)
+  const breWide = breWideByProfile(resultsByTable.bre_ratings ?? [], resultsByTable.bre_events ?? [], {
+    ownerOf: r => r.user_id ?? null,
+    namer: tools.namer,
+    put: (target, col, value) => putCell(target, col, value, c => tools.integrity.collisions.push({ table: 'bre_ratings', ...c })),
+  })
 
   const built = context.enrollments.map(e => {
     const pid = e.profile_id
@@ -1088,7 +1098,7 @@ export function buildMasterWithIntegrity(context, resultsByTable) {
     each(ldem, 'ldem',     'liliana_demographics',    mergeJsonResponses)
     each(scr,  'screener', 'screener_results',        mergePrefixed)
     const put = cellWriter(tools, 'master', pid)
-    for (const block of [qWide[pid], instWide[pid], vasWide[pid]]) {
+    for (const block of [qWide[pid], instWide[pid], vasWide[pid], breWide[pid]]) {
       for (const [col, value] of Object.entries(block ?? {})) put(row, col, value)
     }
     each(comp, 'comp',     'participant_compensation', mergePrefixed)
@@ -1260,6 +1270,7 @@ const COLUMN_NOTES = [
   [/_format$/,                  'Layout this questionnaire was shown in: one_per_screen (v1), stacked (v2: labelled cards, several per page) or checklist. Blank = recorded before 2026-10-10.'],
   [/_secs_total$/,              'Seconds from the first page of this questionnaire being shown to its submission (browser monotonic clock, so a wrong participant clock does not matter).'],
   [/_secs_per_item$/,           'Seconds per answered item (total / items answered, not-applicable items excluded). For speeder screening: comparable across layouts, unlike per-screen times.'],
+  ...BRE_COLUMN_NOTES,
   [/_pos_[^_]+$/,               'Position (1 = first) at which the matching item was shown to this participant. Same suffix as the answer column it describes.'],
 ]
 

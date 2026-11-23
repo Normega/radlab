@@ -262,13 +262,21 @@ function SegmentOp({ op, paused, media, mark, condition, onDone }) {
   )
 }
 
+// A stall is buffering AFTER the first frame: the element also fires 'waiting' during the seek to 0
+// before playback begins, which is not one (the dry run logged it on every clip). A stall is logged
+// when it starts and again, with its length, when playback resumes.
 function playThrough(el, { onStart, onEnd, onError }) {
   el.currentTime = 0
   el.dataset.started = '1'
-  const started = () => onStart()
+  let begun = false
+  let waitingAt = null
+  const started = () => {
+    if (!begun) { begun = true; onStart(); return }
+    if (waitingAt != null) { onError?.('resumed', Math.round(performance.now() - waitingAt)); waitingAt = null }
+  }
   const ended = () => onEnd()
-  const waiting = () => onError?.('waiting')
-  el.addEventListener('playing', started, { once: true })
+  const waiting = () => { if (begun && waitingAt == null) { waitingAt = performance.now(); onError?.('waiting') } }
+  el.addEventListener('playing', started)
   el.addEventListener('ended', ended, { once: true })
   el.addEventListener('waiting', waiting)
   const p = el.play()
@@ -313,7 +321,7 @@ function ClipOp({ op, paused, media, mark, log, onDone }) {
     const run = playThrough(el, {
       onStart: () => mark('clip_on', CLIP_ONSET[op.clip], { op: op.id, clip: op.clip, block: op.block, emotion: op.emotion }),
       onEnd: () => { mark('clip_off', MARKERS.clip_off, { op: op.id, clip: op.clip }); onDone() },
-      onError: (what) => log('clip_stall', { op: op.id, clip: op.clip, what, t: el.currentTime }),
+      onError: (what, stalledMs) => log('clip_stall', { op: op.id, clip: op.clip, what, t: el.currentTime, ...(stalledMs != null ? { stalled_ms: stalledMs } : {}) }),
     })
     run.promise.then(() => setBlocked(false)).catch(err => { setBlocked(true); log('media_blocked', { op: op.id, error: String(err?.message ?? err) }) })
     runRef.current = run

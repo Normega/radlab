@@ -33,6 +33,9 @@ export default function AnonymousLinkPanel({ study, qc }) {
   // The study code of the link just created (studies.study_code_prefix). The RA
   // names the physiology file with it, so it is shown large until the next link.
   const [lastCode, setLastCode] = useState(null)
+  // Pilot / staff runs: the enrollment is flagged is_test, so it is not counted towards
+  // baseline_cap (study_baselines_completed) and is marked as test data in the export.
+  const [isTest,   setIsTest]   = useState(false)
 
   async function callEdgeFunction(sonaIdValue) {
     const { data: { session } } = await supabase.auth.getSession()
@@ -44,7 +47,7 @@ export default function AnonymousLinkPanel({ study, qc }) {
           'Content-Type':  'application/json',
           Authorization:   `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ studyId, sonaId: sonaIdValue || null }),
+        body: JSON.stringify({ studyId, sonaId: sonaIdValue || null, isTest }),
       }
     )
     if (!resp.ok) {
@@ -142,6 +145,11 @@ export default function AnonymousLinkPanel({ study, qc }) {
           </div>
         </div>
       </div>
+
+      <label style={{ ...S.muted, display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+        <input type="checkbox" checked={isTest} onChange={e => setIsTest(e.target.checked)} />
+        Pilot or test participant (not counted towards enrollment, marked as test data)
+      </label>
 
       {genError && <p style={S.errMsg}>{genError}</p>}
 

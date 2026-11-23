@@ -14,6 +14,13 @@ export const GUIDES = [
     load: () => import('./content/breathbelt.md?raw').then(m => m.default),
     figures: () => import('./figures/BreathBeltFigures.jsx').then(m => m.FIGURES),
   },
+  {
+    slug: 'breath-attention',
+    title: 'Breath Attention and Emotional Recovery: running a session',
+    summary: 'Making the link, unlocking the sensor hold, checking the markers, the RA panel during the films, and withdrawals.',
+    updated: '2026-11-23',
+    load: () => import('./content/breath-attention.md?raw').then(m => m.default),
+  },
 ]
 
 export const findGuide = slug => GUIDES.find(g => g.slug === slug)
