@@ -1,0 +1,14 @@
+Images in this folder come from Asteroid Impact
+(https://github.com/asteroidimpact/asteroid_impact_py3, src/data/), resized for the web.
+
+(C) Media Neuroscience Lab, Rene Weber, 2015. Authored by Nick Winters.
+Licensed CC BY-SA 4.0 <http://creativecommons.org/licenses/by-sa/4.0/>
+
+  background.jpg  (original: background4x3.jpg)
+  asteroid.png    (uses Moon_Farside_LRO.jpeg, public domain, NASA)
+  clock.png, crystal.png, cursor.png, shield.png  (exported from gamesprites.svg)
+
+The browser port that uses them (../../flow-game.html and ../*.js) is an adaptation of
+Asteroid Impact and is shared under the same licence, CC BY-SA 4.0.
+Reference: Huskey, R., Craighead, B., Miller, M. B., & Weber, R. (2018). Does intrinsic
+reward motivate cognitive control? Cognitive, Affective, & Behavioral Neuroscience, 18(5), 902-924.
