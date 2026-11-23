@@ -41,6 +41,10 @@ const RESPONSE_TABLES = [
   // OSSLT practice test (20261122_osslt_practice.sql): written only by osslt_submit(),
   // which flags a provable double-submit in resubmission_of.
   'osslt_submissions',
+  // Breath Attention and Emotional Recovery (20261123_bre_task_tables.sql), like foggy_valleys_*:
+  // client-made ids leave note_response_trg nothing to flag.
+  'bre_events',
+  'bre_ratings',
 ]
 
 let pass = 0, fail = 0

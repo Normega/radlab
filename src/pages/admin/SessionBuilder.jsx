@@ -14,7 +14,7 @@ import { nodeBehaviour } from '../../lib/templateNodes'
 // every step component comes with it, so it loads on the first Preview click
 const StepPreviewModal = lazy(() => import('../../components/study/StepPreviewModal'))
 
-const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy', 'assessment', 'video', 'form', 'physio', 'training', 'embedded_practice', 'practice_task', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
+const CATEGORY_ORDER  = ['game', 'questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy', 'assessment', 'video', 'form', 'physio', 'training', 'embedded_practice', 'practice_task', 'midpoint', 'assignment', 'bre_task', 'assessment_leadin', 'daily_welcome', 'daily_farewell']
 const CATEGORY_LABELS = {
   game: 'Games', questionnaire: 'Questionnaires', vas: 'VAS', display: 'Displays',
   likert_slider: 'Likert Sliders', numeric_slider: 'Numeric Sliders',
@@ -24,6 +24,10 @@ const CATEGORY_LABELS = {
   form: 'Forms', physio: 'Physio', training: 'Training Modules', embedded_practice: 'Embedded Practices', practice_task: 'Practice Tasks', midpoint: 'Midpoint',
   video: 'Videos', assessment_leadin: 'Assessment Lead-ins',
   daily_welcome: 'Daily Welcome', daily_farewell: 'Daily Farewell',
+  // Sets a slot mid-session (studies.assignment_slot_rules): route by score, or a
+  // conditional draw. One activity per slot; the subcategory is the slot key.
+  assignment: 'Assignments',
+  bre_task: 'Breath Attention tasks',
 }
 
 // Picker sections mirror the admin sidebar hierarchy (Norm, 2026-08-25):
@@ -35,7 +39,7 @@ const CATEGORY_LABELS = {
 const PICKER_SECTIONS = [
   { header: 'Instruments', cats: ['questionnaire', 'vas', 'display', 'likert_slider', 'numeric_slider', 'multiple_choice', 'open_list', 'open_text', 'hierarchy', 'assessment'] },
   { header: 'Media',       cats: ['game', 'video'] },
-  { header: 'Study steps', cats: ['form', 'physio', 'training', 'embedded_practice', 'practice_task', 'midpoint', 'assessment_leadin', 'daily_welcome', 'daily_farewell'] },
+  { header: 'Study steps', cats: ['form', 'physio', 'training', 'embedded_practice', 'practice_task', 'midpoint', 'assignment', 'bre_task', 'assessment_leadin', 'daily_welcome', 'daily_farewell'] },
 ]
 
 // Adopted instrument categories whose library may still be empty (the seeds

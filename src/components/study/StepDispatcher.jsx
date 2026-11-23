@@ -22,6 +22,10 @@ import VideoStepWrapper        from './VideoStepWrapper'
 import AssessmentLeadInStep    from './AssessmentLeadInStep'
 import DailyWelcomeStep        from './DailyWelcomeStep'
 import DailyFarewellStep       from './DailyFarewellStep'
+import AssignmentStep          from './AssignmentStep'
+import BrePhysioSetupStep      from './bre/BrePhysioSetupStep'
+import BreTask                 from './bre/BreTask'
+import BreEndStep              from './bre/BreEndStep'
 
 /**
  * Props:
@@ -40,8 +44,11 @@ import DailyFarewellStep       from './DailyFarewellStep'
  *                 earlier steps this session; consumed by display steps
  *   studyId     — the study a demo runs as (the study builder's), for settings
  *                 a step reads from its study; real sessions use the enrollment's
+ *   slotRules   — studies.assignment_slot_rules as get_session_by_token returns
+ *                 them ({ [slot]: { assign, draw_if } }), for assignment steps
+ *   onAssigned  — (slot, arm) => void: an assignment step set a slot mid-session
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null, studyId = null }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null, studyId = null, slotRules = null, onAssigned = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -61,7 +68,7 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
   // day/slot content piped in via studyDay/sendTime.
   const PREVIEWABLE_FORMS = ['mood_checkin', 'mood_checkin_reflective', 'wellness_tip']
   if (demoMode && (
-    category === 'game' || category === 'physio' ||
+    category === 'game' || category === 'physio' || category === 'bre_task' ||
     (category === 'form' && !PREVIEWABLE_FORMS.includes(subcategory))
   )) {
     return <DemoSkipCard category={category} subcategory={subcategory} label={label} onComplete={onComplete} />
@@ -306,6 +313,58 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         stepOutputs={stepOutputs}
         onComplete={onComplete}
         supabaseClient={supabaseClient}
+        isSimMode={isSimMode}
+      />
+    )
+  }
+
+  // Sets an assignment slot mid-session (route by score, or a conditional draw).
+  // Renders nothing but a holding line; see AssignmentStep.jsx.
+  if (category === 'assignment') {
+    return (
+      <AssignmentStep
+        slot={subcategory}
+        studyId={enrollment?.study_id ?? studyId}
+        scheduleId={scheduleId}
+        rules={slotRules}
+        assignments={assignments}
+        supabaseClient={supabaseClient}
+        onAssigned={onAssigned}
+        onComplete={onComplete}
+        demoMode={demoMode || isSimMode}
+      />
+    )
+  }
+
+  // Breath Attention and Emotional Recovery: the coded tasks and Screen 12 (bre/)
+  if (category === 'bre_task') {
+    if (subcategory === 'bre_end') {
+      return <BreEndStep enrollment={enrollment} scheduleId={scheduleId} supabaseClient={supabaseClient} onComplete={onComplete} isSimMode={isSimMode} />
+    }
+    if (subcategory === 'bre_baseline' || subcategory === 'bre_main') {
+      return (
+        <BreTask
+          key={subcategory}
+          step={subcategory}
+          enrollment={enrollment}
+          scheduleId={scheduleId}
+          assignments={assignments}
+          supabaseClient={supabaseClient}
+          onComplete={onComplete}
+          isSimMode={isSimMode}
+        />
+      )
+    }
+  }
+
+  // Breath Attention and Emotional Recovery: RA sensor hold + marker box (bre/BrePhysioSetupStep.jsx)
+  if (category === 'physio' && subcategory === 'bre_physio_setup') {
+    return (
+      <BrePhysioSetupStep
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        supabaseClient={supabaseClient}
+        onComplete={onComplete}
         isSimMode={isSimMode}
       />
     )

@@ -25,6 +25,8 @@ import { useScrollToTopOn } from '../lib/scrollToTop'
 import { useNoTranslate } from '../lib/noTranslate'
 import { shuffleStepGroups } from '../lib/stepShuffle'
 import { armSlotsOf, stepsForArms } from '../lib/armSteps'
+import { lazySlotsOf, upfrontSlotsOf } from '../lib/lazySlots'
+import { expandAssignments } from '../lib/assignmentSlots'
 import SupportResources from '../components/study/SupportResources'
 import { supportResourcesFor } from '../lib/supportResources'
 
@@ -95,9 +97,12 @@ export default function SessionEntry() {
 
   // Condition assignment: draw every slot before the step flow starts.
   // Draws are idempotent server-side, so refresh returns the same arms.
-  const slotKeys = sessionData?.study?.assignment_slots
-    ? Object.keys(sessionData.study.assignment_slots)
-    : []
+  // Except slots listed in studies.assignment_slot_rules: those are set
+  // mid-session by an assignment step (src/lib/lazySlots.js) and arrive in
+  // lateArms, read back from participant_assignments on a resume.
+  const slotKeys = upfrontSlotsOf(sessionData?.study)
+  const lazySlots = lazySlotsOf(sessionData?.study)
+  const [lateArms, setLateArms] = useState({})
   const {
     assignments,
     isLoading: assignmentsLoading,
@@ -388,6 +393,22 @@ export default function SessionEntry() {
     // useAssignments below gets the same arm. Fails closed: a slot the study does
     // not define, a failed draw or a missing arm stops the session here.
     const slots = armSlotsOf(data.nodes)
+    // A step cannot be conditioned on a slot that is only set later in the
+    // session: the step list must be final before step 1. Fail closed.
+    const lazy = lazySlotsOf(data.study)
+    if (slots.some(s => lazy.includes(s))) { setState('assignment_error'); return }
+    // Slots already set mid-session (a reload, or the RA reopening the link)
+    // come back from the database, not from this browser's memory.
+    if (lazy.length) {
+      const { data: rows, error } = await sb
+        .from('participant_assignments')
+        .select('node_id, value')
+        .eq('study_id', data.link.study_id)
+        .eq('participant_id', data.link.participant_id)
+        .in('node_id', lazy)
+      if (error) { setState('assignment_error'); return }
+      setLateArms(Object.fromEntries((rows ?? []).map(r => [r.node_id, r.value])))
+    }
     if (slots.length) {
       const defined = data.study?.assignment_slots ?? {}
       const arms = {}
@@ -867,8 +888,12 @@ export default function SessionEntry() {
             onComplete={handleStepComplete}
             debriefHtml={debriefHtml}
             supabaseClient={sb}
-            assignments={slotKeys.length > 0 ? assignments : null}
+            assignments={slotKeys.length > 0 || lazySlots.length > 0
+              ? { ...assignments, ...expandAssignments(lateArms) }
+              : null}
             stepOutputs={stepOutputs}
+            slotRules={sessionData.study?.assignment_slot_rules ?? null}
+            onAssigned={(slot, value) => setLateArms(prev => ({ ...prev, [slot]: value }))}
           />
           </SessionStepBoundary>
         </div>

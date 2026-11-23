@@ -69,6 +69,17 @@ for (const name of readdirSync(fnDir, { withFileTypes: true })) {
   check('auto-enroll multi-session path refuses on a block reason before any link',
     /if \(blockReason\) \{[\s\S]{0,800}return json\(/.test(block) && block.indexOf('if (blockReason)') < issue)
 }
+// 1d. create_anonymous_participant (the RA's "Generate link") hands the token back instead of
+//     emailing it, so the /s/ scan cannot see it either. It asks before it inserts the link.
+{
+  const src = read('supabase/functions/create_anonymous_participant/index.ts')
+  const gate = src.indexOf("rpc('schedule_row_block_reason'")
+  const link = src.indexOf(".from('participant_links')")
+  check('create_anonymous_participant asks the gate before inserting the link', gate !== -1 && link !== -1 && gate < link,
+    `gate at ${gate}, link insert at ${link}`)
+  check('create_anonymous_participant fails closed on a gate error or a block reason',
+    /if \(gateErr \|\| blockReason\) \{[\s\S]{0,400}return /.test(src))
+}
 check('the scan found the session-link senders', senders.includes('supabase/functions/send_message/index.ts'),
   senders.join(', '))
 
