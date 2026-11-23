@@ -84,6 +84,7 @@ const Mirror        = lazy(() => import('./games/Mirror/Mirror'))
 const BreathBeltDemo  = lazy(() => import('./games/BreathBelt/BreathBeltDemo'))
 const PacerOpenerDemo = lazy(() => import('./games/BreathBelt/PacerOpenerDemo'))
 const BreathLab        = lazy(() => import('./games/shared/breath/BreathLab'))
+const MicBreathLab     = lazy(() => import('./games/shared/breath/MicBreathLab'))
 const Kite             = lazy(() => import('./games/Kite/Kite'))
 
 const VideoTest = lazy(() => import('./pages/dev/VideoTest'))
@@ -733,6 +734,8 @@ export default function App() {
           <Route path="/dev/bcat-threshold" element={<BcatThresholdPreview />} />
           {/* Breath-signal instrumentation for biofeedback game dev; ?sim=1 for beltless */}
           <Route path="/dev/breath-lab" element={<BreathLab />} />
+          {/* Microphone breath-rate prototype — can a webcam/phone mic hear breathing? Local only, saves nothing */}
+          <Route path="/dev/mic-breath" element={<MicBreathLab />} />
           {/* Kite (né Free Breathing) graduated to the catalog (2026-09-04) — old dev URL forwards */}
           <Route path="/dev/free-breath" element={<Navigate to="/games/kite" replace />} />
 

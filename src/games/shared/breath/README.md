@@ -43,3 +43,23 @@ connect/calibrate; `breath.setSimPeriodMs(ms)` retunes the fake breather live.
 | `hr` | Heart rate, bpm (1 Hz from belt) | ~1 s | Ambient display, arousal context |
 | `rsaMs` | max−min RR interval over last 12 s — breath-driven heart-rate swing | rolls over ~2–3 breaths | Coherence/resonance feedback; grows as breathing slows toward ~6 bpm |
 | `lagMs` | Calibrated belt latency v
+
+## Microphone prototype (`useMicBreath`) — no belt
+
+**`/dev/mic-breath`** asks whether an ordinary webcam/laptop/phone mic can hear breathing
+rate. `micBreath.js` is the pure DSP (tested headless in `micBreath.test.mjs`);
+`useMicBreath.js` opens the mic with noise suppression / AGC / echo cancellation **off**
+(noise suppression deletes breath sounds) and feeds it a spectrum every 50 ms.
+
+- Signal = dB above a rolling noise floor in a breath band (250–2500 Hz) and a "wind"
+  band (< 200 Hz, exhaling onto the capsule), with tonal sound (voice) gated out by
+  spectral flatness → hysteresis bursts → rate from burst intervals, cross-checked by
+  autocorrelation.
+- The core ambiguity: one burst per breath (exhale only — typical at webcam distance)
+  or two (inhale + exhale — typical close up). `pairing: 'auto'` decides from gap
+  alternation and loudness/pitch alternation; inhale vs exhale is *inferred* from timing,
+  never measured. A mic hears airflow, not lung volume — there is no `value` 0–1.
+- Ground truth on the page: Space-bar taps at each in-breath, or the built-in pacer.
+  CSV + raw-audio download for offline tuning. Nothing is saved or uploaded.
+- Any game using it must not play breath-band audio through speakers (Kite's
+  `breathAudio.js` would be heard as breathing) — mute it or require headphones.
