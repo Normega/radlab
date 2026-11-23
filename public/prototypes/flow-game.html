@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Flow game</title>
+<link rel="icon" type="image/svg+xml" href="/RADlab_Logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Serif+Display&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /*
+    FLOW GAME PROTOTYPE (Carleigh Pace-Tonna's thesis study, planning doc:
+    "Flow game study: planning notes", Nov 2026). One core round:
+    practice (calibration) → press when ready → game round → difficulty
+    slider → arrow task → Flow Short Scale → summary + log download.
+
+    The game is a browser port of Asteroid Impact (Media Neuroscience Lab,
+    asteroidimpact/asteroid_impact_py3), CC BY-SA 4.0. This port and its art
+    (flow-game/img/, see CREDITS.txt) are CC BY-SA 4.0 as well.
+
+    Logic lives in byte-identical copies of src/games/FlowGame/{levels,arrows,
+    fss}.js (tests fail if they drift). No login, no network calls, nothing
+    stored: the log lives in this tab and downloads at the end.
+
+    URL: ?round=240&calib=180&trials=48&cond=flow&seed=123&nopractice
+         ?dev  skip buttons + window.__flowgame
+         ?test manual clock for headless runs (window.__flowgame.advance)
+  */
+  :root{
+    --bg:#FCF0F5; --bgc:#ffffff; --pk:#f068a4; --pkd:#ba417a; --pkdd:#a3396b; --pkl:#fde8f2;
+    --tx:#1c1c1e; --tx2:#6b6c70; --tx3:#abadb0; --bd:rgba(180,100,140,0.13); --bds:rgba(180,100,140,0.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--tx);
+    font-family:"DM Sans",system-ui,sans-serif;}
+  body{overflow:hidden;}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;}
+  .screen.on{display:flex;}
+  .pad{padding:32px 24px 48px;max-width:640px;margin:0 auto;width:100%;overflow-y:auto;height:100%;}
+  .kicker{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--pkd);}
+  h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:36px;margin:8px 0 16px;line-height:1.05;}
+  h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:28px;margin:8px 0 8px;line-height:1.1;}
+  h3{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:20px;margin:24px 0 8px;}
+  p{font-size:16px;line-height:1.5;color:var(--tx2);margin:0 0 16px;}
+  .label{font-size:14px;color:var(--tx);font-weight:600;margin:16px 0 8px;}
+  .opts{display:flex;gap:8px;flex-wrap:wrap;}
+  .opts button{border:1.5px solid var(--bds);background:var(--bgc);border-radius:24px;padding:8px 16px;font:inherit;font-size:14px;color:var(--tx2);cursor:pointer;}
+  .opts button.sel{border-color:var(--pkd);color:#fff;background:var(--pkd);}
+  input[type=text],input[type=number]{font:inherit;font-size:16px;padding:8px 16px;border:1.5px solid var(--bds);border-radius:12px;background:var(--bgc);width:100%;}
+  .check{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx);margin:16px 0 0;}
+  .hint{font-size:12px;color:var(--tx2);margin:8px 0 0;line-height:1.5;}
+  .go{display:block;width:100%;border:none;border-radius:24px;padding:16px;font:inherit;font-size:16px;font-weight:600;background:var(--pkd);color:#fff;margin-top:24px;cursor:pointer;}
+  .go:hover{background:var(--pkdd);}
+  .go:disabled{background:var(--tx3);cursor:default;}
+  .ghost{background:var(--bgc);color:var(--pkd);border:1.5px solid var(--pkd);}
+  .ghost:hover{background:var(--pkl);}
+  .small{font-family:"Space Mono",monospace;font-size:12px;color:var(--tx2);letter-spacing:.04em;line-height:1.6;}
+  a.home{font-family:"Space Mono",monospace;font-size:12px;color:var(--pkd);text-decoration:none;}
+  .card{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:16px 24px;margin:0 0 16px;}
+  .devskip{position:fixed;right:16px;top:16px;z-index:10;border:1px solid var(--bds);background:var(--bgc);border-radius:24px;padding:4px 16px;font:inherit;font-size:12px;color:var(--tx2);cursor:pointer;display:none;}
+  body.dev .devskip{display:block;}
+
+  /* how to play */
+  .howrow{display:flex;gap:16px;align-items:center;margin:0 0 16px;}
+  .howrow img{width:48px;height:48px;flex:none;object-fit:contain;}
+  .howrow img.big{width:64px;height:64px;}
+  .howrow p{margin:0;}
+
+  /* ready */
+  #ready .pad{display:flex;flex-direction:column;justify-content:center;}
+
+  /* game */
+  #game{background:#000;}
+  #canvas{position:absolute;inset:0;width:100%;height:100%;cursor:none;touch-action:none;}
+
+  /* slider */
+  .scale{margin:24px 0 8px;}
+  /* a plain track with no fill, so the untouched slider suggests no answer */
+  .scale input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:4px;
+    background:var(--bds);margin:16px 0;cursor:pointer;}
+  .scale input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--pkd);}
+  .scale input[type=range]::-moz-range-thumb{width:24px;height:24px;border:none;border-radius:50%;background:var(--pkd);}
+  .scale input.untouched::-webkit-slider-thumb{opacity:0;}
+  .scale input.untouched::-moz-range-thumb{opacity:0;}
+  .ends{display:grid;grid-template-columns:1fr 1fr 1fr;font-size:14px;color:var(--tx2);}
+  .ends span:nth-child(2){text-align:center;} .ends span:nth-child(3){text-align:right;}
+
+  /* arrow task: deliberately plain and unlike the game */
+  .arrowscreen{background:#ececec;color:#111;font-family:Arial,Helvetica,sans-serif;}
+  .arrowscreen .pad{max-width:560px;}
+  .arrowscreen h1{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:28px;color:#111;}
+  .arrowscreen p{color:#333;}
+  .arrowscreen .go{background:#333;border-radius:12px;}
+  .arrowscreen .go:hover{background:#111;}
+  .keys{display:flex;gap:24px;justify-content:center;margin:24px 0;}
+  .key{border:2px solid #333;border-radius:12px;padding:8px 16px;font-size:20px;font-weight:700;text-align:center;min-width:120px;background:#fff;}
+  .key small{display:block;font-size:12px;font-weight:400;color:#555;margin-top:4px;}
+  #arrowStage{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  #stim{display:flex;gap:16px;align-items:center;height:64px;}
+  #stim svg{width:56px;height:56px;}
+  #fix{font-size:48px;line-height:64px;font-weight:400;}
+  #fb{height:32px;margin-top:24px;font-size:20px;font-weight:700;}
+
+  /* FSS */
+  .item{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:0 0 16px;}
+  .item .t{font-size:16px;color:var(--tx);margin:0 0 16px;line-height:1.4;}
+  .item .t b{color:var(--pkd);font-weight:600;margin-right:4px;}
+  .pts{display:grid;gap:4px;}
+  .pts button{border:1.5px solid var(--bds);background:var(--bgc);border-radius:24px;padding:8px 0;font:inherit;font-size:14px;color:var(--tx2);cursor:pointer;}
+  .pts button.sel{border-color:var(--pkd);background:var(--pkd);color:#fff;}
+  .ptlabels{display:grid;gap:4px;margin-top:4px;font-size:12px;color:var(--tx2);text-align:center;line-height:1.3;}
+  .verify{background:var(--pkl);border-radius:12px;padding:8px 16px;font-size:12px;color:var(--pkd);margin:0 0 16px;}
+
+  /* summary */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+  .stat{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;}
+  .stat b{display:block;font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:28px;}
+  .stat span{font-size:12px;color:var(--tx2);}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0 16px;background:var(--bgc);}
+  th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);}
+  th{font-weight:600;color:var(--tx2);font-size:12px;}
+  .dl{display:flex;gap:8px;flex-wrap:wrap;}
+  .dl button{flex:1 1 40%;margin-top:8px;}
+  .flag{color:var(--pkd);font-size:12px;}
+  footer{margin-top:32px;}
+</style>
+</head>
+<body>
+
+<button class="devskip" id="devskip">skip ›</button>
+
+<!-- 1. Researcher setup -->
+<section class="screen on" id="setup">
+  <div class="pad">
+    <a class="home" href="/prototypes/">‹ prototypes</a>
+    <div class="kicker" style="margin-top:16px">Research task prototype · flow</div>
+    <h1>Flow game</h1>
+    <p>One core round of the flow study: a short practice that estimates the player's level, one
+      game round, a difficulty slider, the arrow task and the Flow Short Scale. Nothing is stored;
+      the log downloads at the end.</p>
+
+    <div class="label">Participant code (optional, only written into the log)</div>
+    <input type="text" id="pid" autocomplete="off" placeholder="e.g. P01">
+
+    <div class="label">Condition</div>
+    <div class="opts" id="condOpts">
+      <button data-v="low">Low challenge</button>
+      <button data-v="flow">Flow (adaptive)</button>
+      <button data-v="high">High challenge</button>
+    </div>
+    <p class="hint" id="condHint"></p>
+
+    <div id="abilityBox"></div>
+
+    <div class="small" id="settings" style="margin-top:16px"></div>
+    <button class="go" id="begin" disabled>Begin</button>
+
+    <footer>
+      <p class="hint">Game: a browser port of <a href="https://github.com/asteroidimpact" target="_blank" rel="noopener">Asteroid Impact</a>
+        (Media Neuroscience Lab; Huskey et al., 2018), CC BY-SA 4.0. Art © Media Neuroscience Lab, Rene Weber 2015,
+        CC BY-SA 4.0 (asteroid from a public-domain NASA image). This port is shared under the same licence.</p>
+    </footer>
+  </div>
+</section>
+
+<!-- 2. How to play -->
+<section class="screen" id="howto">
+  <div class="pad">
+    <h1>How to play</h1>
+    <div class="howrow"><img src="flow-game/img/cursor.png" alt=""><p>Move your ship with the mouse.</p></div>
+    <div class="howrow"><img src="flow-game/img/crystal.png" alt=""><p>Pick up the crystals. Collect all three to clear a level.</p></div>
+    <div class="howrow"><img class="big" src="flow-game/img/asteroid.png" alt=""><p>Avoid the bouncing asteroids. If you hit one, the level starts again.</p></div>
+    <div class="howrow"><img src="flow-game/img/shield.png" alt=""><p>Shield: asteroids can't hurt you for a few seconds.</p></div>
+    <div class="howrow"><img src="flow-game/img/clock.png" alt=""><p>Clock: slows the asteroids down for a few seconds.</p></div>
+    <p>Collect as many crystals as you can.</p>
+    <button class="go" id="howtoGo">Continue</button>
+  </div>
+</section>
+
+<!-- 3. Press when ready (game) -->
+<section class="screen" id="ready">
+  <div class="pad">
+    <div class="kicker" id="readyKicker"></div>
+    <h1 id="readyTitle"></h1>
+    <p id="readyText"></p>
+    <button class="go" id="readyGo">I'm ready</button>
+    <p class="hint" style="text-align:center">or press the space bar</p>
+  </div>
+</section>
+
+<!-- 4. Game -->
+<section class="screen" id="game"><canvas id="canvas"></canvas></section>
+
+<!-- 5. Difficulty slider -->
+<section class="screen" id="slider">
+  <div class="pad" style="display:flex;flex-direction:column;justify-content:center;">
+    <h2>How difficult was that round?</h2>
+    <div class="scale">
+      <input type="range" id="diff" min="0" max="100" step="1" value="50" class="untouched" aria-label="Difficulty, from too easy to too hard">
+      <div class="ends"><span>Too easy</span><span>Just right</span><span>Too hard</span></div>
+    </div>
+    <button class="go" id="sliderGo" disabled>Continue</button>
+  </div>
+</section>
+
+<!-- 6. Arrow task instructions -->
+<section class="screen arrowscreen" id="arrowIntro">
+  <div class="pad" style="display:flex;flex-direction:column;justify-content:center;">
+    <h1>Arrow task</h1>
+    <p>A row of five arrows will appear. Look at the <b>middle</b> arrow only and press the key for the
+      way it points. Ignore the other arrows.</p>
+    <div class="keys">
+      <div class="key">F<small>middle arrow points left</small></div>
+      <div class="key">J<small>middle arrow points right</small></div>
+    </div>
+    <p>Rest your left index finger on F and your right index finger on J. Respond as quickly and as
+      accurately as you can.</p>
+    <p id="arrowIntroNote"></p>
+    <button class="go" id="arrowIntroGo">I'm ready</button>
+    <p style="text-align:center;font-size:12px;color:#555">or press the space bar</p>
+  </div>
+</section>
+
+<!-- 7. Arrow task -->
+<section class="screen arrowscreen" id="arrows">
+  <div id="arrowStage">
+    <div id="fix">+</div>
+    <div id="stim"></div>
+    <div id="fb"></div>
+  </div>
+</section>
+
+<!-- 8. Flow Short Scale -->
+<section class="screen" id="fss">
+  <div class="pad" id="fssPad"></div>
+</section>
+
+<!-- 9. Summary -->
+<section class="screen" id="summary">
+  <div class="pad" id="sumPad"></div>
+</section>
+
+<script type="module">
+import {
+  LADDER, SPEEDS, SIZES, TARGETS_PER_LEVEL, TOP_LEVEL, STAIRCASES,
+  levelFromScore, stepScore, estimateAbility, conditionPlan, zoneOf, emptyZoneTally, zoneSummary,
+} from './flow-game/levels.js'
+import { ARROW_DEFAULTS, buildTrials, scoreBlock, mulberry32 } from './flow-game/arrows.js'
+import { FSS_ITEMS, FSS_INSTRUCTIONS, FSS_VERIFIED, fssPages, scoreFss } from './flow-game/fss.js'
+
+// ── config ─────────────────────────────────────────────────────────────────
+const Q = new URLSearchParams(location.search)
+const DEV = Q.has('dev') || Q.has('test')
+const TEST = Q.has('test')
+const num = (k, d) => (Q.has(k) && Number.isFinite(+Q.get(k)) ? +Q.get(k) : d)
+const CFG = {
+  roundMs: num('round', 240) * 1000,
+  calibMs: num('calib', 180) * 1000,
+  trials: Math.max(4, Math.round(num('trials', ARROW_DEFAULTS.trials) / 4) * 4),
+  practice: Q.has('nopractice') ? 0 : ARROW_DEFAULTS.practice,
+  seed: num('seed', Math.floor(Math.random() * 1e9)),
+}
+if (DEV) document.body.classList.add('dev')
+
+// ── clock, loop and log ────────────────────────────────────────────────────
+let virtualNow = 0
+const now = () => (TEST ? virtualNow : performance.now())
+let active = null // { update(t), render?() }
+let lastPump = 0
+function pump() { lastPump = performance.now(); if (active) active.update(now()) }
+function frame() { pump(); if (active && active.render) active.render(); requestAnimationFrame(frame) }
+if (!TEST) {
+  requestAnimationFrame(frame)
+  setInterval(() => { if (performance.now() - lastPump > 100) pump() }, 50) // throttled rAF
+}
+
+const LOG = {
+  meta: {
+    prototype: 'flow-game', version: '2026-11-23', userAgent: navigator.userAgent,
+    startedAt: new Date().toISOString(), config: CFG, fssWordingVerified: FSS_VERIFIED,
+  },
+  runs: [], events: [], frames: [], arrows: [], responses: [],
+}
+const S = { participant: '', condition: null, ability: null, abilitySource: null, run: 0, step: 'setup' }
+const r1 = v => Math.round(v * 10) / 10
+function ev(event, detail = {}) {
+  LOG.events.push({ t_ms: r1(now()), run: S.run, step: S.step, event, detail: JSON.stringify(detail) })
+}
+
+const $ = id => document.getElementById(id)
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id))
+}
+
+// one-shot handlers for "continue"-type buttons, with Space as an alternative
+let spaceHandler = null
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && spaceHandler && !e.repeat) { e.preventDefault(); const h = spaceHandler; spaceHandler = null; h() }
+})
+function onceClick(btn, withSpace = false) {
+  return new Promise(res => {
+    const done = () => { btn.onclick = null; spaceHandler = null; res() }
+    btn.onclick = done
+    if (withSpace) spaceHandler = done
+  })
+}
+
+// "Press when ready": latency is the initiation measure.
+async function ready({ kicker, title, text, what }) {
+  $('readyKicker').textContent = kicker
+  $('readyTitle').textContent = title
+  $('readyText').textContent = text
+  show('ready')
+  const t0 = now()
+  ev('ready_shown', { what })
+  await onceClick($('readyGo'), true)
+  const latency = r1(now() - t0)
+  ev('ready_pressed', { what, latency_ms: latency })
+  return latency
+}
+
+// ── setup screen ───────────────────────────────────────────────────────────
+const condHints = {
+  low: 'Fixed 3 levels below the practice estimate.',
+  flow: 'Starts at the practice estimate; up a step after each cleared level, down after each crash.',
+  high: 'Fixed 3 levels above the practice estimate.',
+}
+function renderSetup() {
+  document.querySelectorAll('#condOpts button').forEach(b => {
+    b.classList.toggle('sel', b.dataset.v === S.condition)
+    b.onclick = () => { S.condition = b.dataset.v; renderSetup() }
+  })
+  $('condHint').textContent = S.condition ? condHints[S.condition] : ''
+  const fmt = ms => `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, '0')}`
+  $('settings').textContent =
+    `Practice ${fmt(CFG.calibMs)} · round ${fmt(CFG.roundMs)} · arrow task ${CFG.practice ? CFG.practice + ' practice + ' : ''}${CFG.trials} trials · seed ${CFG.seed}`
+  const box = $('abilityBox')
+  if (S.ability == null) {
+    box.innerHTML = '<p class="hint">The practice comes first and estimates the player\'s level for this round.</p>'
+  } else {
+    box.innerHTML = `<label class="check"><input type="checkbox" id="redoCalib"> Run the practice again
+      (current estimate: level ${S.ability} of ${TOP_LEVEL}, from ${S.abilitySource})</label>`
+  }
+  if (DEV) {
+    box.insertAdjacentHTML('beforeend', `<div class="label">Dev: set ability by hand (skips the practice)</div>
+      <input type="number" id="abilityOverride" min="1" max="${TOP_LEVEL}" placeholder="1–${TOP_LEVEL}">`)
+  }
+  $('begin').disabled = !S.condition
+}
+if (['low', 'flow', 'high'].includes(Q.get('cond'))) S.condition = Q.get('cond')
+renderSetup()
+$('begin').onclick = () => {
+  S.participant = $('pid').value.trim()
+  const ov = DEV && $('abilityOverride') ? parseInt($('abilityOverride').value, 10) : NaN
+  if (Number.isFinite(ov)) { S.ability = Math.min(TOP_LEVEL, Math.max(1, ov)); S.abilitySource = 'set by hand' }
+  const redo = S.ability == null || ($('redoCalib') && $('redoCalib').checked)
+  if (!TEST && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {})
+  runRound(redo)
+}
+
+// ── game ───────────────────────────────────────────────────────────────────
+const W = 1280, H = 960, PH = 896, SHIP = 32, DT = 1000 / 60
+const IMG = {}
+for (const k of ['cursor', 'crystal', 'asteroid', 'shield', 'clock']) { IMG[k] = new Image(); IMG[k].src = `flow-game/img/${k}.png` }
+IMG.bg = new Image(); IMG.bg.src = 'flow-game/img/background.jpg'
+
+const canvas = $('canvas')
+const ctx = canvas.getContext('2d')
+const pointer = { x: W / 2, y: PH / 2 }
+let view = { s: 1, ox: 0, oy: 0, dpr: 1 }
+function layout() {
+  const dpr = window.devicePixelRatio || 1
+  const cw = canvas.clientWidth, ch = canvas.clientHeight
+  canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr)
+  const s = Math.min(cw / W, ch / H)
+  view = { s, ox: (cw - W * s) / 2, oy: (ch - H * s) / 2, dpr }
+}
+window.addEventListener('resize', layout)
+window.addEventListener('pointermove', e => {
+  const rect = canvas.getBoundingClientRect()
+  pointer.x = (e.clientX - rect.left - view.ox) / view.s
+  pointer.y = (e.clientY - rect.top - view.oy) / view.s
+})
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
+const hit = (ax, ay, ad, bx, by, bd) => (ax - bx) ** 2 + (ay - by) ** 2 < 0.25 * (ad + bd) ** 2
+
+let bot = 0 // ?dev/?test helper: ship speed (units/frame) of a bot that steers to crystals and shies away from asteroids; 0 = off
+let botReactTicks = 1 // the bot re-plans its heading only this often (12 ticks ≈ a 200 ms reaction time)
+
+function playGame({ step, durationMs, level, adaptive, steps, ability, seed }) {
+  return new Promise(resolve => {
+    const rand = mulberry32(seed)
+    const pick = xs => xs[Math.floor(rand() * xs.length)]
+    const g = {
+      ms: 0, ticks: 0, acc: 0, last: now(), score: level + (adaptive ? 0.5 : 0), level, state: 'countdown', stateMs: 0,
+      playMs: 0, ship: { x: clamp(pointer.x, SHIP / 2, W - SHIP / 2), y: clamp(pointer.y, SHIP / 2, PH - SHIP / 2) },
+      asteroids: [], crystal: null, collected: 0, powerup: null, activePU: null, puIndex: 0, puWait: 0,
+      deaths: 0, clears: 0, crystals: 0, zones: emptyZoneTally(), samples: [], levelMs: {}, flash: null,
+    }
+    S.step = step
+
+    const velocity = speed => {
+      const s = pick(SPEEDS[speed])
+      const comp = () => (1 + Math.floor(rand() * s)) * (rand() < 0.5 ? -1 : 1)
+      return [comp(), comp()]
+    }
+    const spawnPoint = d => {
+      let best = null
+      for (let i = 0; i < 50; i++) {
+        const p = { x: d / 2 + rand() * (W - d), y: d / 2 + rand() * (PH - d) }
+        const far = Math.hypot(p.x - g.ship.x, p.y - g.ship.y) > d / 2 + 160
+        if (far) return p
+        best = p
+      }
+      return best
+    }
+    const newAsteroid = (i, tpl, growMs) => {
+      const sizes = SIZES[tpl.size]
+      const d1 = sizes[i % sizes.length]
+      const [dx, dy] = velocity(tpl.speed)
+      const p = spawnPoint(d1)
+      return { x: p.x, y: p.y, d: growMs ? 0 : d1, d0: 0, d1, tStart: g.ms, tDur: growMs, dx, dy,
+        tdx: Math.abs(dx), tdy: Math.abs(dy), dying: false }
+    }
+    // Move the field to a template: resize/re-speed existing asteroids over
+    // 2000 ms, shrink extras away over 1000 ms, grow new ones in (original
+    // adaptive behaviour; speeds change at bounces, by at most ±4).
+    const applyTemplate = (lvl, initial) => {
+      const tpl = LADDER[lvl - 1]
+      const live = g.asteroids.filter(a => !a.dying)
+      live.forEach((a, i) => {
+        if (i < tpl.asteroids) {
+          const sizes = SIZES[tpl.size]
+          const [dx, dy] = velocity(tpl.speed)
+          Object.assign(a, { d0: a.d, d1: sizes[i % sizes.length], tStart: g.ms, tDur: 2000, tdx: Math.abs(dx), tdy: Math.abs(dy) })
+        } else Object.assign(a, { dying: true, d0: a.d, d1: 0, tStart: g.ms, tDur: 1000 })
+      })
+      for (let i = live.length; i < tpl.asteroids; i++) g.asteroids.push(newAsteroid(i, tpl, initial ? 0 : 2000))
+      if (g.powerup && !tpl.powerups.includes(g.powerup.type)) g.powerup = null
+      g.puIndex = 0; g.puWait = 0
+    }
+    const newCrystal = () => { g.crystal = { x: 16 + rand() * (W - 32), y: 16 + rand() * (PH - 32) } }
+    const zone = () => (ability == null ? null : zoneOf(g.level, ability))
+    const changeLevel = outcome => {
+      if (!adaptive) return
+      const before = g.level
+      g.score = stepScore(g.score, outcome, steps)
+      g.level = levelFromScore(g.score)
+      if (g.level !== before) {
+        ev(g.level > before ? 'adaptive_difficulty_increase' : 'adaptive_difficulty_decrease', { from: before, to: g.level, score: r1(g.score) })
+        applyTemplate(g.level, false)
+      }
+    }
+    const clear = () => {
+      g.clears++
+      if (zone()) g.zones[zone()].clears++
+      ev('game_level_complete', { level: g.level })
+      g.collected = 0
+      changeLevel('clear')
+      g.flash = { text: 'Level complete', until: g.ms + 1000 }
+      newCrystal()
+      ev('game_level_begin', { level: g.level })
+    }
+    const die = () => {
+      g.deaths++
+      if (zone()) g.zones[zone()].deaths++
+      ev('game_death', { level: g.level })
+      g.activePU = null
+      g.collected = 0
+      changeLevel('death')
+      g.state = 'dead'; g.stateMs = 0
+      newCrystal()
+    }
+
+    const steer = () => {
+      if (!g.crystal) return
+      let vx = g.crystal.x - g.ship.x, vy = g.crystal.y - g.ship.y
+      const n = Math.hypot(vx, vy) || 1
+      vx /= n; vy /= n
+      for (const a of g.asteroids) {
+        const dx = g.ship.x - a.x, dy = g.ship.y - a.y
+        const dist = Math.hypot(dx, dy) - a.d / 2
+        if (dist < 140) { const w = 2.5 * (1 - Math.max(dist, 0) / 140); vx += (dx / (dist + a.d / 2)) * w; vy += (dy / (dist + a.d / 2)) * w }
+      }
+      const m = Math.hypot(vx, vy) || 1
+      g.botV = [(vx / m) * bot, (vy / m) * bot]
+      pointer.x = g.ship.x + g.botV[0]
+      pointer.y = g.ship.y + g.botV[1]
+    }
+
+    const tick = () => {
+      g.ticks++
+      g.ms = g.ticks * DT // whole ticks, so a round is exactly durationMs
+      g.levelMs[g.level] = (g.levelMs[g.level] || 0) + DT
+      if (zone()) g.zones[zone()].ms += DT
+      if (Math.round(g.ms / DT) % 6 === 0) g.samples.push({ t: g.ms, level: g.level })
+      if (bot && g.ticks % botReactTicks === 0) steer()
+      else if (bot && g.botV) { pointer.x = g.ship.x + g.botV[0]; pointer.y = g.ship.y + g.botV[1] }
+      g.ship.x = clamp(pointer.x, SHIP / 2, W - SHIP / 2)
+      g.ship.y = clamp(pointer.y, SHIP / 2, PH - SHIP / 2)
+
+      // sizes ease toward their targets in every state
+      for (const a of g.asteroids) {
+        if (a.tDur > 0) {
+          const f = clamp((g.ms - a.tStart) / a.tDur, 0, 1)
+          a.d = a.d0 + (a.d1 - a.d0) * f
+          if (f >= 1) a.tDur = 0
+        }
+      }
+      g.asteroids = g.asteroids.filter(a => !(a.dying && a.tDur === 0))
+
+      if (g.state === 'dead') {
+        g.stateMs += DT
+        if (g.stateMs >= 1000) { g.state = 'countdown'; g.stateMs = 0 }
+      } else if (g.state === 'countdown') {
+        g.stateMs += DT
+        if (g.stateMs >= 2000) { g.state = 'playing'; g.playMs = 0; ev('game_level_begin', { level: g.level }) }
+      } else {
+        g.playMs += DT
+        const tpl = LADDER[g.level - 1]
+        // power-ups: the next in the level's list appears `delay` s after the last one ended
+        if (tpl.powerups.length && !g.powerup && !g.activePU) {
+          g.puWait += DT
+          if (g.puWait >= tpl.delay * 1000) {
+            const type = tpl.powerups[g.puIndex % tpl.powerups.length]
+            g.puIndex++; g.puWait = 0
+            g.powerup = { type, x: 16 + rand() * (W - 32), y: 16 + rand() * (PH - 32) }
+          }
+        }
+        if (g.powerup && hit(g.ship.x, g.ship.y, SHIP, g.powerup.x, g.powerup.y, 32)) {
+          g.activePU = { type: g.powerup.type, until: g.ms + 5000 }
+          ev(g.powerup.type === 'shield' ? 'game_shield_activate' : 'game_slow_activate', { level: g.level })
+          g.powerup = null
+        }
+        if (g.activePU && g.ms >= g.activePU.until) { ev('game_powerup_end', { type: g.activePU.type }); g.activePU = null }
+        const sf = g.activePU && g.activePU.type === 'slow' ? 0.25 : 1
+        const nudge = (v, target) => { const m = Math.abs(v); return Math.max(1, m + clamp(target - m, -4, 4)) }
+        for (const a of g.asteroids) {
+          a.x += a.dx * sf; a.y += a.dy * sf
+          const r = a.d / 2
+          if (a.x - r < 0) { a.x = r; a.dx = nudge(a.dx, a.tdx) }
+          if (a.x + r > W) { a.x = W - r; a.dx = -nudge(a.dx, a.tdx) }
+          if (a.y - r < 0) { a.y = r; a.dy = nudge(a.dy, a.tdy) }
+          if (a.y + r > PH) { a.y = PH - r; a.dy = -nudge(a.dy, a.tdy) }
+        }
+        if (g.crystal && hit(g.ship.x, g.ship.y, SHIP, g.crystal.x, g.crystal.y, 32)) {
+          g.collected++; g.crystals++
+          if (zone()) g.zones[zone()].crystals++
+          ev('game_crystal_collected', { level: g.level, n: g.collected })
+          if (g.collected >= TARGETS_PER_LEVEL) clear(); else newCrystal()
+        }
+        const shielded = g.activePU && g.activePU.type === 'shield'
+        if (!shielded && g.asteroids.some(a => !a.dying && a.d > 0 && hit(g.ship.x, g.ship.y, SHIP, a.x, a.y, a.d))) die()
+      }
+
+      const row = [S.run, step, Math.round(g.ms), g.level, r1(g.score), g.state, g.collected,
+        g.crystal ? r1(g.crystal.x) : '', g.crystal ? r1(g.crystal.y) : '', r1(g.ship.x), r1(g.ship.y),
+        g.activePU ? g.activePU.type : '', g.powerup ? g.powerup.type : '',
+        g.powerup ? r1(g.powerup.x) : '', g.powerup ? r1(g.powerup.y) : '', g.asteroids.length]
+      for (let i = 0; i < 8; i++) {
+        const a = g.asteroids[i]
+        row.push(a ? r1(a.x) : '', a ? r1(a.y) : '', a ? r1(a.d) : '')
+      }
+      LOG.frames.push(row)
+    }
+
+    const render = () => {
+      if (canvas.width === 0 || Math.round(canvas.clientWidth * view.dpr) !== canvas.width) layout()
+      const { s, ox, oy, dpr } = view
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy)
+      if (IMG.bg.complete) ctx.drawImage(IMG.bg, 0, 0, W, H)
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, PH); ctx.clip()
+      for (const a of g.asteroids) if (a.d > 0) ctx.drawImage(IMG.asteroid, a.x - a.d / 2, a.y - a.d / 2, a.d, a.d)
+      if (g.crystal) ctx.drawImage(IMG.crystal, g.crystal.x - 16, g.crystal.y - 16, 32, 32)
+      if (g.powerup) ctx.drawImage(IMG[g.powerup.type === 'shield' ? 'shield' : 'clock'], g.powerup.x - 16, g.powerup.y - 16, 32, 32)
+      ctx.drawImage(IMG.cursor, g.ship.x - 16, g.ship.y - 16, 32, 32)
+      if (g.activePU && g.activePU.type === 'shield') ctx.drawImage(IMG.shield, g.ship.x - 28, g.ship.y - 28, 56, 56)
+      ctx.restore()
+      // HUD
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0, PH, W, H - PH)
+      ctx.fillStyle = '#fff'; ctx.font = '700 28px "DM Sans", sans-serif'; ctx.textBaseline = 'middle'
+      ctx.textAlign = 'left'; ctx.fillText(`${g.collected}/${TARGETS_PER_LEVEL} collected`, 24, PH + 32)
+      if (g.activePU) {
+        const left = Math.max(0, g.activePU.until - g.ms) / 5000
+        ctx.drawImage(IMG[g.activePU.type === 'shield' ? 'shield' : 'clock'], W - 224, PH + 16, 32, 32)
+        ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(W - 176, PH + 28, 152, 8)
+        ctx.fillStyle = '#fff'; ctx.fillRect(W - 176, PH + 28, 152 * left, 8)
+      }
+      // overlays
+      ctx.textAlign = 'center'
+      const big = (text, color) => {
+        ctx.font = '700 72px "DM Sans", sans-serif'; ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.6)'
+        ctx.strokeText(text, W / 2, PH / 2); ctx.fillStyle = color; ctx.fillText(text, W / 2, PH / 2)
+      }
+      if (g.state === 'dead') big('You died!', '#ff3b30')
+      else if (g.state === 'countdown') big(g.stateMs < 1000 ? 'Get ready' : 'Set', '#fff')
+      else if (g.playMs < 500) big('Go!', '#fff')
+      // a cleared level is announced in the HUD, so the field stays clear while play continues
+      if (g.flash && g.ms < g.flash.until) {
+        ctx.font = '700 28px "DM Sans", sans-serif'; ctx.fillStyle = '#7CFC00'
+        ctx.fillText(g.flash.text, W / 2, PH + 32)
+      }
+    }
+
+    const finish = () => {
+      active = null
+      const out = {
+        step, durationMs, startLevel: level, endLevel: g.level, adaptive,
+        meanLevel: g.samples.length ? r1(g.samples.reduce((a, x) => a + x.level, 0) / g.samples.length) : level,
+        deaths: g.deaths, clears: g.clears, crystals: g.crystals,
+        secondsByLevel: Object.fromEntries(Object.entries(g.levelMs).map(([k, v]) => [k, r1(v / 1000)])),
+        zones: ability == null ? null : zoneSummary(g.zones),
+        samples: g.samples,
+      }
+      ev('step_end', { step })
+      resolve(out)
+    }
+
+    applyTemplate(g.level, true)
+    newCrystal()
+    show('game'); layout()
+    ev('step_begin', { step, level, adaptive, durationMs })
+    g.last = now()
+    active = {
+      update(t) {
+        g.acc += Math.min(t - g.last, 250); g.last = t
+        while (g.acc >= DT && active) {
+          g.acc -= DT; tick()
+          if (g.ticks >= Math.round(durationMs / DT)) { finish(); break }
+        }
+      },
+      render,
+    }
+    api.game = g
+    api.skip = () => { g.ms = durationMs; finish() }
+  })
+}
+
+// ── slider ─────────────────────────────────────────────────────────────────
+function sliderScreen() {
+  return new Promise(resolve => {
+    S.step = 'slider'
+    const el = $('diff'); el.value = 50; el.classList.add('untouched')
+    $('sliderGo').disabled = true
+    show('slider')
+    const t0 = now(); let moved = 0
+    ev('slider_shown')
+    el.oninput = () => { el.classList.remove('untouched'); $('sliderGo').disabled = false; moved++ }
+    $('sliderGo').onclick = () => {
+      const value = +el.value, rt = r1(now() - t0)
+      LOG.responses.push({ run: S.run, measure: 'difficulty_slider', item: 1, text: 'How difficult was that round? (0 too easy, 50 just right, 100 too hard)', value, rt_ms: rt })
+      ev('slider_submitted', { value, rt_ms: rt, moves: moved })
+      resolve({ value, rtMs: rt })
+    }
+    api.skip = () => { el.value = 50; el.oninput(); $('sliderGo').onclick() }
+  })
+}
+
+// ── arrow task ─────────────────────────────────────────────────────────────
+const arrowSvg = dir => `<svg viewBox="0 0 56 56" aria-hidden="true"${dir === '<' ? ' style="transform:scaleX(-1)"' : ''}>
+  <path d="M4 22h30V10l18 18-18 18V34H4z" fill="#111"/></svg>`
+
+let arrowKey = null // the active block's key handler
+document.addEventListener('keydown', e => {
+  if (arrowKey && (e.code === 'KeyF' || e.code === 'KeyJ') && !e.repeat) arrowKey(e.code)
+})
+
+function arrowBlock(kind) {
+  return new Promise(resolve => {
+    S.step = `arrows_${kind}`
+    const o = ARROW_DEFAULTS
+    const n = kind === 'practice' ? CFG.practice : CFG.trials
+    const trials = buildTrials(n, CFG.seed + S.run * 100 + (kind === 'practice' ? 1 : 2))
+    const out = []
+    let i = 0, phase = 'fix', t0 = now(), onset = 0
+    const fix = $('fix'), stim = $('stim'), fb = $('fb')
+    const set = (p, t) => {
+      phase = p; t0 = t
+      fix.style.visibility = p === 'fix' ? 'visible' : 'hidden'
+      stim.style.visibility = p === 'stim' ? 'visible' : 'hidden'
+      if (p !== 'fb') fb.textContent = ''
+    }
+    const startTrial = t => {
+      if (i >= trials.length) { arrowKey = null; active = null; ev('arrow_block_end', { kind }); resolve(out); return }
+      stim.innerHTML = [...trials[i].stimulus].map(arrowSvg).join('')
+      set('fix', t)
+    }
+    const respond = (code, t) => {
+      const tr = trials[i]
+      const response = code === 'KeyF' ? 'left' : code === 'KeyJ' ? 'right' : null
+      const rec = {
+        run: S.run, block: kind, trial: tr.index, target: tr.target, congruency: tr.congruency, stimulus: tr.stimulus,
+        key: code ? code.replace('Key', '') : '', response: response || '', correct: response === tr.target,
+        rtMs: response ? r1(t - onset) : null, timeout: !response, onset_ms: r1(onset), iti_ms: tr.itiMs,
+      }
+      out.push(rec); LOG.arrows.push(rec)
+      ev(response ? 'arrow_response' : 'arrow_timeout', { block: kind, trial: tr.index, correct: rec.correct, rt_ms: rec.rtMs })
+      if (kind === 'practice') {
+        fb.textContent = !response ? 'Too slow' : rec.correct ? 'Correct' : 'Incorrect'
+        fb.style.color = rec.correct ? '#1a7f37' : '#b3261e'
+        set('fb', t)
+      } else set('iti', t)
+    }
+    arrowKey = code => { if (phase === 'stim') respond(code, now()) }
+    show('arrows')
+    ev('arrow_block_begin', { kind, n })
+    startTrial(now())
+    active = {
+      update(t) {
+        const el = t - t0
+        if (phase === 'fix' && el >= o.fixationMs) {
+          set('stim', t); onset = t
+          ev('arrow_stimulus_onset', { block: kind, trial: trials[i].index, stimulus: trials[i].stimulus })
+        } else if (phase === 'stim' && el >= o.deadlineMs) respond(null, t)
+        else if (phase === 'fb' && el >= o.feedbackMs) set('iti', t)
+        else if (phase === 'iti' && el >= trials[i].itiMs) { i++; startTrial(t) }
+      },
+    }
+    api.skip = () => { while (i < trials.length) { respond(trials[i].target === 'left' ? 'KeyF' : 'KeyJ', onset + 450); i++ } startTrial(now()) }
+  })
+}
+
+async function arrowTask() {
+  const intro = async note => {
+    S.step = 'arrows_intro'
+    $('arrowIntroNote').textContent = note
+    show('arrowIntro')
+    const t0 = now(); ev('ready_shown', { what: 'arrow_task' })
+    await onceClick($('arrowIntroGo'), true)
+    ev('ready_pressed', { what: 'arrow_task', latency_ms: r1(now() - t0) })
+  }
+  if (CFG.practice) {
+    await intro(`First, ${CFG.practice} practice trials that tell you whether you were right.`)
+    await arrowBlock('practice')
+    await intro('Now the real block. There is no feedback from here on.')
+  } else await intro('')
+  return arrowBlock('test')
+}
+
+// ── Flow Short Scale ───────────────────────────────────────────────────────
+function fssScreens() {
+  return new Promise(resolve => {
+    S.step = 'fss'
+    const pages = fssPages()
+    const answers = {}
+    let p = 0, t0 = 0
+    const render = () => {
+      const items = pages[p]
+      const verify = FSS_VERIFIED ? '' : '<div class="verify">Prototype: item wording still to be checked against the official English FSS.</div>'
+      const head = p === 0 ? `<h2>About the game you just played</h2><p>${FSS_INSTRUCTIONS}</p>` : ''
+      const cards = items.map(it => {
+        const cols = `grid-template-columns:repeat(${it.scale.points},1fr)`
+        const btns = Array.from({ length: it.scale.points }, (_, k) => k + 1)
+          .map(v => `<button data-n="${it.n}" data-v="${v}" class="${answers[it.n] === v ? 'sel' : ''}">${v}</button>`).join('')
+        const labs = Array.from({ length: it.scale.points }, (_, k) => `<span>${it.scale.labels[k + 1] || ''}</span>`).join('')
+        return `<div class="item"><p class="t"><b>${it.n}.</b>${it.text}</p>
+          <div class="pts" style="${cols}">${btns}</div><div class="ptlabels" style="${cols}">${labs}</div></div>`
+      }).join('')
+      $('fssPad').innerHTML = `${verify}${head}${cards}
+        <p class="small">Page ${p + 1} of ${pages.length}</p><button class="go" id="fssGo">${p < pages.length - 1 ? 'Next' : 'Finish'}</button>`
+      $('fssPad').scrollTop = 0
+      $('fssPad').querySelectorAll('.pts button').forEach(b => {
+        b.onclick = () => {
+          const n = +b.dataset.n, v = +b.dataset.v
+          answers[n] = v
+          ev('fss_answer', { item: n, value: v })
+          b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b))
+        }
+      })
+      t0 = now()
+      $('fssGo').onclick = next
+    }
+    const next = () => {
+      const rt = r1(now() - t0)
+      for (const it of pages[p]) {
+        LOG.responses.push({ run: S.run, measure: 'fss', item: it.n, text: it.text, value: answers[it.n] ?? 'MISSING', rt_ms: rt })
+      }
+      ev('fss_page_submitted', { page: p + 1, rt_ms: rt })
+      p++
+      if (p < pages.length) render()
+      else resolve({ answers, scores: scoreFss(answers) })
+    }
+    show('fss'); ev('fss_shown')
+    render()
+    api.skip = () => {
+      for (const it of FSS_ITEMS) if (answers[it.n] == null) answers[it.n] = Math.ceil(it.scale.points / 2)
+      while (p < pages.length) next()
+    }
+  })
+}
+
+// ── one round ──────────────────────────────────────────────────────────────
+async function runRound(redoCalib) {
+  S.run++
+  const rec = { run: S.run, participant: S.participant, condition: S.condition, startedAt: new Date().toISOString() }
+  LOG.runs.push(rec)
+  ev('run_begin', { condition: S.condition })
+
+  if (redoCalib) {
+    S.step = 'howto'; show('howto')
+    await onceClick($('howtoGo'))
+    rec.readyLatencyPracticeMs = await ready({
+      kicker: 'Practice', title: 'Practice round',
+      text: 'Play for a few minutes to get used to the game. Collect as many crystals as you can.', what: 'practice',
+    })
+    const cal = await playGame({ step: 'calibration', durationMs: CFG.calibMs, level: 1, adaptive: true,
+      steps: STAIRCASES.calibration, ability: null, seed: CFG.seed + S.run * 100 + 11 })
+    S.ability = estimateAbility(cal.samples, CFG.calibMs)
+    S.abilitySource = `practice in run ${S.run}`
+    ev('ability_estimated', { ability: S.ability })
+    rec.calibration = { ...cal, samples: undefined }
+  }
+  rec.ability = S.ability
+  rec.abilitySource = S.abilitySource
+  const plan = conditionPlan(S.condition, S.ability)
+  rec.plan = plan
+
+  rec.readyLatencyRoundMs = await ready({
+    kicker: 'Game', title: 'Next round',
+    text: 'Collect as many crystals as you can.', what: 'round',
+  })
+  const round = await playGame({ step: 'round', durationMs: CFG.roundMs, level: plan.level, adaptive: plan.adaptive,
+    steps: STAIRCASES.flow, ability: S.ability, seed: CFG.seed + S.run * 100 + 22 })
+  rec.round = { ...round, samples: undefined }
+  rec.slider = await sliderScreen()
+  const arrows = await arrowTask()
+  rec.arrows = scoreBlock(arrows)
+  const fss = await fssScreens()
+  rec.fss = fss.scores
+  rec.endedAt = new Date().toISOString()
+  ev('run_end')
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  summary()
+}
+
+// ── summary + downloads ────────────────────────────────────────────────────
+const f1 = v => (v == null ? '–' : (Math.round(v * 10) / 10).toString())
+const pct = v => (v == null ? '–' : `${Math.round(v * 100)}%`)
+const condName = { low: 'Low challenge', flow: 'Flow (adaptive)', high: 'High challenge' }
+
+function summary() {
+  S.step = 'summary'
+  const rec = LOG.runs[LOG.runs.length - 1]
+  const z = rec.round.zones
+  const zoneRows = ['below', 'matched', 'above'].map(k => `<tr><td>${k}</td><td>${f1(z[k].seconds)}</td>
+    <td>${f1(z[k].deathsPerMin)}</td><td>${f1(z[k].clearsPerMin)}</td><td>${f1(z[k].crystalsPerMin)}</td></tr>`).join('')
+  const lv = Object.entries(rec.round.secondsByLevel).map(([k, v]) => `L${k} ${f1(v)} s`).join(' · ')
+  const a = rec.arrows
+  const clampNote = rec.plan.clamped ? `<p class="flag">The ladder clamped this condition: it sits ${rec.plan.gap} level(s) from the estimate instead of 3.</p>` : ''
+  const pr = rec.calibration
+  const cal = pr
+    ? `<p class="small">Practice: ${pr.clears} levels cleared, ${pr.deaths} crashes, ended on level ${pr.endLevel}.</p>` : ''
+  $('sumPad').innerHTML = `
+    <div class="kicker">Run ${rec.run}${rec.participant ? ' · ' + rec.participant : ''}</div>
+    <h1>${condName[rec.condition]}</h1>
+    <p>Ability estimate: <b>level ${rec.ability}</b> of ${TOP_LEVEL} (${rec.abilitySource}). This round
+      ${rec.plan.adaptive ? `started at level ${rec.plan.level} and adapted (ended on level ${rec.round.endLevel}, mean ${f1(rec.round.meanLevel)})` : `stayed on level ${rec.plan.level}`}.</p>
+    ${clampNote}${cal}
+    <div class="stats">
+      <div class="stat"><b>${rec.round.clears}</b><span>levels cleared</span></div>
+      <div class="stat"><b>${rec.round.deaths}</b><span>crashes</span></div>
+      <div class="stat"><b>${rec.slider.value}</b><span>difficulty slider (0 too easy · 50 just right · 100 too hard)</span></div>
+      <div class="stat"><b>${f1(rec.fss.flow)}</b><span>FSS flow mean (1–7), ${rec.fss.flowAnswered}/10 answered</span></div>
+    </div>
+    <h3>Time in each zone</h3>
+    <p class="hint">Zones are relative to the ability estimate: below = 2 or more levels under it, matched = within 1, above = 2 or more over it.</p>
+    <table><tr><th>zone</th><th>seconds</th><th>crashes/min</th><th>clears/min</th><th>crystals/min</th></tr>${zoneRows}</table>
+    <p class="small">Seconds by level: ${lv}</p>
+    <h3>Arrow task (${a.n} trials)</h3>
+    <table>
+      <tr><th></th><th>congruent</th><th>incongruent</th><th>all</th></tr>
+      <tr><td>accuracy</td><td>${pct(a.accuracyCongruent)}</td><td>${pct(a.accuracyIncongruent)}</td><td>${pct(a.accuracy)}</td></tr>
+      <tr><td>mean correct RT (ms)</td><td>${f1(a.meanRtCongruentMs)}</td><td>${f1(a.meanRtIncongruentMs)}</td><td>${f1(a.meanRtMs)}</td></tr>
+    </table>
+    <p class="small">Congruency effect ${f1(a.congruencyEffectMs)} ms · ${a.timeouts} too slow · ${a.anticipations} faster than ${ARROW_DEFAULTS.minRtMs} ms (left out of RTs)</p>
+    <h3>Flow Short Scale</h3>
+    <p class="small">Flow ${f1(rec.fss.flow)} · worry ${f1(rec.fss.worry)} (${rec.fss.worryAnswered}/3) · difficulty ${rec.fss.difficulty ?? '–'}/9 ·
+      competence ${rec.fss.competence ?? '–'}/9 · demands ${rec.fss.demands ?? '–'}/9 (5 = just right)</p>
+    <h3>Download the log</h3>
+    <p class="hint">Covers every run in this tab so far.</p>
+    <div class="dl">
+      <button class="go ghost" data-dl="frames">frames.csv (60 Hz)</button>
+      <button class="go ghost" data-dl="events">events.csv</button>
+      <button class="go ghost" data-dl="arrows">arrows.csv</button>
+      <button class="go ghost" data-dl="responses">responses.csv</button>
+      <button class="go ghost" data-dl="json">everything.json</button>
+    </div>
+    <button class="go" id="again">Run another condition</button>`
+  $('sumPad').querySelectorAll('[data-dl]').forEach(b => { b.onclick = () => download(b.dataset.dl) })
+  $('again').onclick = () => { show('setup'); S.condition = null; renderSetup() }
+  show('summary')
+}
+
+const FRAME_HEADER = ['run', 'step', 'step_ms', 'level', 'adaptive_score', 'level_state', 'crystals_collected',
+  'crystal_x', 'crystal_y', 'ship_x', 'ship_y', 'active_powerup', 'field_powerup', 'powerup_x', 'powerup_y', 'n_asteroids',
+  ...Array.from({ length: 8 }, (_, i) => [`asteroid_${i + 1}_x`, `asteroid_${i + 1}_y`, `asteroid_${i + 1}_diameter`]).flat()]
+const cell = v => {
+  const s = v == null ? '' : String(v)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+const csv = (header, rows) => [header.join(','), ...rows.map(r => r.map(cell).join(','))].join('\n')
+const objCsv = rows => {
+  if (!rows.length) return ''
+  const h = Object.keys(rows[0])
+  return csv(h, rows.map(r => h.map(k => r[k])))
+}
+function buildFile(kind) {
+  if (kind === 'frames') return csv(FRAME_HEADER, LOG.frames)
+  if (kind === 'json') return JSON.stringify({ ...LOG, frames: undefined, frameHeader: FRAME_HEADER, framesCount: LOG.frames.length }, null, 2)
+  return objCsv(LOG[kind])
+}
+function download(kind) {
+  const ext = kind === 'json' ? 'json' : 'csv'
+  const name = `flowgame_${S.participant || 'anon'}_${LOG.meta.startedAt.slice(0, 10)}_${kind === 'json' ? 'everything' : kind}.${ext}`
+  const blob = new Blob([buildFile(kind)], { type: ext === 'json' ? 'application/json' : 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const el = document.createElement('a'); el.href = url; el.download = name; el.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+// ── headless / dev API ─────────────────────────────────────────────────────
+const api = {
+  CFG, LOG, S, buildFile,
+  skip: null,
+  get screen() { return document.querySelector('.screen.on')?.id },
+  bot(speed = 16, reactTicks = 1) { bot = speed || 0; botReactTicks = Math.max(1, reactTicks) },
+  pointer(x, y) { pointer.x = x; pointer.y = y },
+  key(code) { if (arrowKey && (code === 'KeyF' || code === 'KeyJ')) arrowKey(code); else if (code === 'Space' && spaceHandler) { const h = spaceHandler; spaceHandler = null; h() } },
+  click(sel) { document.querySelector(sel)?.click() },
+  advance(ms) { // TEST only: move the virtual clock in 1/60 s steps
+    const end = virtualNow + ms
+    while (virtualNow < end) { virtualNow = Math.min(end, virtualNow + DT); pump() }
+    if (active && active.render) active.render()
+  },
+}
+$('devskip').onclick = () => { if (api.skip) api.skip() }
+if (DEV) window.__flowgame = api
+</script>
+</body>
+</html>
