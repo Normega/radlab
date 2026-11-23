@@ -22,6 +22,7 @@ import VideoStepWrapper        from './VideoStepWrapper'
 import AssessmentLeadInStep    from './AssessmentLeadInStep'
 import DailyWelcomeStep        from './DailyWelcomeStep'
 import DailyFarewellStep       from './DailyFarewellStep'
+import AssignmentStep          from './AssignmentStep'
 
 /**
  * Props:
@@ -40,8 +41,11 @@ import DailyFarewellStep       from './DailyFarewellStep'
  *                 earlier steps this session; consumed by display steps
  *   studyId     — the study a demo runs as (the study builder's), for settings
  *                 a step reads from its study; real sessions use the enrollment's
+ *   slotRules   — studies.assignment_slot_rules as get_session_by_token returns
+ *                 them ({ [slot]: { assign, draw_if } }), for assignment steps
+ *   onAssigned  — (slot, arm) => void: an assignment step set a slot mid-session
  */
-export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null, studyId = null }) {
+export default function StepDispatcher({ node, enrollment, scheduleId, studyDay = null, sendTime = null, stepIndex, totalSteps, onComplete, debriefHtml, supabaseClient, isSimMode = false, demoMode = false, assignments = null, stepOutputs = null, studyId = null, slotRules = null, onAssigned = null }) {
   const activity = node?.activity ?? node?.activities
   if (!activity) {
     return (
@@ -307,6 +311,24 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         onComplete={onComplete}
         supabaseClient={supabaseClient}
         isSimMode={isSimMode}
+      />
+    )
+  }
+
+  // Sets an assignment slot mid-session (route by score, or a conditional draw).
+  // Renders nothing but a holding line; see AssignmentStep.jsx.
+  if (category === 'assignment') {
+    return (
+      <AssignmentStep
+        slot={subcategory}
+        studyId={enrollment?.study_id ?? studyId}
+        scheduleId={scheduleId}
+        rules={slotRules}
+        assignments={assignments}
+        supabaseClient={supabaseClient}
+        onAssigned={onAssigned}
+        onComplete={onComplete}
+        demoMode={demoMode || isSimMode}
       />
     )
   }
