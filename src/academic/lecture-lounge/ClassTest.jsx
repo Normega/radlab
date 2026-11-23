@@ -374,8 +374,12 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
 
       <div style={S.footer}>
         {at > 0 ? <button style={S.secondaryBtn} onClick={() => go(sections[at - 1])}>← Back to {sections[at - 1].tab.toLowerCase()}</button> : <span />}
-        {at < sections.length - 1 && <button style={S.secondaryBtn} onClick={() => go(sections[at + 1])}>Go to {sections[at + 1].tab.toLowerCase()} →</button>}
-        <button style={S.primaryBtn} onClick={() => setConfirming(true)}>{takeHome ? 'Submit' : 'Submit test'}</button>
+        {/* Submit lives only on the last section. Beside "Go to …" it read as the way forward, and a
+            student submitted the RCT reflection with the written section unseen (Nov 18). The tabs
+            still reach the last section from anywhere. */}
+        {at < sections.length - 1
+          ? <button style={S.primaryBtn} onClick={() => go(sections[at + 1])}>Go to {sections[at + 1].tab.toLowerCase()} →</button>
+          : <button style={S.primaryBtn} onClick={() => setConfirming(true)}>{takeHome ? 'Submit' : 'Submit test'}</button>}
       </div>
 
       {confirming && (
@@ -396,8 +400,9 @@ export default function ClassTest({ session, preview = false, testId: testIdProp
               </p>
             )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button style={S.secondaryBtn} onClick={() => { setConfirming(false); setSubmitError(null) }}>Keep working</button>
-              <button style={S.primaryBtn} disabled={finish.busy}
+              {/* With questions unanswered, staying is the emphasized choice. */}
+              <button style={missing ? S.primaryBtn : S.secondaryBtn} onClick={() => { setConfirming(false); setSubmitError(null) }}>Keep working</button>
+              <button style={missing ? S.secondaryBtn : S.primaryBtn} disabled={finish.busy}
                 onClick={() => finish.submit(async () => {
                   setSubmitError(null)
                   if (preview) { setTest((p) => ({ ...p, attempt: { ...p.attempt, submitted_at: new Date().toISOString() } })); return }
