@@ -24,6 +24,7 @@ import { takeScreenerDraft } from '../lib/screenerDraft'
 import { useScrollToTopOn } from '../lib/scrollToTop'
 import { useNoTranslate } from '../lib/noTranslate'
 import { shuffleStepGroups } from '../lib/stepShuffle'
+import { armSlotsOf, stepsForArms } from '../lib/armSteps'
 import SupportResources from '../components/study/SupportResources'
 import { supportResourcesFor } from '../lib/supportResources'
 
@@ -380,6 +381,27 @@ export default function SessionEntry() {
   async function startStepFlow(data) {
     // Consent confirmed (or not required) — flush any buffered screener responses
     await flushScreenerDraft(data.link.participant_id, data.link.study_id)
+    // Steps that run for one arm only (session_template_nodes.show_if; the Sense
+    // Foraging 2b retest). The arm is drawn here, before the first step, so the
+    // step list -- every step_index, the progress bar and the resume point -- is
+    // final before anything renders. draw_assignment is idempotent, so
+    // useAssignments below gets the same arm. Fails closed: a slot the study does
+    // not define, a failed draw or a missing arm stops the session here.
+    const slots = armSlotsOf(data.nodes)
+    if (slots.length) {
+      const defined = data.study?.assignment_slots ?? {}
+      const arms = {}
+      for (const slot of slots) {
+        if (!Object.prototype.hasOwnProperty.call(defined, slot)) { setState('assignment_error'); return }
+        const { data: drawn, error } = await sb.rpc('draw_assignment', { p_study_id: data.link.study_id, p_slot_key: slot })
+        if (error) { setState('assignment_error'); return }
+        arms[slot] = drawn?.value
+      }
+      const nodes = stepsForArms(data.nodes, arms)
+      if (!nodes) { setState('assignment_error'); return }
+      data = { ...data, nodes }
+      fullDataRef.current = data
+    }
     const resumed = readProgress(token, data.nodes)
     if (resumed) {
       setCurrentIndex(resumed.index)
@@ -697,6 +719,16 @@ export default function SessionEntry() {
           onPass={handleScreenerPass}
         />
       </div>
+    )
+  }
+
+  if (state === 'assignment_error') {
+    return (
+      <FullScreen>
+        <StatusCard>
+          Something went wrong preparing your session. Please refresh the page, or contact your researcher if the problem continues.
+        </StatusCard>
+      </FullScreen>
     )
   }
 

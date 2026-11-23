@@ -11,7 +11,7 @@
 // So the point of these checks is less "does the mapper work" than "can the
 // two lists drift apart again".
 
-import { NODE_REF_COLUMNS, CLONE_NODE_SELECT, cloneNodeRows } from './templateNodes.js'
+import { NODE_REF_COLUMNS, NODE_BEHAVIOUR_COLUMNS, CLONE_NODE_SELECT, cloneNodeRows, nodeBehaviour } from './templateNodes.js'
 
 let pass = 0, fail = 0
 function check(name, cond) {
@@ -75,6 +75,30 @@ for (const col of NODE_REF_COLUMNS) {
 {
   check('empty source → empty rows', cloneNodeRows([], 't').length === 0)
   check('null source → empty rows',  cloneNodeRows(null, 't').length === 0)
+}
+
+// 6. Behaviour columns (shuffle_group, show_if, debrief_form_id) are read and
+//    carried too. A clone of the Sense Foraging 2b retest template that dropped
+//    show_if would give the no-vignette arm the vignettes as well; one that
+//    dropped debrief_form_id would show 2b's debrief instead of the retest's.
+for (const col of ['shuffle_group', 'show_if', 'debrief_form_id']) {
+  check(`${col} is a behaviour column`, NODE_BEHAVIOUR_COLUMNS.includes(col))
+}
+for (const col of NODE_BEHAVIOUR_COLUMNS) {
+  check(`clone reads ${col}`, CLONE_NODE_SELECT.split(',').map(s => s.trim()).includes(col))
+}
+{
+  const showIf = { slot: 'sf2b_retest_vignettes', in: ['no_vignettes'] }
+  const [a, b, c] = cloneNodeRows([
+    { order_index: 0, label: 'intro', questionnaire_id: 'q-intro', show_if: showIf },
+    { order_index: 1, label: 'validity', questionnaire_id: 'q-v', shuffle_group: 'validity' },
+    { order_index: 2, label: 'Debrief', activity_id: 'act-debrief', debrief_form_id: 'form-retest' },
+  ], 'new-tmpl')
+  check('show_if survives the clone', a.show_if === showIf)
+  check('shuffle_group survives the clone', b.shuffle_group === 'validity')
+  check('debrief_form_id survives the clone', c.debrief_form_id === 'form-retest')
+  check('unset behaviour is null, not absent', a.shuffle_group === null && a.debrief_form_id === null && b.show_if === null)
+  check('nodeBehaviour of nothing is all null', NODE_BEHAVIOUR_COLUMNS.every(col => nodeBehaviour(undefined)[col] === null))
 }
 
 console.log(`templateNodes: ${pass} passed, ${fail} failed`)

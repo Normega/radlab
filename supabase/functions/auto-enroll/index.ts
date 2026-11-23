@@ -628,6 +628,90 @@ Deno.serve(async (req) => {
       return json({ token: link.token })
     }
 
+    // 6a. A single-shot study with more than one session (Sense Foraging 2b's
+    // retest, 20261123_sf2b_retest_session.sql). A returning participant gets
+    // the FIRST session they have not completed, never a completed one again
+    // (the single-session path below re-runs a completer's whole session, which
+    // happened once in Study 2a). The row is asked the hard gate before any link
+    // exists (CLAUDE.md "Hard gates"): someone without a completed entry session
+    // meets enrollment_full once baseline_cap is reached, someone unconsented
+    // meets no_consent on a later session. Fails closed. Single-session studies
+    // (all others today, Sandy Study 3 among them) skip this block.
+    const { data: allSessions, error: allSessionsErr } = await admin
+      .from('study_sessions')
+      .select('id, send_time, link_expires_hours, order_index')
+      .eq('study_id', study_id)
+      .order('order_index', { ascending: true })
+    if (allSessionsErr) return json({ error: 'Failed to look up this study. Please try again.' }, 500)
+
+    if ((allSessions ?? []).length > 1) {
+      const { data: ownRows, error: ownErr } = await admin
+        .from('participant_schedule')
+        .select('id, study_session_id, status, completed_at, created_at')
+        .eq('participant_id', participantId)
+        .eq('study_id', study_id)
+        .order('created_at', { ascending: false })
+      if (ownErr) return json({ error: 'Failed to look up your sessions. Please try again.' }, 500)
+
+      const rows = ownRows ?? []
+      const done = new Set(rows.filter((r) => r.status === 'completed' || r.completed_at).map((r) => r.study_session_id))
+      const target = allSessions!.find((s) => !done.has(s.id))
+      if (!target) {
+        return json({ error: 'You have already completed this study — thank you for taking part!' }, 409)
+      }
+
+      // Re-entry reuses the open row for that session: one person's follow-up is
+      // one schedule row, so one export label and one seeded item order.
+      let row = rows.find((r) => r.study_session_id === target.id && !r.completed_at) ?? null
+      let created = false
+      if (!row) {
+        const { data: ins, error: insErr } = await admin
+          .from('participant_schedule')
+          .insert({
+            participant_id:   participantId,
+            study_id,
+            study_session_id: target.id,
+            scheduled_date:   today,
+            send_time:        target.send_time ?? '09:00',
+            status:           'unlocked',
+          })
+          .select('id, study_session_id, status, completed_at, created_at')
+          .single()
+        if (insErr || !ins) return json({ error: 'Failed to create session schedule.' }, 500)
+        row = ins
+        created = true
+      }
+
+      const { data: blockReason, error: gateErr } = await admin
+        .rpc('schedule_row_block_reason', { p_schedule_id: row.id })
+      if (gateErr) {
+        console.error('auto-enroll: gate check failed:', gateErr.message)
+        return json({ error: 'Something went wrong. Please try again in a few minutes.' }, 500)
+      }
+      if (blockReason) {
+        // Only a row made by this refused request is closed; a row that already
+        // existed is the participant's history and keeps its status.
+        if (created) await admin.from('participant_schedule').update({ status: 'blocked' }).eq('id', row.id)
+        console.log(`auto-enroll: study ${study_id} session ${target.id} refused: ${blockReason}`)
+        return json({
+          error: blockReason === 'enrollment_full'
+            ? 'Recruitment for this study is now complete. Thanks for your interest!'
+            : 'This study is not available to you at the moment. Please contact the research team if you have any questions.',
+        }, 409)
+      }
+
+      if (row.status !== 'unlocked') {
+        await admin.from('participant_schedule').update({ status: 'unlocked' }).eq('id', row.id)
+      }
+      const link = await issueLink(admin, {
+        scheduleId:       row.id,
+        participantId,
+        studyId:          study_id,
+        linkExpiresHours: target.link_expires_hours ?? 48,
+      })
+      return json({ token: link.token })
+    }
+
     // 6b. Legacy single-shot path (in_person / online_single): one session,
     // schedule row created immediately.
     const { data: session, error: sessionErr } = await admin
