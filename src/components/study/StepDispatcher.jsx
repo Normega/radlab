@@ -23,6 +23,7 @@ import AssessmentLeadInStep    from './AssessmentLeadInStep'
 import DailyWelcomeStep        from './DailyWelcomeStep'
 import DailyFarewellStep       from './DailyFarewellStep'
 import AssignmentStep          from './AssignmentStep'
+import BrePhysioSetupStep      from './bre/BrePhysioSetupStep'
 
 /**
  * Props:
@@ -329,6 +330,19 @@ export default function StepDispatcher({ node, enrollment, scheduleId, studyDay 
         onAssigned={onAssigned}
         onComplete={onComplete}
         demoMode={demoMode || isSimMode}
+      />
+    )
+  }
+
+  // Breath Attention and Emotional Recovery: RA sensor hold + marker box (bre/BrePhysioSetupStep.jsx)
+  if (category === 'physio' && subcategory === 'bre_physio_setup') {
+    return (
+      <BrePhysioSetupStep
+        enrollment={enrollment}
+        scheduleId={scheduleId}
+        supabaseClient={supabaseClient}
+        onComplete={onComplete}
+        isSimMode={isSimMode}
       />
     )
   }
