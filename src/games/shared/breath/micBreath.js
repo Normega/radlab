@@ -15,8 +15,8 @@
 //
 // Pipeline per frame:
 //   band dB (breath band + wind band) → rolling percentile noise floor →
-//   dB-above-floor, EMA-smoothed = "activity" → tonal gate (spectral flatness;
-//   voice/music is tonal, breath is noise) → hysteresis burst detector →
+//   dB-above-floor → tonal gate (spectral flatness; voice/music is tonal,
+//   breath is noise) → EMA-smoothed = "activity" → hysteresis burst detector →
 //   bursts → rate, two ways:
 //     1. burst intervals, deciding whether each breath is one burst (exhale only)
 //        or a pair (inhale + exhale) — the main ambiguity of acoustic breathing;
@@ -36,6 +36,7 @@ export const MIC_DEFAULTS = {
   maxBurstMs: 6000,          // longer = a sustained noise change, not a breath
   mergeGapMs: 250,           // dips shorter than this don't split a burst
   flatnessMin: 0.18,         // below = tonal (voice) → not breath
+  tonalHoldMs: 300,          // keep the voice gate shut this long after the last tonal frame
   pairing: 'auto',           // 'auto' | 'single' | 'pairs'
   maxBursts: 16,
   acfWindowMs: 30000,
@@ -183,6 +184,7 @@ export function createMicBreathDetector(opts = {}) {
   let breathFloor = createFloorTracker(floorFrames(), o.floorPercentile)
   let windFloor   = createFloorTracker(floorFrames(), o.floorPercentile)
   let smB = 0, smW = 0
+  let lastTonalT = -Infinity
   let burst = null          // open burst
   const bursts = []         // completed, newest last
   const actHist = []        // { t, act } for ACF
@@ -233,10 +235,14 @@ export function createMicBreathDetector(opts = {}) {
       const a = 1 - Math.exp(-o.frameMs / o.smoothMs)
       const bf = breathFloor.push(frame.breathDb)
       const wf = windFloor.push(frame.windDb)
-      smB += a * (Math.max(0, frame.breathDb - bf) - smB)
+      // Gate BEFORE smoothing: gating the smoothed trace lets the decaying tail
+      // of a voiced sound through as "breath" once the flatness recovers.
+      const rawB = Math.max(0, frame.breathDb - bf)
+      if (frame.flatness < o.flatnessMin && rawB > o.onDb) lastTonalT = t
+      const tonal = t - lastTonalT <= o.tonalHoldMs
+      smB += a * ((tonal ? 0 : rawB) - smB)
       smW += a * (Math.max(0, frame.windDb - wf) - smW)
-      const tonal = frame.flatness < o.flatnessMin && smB > o.onDb
-      const bAct = tonal ? 0 : smB
+      const bAct = smB
       const act = o.source === 'breath' ? bAct : o.source === 'wind' ? smW : Math.max(bAct, smW)
 
       let event = null
