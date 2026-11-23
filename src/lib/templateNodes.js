@@ -25,8 +25,25 @@
 
 export const NODE_REF_COLUMNS = ['activity_id', 'questionnaire_id', 'module_id']
 
+// How a node behaves, beyond what it points at. Each is NULL on ordinary nodes:
+//   shuffle_group   → steps sharing a group run in a per-participant order
+//   show_if         → the step runs for one arm only ({slot, in}; src/lib/armSteps.js)
+//   debrief_form_id → a debrief node's own form, in place of the study's
+// Dropping one does not break a session visibly -- it changes what participants
+// are given (a no-vignette arm that also gets the vignettes, a fixed order, the
+// wrong debrief). So the clone and the session builder carry these as well, from
+// this one list (20261123_sf2b_retest_session.sql).
+export const NODE_BEHAVIOUR_COLUMNS = ['shuffle_group', 'show_if', 'debrief_form_id']
+
 // Columns a clone must read. Anything omitted here is silently dropped.
-export const CLONE_NODE_SELECT = ['order_index', 'label', ...NODE_REF_COLUMNS].join(', ')
+export const CLONE_NODE_SELECT = ['order_index', 'label', ...NODE_REF_COLUMNS, ...NODE_BEHAVIOUR_COLUMNS].join(', ')
+
+// The behaviour columns of a node (or a builder sequence item), NULL when unset.
+export function nodeBehaviour(node) {
+  const out = {}
+  for (const col of NODE_BEHAVIOUR_COLUMNS) out[col] = node?.[col] ?? null
+  return out
+}
 
 // Re-parent a template's nodes onto a new template, carrying every reference.
 export function cloneNodeRows(nodes, templateId) {
@@ -37,6 +54,6 @@ export function cloneNodeRows(nodes, templateId) {
       label:               node.label,
     }
     for (const col of NODE_REF_COLUMNS) row[col] = node[col] ?? null
-    return row
+    return { ...row, ...nodeBehaviour(node) }
   })
 }

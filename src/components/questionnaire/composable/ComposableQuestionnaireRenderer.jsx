@@ -10,6 +10,7 @@ import { interleaveOrder } from '../../../lib/interleaveOrder'
 import { visibleComponents, pageIsShown, markNotApplicable } from '../../../lib/composableVisibility'
 import './composableSurvey.css'
 import { useScrollToTopOn } from '../../../lib/scrollToTop'
+import { isIntroductionOnly } from '../../../lib/introductionOnly'
 
 // The pages this participant sees. Without `interleave` they are the
 // definition's own pages. With it, the listed items are re-ordered by
@@ -53,6 +54,7 @@ export default function ComposableQuestionnaireRenderer({
   orderSeed = null,
 }) {
   const hasInstructions = Boolean(questionnaire.instructions?.trim())
+  const introductionOnly = isIntroductionOnly(questionnaire)
   const [showInstructions, setShowInstructions] = useState(hasInstructions)
   const [pageIndex, setPageIndex] = useState(0)
   // Each page starts at the top of the page (see scrollToTop.js).
@@ -219,7 +221,9 @@ export default function ComposableQuestionnaireRenderer({
             <button
               type="button"
               className="cs-primary-button"
-              onClick={() => setShowInstructions(false)}
+              // An introduction-only definition (instructions, empty pages: the 2b
+              // retest's sf2b-retest-intro) ends here rather than showing a blank page.
+              onClick={() => (introductionOnly ? finish() : setShowInstructions(false))}
             >
               Begin
             </button>

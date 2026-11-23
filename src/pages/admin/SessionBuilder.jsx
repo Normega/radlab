@@ -10,6 +10,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../../lib/supabase'
 import { checkSequence, unmetMessage } from '../../lib/displayDeps'
+import { nodeBehaviour } from '../../lib/templateNodes'
 // every step component comes with it, so it loads on the first Preview click
 const StepPreviewModal = lazy(() => import('../../components/study/StepPreviewModal'))
 
@@ -111,6 +112,7 @@ function useSession(id) {
         .select(`
           id, label, description, folder,
           session_template_nodes(id, order_index, activity_id, questionnaire_id, module_id, label,
+            shuffle_group, show_if, debrief_form_id,
             activities(id, label, category, subcategory, estimated_minutes),
             questionnaires(id, name, slug)
           )
@@ -226,6 +228,9 @@ export default function SessionBuilder() {
       category:          n.module_id ? 'training' : (n.activities ? displayCategory(n.activities) : 'questionnaire'),
       subcategory:       n.activities?.subcategory ?? null,
       estimated_minutes: n.activities?.estimated_minutes ?? null,
+      // Kept through a save: dropping show_if or debrief_form_id changes what
+      // participants are given without anything looking different here.
+      ...nodeBehaviour(n),
     })))
   }, [existing])
 
@@ -386,6 +391,7 @@ export default function SessionBuilder() {
           questionnaire_id:    item.questionnaire_id ?? null,
           module_id:           item.module_id      ?? null,
           label:               item.label,
+          ...nodeBehaviour(item),
         }))
 
       if (isNew) {

@@ -51,6 +51,24 @@ for (const name of readdirSync(fnDir, { withFileTypes: true })) {
   const issue = src.indexOf('issueLink(')
   check('send_message asks the gate before issueLink', gate !== -1 && issue !== -1 && gate < issue)
 }
+// 1c. auto-enroll's multi-session path (20261123_sf2b_retest_session.sql, the
+//     Sense Foraging 2b retest) hands back a session link without emailing it,
+//     so the /s/ scan above cannot see it. It asks the gate before issueLink,
+//     like send_message, and fails closed if the check errors.
+{
+  const src = read('supabase/functions/auto-enroll/index.ts')
+  const start = src.indexOf('if ((allSessions ?? []).length > 1)')
+  const block = start === -1 ? '' : src.slice(start, src.indexOf('// 6b. Legacy single-shot path', start))
+  const gate = block.indexOf("rpc('schedule_row_block_reason'")
+  const issue = block.indexOf('issueLink(')
+  check('auto-enroll has its multi-session path', start !== -1 && block.length > 0)
+  check('auto-enroll multi-session path asks the gate before issueLink', gate !== -1 && issue !== -1 && gate < issue,
+    `gate at ${gate}, issueLink at ${issue}`)
+  check('auto-enroll multi-session path fails closed on a gate error',
+    /if \(gateErr\) \{[\s\S]{0,200}return json\(/.test(block))
+  check('auto-enroll multi-session path refuses on a block reason before any link',
+    /if \(blockReason\) \{[\s\S]{0,800}return json\(/.test(block) && block.indexOf('if (blockReason)') < issue)
+}
 check('the scan found the session-link senders', senders.includes('supabase/functions/send_message/index.ts'),
   senders.join(', '))
 

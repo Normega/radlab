@@ -5,6 +5,7 @@ import {
 } from './componentRegistry'
 import { validateInterleaveSpec } from '../../../lib/interleaveOrder'
 import { validateShowIf } from '../../../lib/composableVisibility'
+import { isIntroductionOnly } from '../../../lib/introductionOnly'
 
 // The types whose component actually draws "Prefer not to answer". Setting
 // allow_pna anywhere else used to be accepted and silently ignored, which left
@@ -110,6 +111,9 @@ export function validateComposableDefinition(definition) {
 
   const pageIds = new Set()
   const componentIds = new Set()
+  // The one definition allowed an empty page: instructions to read and nothing to answer
+  // (sf2b-retest-intro). The renderer finishes it at "Begin" (src/lib/introductionOnly.js).
+  const introductionOnly = isIntroductionOnly(definition)
 
   definition.pages.forEach((page, pageIndex) => {
     const pagePrefix = `Page ${pageIndex + 1}`
@@ -123,7 +127,7 @@ export function validateComposableDefinition(definition) {
       return
     }
 
-    if (page.components.length === 0) {
+    if (page.components.length === 0 && !introductionOnly) {
       errors.push(`${pagePrefix}: add at least one component.`)
     }
 
