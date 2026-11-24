@@ -47,7 +47,7 @@
 - **Each participant gets a list, 0, 1 or 2, assigned in rotation at enrolment.** Stratum *s* plays in valence (*s* + list) mod 3. For list 0: A pleasant, B neutral, C unpleasant. For list 1: A neutral, B unpleasant, C pleasant. And so on. Across every three participants, each frame is heard once in each valence, so frame content cannot pass for a valence effect.
 - **Each round draws two unused frames at random from each stratum.** So every round has exactly two pleasant, two neutral and two unpleasant passages, in a shuffled order. Valence is therefore balanced within every round and every session, and so across sessions.
 - **The draw is without replacement across all sessions.** Which frames land in phase 4 and which in phase 5 is random for each person, which is why every frame gets a comprehension question.
-- **Logged per kite:** frame id, version, list, draw seed, passage onset relative to begin, and the audio file's hash.
+- **Logged per kite:** frame id, version, voice, list, draw seed, passage onset relative to begin, and the audio file's hash.
 
 ## 4. Building and norming the set
 
@@ -291,8 +291,10 @@ Speech duration in seconds, onset to offset: Bella is af_bella at 0.83, Michael 
 
 **Decided (W19, 2026-11-20):** two voices, af_bella (speed 0.83) and am_michael (speed 0.88).
 
+**Decided (W20, 2026-11-23):** the voice matches the participant's gender from onboarding (af_bella for women, am_michael for men), so it is easy to internalize as one's own. One voice per participant throughout. Voice is not counterbalanced and goes with participant gender.
+
 **Open:**
-1. **How the two voices are assigned.** Recommended: one voice per participant, assigned in rotation and crossed with the valence list (six cells). Each person then hears one consistent voice, as W17 intended, and voice is balanced across participants. The alternative, both voices within a session, needs voice balanced against valence inside every round.
+1. **The voice for participants whose onboarding answer is not woman or man** (non-binary, another answer, prefer not to say, blank). Recommended: they hear one short sample of each voice at the start of phase 4 and pick the one that feels more like their own; the pick holds for every session.
 2. **The reserve.** Four extra sessions (360 normed frames) as proposed, or another number.
 3. **Neutral versions in the samples that read as slightly off.** For example, T13 "at six fifteen" is mildly late, and T28 "stayed the same" mildly disappointing. Mark any while listening.
 4. **The order inside a round.** Fully random, or no two of the same valence back to back.

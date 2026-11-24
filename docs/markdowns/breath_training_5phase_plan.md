@@ -111,7 +111,12 @@ The ladder only works if phases 3–5 hold everything else fixed: same plan, sam
   - **A large reserve, so sessions stay novel.** Nobody hears a frame twice. The proposal is 360 normed frames (1,080 passages, ten sessions' worth), drafted from about 470.
   - **Voice.** Settled by W19: af_bella and am_michael.
   - (Answers P4-2 and P5-3's timing; P4-3, the on-screen indicator, is still open.)
-- **W19 (Norm, 2026-11-20). Two voices: af_bella (female, speed 0.83) and am_michael (male, speed 0.88), both Kokoro-82M run locally.** This revises the "one synthetic voice" of W17. Each voice still gives every passage one neutral delivery, and the speeds are set so both read at the same length (8.4 s on average, 3.7 syllables a second). af_nicole, the PSY240 voice, was ruled out on 2026-11-18 as too breathy. Still open: how the voices are assigned to participants (`breath_training_passages.md` §6).
+- **W19 (Norm, 2026-11-20). Two voices: af_bella (female, speed 0.83) and am_michael (male, speed 0.88), both Kokoro-82M run locally.** This revises the "one synthetic voice" of W17. Each voice still gives every passage one neutral delivery, and the speeds are set so both read at the same length (8.4 s on average, 3.7 syllables a second). af_nicole, the PSY240 voice, was ruled out on 2026-11-18 as too breathy. W20 settles how the voices are assigned.
+- **W20 (Norm, 2026-11-23). The voice matches the participant's gender from onboarding: af_bella for women, am_michael for men.** The aim is a voice that is easy to internalize as one's own. Each participant keeps the same voice in every passage and session.
+  - **Voice is not counterbalanced.** It goes with participant gender, so a voice effect cannot be separated from a gender effect. Valence is still counterbalanced within every round (W18).
+  - **The onboarding question is free text** ("What is your gender?", `DemographicsStep`). Answers that clearly mean woman or man set the voice.
+  - **Still open: everyone else** (non-binary, another answer, prefer not to say, blank). Recommended: at the start of phase 4 they hear one short sample of each voice and pick the one that feels more like their own. The pick then holds for every session.
+  - **Logged per participant:** the voice, and whether it was set from onboarding or chosen.
 
 ## Open questions
 
