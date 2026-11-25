@@ -129,6 +129,10 @@ engine: enrolment, randomisation, ratings, export). Compassion and reappraisal a
 - [ ] Sense Foraging arm: radlab session → that day's senseforaging.com practice → back to radlab
   for the after ratings. Design the handoff.
 - [ ] End-to-end run on the dev site with a fake student (days 1–3, 28) before Oct 14.
+- [ ] **Bug before any second run (reported in an RCT reflection, 2026-11-24):** a Sense Foraging
+  session does not survive leaving the page. A student who swiped away mid-session (phone) had to
+  redo the whole session. Find where progress lives (radlab session vs senseforaging.com practice),
+  and resume from the last step instead of restarting. Not yet reproduced.
 
 ## Field Guide — flagged findings awaiting correction
 
@@ -388,8 +392,9 @@ Content pass 2026-09-22: 17 → 30 sections (branch `psy240/l10-content-pass`).
   vignette and a response check-in. Optionally, turn "Must, may, or no duty?" (slide 28, a room
   vote) into a second, quiz-style check-in.
 - [ ] Closer: `TODO(QotW)` for week 11.
-- [ ] The deck says the "post-questionnaire window closed yesterday" (Nov 24); the syllabus puts the
-  end of data collection ~Nov 18. Reconcile it with the RCT schedule (and L7's "through November 17").
+- [x] The stale "post-questionnaire window closed yesterday" bullet now points to the RCT reflection
+  (due Dec 8). The class opens with an RCT-experiences slide (anonymous reflection quotes), then
+  hands over to Whitney for the personality section. 2026-11-24.
 - [ ] Corrected an existing slide: Canada has no Tarasoff-style duty. *Smith v. Jones* is a
   permission to disclose. The new slide 21 teaches this. Norm, check the Ontario law slides (Form 1,
   Box A/B, CYFSA s.125 reporting, Starson, Gladue). They're sourced to `law-and-ethics`, but law
