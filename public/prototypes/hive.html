@@ -35,6 +35,21 @@
     - Your day: the day's trips and stays on a timeline. Tap where the day got
       tightest; after three marked days in a week, it names the part of the
       day that came up most, and how often you went out then.
+
+    Nov 25 (Norm's picks from the Nov 23 brainstorm: one engine, a skin a week,
+    Harbour, Quilt, Hive, Paths):
+    - Taste and smell stay in the draw; when one comes up, it asks whether
+      there is anything to taste or smell nearby, and draws again on a no.
+    - "Went out earlier": a trip taken without the phone, logged afterwards
+      with a rough length and when. Drawn as estimated (a dashed edge).
+    - Each trip keeps the senses turned from on the way (declined).
+    - Paths (?skin=paths, or the switch in the bar): the same record drawn as
+      a park. Each trip of the last seven days wears a faint path from the
+      house to its sense's place, so the paths walked most wear in (desire
+      paths); a sense turned from shows as a detour that heads toward its
+      place and bends off (avoidance paths). Places appear once visited or
+      turned from: nothing waits to be filled. A bench by the house holds the
+      stays. Harbour and Quilt are not built yet.
   */
   :root{
     color-scheme:light;
@@ -84,7 +99,8 @@
   .pair{display:flex;gap:8px;}
   .pair .btn{flex:1;padding:0 16px;}
   .btn.grey{background:transparent;border-color:var(--muted);color:var(--body);}
-  .links{display:flex;justify-content:center;gap:16px;}
+  .links{display:flex;flex-wrap:wrap;justify-content:center;gap:0 8px;}
+  .links .link.tiny{white-space:nowrap;}
 
   /* the hive */
   .bar{display:flex;align-items:center;justify-content:space-between;min-height:40px;}
@@ -129,6 +145,18 @@
   .own{display:flex;gap:8px;margin:0;}
   .own input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);
     padding:0 16px;font:16px var(--serif);color:var(--ink);background:var(--surface);}
+
+  /* out: is there anything to taste or smell nearby? */
+  #oCheck h2{font:600 30px/1.2 var(--display);letter-spacing:-.01em;color:var(--s-deep);margin:0 0 24px;text-wrap:balance;}
+  #oCheck .pair .btn.quiet{background:transparent;border-color:var(--s-deep);color:var(--s-deep);}
+  #out.checking .hint,#out.checking .prompt,#out.checking .actions{display:none;}
+
+  /* went out earlier */
+  .chip.pick{border-color:var(--line);color:var(--ink);}
+  .chip.pick.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .chip.sense{border-color:var(--cs-soft);color:var(--cs-deep);}
+  .chip.sense.on{background:var(--cs-soft);border-color:var(--cs-deep);}
+  .bar .tools{display:flex;gap:4px;}
 
   /* what tipped you off */
   .sub{font:600 12px/1.3 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
@@ -182,7 +210,8 @@
       <h1>Hive</h1>
       <p class="lead">Keep this open beside whatever you’re doing.</p>
       <p>When you notice you’ve been doing for a while, tap <b>Out</b>. The hive offers one sense. Put the phone down and stay with it for as long as you like.</p>
-      <p>Then tap <b>Home</b>, bring back a word if one comes, and go back to what you were doing. Each trip becomes a cell in the comb.</p>
+      <p>Then tap <b>Home</b>, bring back a word if one comes, and go back to what you were doing. <span id="introDraw">Each trip becomes a cell in the comb.</span></p>
+      <p>Went out without the phone? <b>Went out earlier</b> logs it afterwards, roughly.</p>
       <p>If you notice and would rather keep going, tap <b>Noticed, staying in</b>. Choosing to stay is a full move too.</p>
       <p>Now and then the hive asks what tipped you off. Your answers become your own list. <b>Your day</b> shows where your trips fell.</p>
       <p class="fine">There are no reminders: every trip starts with you noticing. Nothing leaves this phone.</p>
@@ -197,10 +226,10 @@
 <!-- The hive -->
 <section class="screen" id="hive">
   <div class="col">
-    <header class="bar"><span class="brand">Hive</span><button class="link" id="aboutBtn">About</button></header>
+    <header class="bar"><span class="brand" id="brand">Hive</span><span class="tools"><button class="link" id="skinBtn" title="Prototype only: the same trips, drawn another way"></button><button class="link" id="aboutBtn">About</button></span></header>
     <p class="demo" id="demoBar" hidden>A sample month. Nothing here is saved. <a href="hive.html">Leave it</a></p>
     <div class="stage" id="stage">
-      <svg id="svg" xmlns="http://www.w3.org/2000/svg" aria-label="The comb"></svg>
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" aria-label="Your trips"></svg>
       <div class="detail" id="detail" hidden></div>
     </div>
     <p class="status" id="status"></p>
@@ -210,6 +239,7 @@
         <button class="btn grey" id="stayBtn">Noticed, staying in</button>
       </div>
       <div class="links">
+        <button class="link tiny" id="earlierBtn">Went out earlier</button>
         <button class="link tiny" id="dayBtn">Your day</button>
         <button class="link tiny" id="recordBtn">The record (prototype only)</button>
       </div>
@@ -224,6 +254,13 @@
       <p class="label" id="oLabel"></p>
       <h2 class="prompt" id="oPrompt"></h2>
       <p class="hint">Put the phone down. Come home when you’re ready.</p>
+      <div id="oCheck" hidden>
+        <h2 id="oCheckQ"></h2>
+        <div class="pair">
+          <button class="btn primary" id="checkYes">Yes</button>
+          <button class="btn quiet" id="checkNo">Not right now</button>
+        </div>
+      </div>
     </div>
     <div class="actions">
       <button class="btn primary" id="homeBtn">Home</button>
@@ -248,6 +285,20 @@
     <div class="actions">
       <button class="btn secondary" id="noneBtn">Nothing this time</button>
     </div>
+  </div>
+</section>
+
+<!-- Went out earlier: a trip taken without the phone, logged afterwards -->
+<section class="screen" id="earlier">
+  <div class="col">
+    <header class="bar"><span class="brand">Went out earlier</span><button class="link" id="eClose">Cancel</button></header>
+    <div class="grow scroll">
+      <p class="fine">For a trip you took without the phone. Roughly is fine.</p>
+      <p class="sub">Which sense</p><div class="chips" id="eSense"></div>
+      <p class="sub">About how long</p><div class="chips" id="eLen"></div>
+      <p class="sub">When</p><div class="chips" id="eWhen"></div>
+    </div>
+    <div class="actions"><button class="btn primary" id="eGo" disabled>Bring back a word</button></div>
   </div>
 </section>
 
@@ -346,15 +397,19 @@ let offset = 0;                                  // debug clock shift (ms)
 const now = () => Math.round(Date.now() + offset);
 // stays: noticed and kept doing, on purpose ({ at, gapMs, tellAsked, tell }).
 // tight: by day, the times of day (ms after midnight) marked as tightest.
-const empty = () => ({ trips: [], stays: [], tight: {}, current: null, seenIntro: true });
+const empty = () => ({ trips: [], stays: [], tight: {}, current: null, seenIntro: true, skin: null });
 let store = { ...empty(), seenIntro: false };
+// the same record, drawn as the hive or as paths (prototype: ?skin=, or the switch)
+const SKINS = ['hive', 'paths'];
+let skin = SKINS.includes(Q.get('skin')) ? Q.get('skin') : 'hive';
 let busy = false;
 
 function load() {
   if (DEMO) { store = { ...sampleMonth(), current: null, seenIntro: true }; return; }
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && Array.isArray(s.trips)) store = { trips: s.trips, stays: s.stays || [], tight: s.tight || {}, current: s.current || null, seenIntro: !!s.seenIntro };
+    if (s && Array.isArray(s.trips)) store = { trips: s.trips, stays: s.stays || [], tight: s.tight || {}, current: s.current || null, seenIntro: !!s.seenIntro, skin: s.skin || null };
+    if (!Q.get('skin') && SKINS.includes(store.skin)) skin = store.skin;
   } catch { /* storage blocked: the hive lives in memory for this visit */ }
 }
 function save() {
@@ -392,7 +447,8 @@ const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${Stri
 // variety as well as depth), and never the same prompt twice running.
 function pickSense(exclude, rnd = Math.random, trips = store.trips) {
   const recent = trips.slice(-8).map((t) => t.sense);
-  const pool = ORDER.filter((s) => s !== exclude);
+  const ex = [].concat(exclude || []);
+  const pool = ORDER.filter((s) => !ex.includes(s)).length ? ORDER.filter((s) => !ex.includes(s)) : ORDER;
   const w = pool.map((s) => 1 / (1 + 1.5 * recent.filter((x) => x === s).length));
   let r = rnd() * w.reduce((a, b) => a + b, 0);
   for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) return pool[i]; }
@@ -420,17 +476,38 @@ function senseVars(el, s) {
 function goOut(sense, instant) {
   if (busy || store.current) return;
   const s = SENSES[sense] ? sense : pickSense();
-  store.current = { start: now(), sense: s, prompt: pickPrompt(s), changes: 0, hiddenMs: 0, hiddenAt: null, end: null, tellAsked: askTellNext() };
+  store.current = { start: now(), sense: s, prompt: pickPrompt(s), changes: 0, hiddenMs: 0, hiddenAt: null, end: null, tellAsked: askTellNext(),
+    declined: [], checks: [], nearbyOk: false };
   save();
   closeDetail();
   if (instant || document.hidden) { showOut(); return; }
   busy = true;
-  flyOut(SENSES[s].bright, () => { busy = false; if (store.current && !store.current.end) showOut(); });
+  const back = () => { busy = false; if (store.current && !store.current.end) showOut(); };
+  if (skin === 'paths') walkOut(s, DIRT, back); else flyOut(SENSES[s].bright, back);
 }
 
+// senses not to offer again on this trip: the one showing, and any with
+// nothing nearby to taste or smell
+const notAgain = (c) => [c.sense, ...(c.checks || []).filter((x) => !x.nearby).map((x) => x.sense)];
 function reroll() {
   const c = store.current; if (!c || c.end) return;
-  c.sense = pickSense(c.sense); c.prompt = pickPrompt(c.sense); c.changes++;
+  (c.declined || (c.declined = [])).push({ sense: c.sense, why: 'different' });
+  c.sense = pickSense(notAgain(c)); c.prompt = pickPrompt(c.sense); c.changes++; c.nearbyOk = false;
+  save(); paintOut(); wake();
+}
+
+// Taste and smell need something to hand: when one comes up, ask first, and
+// draw again on a no (Norm, Nov 25: keep them in, they matter).
+const NEARBY = { taste: 'Anything to taste nearby?', smell: 'Anything to smell nearby?' };
+const needsCheck = (c) => !!NEARBY[c.sense] && !c.nearbyOk;
+function answerNearby(yes) {
+  const c = store.current; if (!c || c.end || !needsCheck(c)) return;
+  (c.checks || (c.checks = [])).push({ sense: c.sense, nearby: !!yes });
+  if (yes) c.nearbyOk = true;
+  else {
+    (c.declined || (c.declined = [])).push({ sense: c.sense, why: 'nothing nearby' });
+    c.sense = pickSense(notAgain(c)); c.prompt = pickPrompt(c.sense);
+  }
   save(); paintOut(); wake();
 }
 
@@ -454,6 +531,10 @@ function bring(word, kind, instant) {
     // time back in doing since the last trip came home, same day only
     gapMs: prev && dayKey(prev.end) === dayKey(c.start) ? c.start - prev.end : null,
     tellAsked: !!c.tellAsked, tell: null,
+    // senses turned from on the way ('different') or with nothing to hand ('nothing nearby')
+    declined: c.declined || [], checks: c.checks || [],
+    // logged afterwards: start and end are estimates from est and when
+    ...(c.told ? { told: true, est: c.est, when: c.when } : {}),
   };
   store.trips.push(trip); store.current = null; save();
   if (trip.tellAsked && !instant) { askTell(trip, 'trip'); return; }
@@ -474,7 +555,7 @@ function stayIn(instant) {
 function stayed(instant) {
   showHive(null);
   setStatus('Staying in, on purpose.', 12000);
-  if (!instant && !document.hidden) hop();
+  if (!instant && !document.hidden) { if (skin === 'paths') walkToBench(); else hop(); }
 }
 
 // ─── What tipped you off ────────────────────────────────────────────────────
@@ -501,16 +582,20 @@ function answerTell(word) {
 // ─── Out ────────────────────────────────────────────────────────────────────
 let restTimer = null;
 function paintOut() {
-  const c = store.current, s = SENSES[c.sense];
+  const c = store.current, s = SENSES[c.sense], ask = needsCheck(c);
   senseVars($('out'), s);
   $('oLabel').textContent = c.sense;
   $('oPrompt').textContent = c.prompt;
+  $('oCheckQ').textContent = NEARBY[c.sense] || '';
+  $('oCheck').hidden = !ask;
+  $('out').classList.toggle('checking', ask);
   document.querySelector('meta[name=theme-color]').content = s.soft;
 }
 function showOut() { paintOut(); show('out'); wake(); }
 function wake() {
   $('out').classList.remove('rest');
   clearTimeout(restTimer);
+  if (store.current && needsCheck(store.current)) return;
   restTimer = setTimeout(() => $('out').classList.add('rest'), 7000);
 }
 
@@ -519,11 +604,43 @@ function showBack() {
   const c = store.current, s = SENSES[c.sense];
   senseVars($('back'), s);
   $('bLabel').textContent = c.sense;
-  $('bPrompt').textContent = c.prompt;
+  $('bPrompt').textContent = c.prompt || `A trip of your own, ${c.when === 'now' ? 'just now' : c.when === 'hour' ? 'within the hour' : 'earlier today'}.`;
   $('chips').innerHTML = s.words.map((w) => `<button class="chip" data-w="${esc(w)}">${esc(w)}</button>`).join('');
   $('own').value = ''; $('ownBtn').disabled = true;
   show('back');
 }
+
+// ─── Went out earlier ───────────────────────────────────────────────────────
+// A trip taken without the phone (at the sink, in a queue), logged afterwards.
+// Its length and time are estimates, kept as such (est, when) and drawn dashed.
+const EST = { breaths: ['a few breaths', 15000], minute: ['about a minute', 60000], minutes: ['a few minutes', 180000], longer: ['longer', 420000] };
+const WHEN = { now: ['just now', 0], hour: ['within the hour', 30 * 60000], today: ['earlier today', 3 * 3600000] };
+let early = { sense: null, est: null, when: 'now' };
+function showEarlier() {
+  if (busy || store.current) return;
+  closeDetail();
+  early = { sense: null, est: null, when: 'now' };
+  $('eSense').innerHTML = ORDER.map((s) => `<button class="chip sense" data-v="${s}" style="--cs-soft:${SENSES[s].soft};--cs-deep:${SENSES[s].deep}">${s}</button>`).join('');
+  $('eLen').innerHTML = Object.entries(EST).map(([k, [w]]) => `<button class="chip pick" data-v="${k}">${esc(w)}</button>`).join('');
+  $('eWhen').innerHTML = Object.entries(WHEN).map(([k, [w]]) => `<button class="chip pick" data-v="${k}">${esc(w)}</button>`).join('');
+  paintEarlier();
+  show('earlier');
+}
+function paintEarlier() {
+  for (const [id, key] of [['eSense', 'sense'], ['eLen', 'est'], ['eWhen', 'when']])
+    $(id).querySelectorAll('.chip').forEach((b) => { const on = b.dataset.v === early[key]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  $('eGo').disabled = !(early.sense && early.est);
+}
+function logEarlier(sense = early.sense, est = early.est, when = early.when) {
+  if (store.current || !SENSES[sense] || !EST[est] || !WHEN[when]) return;
+  const today = dayStart(now());
+  const end = Math.max(today + EST[est][1] + 60000, now() - WHEN[when][1]), start = end - EST[est][1];
+  store.current = { start, end, sense, prompt: null, changes: 0, hiddenMs: 0, hiddenAt: null, tellAsked: askTellNext(),
+    declined: [], checks: [], told: true, est, when };
+  save();
+  showBack();
+}
+const tripLength = (t) => t.told && EST[t.est] ? EST[t.est][0] : lengthWords(t.end - t.start);
 
 // ─── The comb ───────────────────────────────────────────────────────────────
 // Pointy-top hexes hanging from a branch. The order grows down and out from
@@ -588,7 +705,7 @@ function renderHive(hideLast) {
     return `<g class="cell" data-i="${i}" transform="translate(${c.x.toFixed(1)},${c.y.toFixed(1)})"><g class="pop" transform="scale(${hideLast && i === store.trips.length - 1 ? 0 : 1})">`
       + `<polygon points="${P}" fill="${s.soft}" fill-opacity=".28"/>`
       + `<rect clip-path="url(#hc)" x="${-R}" y="${(R - 2 * R * f).toFixed(1)}" width="${2 * R}" height="${(2 * R * f).toFixed(1)}" fill="${s.soft}"/>`
-      + `<polygon points="${P}" fill="none" stroke="${i === selected ? '#252a38' : s.deep}" stroke-opacity="${i === selected ? 1 : 0.35}" stroke-width="${i === selected ? 2 : 1}"/>`
+      + `<polygon points="${P}" fill="none" stroke="${i === selected ? '#252a38' : s.deep}" stroke-opacity="${i === selected ? 1 : t.told ? 0.6 : 0.35}" stroke-width="${i === selected ? 2 : 1}"${t.told ? ' stroke-dasharray="3 3"' : ''}/>`
       + word + `</g></g>`;
   }).join('');
   svg.innerHTML = `<defs><clipPath id="hc"><polygon points="${P}"/></clipPath><clipPath id="bb"><ellipse rx="8" ry="5.5"/></clipPath></defs>`
@@ -605,9 +722,146 @@ function renderHive(hideLast) {
     + `</g></g>`;
 }
 
+// ─── Paths ──────────────────────────────────────────────────────────────────
+// The same trips drawn as a park seen from above: the house is doing, each
+// sense has a place, and each trip of the last seven days wears a faint path
+// from the house to it. Paths walked often wear in (desire paths). A sense
+// turned from on the way ('A different sense') bends the path: it heads
+// toward that place and turns off (avoidance paths). Longer trips linger in a
+// wider loop at the place. A place appears once visited or turned from, so
+// nothing waits to be filled; a place only turned from is drawn as an outline.
+// Stays are scuffs in front of a bench by the house.
+const PLACE = {   // stage fractions; inner places sit off the lines to the outer ones
+  body: [0.10, 0.60], touch: [0.35, 0.52], hearing: [0.13, 0.22], sight: [0.50, 0.09],
+  smell: [0.87, 0.22], taste: [0.65, 0.52], breath: [0.90, 0.60],
+};
+const GLYPH = {
+  hearing: '<circle r="1.6" cx="-4"/><path d="M -1 -4 Q 2.5 0 -1 4 M 2.5 -7.5 Q 8.5 0 2.5 7.5" fill="none" stroke-width="1.6" stroke-linecap="round"/>',
+  sight: '<circle r="3.6"/><path d="M 0 -8 V -5.5 M 0 8 V 5.5 M -8 0 H -5.5 M 8 0 H 5.5 M -5.7 -5.7 L -3.9 -3.9 M 5.7 5.7 L 3.9 3.9 M -5.7 5.7 L -3.9 3.9 M 5.7 -5.7 L 3.9 -3.9" stroke-width="1.5" stroke-linecap="round"/>',
+  touch: '<path d="M -7 3 C -8 -3 -3 -6 1 -5 C 6 -4 8 0 7 3 C 6 6 -6 6 -7 3 Z"/>',
+  body: '<circle cy="-5.5" r="2.6"/><path d="M 0 -2.5 V 3.5 M -4.5 -0.5 H 4.5 M 0 3.5 L -3 8 M 0 3.5 L 3 8" fill="none" stroke-width="1.6" stroke-linecap="round"/>',
+  breath: '<path d="M -8 -2 H 2 A 3 3 0 1 0 -1 -5 M -8 2.5 H 4 A 3 3 0 1 1 1 5.5" fill="none" stroke-width="1.6" stroke-linecap="round"/>',
+  smell: '<circle cy="-4" r="2.4"/><circle cx="3.8" cy="-1.2" r="2.4"/><circle cx="2.4" cy="3.3" r="2.4"/><circle cx="-2.4" cy="3.3" r="2.4"/><circle cx="-3.8" cy="-1.2" r="2.4"/><circle r="1.6" fill="#fff"/>',
+  taste: '<circle cy="1" r="5"/><path d="M 0 -4 Q 0.5 -7 2 -8 M 0.6 -5.5 Q 4 -8 6 -5.5 Q 3 -4 0.6 -5.5 Z" stroke-width="1.2" stroke-linecap="round"/>',
+};
+const DIRT = '#a8865a';
+const weekStart = () => addDays(dayStart(now()), -6);
+const weekTrips = () => store.trips.map((t, i) => ({ t, i })).filter(({ t }) => t.start >= weekStart());
+
+function pathsLayout() {
+  const st = $('stage');
+  const W = st.clientWidth, H = st.clientHeight;
+  const at = ([u, v]) => ({ x: 28 + u * (W - 56), y: 34 + v * (H - 68) });
+  const places = Object.fromEntries(Object.entries(PLACE).map(([s, uv]) => [s, at(uv)]));
+  const home = { x: W / 2, y: H - 40 };
+  const bench = { x: home.x + 46, y: home.y + 2 };
+  return { W, H, places, home, bench, rest: { x: home.x - 4, y: home.y + 16 }, cells: [] };
+}
+const ctrl = (a, b, r) => {   // a bend in the path: the midpoint, pushed sideways a little
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+  const k = (r() - 0.5) * 0.28 * L;
+  return `${(mx - dy / L * k).toFixed(1)} ${(my + dx / L * k).toFixed(1)}`;
+};
+function tripD(t, g) {
+  const r = mulberry32(Math.floor(t.start / 1000) % 2147483647);
+  let from = { x: g.home.x + (r() - 0.5) * 10, y: g.home.y - 14 };
+  let d = `M ${from.x.toFixed(1)} ${from.y.toFixed(1)}`;
+  for (const v of (t.declined || []).filter((x) => x.why === 'different' && g.places[x.sense])) {
+    const P = g.places[v.sense], k = 0.28 + r() * 0.14;
+    const p = { x: from.x + (P.x - from.x) * k, y: from.y + (P.y - from.y) * k };
+    d += ` Q ${ctrl(from, p, r)} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`; from = p;
+  }
+  const D = g.places[t.sense], end = { x: D.x + (r() - 0.5) * 12, y: D.y + 8 + (r() - 0.5) * 6 };
+  d += ` Q ${ctrl(from, end, r)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
+  const rr = 3 + 11 * fillOf(t.end - t.start), side = r() < 0.5 ? 1 : -1;
+  d += ` a ${rr.toFixed(1)} ${(rr * 0.7).toFixed(1)} 0 1 1 ${(side * 2 * rr).toFixed(1)} 0 a ${rr.toFixed(1)} ${(rr * 0.7).toFixed(1)} 0 1 1 ${(-side * 2 * rr).toFixed(1)} 0`;
+  return d;
+}
+let selPlace = null;
+function renderPaths(hideLast) {
+  const g = geo = pathsLayout();
+  const { W, H, places, home, bench } = g;
+  const svg = $('svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  const wk = weekTrips(), last = store.trips.length - 1;
+  const visited = new Set(wk.map(({ t }) => t.sense));
+  const turned = new Set(wk.flatMap(({ t }) => (t.declined || []).filter((x) => x.why === 'different').map((x) => x.sense)));
+  const r = mulberry32(5);
+  let tufts = '';
+  for (let i = 0; i < 46; i++) {
+    const x = r() * W, y = r() * H;
+    tufts += `<path d="M ${x.toFixed(0)} ${y.toFixed(0)} l -2 -5 M ${x.toFixed(0)} ${y.toFixed(0)} l 0 -6 M ${x.toFixed(0)} ${y.toFixed(0)} l 2 -5" stroke="#b7c7a2" stroke-width="1" stroke-linecap="round" opacity=".7"/>`;
+  }
+  const strokes = wk.map(({ t, i }) => `<path class="walk" data-i="${i}" d="${tripD(t, g)}" fill="none" stroke="${DIRT}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${hideLast && i === last ? 0 : 0.2}"${t.told ? ' stroke-dasharray="7 6"' : ''}/>`).join('');
+  const stays = store.stays.filter((s) => s.at >= weekStart());
+  const scuffs = stays.map((s) => { const q = mulberry32(Math.floor(s.at / 1000) % 2147483647); const x = bench.x - 8 + q() * 16, y = bench.y - 12 - q() * 6;
+    return `<path d="M ${x.toFixed(1)} ${y.toFixed(1)} q 4 ${(-2 - q() * 3).toFixed(1)} 9 0" fill="none" stroke="${DIRT}" stroke-width="4" stroke-linecap="round" stroke-opacity=".22"/>`; }).join('');
+  const benchSvg = stays.length ? `<g transform="translate(${bench.x},${bench.y})"><rect x="-11" y="-3" width="22" height="5" rx="1.5" fill="#c9a77a" stroke="#7c611f" stroke-opacity=".6"/><path d="M -8 2 v 4 M 8 2 v 4" stroke="#7c611f" stroke-opacity=".6" stroke-width="1.4"/></g>` : '';
+  const placeSvg = ORDER.filter((s) => visited.has(s) || turned.has(s)).map((s) => {
+    const P = places[s], c = SENSES[s], been = visited.has(s), sel = selPlace === s;
+    return `<g class="cell place" data-s="${s}" transform="translate(${P.x.toFixed(1)},${P.y.toFixed(1)})">`
+      + `<ellipse rx="27" ry="19" fill="${been ? c.soft : 'none'}" fill-opacity=".75" stroke="${sel ? '#252a38' : c.deep}" stroke-opacity="${sel ? 1 : been ? 0.4 : 0.55}" stroke-width="${sel ? 2 : 1.2}"${been ? '' : ' stroke-dasharray="4 4"'}/>`
+      + `<g fill="${c.deep}" stroke="${c.deep}" opacity="${been ? 1 : 0.55}">${GLYPH[s]}</g>`
+      + `<text y="33" text-anchor="middle" font-family="Bricolage Grotesque,system-ui,sans-serif" font-weight="600" font-size="11" fill="${been ? c.deep : '#9aa0b3'}">${s}</text></g>`;
+  }).join('');
+  const house = `<g transform="translate(${home.x},${home.y})"><rect x="-15" y="-12" width="30" height="22" rx="2" fill="#f0e6d8" stroke="#252a38" stroke-opacity=".55"/>`
+    + `<path d="M -19 -11 L 0 -27 L 19 -11 Z" fill="#565d72"/><rect x="-4" y="0" width="8" height="10" fill="#565d72" opacity=".7"/></g>`;
+  svg.innerHTML = `<rect width="${W}" height="${H}" fill="#eaf0e2"/>` + tufts
+    + `<text x="12" y="18" font-family="Bricolage Grotesque,system-ui,sans-serif" font-weight="600" font-size="11" fill="#7d8a6c">the last seven days</text>`
+    + `<g id="walks">${strokes}</g>${scuffs}${placeSvg}${benchSvg}${house}<g id="trails"></g>`
+    + `<g id="bee" transform="translate(${g.rest.x},${g.rest.y})"><g id="beeInner"><ellipse rx="3.6" ry="6.4" fill="#252a38"/><circle r="3.4" fill="#f0e6d8" stroke="#252a38" stroke-width="1.2"/></g></g>`;
+}
+// out: walk a little way toward the offered place
+function walkOut(sense, color, done) {
+  const { home, places, rest } = geo, P = places[sense] || places.sight;
+  const p = { x: home.x + (P.x - home.x) * 0.3, y: home.y + (P.y - home.y) * 0.3 };
+  fly(`M ${rest.x} ${rest.y} Q ${home.x} ${home.y - 30}, ${p.x.toFixed(1)} ${p.y.toFixed(1)}`, color, 900, done);
+}
+// home: the walk is drawn as it happens, then the walker comes back to the house
+function walkIn(trip) {
+  const i = store.trips.length - 1, el = $('svg').querySelector(`.walk[data-i="${i}"]`);
+  if (!el) { busy = false; return; }
+  busy = true;
+  fly(el.getAttribute('d'), DIRT, 1700, () => {
+    el.style.transition = 'stroke-opacity .6s ease'; el.setAttribute('stroke-opacity', '0.2');
+    const end = el.getPointAtLength(el.getTotalLength()), { rest, home } = geo;
+    fly(`M ${end.x.toFixed(1)} ${end.y.toFixed(1)} Q ${((end.x + home.x) / 2 + 20).toFixed(1)} ${((end.y + home.y) / 2).toFixed(1)}, ${rest.x} ${rest.y}`, '#9aa0b3', 900, () => { setBee(rest.x, rest.y, -90); busy = false; });
+  });
+}
+function walkToBench() {
+  const { rest, bench } = geo;
+  busy = true;
+  fly(`M ${rest.x} ${rest.y} Q ${bench.x - 10} ${rest.y + 6}, ${bench.x} ${bench.y - 12} T ${rest.x} ${rest.y}`, '#9aa0b3', 1400, () => { setBee(rest.x, rest.y, -90); busy = false; });
+}
+function openPlace(sense) {
+  const wk = weekTrips().map(({ t }) => t), here = wk.filter((t) => t.sense === sense);
+  const away = wk.reduce((a, t) => a + (t.declined || []).filter((x) => x.sense === sense && x.why === 'different').length, 0);
+  selPlace = sense; renderPaths(false);
+  const s = SENSES[sense], el = $('detail');
+  senseVars(el, s);
+  const words = [...new Set(here.map((t) => t.word).filter(Boolean).reverse())].slice(0, 6);
+  const times = (k) => k === 1 ? 'once' : k === 2 ? 'twice' : `${k} times`;
+  el.innerHTML = `<p class="label">${esc(sense)}</p>`
+    + `<p class="p">${here.length ? (words.length ? `Brought back from here: ${words.map(esc).join(', ')}` : 'Nothing brought back from here this week.') : 'You haven’t been here this week.'}</p>`
+    + (here.length ? `<p class="m">Out here ${times(here.length)} this week, ${esc(lengthWords(median(here.map((t) => t.end - t.start))))} as a rule.</p>` : '')
+    + (away ? `<p class="m">Turned away from it ${times(away)} this week.</p>` : '');
+  el.hidden = false;
+}
+
+// one entry point for whichever skin is showing
+function render(hideLast) { if (skin === 'paths') renderPaths(hideLast); else renderHive(hideLast); }
+function setSkin(s) {
+  if (!SKINS.includes(s)) return;
+  skin = s; store.skin = s; save();
+  selected = -1; selPlace = null; $('detail').hidden = true;
+  $('introDraw').textContent = s === 'paths' ? 'Each trip wears a path across the park.' : 'Each trip becomes a cell in the comb.';
+  if (screen === 'hive') showHive(null);
+}
+
 function setBee(x, y, a = 0) {
-  const flip = Math.abs(a) > 90 ? -1 : 1;
-  $('bee').setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${a.toFixed(1)}) scale(1.15,${1.15 * flip})`);
+  const flip = Math.abs(a) > 90 && skin === 'hive' ? -1 : 1, k = skin === 'hive' ? 1.15 : 1;
+  $('bee').setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${a.toFixed(1)}) scale(${k},${k * flip})`);
 }
 
 function fly(d, color, ms, done) {
@@ -673,7 +927,7 @@ const idleLine = () => {
   const u = usualTell();
   if (u && noticings() % 2 === 1) return `Your usual tell: ${u}.`;
   return store.trips.length ? 'When you notice you’ve been doing for a while, go out, or stay in on purpose.'
-    : 'The comb starts with your first trip out.';
+    : skin === 'paths' ? 'The paths start with your first trip out.' : 'The comb starts with your first trip out.';
 };
 function setStatus(text, revertMs) {
   $('status').textContent = text;
@@ -683,9 +937,14 @@ function setStatus(text, revertMs) {
 function showHive(arriving) {
   show('hive');
   $('demoBar').hidden = !DEMO;
-  renderHive(!!arriving);
-  if (arriving && !document.hidden) { flyIn(arriving); setStatus('Back to what you were doing.', 12000); }
-  else if (arriving) { popCell(store.trips.length - 1); setStatus('Back to what you were doing.', 12000); }
+  $('brand').textContent = skin === 'paths' ? 'Paths' : 'Hive';
+  $('demoBar').querySelector('a').setAttribute('href', skin === 'paths' ? 'hive.html?skin=paths' : 'hive.html');
+  $('skinBtn').textContent = skin === 'paths' ? 'As the hive' : 'As paths';
+  $('svg').setAttribute('aria-label', skin === 'paths' ? 'Paths across a park' : 'The comb');
+  render(!!arriving);
+  const paths = skin === 'paths';
+  if (arriving && !document.hidden) { if (paths) walkIn(arriving); else flyIn(arriving); setStatus('Back to what you were doing.', 12000); }
+  else if (arriving) { if (paths) renderPaths(false); else popCell(store.trips.length - 1); setStatus('Back to what you were doing.', 12000); }
   else setStatus(idleLine());
 }
 
@@ -703,15 +962,15 @@ function openDetail(i) {
   const s = SENSES[t.sense], el = $('detail');
   senseVars(el, s);
   const when = new Date(t.start).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  el.innerHTML = `<p class="label">${esc(t.sense)}</p><p class="p">${esc(t.prompt)}</p>`
+  el.innerHTML = `<p class="label">${esc(t.sense)}</p><p class="p">${esc(t.prompt || 'A trip of your own')}</p>`
     + `<p class="m">${t.word ? `Brought back: <b>${esc(t.word)}</b>` : 'Nothing brought back.'}</p>`
-    + `<p class="m">${esc(when)} · ${lengthWords(t.end - t.start)}</p>`;
+    + `<p class="m">${esc(when)} · ${esc(tripLength(t))}${t.told ? ', logged afterwards' : ''}</p>`;
   el.hidden = false;
 }
 function closeDetail() {
-  if (selected < 0 && $('detail').hidden) return;
-  selected = -1; $('detail').hidden = true;
-  if (screen === 'hive') renderHive(false);
+  if (selected < 0 && !selPlace && $('detail').hidden) return;
+  selected = -1; selPlace = null; $('detail').hidden = true;
+  if (screen === 'hive') render(false);
 }
 
 // ─── The record ─────────────────────────────────────────────────────────────
@@ -746,6 +1005,10 @@ function summarize(trips, stays = [], tight = {}) {
     tellsGiven: asked.filter((x) => x.tell).length,
     tells: Object.fromEntries(tellCounts({ trips, stays })),
     daysMarkedTight: Object.values(tight).filter((a) => a.length).length,
+    loggedAfter: trips.filter((t) => t.told).length,
+    turnedFrom: trips.reduce((a, t) => a + (t.declined || []).filter((x) => x.why === 'different').length, 0),
+    nothingNearby: trips.reduce((a, t) => a + (t.checks || []).filter((x) => !x.nearby).length, 0),
+    nearbyAsked: trips.reduce((a, t) => a + (t.checks || []).length, 0),
   };
 }
 const pct = (x) => x == null ? '–' : `${Math.round(x * 100)}%`;
@@ -756,7 +1019,7 @@ function showRecord() {
     const d = new Date(x.start);
     return `<tr><td>${esc(d.toLocaleDateString([], { month: 'short', day: 'numeric' }))} ${esc(d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td>`
       + `<td><span class="dot" style="background:${SENSES[x.sense].bright}"></span>${esc(x.sense)}</td>`
-      + `<td>${fmtDur(x.end - x.start)}</td><td>${pct(x.hiddenMs / Math.max(1, x.end - x.start))}</td><td>${x.word ? esc(x.word) : ''}</td></tr>`;
+      + `<td>${x.told ? `~${esc(EST[x.est] ? EST[x.est][0] : '')}` : fmtDur(x.end - x.start)}</td><td>${pct(x.hiddenMs / Math.max(1, x.end - x.start))}</td><td>${x.word ? esc(x.word) : ''}</td></tr>`;
   }).join('');
   $('recordBody').innerHTML = (DEMO ? '<p class="demo">A sample month, generated. Nothing here is saved.</p>' : '')
     + `<div class="grid">`
@@ -767,6 +1030,8 @@ function showRecord() {
     + stat(pct(m.broughtWord), 'brought back a word') + stat(pct(t.filter((x) => x.changes > 0).length / Math.max(1, t.length)), 'asked for a different sense')
     + stat(m.stays, 'noticed, stayed in') + stat(fmtDur(m.medianGapToStayMs), 'typical time in doing before staying in')
     + stat(`${m.tellsGiven} of ${m.tellsAsked}`, 'asked what tipped them off, and answered') + stat(m.daysMarkedTight, 'days with a tightest moment marked')
+    + stat(m.loggedAfter, 'trips logged afterwards (length estimated)') + stat(m.turnedFrom, 'senses turned from on the way')
+    + stat(`${m.nothingNearby} of ${m.nearbyAsked}`, 'asked about taste or smell: nothing nearby')
     + `</div>`
     + (m.tellsGiven ? `<p class="fine">Their tells: ${Object.entries(m.tells).map(([w, k]) => `${esc(w)} ${k}`).join(' · ')}</p>` : '')
     + `<p class="fine">By sense: ${ORDER.map((s) => `<span class="dot" style="background:${SENSES[s].bright}"></span>${s} ${m.bySense[s]}`).join(' &nbsp; ')}</p>`
@@ -807,7 +1072,7 @@ function showDay(t = dayAt ?? dayStart(now())) {
   let below = -99;                 // keep close trips from overlapping
   trips.forEach((x) => {
     const s = SENSES[x.sense], top = Math.max(y(x.start - dayAt), below + 22); below = top;
-    html += `<div class="ev trip" style="top:${top}px;background:${s.soft};color:${s.deep}">${esc(x.sense)}${x.word ? ` · ${esc(x.word)}` : ''} · ${esc(lengthWords(x.end - x.start))}</div>`;
+    html += `<div class="ev trip" style="top:${top}px;background:${s.soft};color:${s.deep}">${esc(x.sense)}${x.word ? ` · ${esc(x.word)}` : ''} · ${esc(tripLength(x))}</div>`;
   });
   below = -99;
   stays.forEach((x) => {
@@ -882,12 +1147,30 @@ function sampleMonth() {
       const start = Math.round(base + tm);
       if (d === 0 && start > Date.now()) continue;
       if (prevEnd && start < prevEnd + 10 * 60000) continue;
-      const sense = pickSense(null, rnd, out), dur = Math.round(Math.min(420, Math.max(6, Math.exp(Math.log(50) + 0.8 * gauss()))) * 1000);
-      const kept = rnd() < 0.7, wr = rnd();
+      // this sample person mostly turns from touch, often asks again until sight
+      // or hearing, and now and then has nothing to taste or smell to hand
+      let sense = pickSense(null, rnd, out);
+      const declined = [], checks = [];
+      for (let g = 0; g < 3; g++) {
+        if (NEARBY[sense]) {
+          const near = rnd() < 0.55; checks.push({ sense, nearby: near });
+          if (!near) { declined.push({ sense, why: 'nothing nearby' }); sense = pickSense(declined.map((x) => x.sense), rnd, out); continue; }
+        }
+        if ((sense === 'touch' && rnd() < 0.6) || (!['sight', 'hearing'].includes(sense) && rnd() < 0.22)) {
+          declined.push({ sense, why: 'different' });
+          sense = rnd() < 0.6 ? (rnd() < 0.55 ? 'sight' : 'hearing') : pickSense(declined.map((x) => x.sense), rnd, out);
+          continue;
+        }
+        break;
+      }
+      const changes = declined.filter((x) => x.why === 'different').length;
+      const told = rnd() < 0.12, est = told ? ['breaths', 'minute', 'minutes'][Math.floor(rnd() * 3)] : null;
+      const dur = told ? EST[est][1] : Math.round(Math.min(420, Math.max(6, Math.exp(Math.log(50) + 0.8 * gauss()))) * 1000);
+      const kept = changes === 0, wr = rnd();
       const word = wr < 0.55 ? SENSES[sense].words[Math.floor(rnd() * 6)] : wr < 0.7 ? own[Math.floor(rnd() * own.length)] : null;
-      out.push({ start, end: start + dur, sense, prompt: pickPrompt(sense, rnd, out), keptOffer: kept, changes: kept ? 0 : 1 + Math.floor(rnd() * 2),
-        hiddenMs: Math.round(dur * (rnd() < 0.3 ? rnd() * 0.2 : 0.4 + rnd() * 0.6)), word, wordKind: word ? (wr < 0.55 ? 'chip' : 'own') : null,
-        gapMs: prevEnd ? start - prevEnd : null, ...tellOf() });
+      out.push({ start, end: start + dur, sense, prompt: told ? null : pickPrompt(sense, rnd, out), keptOffer: kept, changes,
+        hiddenMs: told ? 0 : Math.round(dur * (rnd() < 0.3 ? rnd() * 0.2 : 0.4 + rnd() * 0.6)), word, wordKind: word ? (wr < 0.55 ? 'chip' : 'own') : null,
+        gapMs: prevEnd ? start - prevEnd : null, ...tellOf(), declined, checks, ...(told ? { told: true, est, when: 'today' } : {}) });
       prevEnd = start + dur;
     }
     // now and then, noticed and stayed in
@@ -929,6 +1212,14 @@ $('tl').addEventListener('click', (e) => {
 });
 $('homeBtn').addEventListener('click', comeHome);
 $('rerollBtn').addEventListener('click', reroll);
+$('checkYes').addEventListener('click', () => answerNearby(true));
+$('checkNo').addEventListener('click', () => answerNearby(false));
+$('skinBtn').addEventListener('click', () => setSkin(skin === 'paths' ? 'hive' : 'paths'));
+$('earlierBtn').addEventListener('click', showEarlier);
+$('eClose').addEventListener('click', () => showHive(null));
+for (const [id, key] of [['eSense', 'sense'], ['eLen', 'est'], ['eWhen', 'when']])
+  $(id).addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (c) { early[key] = c.dataset.v; paintEarlier(); } });
+$('eGo').addEventListener('click', () => logEarlier());
 $('out').addEventListener('pointerdown', (e) => { if (!e.target.closest('button')) wake(); });
 $('chips').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) bring(b.dataset.w, 'chip'); });
 $('own').addEventListener('input', () => { $('ownBtn').disabled = !$('own').value.trim(); });
@@ -947,7 +1238,8 @@ $('dlBtn').addEventListener('click', () => {
 });
 $('svg').addEventListener('click', (e) => {
   const c = e.target.closest('.cell');
-  if (c) openDetail(+c.dataset.i); else closeDetail();
+  if (c && c.dataset.s) openPlace(c.dataset.s);
+  else if (c) openDetail(+c.dataset.i); else closeDetail();
 });
 $('detail').addEventListener('click', closeDetail);
 document.addEventListener('keydown', (e) => {
@@ -964,13 +1256,18 @@ document.addEventListener('visibilitychange', () => {
   save();
 });
 let resizeT = null;
-window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (screen === 'hive') renderHive(false); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (screen === 'hive') render(false); }, 120); });
 
 // Headless driving (agent playtests): instant variants skip the flights.
 window.__hive = {
   get state() { return JSON.parse(JSON.stringify(store)); },
   get screen() { return screen; },
   get geo() { return geo; },
+  get skin() { return skin; },
+  setSkin,
+  nearby: (yes) => { answerNearby(yes); return store.current; },
+  earlier: (sense, est = 'minute', when = 'now') => { logEarlier(sense, est, when); return store.current; },
+  place: (s) => openPlace(s),
   out: (sense) => { goOut(sense, true); return store.current; },
   reroll, home: comeHome,
   bring: (word) => bring(word || null, word ? 'own' : null, true),
@@ -988,6 +1285,7 @@ window.__hive = {
 
 // ─── Start ──────────────────────────────────────────────────────────────────
 load();
+$('introDraw').textContent = skin === 'paths' ? 'Each trip wears a path across the park.' : 'Each trip becomes a cell in the comb.';
 if (store.current) {
   const c = store.current;
   if (!c.end && c.hiddenAt != null) { c.hiddenMs += now() - c.hiddenAt; c.hiddenAt = null; save(); }
