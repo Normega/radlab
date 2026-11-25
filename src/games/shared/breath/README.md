@@ -43,3 +43,20 @@ connect/calibrate; `breath.setSimPeriodMs(ms)` retunes the fake breather live.
 | `hr` | Heart rate, bpm (1 Hz from belt) | ~1 s | Ambient display, arousal context |
 | `rsaMs` | max−min RR interval over last 12 s — breath-driven heart-rate swing | rolls over ~2–3 breaths | Coherence/resonance feedback; grows as breathing slows toward ~6 bpm |
 | `lagMs` | Calibrated belt latency v
+## Belt Scope (`/belt-scope`): the raw, uncalibrated view
+
+A lab-only page (`LabOnlyRoute`) for trying out how the strap is fitted. It uses
+none of the calibration above: `useH10Stream` repeats `useBreathSignal`'s
+connect sequence but hands over every raw packet, and `beltScopeSignal.js` does
+the maths.
+
+| File | What it is |
+|---|---|
+| `useH10Stream.js` | `useH10Stream({ onAccel, onHr })`: raw PMD packets (`x/y/z` int16 = mg, `packetTs`, `devicePacketMicros`) and HR rows, `btState`, `connect`, `disconnect` |
+| `beltScopeSignal.js` | React-free: PMD/HR parsers, causal 0.05–0.7 Hz band-pass, running mean, 3×3 covariance + power iteration with sign continuity, breathing size (peak, √2·SD), zero-crossing rate, rhythm (the analysis's `pdt_acf`), tilt and upside-down, chunked raw recorder, the study's CSV writers, a simulator |
+| `beltScopeSignal.test.mjs` | `node src/games/shared/breath/beltScopeSignal.test.mjs` (also in `npm test`) |
+
+Saved recordings use the BreathBelt study's `_accel.csv` / `_hr.csv` layout
+exactly (x/y/z are mg / 100, `phase` = `belt_scope`, `trial` = -1), and the test
+checks this against the study's own writer in `useBeltSession.js`. `?sim=1`
+runs a simulated strap with size/rate sliders, a strap shift and a flip.
