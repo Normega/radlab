@@ -97,11 +97,14 @@
   .keys{display:flex;gap:24px;justify-content:center;margin:24px 0;}
   .key{border:2px solid #333;border-radius:12px;padding:8px 16px;font-size:20px;font-weight:700;text-align:center;min-width:120px;background:#fff;}
   .key small{display:block;font-size:12px;font-weight:400;color:#555;margin-top:4px;}
-  #arrowStage{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;}
-  #stim{display:flex;gap:8px;align-items:center;height:64px;}
+  /* fixation, arrows and feedback share one grid cell, so all three sit at the
+     same point on screen (the centre); only one is visible at a time */
+  #arrowStage{flex:1;display:grid;place-items:center;}
+  #arrowStage > div{grid-area:1/1;height:64px;display:flex;align-items:center;justify-content:center;}
+  #stim{gap:8px;}
   #stim svg{width:40px;height:56px;}
-  #fix{font-size:48px;line-height:64px;font-weight:400;}
-  #fb{height:32px;margin-top:24px;font-size:20px;font-weight:700;}
+  #fix svg{width:32px;height:32px;}
+  #fb{font-size:20px;font-weight:700;line-height:1;}
 
   /* FSS */
   .item{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:0 0 16px;}
@@ -238,7 +241,7 @@
 <!-- 7. Arrow task -->
 <section class="screen arrowscreen" id="arrows">
   <div id="arrowStage">
-    <div id="fix">+</div>
+    <div id="fix"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2v28M2 16h28" stroke="#111" stroke-width="4"/></svg></div>
     <div id="stim"></div>
     <div id="fb"></div>
   </div>
