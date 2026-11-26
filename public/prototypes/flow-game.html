@@ -64,12 +64,18 @@
 
   /* how to play */
   .howrow{display:flex;gap:16px;align-items:center;margin:0 0 16px;}
-  .howrow img{width:48px;height:48px;flex:none;object-fit:contain;}
-  .howrow img.big{width:64px;height:64px;}
-  .howrow p{margin:0;}
+  /* every icon gets the same 64px column, so the text lines up */
+  .howrow img{width:64px;height:48px;flex:none;object-fit:contain;}
+  .howrow img.big{height:64px;}
+  .howrow p{margin:0;font-size:20px;}
+  #howto p{font-size:20px;}
 
-  /* ready */
-  #ready .pad{display:flex;flex-direction:column;justify-content:center;}
+  /* instruction screens: content centred vertically. Auto margins rather than
+     justify-content:center, so a screen taller than the window still scrolls
+     from its top instead of clipping it */
+  .pad.mid{display:flex;flex-direction:column;padding-top:40px;padding-bottom:40px;}
+  .pad.mid > :first-child{margin-top:auto;}
+  .pad.mid > :last-child{margin-bottom:auto;}
 
   /* game */
   #game{background:#000;}
@@ -89,14 +95,15 @@
 
   /* arrow task: deliberately plain and unlike the game */
   .arrowscreen{background:#ececec;color:#111;font-family:Arial,Helvetica,sans-serif;}
-  .arrowscreen .pad{max-width:560px;}
-  .arrowscreen h1{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:28px;color:#111;}
-  .arrowscreen p{color:#333;}
-  .arrowscreen .go{background:#333;border-radius:12px;}
+  .arrowscreen .pad{max-width:720px;}
+  .arrowscreen h1{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:36px;color:#111;}
+  .arrowscreen p{color:#333;font-size:20px;}
+  .arrowscreen .go{background:#333;border-radius:12px;font-size:20px;}
   .arrowscreen .go:hover{background:#111;}
-  .keys{display:flex;gap:24px;justify-content:center;margin:24px 0;}
-  .key{border:2px solid #333;border-radius:12px;padding:8px 16px;font-size:20px;font-weight:700;text-align:center;min-width:120px;background:#fff;}
-  .key small{display:block;font-size:12px;font-weight:400;color:#555;margin-top:4px;}
+  .arrowscreen .hint{font-size:16px;color:#555;text-align:center;}
+  .keys{display:flex;gap:32px;justify-content:center;margin:24px 0;}
+  .key{border:2px solid #333;border-radius:12px;padding:16px 24px;font-size:36px;font-weight:700;text-align:center;min-width:180px;background:#fff;}
+  .key small{display:block;font-size:16px;font-weight:400;color:#555;margin-top:8px;}
   /* fixation, arrows and feedback share one grid cell, so all three sit at the
      same point on screen (the centre); only one is visible at a time */
   #arrowStage{flex:1;display:grid;place-items:center;}
@@ -106,15 +113,27 @@
   #fix svg{width:32px;height:32px;}
   #fb{font-size:20px;font-weight:700;line-height:1;}
 
-  /* FSS */
-  .item{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:0 0 16px;}
-  .item .t{font-size:16px;color:var(--tx);margin:0 0 16px;line-height:1.4;}
-  .item .t b{color:var(--pkd);font-weight:600;margin-right:4px;}
-  .pts{display:grid;gap:4px;}
-  .pts button{border:1.5px solid var(--bds);background:var(--bgc);border-radius:24px;padding:8px 0;font:inherit;font-size:14px;color:var(--tx2);cursor:pointer;}
+  /* FSS (larger type than the other screens, at Carleigh's request) */
+  #fss .pad{max-width:760px;}
+  #fss h2{font-size:36px;}
+  #fss p{font-size:20px;}
+  #fss p.small{font-size:14px;}
+  .item{background:var(--bgc);border:1px solid var(--bd);border-radius:12px;padding:24px;margin:0 0 16px;}
+  .item .t{font-size:20px;color:var(--tx);margin:0 0 16px;line-height:1.4;}
+  .item .t b{color:var(--pkd);font-weight:600;margin-right:8px;}
+  .pts{display:grid;gap:8px;}
+  .pts button{border:1.5px solid var(--bds);background:var(--bgc);border-radius:24px;padding:12px 0;font:inherit;font-size:20px;color:var(--tx2);cursor:pointer;}
   .pts button.sel{border-color:var(--pkd);background:var(--pkd);color:#fff;}
-  .ptlabels{display:grid;gap:4px;margin-top:4px;font-size:12px;color:var(--tx2);text-align:center;line-height:1.3;}
+  .ptlabels{display:grid;gap:8px;margin-top:8px;font-size:16px;color:var(--tx2);text-align:center;line-height:1.3;}
+  #fss .go{font-size:20px;}
   .verify{background:var(--pkl);border-radius:12px;padding:8px 16px;font-size:12px;color:var(--pkd);margin:0 0 16px;}
+  /* reminder on every FSS page: the questions are about the game, not the arrow task */
+  .about{display:flex;gap:16px;align-items:center;background:#000 url(flow-game/img/background.jpg) center/cover;border-radius:12px;
+    padding:16px 24px;margin:0 0 24px;color:#fff;}
+  .about .sprites{display:flex;gap:8px;align-items:center;flex:none;}
+  .about img{width:32px;height:32px;object-fit:contain;}
+  .about img.big{width:48px;height:48px;}
+  .about span{font-size:20px;line-height:1.35;}
 
   /* summary */
   .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
@@ -182,8 +201,8 @@
 
 <!-- 2. How to play -->
 <section class="screen" id="howto">
-  <div class="pad">
-    <h1>How to play</h1>
+  <div class="pad mid">
+    <h1>How to play Asteroid Impact</h1>
     <div class="howrow"><img src="flow-game/img/cursor.png" alt=""><p>Move your ship with the mouse.</p></div>
     <div class="howrow"><img src="flow-game/img/crystal.png" alt=""><p>Pick up the crystals. Collect all three to clear a level.</p></div>
     <div class="howrow"><img class="big" src="flow-game/img/asteroid.png" alt=""><p>Avoid the bouncing asteroids. If you hit one, the level starts again.</p></div>
@@ -196,7 +215,7 @@
 
 <!-- 3. Press when ready (game) -->
 <section class="screen" id="ready">
-  <div class="pad">
+  <div class="pad mid">
     <div class="kicker" id="readyKicker"></div>
     <h1 id="readyTitle"></h1>
     <p id="readyText"></p>
@@ -210,7 +229,7 @@
 
 <!-- 5. Difficulty slider -->
 <section class="screen" id="slider">
-  <div class="pad" style="display:flex;flex-direction:column;justify-content:center;">
+  <div class="pad mid">
     <h2>How difficult was that round?</h2>
     <div class="scale">
       <input type="range" id="diff" min="0" max="100" step="1" value="50" class="untouched" aria-label="Difficulty, from too easy to too hard">
@@ -222,7 +241,7 @@
 
 <!-- 6. Arrow task instructions -->
 <section class="screen arrowscreen" id="arrowIntro">
-  <div class="pad" style="display:flex;flex-direction:column;justify-content:center;">
+  <div class="pad mid">
     <h1>Arrow task</h1>
     <p>A row of five arrows will appear. Look at the <b>middle</b> arrow only and press the key for the
       way it points. Ignore the other arrows.</p>
@@ -234,7 +253,7 @@
       accurately as you can.</p>
     <p id="arrowIntroNote"></p>
     <button class="go" id="arrowIntroGo">I'm ready</button>
-    <p style="text-align:center;font-size:12px;color:#555">or press the space bar</p>
+    <p class="hint">or press the space bar</p>
   </div>
 </section>
 
@@ -790,7 +809,11 @@ function fssScreens() {
       const items = pages[p]
       const unchecked = items.filter(it => !it.verified).map(it => it.n)
       const verify = unchecked.length ? `<div class="verify">Prototype: the wording of item${unchecked.length > 1 ? 's' : ''} ${unchecked.join(', ')} is still to be checked (the FSS manual does not print ${unchecked.length > 1 ? 'them' : 'it'}).</div>` : ''
-      const head = p === 0 ? `<h2>About the game you just played</h2><p>${FSS_INSTRUCTIONS}</p>` : ''
+      // every page carries the reminder; the first page also has the full instructions
+      const about = `<div class="about"><div class="sprites"><img src="flow-game/img/cursor.png" alt="">
+        <img src="flow-game/img/crystal.png" alt=""><img class="big" src="flow-game/img/asteroid.png" alt=""></div>
+        <span>These questions are about <b>Asteroid Impact</b>, the game with the ship, crystals and asteroids. Not the arrow task.</span></div>`
+      const head = p === 0 ? `<h2>About the game</h2><p>${FSS_INSTRUCTIONS}</p>${about}` : about
       const cards = items.map(it => {
         const cols = `grid-template-columns:repeat(${it.scale.points},1fr)`
         const btns = Array.from({ length: it.scale.points }, (_, k) => k + 1)

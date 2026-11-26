@@ -10,7 +10,9 @@
 // (2026-11-26). The manual does not print items 14–16, so their wording is still
 // unverified (`verified: false`) until it is checked against the 2003 original.
 
-export const FSS_INSTRUCTIONS = 'Please think about the game you just played and rate how well each statement describes it.'
+// The questionnaire follows the arrow task, so the instructions name the game:
+// it is the game round being rated, not the arrow task (Carleigh, 2026-11-26).
+export const FSS_INSTRUCTIONS = 'Please think about the game you played before the arrow task, Asteroid Impact, and rate how well each statement describes your experience of playing it.'
 
 const AGREE7 = { points: 7, labels: { 1: 'Not at all', 4: 'Partly', 7: 'Very much' } }
 
