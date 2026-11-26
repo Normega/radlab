@@ -98,8 +98,8 @@
   .key{border:2px solid #333;border-radius:12px;padding:8px 16px;font-size:20px;font-weight:700;text-align:center;min-width:120px;background:#fff;}
   .key small{display:block;font-size:12px;font-weight:400;color:#555;margin-top:4px;}
   #arrowStage{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;}
-  #stim{display:flex;gap:16px;align-items:center;height:64px;}
-  #stim svg{width:56px;height:56px;}
+  #stim{display:flex;gap:8px;align-items:center;height:64px;}
+  #stim svg{width:40px;height:56px;}
   #fix{font-size:48px;line-height:64px;font-weight:400;}
   #fb{height:32px;margin-top:24px;font-size:20px;font-weight:700;}
 
@@ -138,21 +138,33 @@
     <div class="kicker" style="margin-top:16px">Research task prototype · flow</div>
     <h1>Flow game</h1>
     <p>One core round of the flow study: a short practice that estimates the player's level, one
-      game round, a difficulty slider, the arrow task and the Flow Short Scale. Nothing is stored;
-      the log downloads at the end.</p>
+      game round, a difficulty slider, the arrow task and the Flow Short Scale. To look at a later part
+      on its own, start there. Nothing is stored; the log downloads at the end.</p>
 
     <div class="label">Participant code (optional, only written into the log)</div>
     <input type="text" id="pid" autocomplete="off" placeholder="e.g. P01">
 
-    <div class="label">Condition</div>
-    <div class="opts" id="condOpts">
-      <button data-v="low">Low challenge</button>
-      <button data-v="flow">Flow (adaptive)</button>
-      <button data-v="high">High challenge</button>
+    <div class="label">Start at</div>
+    <div class="opts" id="startOpts">
+      <button data-v="game">The game</button>
+      <button data-v="slider">Difficulty slider</button>
+      <button data-v="arrows">Arrow task</button>
+      <button data-v="fss">Questionnaire</button>
     </div>
-    <p class="hint" id="condHint"></p>
+    <label class="check"><input type="checkbox" id="onlyPart"> Run only this part</label>
+    <p class="hint" id="startHint"></p>
 
-    <div id="abilityBox"></div>
+    <div id="condBlock">
+      <div class="label">Condition</div>
+      <div class="opts" id="condOpts">
+        <button data-v="low">Low challenge</button>
+        <button data-v="flow">Flow (adaptive)</button>
+        <button data-v="high">High challenge</button>
+      </div>
+      <p class="hint" id="condHint"></p>
+
+      <div id="abilityBox"></div>
+    </div>
 
     <div class="small" id="settings" style="margin-top:16px"></div>
     <button class="go" id="begin" disabled>Begin</button>
@@ -327,7 +339,24 @@ const condHints = {
   flow: 'Starts at the practice estimate; up a step after each cleared level, down after each crash.',
   high: 'Fixed 3 levels above the practice estimate.',
 }
+// Researchers can start after the game to look at the slider, the arrow task or
+// the questionnaire on their own. Such runs play no game, so they carry no
+// condition in the log (condition is null; parts lists what ran).
+const PARTS = ['game', 'slider', 'arrows', 'fss']
+const PART_NAMES = { game: 'game', slider: 'difficulty slider', arrows: 'arrow task', fss: 'questionnaire' }
+const partsFor = (start, only) => (only ? [start] : PARTS.slice(PARTS.indexOf(start)))
+S.start = PARTS.includes(Q.get('start')) ? Q.get('start') : 'game'
+S.only = Q.has('only')
+$('onlyPart').checked = S.only
+$('onlyPart').onchange = () => { S.only = $('onlyPart').checked; renderSetup() }
 function renderSetup() {
+  document.querySelectorAll('#startOpts button').forEach(b => {
+    b.classList.toggle('sel', b.dataset.v === S.start)
+    b.onclick = () => { S.start = b.dataset.v; renderSetup() }
+  })
+  const parts = partsFor(S.start, S.only)
+  const game = parts.includes('game')
+  $('condBlock').style.display = game ? '' : 'none'
   document.querySelectorAll('#condOpts button').forEach(b => {
     b.classList.toggle('sel', b.dataset.v === S.condition)
     b.onclick = () => { S.condition = b.dataset.v; renderSetup() }
@@ -337,17 +366,22 @@ function renderSetup() {
   $('settings').textContent =
     `Practice ${fmt(CFG.calibMs)} · round ${fmt(CFG.roundMs)} · arrow task ${CFG.practice ? CFG.practice + ' practice + ' : ''}${CFG.trials} trials · seed ${CFG.seed}`
   const box = $('abilityBox')
+  const typed = $('abilityOverride') ? $('abilityOverride').value : ''
   if (S.ability == null) {
     box.innerHTML = '<p class="hint">The practice comes first and estimates the player\'s level for this round.</p>'
   } else {
-    box.innerHTML = `<label class="check"><input type="checkbox" id="redoCalib"> Run the practice again
+    box.innerHTML = `<label class="check"><input type="checkbox" id="redoCalib"${S.redo ? ' checked' : ''}> Run the practice again
       (current estimate: level ${S.ability} of ${TOP_LEVEL}, from ${S.abilitySource})</label>`
   }
   if (DEV) {
     box.insertAdjacentHTML('beforeend', `<div class="label">Dev: set ability by hand (skips the practice)</div>
-      <input type="number" id="abilityOverride" min="1" max="${TOP_LEVEL}" placeholder="1–${TOP_LEVEL}">`)
+      <input type="number" id="abilityOverride" min="1" max="${TOP_LEVEL}" placeholder="1–${TOP_LEVEL}" value="${typed}">`)
   }
-  $('begin').disabled = !S.condition
+  const practice = game && (S.ability == null || ($('redoCalib') && $('redoCalib').checked))
+  $('startHint').textContent = `Runs: ${[...(practice ? ['practice'] : []), ...parts.map(k => PART_NAMES[k]), 'summary'].join(' → ')}.` +
+    (game ? '' : ' No game is played, so no condition is needed.')
+  if ($('redoCalib')) $('redoCalib').onchange = () => { S.redo = $('redoCalib').checked; renderSetup() }
+  $('begin').disabled = game && !S.condition
 }
 if (['low', 'flow', 'high'].includes(Q.get('cond'))) S.condition = Q.get('cond')
 renderSetup()
@@ -357,7 +391,7 @@ $('begin').onclick = () => {
   if (Number.isFinite(ov)) { S.ability = Math.min(TOP_LEVEL, Math.max(1, ov)); S.abilitySource = 'set by hand' }
   const redo = S.ability == null || ($('redoCalib') && $('redoCalib').checked)
   if (!TEST && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {})
-  runRound(redo)
+  runRound(redo, partsFor(S.start, S.only))
 }
 
 // ── game ───────────────────────────────────────────────────────────────────
@@ -661,8 +695,9 @@ function sliderScreen() {
 }
 
 // ── arrow task ─────────────────────────────────────────────────────────────
-const arrowSvg = dir => `<svg viewBox="0 0 56 56" aria-hidden="true"${dir === '<' ? ' style="transform:scaleX(-1)"' : ''}>
-  <path d="M4 22h30V10l18 18-18 18V34H4z" fill="#111"/></svg>`
+// Chevrons, as in Kelly et al. (2008) and Carleigh's example image.
+const arrowSvg = dir => `<svg viewBox="0 0 40 56" aria-hidden="true"${dir === '<' ? ' style="transform:scaleX(-1)"' : ''}>
+  <path d="M8 6 L32 28 L8 50" fill="none" stroke="#111" stroke-width="8" stroke-linecap="butt" stroke-linejoin="miter"/></svg>`
 
 let arrowKey = null // the active block's key handler
 document.addEventListener('keydown', e => {
@@ -750,7 +785,8 @@ function fssScreens() {
     let p = 0, t0 = 0
     const render = () => {
       const items = pages[p]
-      const verify = FSS_VERIFIED ? '' : '<div class="verify">Prototype: item wording still to be checked against the official English FSS.</div>'
+      const unchecked = items.filter(it => !it.verified).map(it => it.n)
+      const verify = unchecked.length ? `<div class="verify">Prototype: the wording of item${unchecked.length > 1 ? 's' : ''} ${unchecked.join(', ')} is still to be checked (the FSS manual does not print ${unchecked.length > 1 ? 'them' : 'it'}).</div>` : ''
       const head = p === 0 ? `<h2>About the game you just played</h2><p>${FSS_INSTRUCTIONS}</p>` : ''
       const cards = items.map(it => {
         const cols = `grid-template-columns:repeat(${it.scale.points},1fr)`
@@ -794,12 +830,24 @@ function fssScreens() {
 }
 
 // ── one round ──────────────────────────────────────────────────────────────
-async function runRound(redoCalib) {
+async function runRound(redoCalib, parts = PARTS) {
   S.run++
-  const rec = { run: S.run, participant: S.participant, condition: S.condition, startedAt: new Date().toISOString() }
+  const game = parts.includes('game')
+  const rec = { run: S.run, participant: S.participant, condition: game ? S.condition : null, parts,
+    startedAt: new Date().toISOString() }
   LOG.runs.push(rec)
-  ev('run_begin', { condition: S.condition })
+  ev('run_begin', { condition: rec.condition, parts: parts.join('+') })
+  if (game) await gamePart(rec, redoCalib)
+  if (parts.includes('slider')) rec.slider = await sliderScreen()
+  if (parts.includes('arrows')) rec.arrows = scoreBlock(await arrowTask())
+  if (parts.includes('fss')) rec.fss = (await fssScreens()).scores
+  rec.endedAt = new Date().toISOString()
+  ev('run_end')
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  summary()
+}
 
+async function gamePart(rec, redoCalib) {
   if (redoCalib) {
     S.step = 'howto'; show('howto')
     await onceClick($('howtoGo'))
@@ -826,15 +874,6 @@ async function runRound(redoCalib) {
   const round = await playGame({ step: 'round', durationMs: CFG.roundMs, level: plan.level, adaptive: plan.adaptive,
     steps: STAIRCASES.flow, ability: S.ability, seed: CFG.seed + S.run * 100 + 22 })
   rec.round = { ...round, samples: undefined }
-  rec.slider = await sliderScreen()
-  const arrows = await arrowTask()
-  rec.arrows = scoreBlock(arrows)
-  const fss = await fssScreens()
-  rec.fss = fss.scores
-  rec.endedAt = new Date().toISOString()
-  ev('run_end')
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
-  summary()
 }
 
 // ── summary + downloads ────────────────────────────────────────────────────
@@ -845,41 +884,55 @@ const condName = { low: 'Low challenge', flow: 'Flow (adaptive)', high: 'High ch
 function summary() {
   S.step = 'summary'
   const rec = LOG.runs[LOG.runs.length - 1]
-  const z = rec.round.zones
-  const zoneRows = ['below', 'matched', 'above'].map(k => `<tr><td>${k}</td><td>${f1(z[k].seconds)}</td>
-    <td>${f1(z[k].deathsPerMin)}</td><td>${f1(z[k].clearsPerMin)}</td><td>${f1(z[k].crystalsPerMin)}</td></tr>`).join('')
-  const lv = Object.entries(rec.round.secondsByLevel).map(([k, v]) => `L${k} ${f1(v)} s`).join(' · ')
-  const a = rec.arrows
-  const clampNote = rec.plan.clamped ? `<p class="flag">The ladder clamped this condition: it sits ${rec.plan.gap} level(s) from the estimate instead of 3.</p>` : ''
-  const pr = rec.calibration
-  const cal = pr
-    ? `<p class="small">Practice: ${pr.clears} levels cleared, ${pr.deaths} crashes, ended on level ${pr.endLevel}.</p>` : ''
-  $('sumPad').innerHTML = `
-    <div class="kicker">Run ${rec.run}${rec.participant ? ' · ' + rec.participant : ''}</div>
-    <h1>${condName[rec.condition]}</h1>
-    <p>Ability estimate: <b>level ${rec.ability}</b> of ${TOP_LEVEL} (${rec.abilitySource}). This round
+  const title = rec.round ? condName[rec.condition]
+    : rec.parts.map(k => PART_NAMES[k]).join(', ').replace(/^./, c => c.toUpperCase()) + (rec.parts.length === 1 ? ' only' : '')
+  const stats = [
+    rec.round && `<div class="stat"><b>${rec.round.clears}</b><span>levels cleared</span></div>`,
+    rec.round && `<div class="stat"><b>${rec.round.deaths}</b><span>crashes</span></div>`,
+    rec.slider && `<div class="stat"><b>${rec.slider.value}</b><span>difficulty slider (0 too easy · 50 just right · 100 too hard)</span></div>`,
+    rec.fss && `<div class="stat"><b>${rec.fss.flow.total ?? '–'}</b><span>FSS flow total (10–70), ${rec.fss.flow.answered}/10 answered</span></div>`,
+  ].filter(Boolean).join('')
+  const statsHtml = stats ? `<div class="stats">${stats}</div>` : ''
+  let gameHtml
+  if (rec.round) {
+    const z = rec.round.zones
+    const zoneRows = ['below', 'matched', 'above'].map(k => `<tr><td>${k}</td><td>${f1(z[k].seconds)}</td>
+      <td>${f1(z[k].deathsPerMin)}</td><td>${f1(z[k].clearsPerMin)}</td><td>${f1(z[k].crystalsPerMin)}</td></tr>`).join('')
+    const lv = Object.entries(rec.round.secondsByLevel).map(([k, v]) => `L${k} ${f1(v)} s`).join(' · ')
+    const clampNote = rec.plan.clamped ? `<p class="flag">The ladder clamped this condition: it sits ${rec.plan.gap} level(s) from the estimate instead of 3.</p>` : ''
+    const pr = rec.calibration
+    const cal = pr
+      ? `<p class="small">Practice: ${pr.clears} levels cleared, ${pr.deaths} crashes, ended on level ${pr.endLevel}.</p>` : ''
+    gameHtml = `<p>Ability estimate: <b>level ${rec.ability}</b> of ${TOP_LEVEL} (${rec.abilitySource}). This round
       ${rec.plan.adaptive ? `started at level ${rec.plan.level} and adapted (ended on level ${rec.round.endLevel}, mean ${f1(rec.round.meanLevel)})` : `stayed on level ${rec.plan.level}`}.</p>
-    ${clampNote}${cal}
-    <div class="stats">
-      <div class="stat"><b>${rec.round.clears}</b><span>levels cleared</span></div>
-      <div class="stat"><b>${rec.round.deaths}</b><span>crashes</span></div>
-      <div class="stat"><b>${rec.slider.value}</b><span>difficulty slider (0 too easy · 50 just right · 100 too hard)</span></div>
-      <div class="stat"><b>${f1(rec.fss.flow)}</b><span>FSS flow mean (1–7), ${rec.fss.flowAnswered}/10 answered</span></div>
-    </div>
+    ${clampNote}${cal}${statsHtml}
     <h3>Time in each zone</h3>
     <p class="hint">Zones are relative to the ability estimate: below = 2 or more levels under it, matched = within 1, above = 2 or more over it.</p>
     <table><tr><th>zone</th><th>seconds</th><th>crashes/min</th><th>clears/min</th><th>crystals/min</th></tr>${zoneRows}</table>
-    <p class="small">Seconds by level: ${lv}</p>
-    <h3>Arrow task (${a.n} trials)</h3>
+    <p class="small">Seconds by level: ${lv}</p>`
+  } else {
+    gameHtml = `<p class="hint">No game in this run: it started at the ${PART_NAMES[rec.parts[0]]}, so it has no condition.</p>${statsHtml}`
+  }
+  const a = rec.arrows
+  const arrowHtml = a ? `<h3>Arrow task (${a.n} trials)</h3>
     <table>
       <tr><th></th><th>congruent</th><th>incongruent</th><th>all</th></tr>
       <tr><td>accuracy</td><td>${pct(a.accuracyCongruent)}</td><td>${pct(a.accuracyIncongruent)}</td><td>${pct(a.accuracy)}</td></tr>
       <tr><td>mean correct RT (ms)</td><td>${f1(a.meanRtCongruentMs)}</td><td>${f1(a.meanRtIncongruentMs)}</td><td>${f1(a.meanRtMs)}</td></tr>
     </table>
-    <p class="small">Congruency effect ${f1(a.congruencyEffectMs)} ms · ${a.timeouts} too slow · ${a.anticipations} faster than ${ARROW_DEFAULTS.minRtMs} ms (left out of RTs)</p>
-    <h3>Flow Short Scale</h3>
-    <p class="small">Flow ${f1(rec.fss.flow)} · worry ${f1(rec.fss.worry)} (${rec.fss.worryAnswered}/3) · difficulty ${rec.fss.difficulty ?? '–'}/9 ·
-      competence ${rec.fss.competence ?? '–'}/9 · demands ${rec.fss.demands ?? '–'}/9 (5 = just right)</p>
+    <p class="small">Congruency effect ${f1(a.congruencyEffectMs)} ms · ${a.timeouts} too slow · ${a.anticipations} faster than ${ARROW_DEFAULTS.minRtMs} ms (left out of RTs)</p>` : ''
+  const fssHtml = rec.fss ? `<h3>Flow Short Scale</h3>
+    <table>
+      <tr><th></th><th>items</th><th>total</th><th>mean (1–7)</th><th>answered</th></tr>
+      ${[['Flow', 'flow', '1–10'], ['Fluency', 'fluency', '2, 4, 5, 7, 8, 9'], ['Absorption', 'absorption', '1, 3, 6, 10'], ['Worry', 'worry', '11–13']]
+        .map(([label, k, items]) => `<tr><td>${label}</td><td>${items}</td><td>${rec.fss[k].total ?? '–'}</td><td>${f1(rec.fss[k].mean)}</td><td>${rec.fss[k].answered}/${rec.fss[k].of}</td></tr>`).join('')}
+    </table>
+    <p class="small">Totals are sums, as the FSS manual scores them (its T-norms use the flow total and worry), and are left blank if an item was skipped.
+      Difficulty ${rec.fss.difficulty ?? '–'}/9 · competence ${rec.fss.competence ?? '–'}/9 · demands ${rec.fss.demands ?? '–'}/9 (5 = just right)</p>` : ''
+  $('sumPad').innerHTML = `
+    <div class="kicker">Run ${rec.run}${rec.participant ? ' · ' + rec.participant : ''}</div>
+    <h1>${title}</h1>
+    ${gameHtml}${arrowHtml}${fssHtml}
     <h3>Download the log</h3>
     <p class="hint">Covers every run in this tab so far.</p>
     <div class="dl">
@@ -889,9 +942,9 @@ function summary() {
       <button class="go ghost" data-dl="responses">responses.csv</button>
       <button class="go ghost" data-dl="json">everything.json</button>
     </div>
-    <button class="go" id="again">Run another condition</button>`
+    <button class="go" id="again">Start another run</button>`
   $('sumPad').querySelectorAll('[data-dl]').forEach(b => { b.onclick = () => download(b.dataset.dl) })
-  $('again').onclick = () => { show('setup'); S.condition = null; renderSetup() }
+  $('again').onclick = () => { show('setup'); S.condition = null; S.redo = false; renderSetup() }
   show('summary')
 }
 
