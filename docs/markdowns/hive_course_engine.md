@@ -46,7 +46,8 @@ Still open:
   - The trip is saved with `told: true, est, when` and drawn dashed in both skins. Its detail says "logged afterwards".
 - **Paths** (`?skin=paths`, or the "As paths" switch in the bar; prototype only). The same record, drawn as a park seen from above.
   - The house is doing, and each sense has a place (a glyph in its hue).
-  - Each trip of the last seven days wears a faint path from the house to its place. Paths walked often wear in: **desire paths**.
+  - Each sense has its own lane (2026-11-26, Norm: paths to hearing ran through touch). The places stand on a fan around the house's door, one direction each, so a path to one place never crosses another place.
+  - Each trip of the last seven days wears a faint path up its sense's lane, a little off its middle. Paths walked often wear in: **desire paths**.
   - A sense turned from on the way bends that trip's path: it heads toward that place and turns off. These are **avoidance paths**.
   - Longer trips loop wider at the place.
   - A place appears once visited or turned from. A place only turned from is a dashed outline.

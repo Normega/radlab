@@ -731,10 +731,10 @@ function renderHive(hideLast) {
 // wider loop at the place. A place appears once visited or turned from, so
 // nothing waits to be filled; a place only turned from is drawn as an outline.
 // Stays are scuffs in front of a bench by the house.
-const PLACE = {   // stage fractions; inner places sit off the lines to the outer ones
-  body: [0.10, 0.60], touch: [0.35, 0.52], hearing: [0.13, 0.22], sight: [0.50, 0.09],
-  smell: [0.87, 0.22], taste: [0.65, 0.52], breath: [0.90, 0.60],
-};
+// Each sense has its own lane: the places stand on a fan around the house's
+// door, one direction each, so a path to one place never runs through another.
+const FAN = ['body', 'touch', 'hearing', 'sight', 'smell', 'taste', 'breath'];   // left to right
+const FAN_FROM = 164, FAN_TO = 16;   // degrees, measured from the door (0 = due right)
 const GLYPH = {
   hearing: '<circle r="1.6" cx="-4"/><path d="M -1 -4 Q 2.5 0 -1 4 M 2.5 -7.5 Q 8.5 0 2.5 7.5" fill="none" stroke-width="1.6" stroke-linecap="round"/>',
   sight: '<circle r="3.6"/><path d="M 0 -8 V -5.5 M 0 8 V 5.5 M -8 0 H -5.5 M 8 0 H 5.5 M -5.7 -5.7 L -3.9 -3.9 M 5.7 5.7 L 3.9 3.9 M -5.7 5.7 L -3.9 3.9 M 5.7 -5.7 L 3.9 -3.9" stroke-width="1.5" stroke-linecap="round"/>',
@@ -751,30 +751,62 @@ const weekTrips = () => store.trips.map((t, i) => ({ t, i })).filter(({ t }) => 
 function pathsLayout() {
   const st = $('stage');
   const W = st.clientWidth, H = st.clientHeight;
-  const at = ([u, v]) => ({ x: 28 + u * (W - 56), y: 34 + v * (H - 68) });
-  const places = Object.fromEntries(Object.entries(PLACE).map(([s, uv]) => [s, at(uv)]));
   const home = { x: W / 2, y: H - 40 };
+  const door = { x: home.x, y: home.y - 14 };
+  const Rx = W / 2 - 46, Ry = door.y - 46;
+  const places = {}, lanes = {};
+  FAN.forEach((s, i) => {
+    const a = (FAN_FROM + (FAN_TO - FAN_FROM) * i / (FAN.length - 1)) * Math.PI / 180;
+    // evenly spaced directions as seen from the door, each reaching out to
+    // the edge of an oval that fills the park
+    const ca = Math.cos(a), sa = Math.sin(a), R = 1 / Math.hypot(ca / Rx, sa / Ry);
+    const ux = ca, uy = -sa, P = { x: door.x + ux * R, y: door.y + uy * R };
+    places[s] = P;
+    // the lane leaves the house already pointing its own way, stops short of
+    // the place on the side facing the door, and bends a little (all the same
+    // way, so neighbouring lanes never cross)
+    const a0 = { x: door.x + ux * 16, y: door.y + uy * 16 }, end = { x: P.x - ux * 22, y: P.y - uy * 22 };
+    const L = Math.hypot(end.x - a0.x, end.y - a0.y);
+    const c = { x: (a0.x + end.x) / 2 + uy * L * 0.05, y: (a0.y + end.y) / 2 - ux * L * 0.05 };
+    lanes[s] = { a: a0, c, b: end, ux, uy, L };
+  });
   const bench = { x: home.x + 46, y: home.y + 2 };
-  return { W, H, places, home, bench, rest: { x: home.x - 4, y: home.y + 16 }, cells: [] };
+  return { W, H, places, lanes, door, home, bench, rest: { x: home.x - 4, y: home.y + 16 }, cells: [] };
 }
-const ctrl = (a, b, r) => {   // a bend in the path: the midpoint, pushed sideways a little
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
-  const k = (r() - 0.5) * 0.28 * L;
-  return `${(mx - dy / L * k).toFixed(1)} ${(my + dx / L * k).toFixed(1)}`;
-};
+const bez = (l, f) => ({   // a point on a lane, f from 0 (the door) to 1 (the place)
+  x: (1 - f) * (1 - f) * l.a.x + 2 * (1 - f) * f * l.c.x + f * f * l.b.x,
+  y: (1 - f) * (1 - f) * l.a.y + 2 * (1 - f) * f * l.c.y + f * f * l.b.y,
+});
+const xy = (p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+// A trip walks its sense's lane, a little off the middle of it (more so the
+// further it gets from the door), so many trips wear one broad path. A sense
+// turned from on the way sends it some way up that sense's lane first, then
+// across to its own: the avoidance path.
 function tripD(t, g) {
   const r = mulberry32(Math.floor(t.start / 1000) % 2147483647);
-  let from = { x: g.home.x + (r() - 0.5) * 10, y: g.home.y - 14 };
-  let d = `M ${from.x.toFixed(1)} ${from.y.toFixed(1)}`;
-  for (const v of (t.declined || []).filter((x) => x.why === 'different' && g.places[x.sense])) {
-    const P = g.places[v.sense], k = 0.28 + r() * 0.14;
-    const p = { x: from.x + (P.x - from.x) * k, y: from.y + (P.y - from.y) * k };
-    d += ` Q ${ctrl(from, p, r)} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`; from = p;
+  const L = g.lanes[t.sense], side = (r() - 0.5) * 2;   // where in the lane's width this trip walks
+  const off = (p, f) => ({ x: p.x - L.uy * side * 9 * f, y: p.y + L.ux * side * 9 * f });
+  let from = { x: g.door.x + (r() - 0.5) * 6, y: g.door.y };
+  let d = `M ${xy(from)}`, f0 = 0;
+  const first = g.lanes[((t.declined || []).find((x) => x.why === 'different' && g.lanes[x.sense] && x.sense !== t.sense) || t).sense];
+  from = first.a; d += ` L ${xy(from)}`;
+  for (const v of (t.declined || []).filter((x) => x.why === 'different' && g.lanes[x.sense] && x.sense !== t.sense)) {
+    const V = g.lanes[v.sense], k = 0.14 + r() * 0.08;
+    const p = bez(V, k);
+    d += ` Q ${xy(bez(V, k * 0.5))} ${xy(p)}`;   // up the lane turned from
+    from = p; f0 = Math.max(f0, k);
   }
-  const D = g.places[t.sense], end = { x: D.x + (r() - 0.5) * 12, y: D.y + 8 + (r() - 0.5) * 6 };
-  d += ` Q ${ctrl(from, end, r)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
-  const rr = 3 + 11 * fillOf(t.end - t.start), side = r() < 0.5 ? 1 : -1;
-  d += ` a ${rr.toFixed(1)} ${(rr * 0.7).toFixed(1)} 0 1 1 ${(side * 2 * rr).toFixed(1)} 0 a ${rr.toFixed(1)} ${(rr * 0.7).toFixed(1)} 0 1 1 ${(-side * 2 * rr).toFixed(1)} 0`;
+  if (f0 > 0) {   // across to its own lane, a little further out
+    const f1 = Math.min(0.5, f0 + 0.08), q = off(bez(L, f1), f1);
+    d += ` Q ${xy({ x: (from.x + q.x) / 2 - L.ux * 6, y: (from.y + q.y) / 2 - L.uy * 6 })} ${xy(q)}`;
+    f0 = f1;
+  }
+  // the rest of its own lane, from f0 to the place (the tail of the curve)
+  const c = { x: (1 - f0) * L.c.x + f0 * L.b.x, y: (1 - f0) * L.c.y + f0 * L.b.y };
+  const end = off({ x: L.b.x + (r() - 0.5) * 6, y: L.b.y + (r() - 0.5) * 6 }, 1);
+  d += ` Q ${xy(off(c, (1 + f0) / 2))} ${xy(end)}`;
+  const rr = 3 + 9 * fillOf(t.end - t.start), side2 = r() < 0.5 ? 1 : -1;
+  d += ` a ${rr.toFixed(1)} ${(rr * 0.7).toFixed(1)} 0 1 1 ${(side2 * 2 * rr).toFixed(1)} 0 a ${rr.toFixed(1)} ${(rr * 0.7).toFixed(1)} 0 1 1 ${(-side2 * 2 * rr).toFixed(1)} 0`;
   return d;
 }
 let selPlace = null;
@@ -814,9 +846,9 @@ function renderPaths(hideLast) {
 }
 // out: walk a little way toward the offered place
 function walkOut(sense, color, done) {
-  const { home, places, rest } = geo, P = places[sense] || places.sight;
-  const p = { x: home.x + (P.x - home.x) * 0.3, y: home.y + (P.y - home.y) * 0.3 };
-  fly(`M ${rest.x} ${rest.y} Q ${home.x} ${home.y - 30}, ${p.x.toFixed(1)} ${p.y.toFixed(1)}`, color, 900, done);
+  const { door, lanes, rest } = geo, l = lanes[sense] || lanes.sight;
+  const p = bez(l, 0.3);
+  fly(`M ${rest.x} ${rest.y} Q ${door.x} ${door.y}, ${xy(p)}`, color, 900, done);
 }
 // home: the walk is drawn as it happens, then the walker comes back to the house
 function walkIn(trip) {
