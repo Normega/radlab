@@ -117,6 +117,7 @@ const MccPhone = lazy(() => import('./pages/mcc-nov-2026/MccPhone'))
 const Talks     = lazy(() => import('./pages/talks/Talks'))
 const BreathEvidence = lazy(() => import('./pages/breathevidence/BreathEvidence'))
 const Psy240Trial = lazy(() => import('./pages/psy240trial/Psy240Trial'))
+const BeltScope = lazy(() => import('./pages/beltscope/BeltScope'))
 
 // Academic partition (src/academic/) — Lecture Lounge lives here, the Field
 // Guide ingest portal joins it. Separate chunk group from research admin and
@@ -805,6 +806,11 @@ export default function App() {
           {/* The teaching trial's launch tracker (Oct 2026): lab only. */}
           <Route element={<LabOnlyRoute session={session} role={role} superAdmin={superAdmin} kicker="Teaching trial · launch tracker" />}>
             <Route path="/psy240trial" element={<Psy240Trial />} />
+          </Route>
+
+          {/* Belt Scope (Nov 2026): live Polar H10 readout for strap-fitting tests. Lab only; saves locally, writes nothing to a server. */}
+          <Route element={<LabOnlyRoute session={session} role={role} superAdmin={superAdmin} kicker="Lab · Belt Scope" />}>
+            <Route path="/belt-scope" element={<BeltScope />} />
           </Route>
 
           {/*
