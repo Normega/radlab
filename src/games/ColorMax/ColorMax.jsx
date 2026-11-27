@@ -4,6 +4,8 @@ import { DEMO_SECS, isDemoMode } from '../../lib/demoMode'
 import { COLORS, W, H, drawPage } from './drawings'
 import { COVERAGE_MIDPOINT, COVERAGE_K, PRECISION_MIDPOINT, PRECISION_K, logisticPercentile } from './constants'
 import SaveRetryBanner from '../../components/study/SaveRetryBanner'
+import ComprehensionCheck from '../../components/study/ComprehensionCheck'
+import { useComprehensionCheck } from '../../components/study/useComprehensionCheck'
 import './ColorMax.css'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -93,8 +95,14 @@ function mmss(secs) {
 }
 
 // ── ColorMax ───────────────────────────────────────────────────────────────
-export default function ColorMax({ session, studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null, studyId = null, isSimMode = false }) {
+export default function ColorMax({ session, studyMode = false, userId: userIdProp = null, onSessionComplete = null, supabaseClient: supabaseClientProp = null, studyId = null, scheduleId = null, isSimMode = false }) {
   const db = supabaseClientProp ?? supabase
+  // The study's comprehension check, if it set one (studies.comprehension_checks):
+  // Start stays disabled until every question is answered correctly.
+  const check = useComprehensionCheck({
+    db, studyId, userId: userIdProp ?? session?.user?.id ?? null, scheduleId, game: 'color_max',
+    enabled: studyMode && !isSimMode,
+  })
   // Admin quick-demo (?demo=1) shortens the session; never honored in studies
   const totalSecs = !studyMode && isDemoMode() ? DEMO_SECS : TOTAL_SECS
   // ── React state (drives re-renders) ─────────────────────────────────────
@@ -299,7 +307,7 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
   // ── Game lifecycle ────────────────────────────────────────────────────────
 
   async function handleStart() {
-    if (startLock.current) return
+    if (startLock.current || !check.cleared) return
     startLock.current = true
     setStarting(true)
     setStartError(null)
@@ -488,9 +496,10 @@ export default function ColorMax({ session, studyMode = false, userId: userIdPro
           <div className="cm-start">
             <h1 className="cm-start-title">ColorMax</h1>
             <p className="cm-start-sub">A paint by numbers activity! 5 images, 5 minutes. Color each region using the matching number — switch between images any time! The final reveal is entirely in your hands. A detail brush, heavy-fill brush, and a precision eraser will be available to you, and you will be scored on completeness and precision.</p>
+            <ComprehensionCheck check={check} />
             <button
               className="cm-start-btn"
-              disabled={starting}
+              disabled={starting || !check.cleared}
               onClick={handleStart}
             >
               {starting ? 'Starting…' : `Start — ${mmss(totalSecs)}`}

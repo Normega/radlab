@@ -12,17 +12,39 @@ import AnagramBox from './components/AnagramBox';
 import FluencyBox from './components/FluencyBox';
 import WordProbeBox from './components/WordProbeBox';
 import SessionComplete from './components/SessionComplete';
+import ComprehensionCheck from '../../components/study/ComprehensionCheck';
+import { useComprehensionCheck } from '../../components/study/useComprehensionCheck';
 
 export default function AptitudeSuite({
   session,
   userId:          userIdProp,
   studyId,
+  scheduleId = null,
   studyMode = false,
   supabaseClient,
   onSessionComplete,
   isSimMode = false,
+  letterBoard: letterBoardProp,
 }) {
   const db = supabaseClient ?? globalSupabase;
+
+  // Word Probe's letter board (studies.wordprobe_letter_board, 2026-11-27): the
+  // letters tried on the current word, coloured as on the grid. A study setting,
+  // off by default, so Sandy Study 3's Aptitude Suite is unchanged. Read under the
+  // participant's own session; unreadable means no board, as before. A preview
+  // can force it with the letterBoard prop.
+  const [letterBoardStudy, setLetterBoardStudy] = useState(false);
+  useEffect(() => {
+    if (letterBoardProp !== undefined || !studyMode || !studyId) return;
+    let live = true;
+    db.from('studies').select('wordprobe_letter_board').eq('id', studyId).maybeSingle()
+      .then(({ data, error }) => {
+        if (error) { console.warn('wordprobe_letter_board unreadable, no letter board:', error.message); return; }
+        if (live) setLetterBoardStudy(data?.wordprobe_letter_board === true);
+      });
+    return () => { live = false; };
+  }, [db, studyId, studyMode, letterBoardProp]);
+  const letterBoard = letterBoardProp ?? letterBoardStudy;
 
   const [phase, setPhase] = useState('instructions'); // 'instructions' | 'active' | 'complete'
   const [saving, setSaving] = useState(false);
@@ -54,6 +76,13 @@ export default function AptitudeSuite({
   scoresRef.current = { anagram, fluency, wordProbe };
 
   const userId = userIdProp ?? session?.user?.id ?? null;
+
+  // The study's comprehension check, if it set one (studies.comprehension_checks):
+  // Begin stays disabled until every question is answered correctly.
+  const check = useComprehensionCheck({
+    db, studyId, userId, scheduleId, game: 'aptitude_suite',
+    enabled: studyMode && !isSimMode,
+  });
 
   // ── Supabase helpers ──────────────────────────────────────────────────────
 
@@ -165,7 +194,7 @@ export default function AptitudeSuite({
 
   async function handleBegin() {
     // A ref, not state: a double click must not create two session rows.
-    if (beginLock.current) return;
+    if (beginLock.current || !check.cleared) return;
     beginLock.current = true;
     setBeginError(null);
     const error = await createSessionRow();
@@ -352,7 +381,8 @@ export default function AptitudeSuite({
               },
               {
                 name: 'Word Probe',
-                desc: 'Guess a hidden 5-letter word in 6 tries. Tip: fewer guesses means a higher score, but only valid words count as guesses. After each guess, the letters will be coloured to guide your next move: green = correct letter, correct position · yellow = correct letter, wrong position · grey = incorrect letter.',
+                desc: 'Guess a hidden 5-letter word in 6 tries. Tip: fewer guesses means a higher score, but only valid words count as guesses. After each guess, the letters will be coloured to guide your next move: green = correct letter, correct position · yellow = correct letter, wrong position · grey = incorrect letter.' +
+                  (letterBoard ? ' The letters under the grid show the same colours, so you can see which letters you have already tried on this word.' : ''),
               },
             ].map(({ name, desc }) => (
               <div key={name} style={{
@@ -382,8 +412,10 @@ export default function AptitudeSuite({
               </div>
             ))}
           </div>
+          <ComprehensionCheck check={check} />
           <button
             onClick={handleBegin}
+            disabled={!check.cleared}
             style={{
               padding: '0.75rem 2.5rem',
               background: 'var(--pk)',
@@ -393,7 +425,8 @@ export default function AptitudeSuite({
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '16px',
               fontWeight: '600',
-              cursor: 'pointer',
+              cursor: check.cleared ? 'pointer' : 'default',
+              opacity: check.cleared ? 1 : 0.5,
             }}
           >
             Begin
@@ -460,6 +493,7 @@ export default function AptitudeSuite({
             hook={wordProbeWithLog}
             onInteract={handleInteract}
             disabled={!timer.running}
+            letterBoard={letterBoard}
           />
         </div>
         <div style={{ display: 'contents' }}

@@ -1,0 +1,89 @@
+/* Comprehension check on a game's start screen (ComprehensionCheck.jsx).
+   Global tokens only, so it sits in the Aptitude Suite, ColourMax and Foggy
+   Valleys start screens alike. Options are real bordered buttons. */
+.cc {
+  max-width: 560px;
+  margin: var(--sp-24) auto;
+  text-align: left;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--tx);
+}
+.cc-title {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 var(--sp-8);
+}
+.cc-intro,
+.cc-note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--tx2);
+  margin: 0 0 var(--sp-16);
+}
+.cc-q {
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: var(--sp-16);
+  margin: 0 0 var(--sp-16);
+  background: var(--bgc);
+}
+.cc-legend {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0;
+  margin-bottom: var(--sp-8);
+}
+.cc-opts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  margin-top: var(--sp-8);
+}
+.cc-opt {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  color: var(--tx);
+  background: var(--bgc);
+  border: 1px solid var(--bds);
+  border-radius: 24px;
+  padding: var(--sp-8) var(--sp-16);
+  cursor: pointer;
+}
+.cc-opt:hover:not(:disabled) { border-color: var(--pk); }
+.cc-opt:focus-visible { outline: 3px solid var(--pk); outline-offset: 2px; }
+.cc-opt:disabled { cursor: default; }
+.cc-opt.is-wrong {
+  color: var(--err-tx);
+  background: var(--err-bg);
+  border-color: var(--err-bd);
+  text-decoration: line-through;
+}
+.cc-opt.is-right {
+  color: var(--tx);
+  background: var(--pkb);
+  border-color: var(--pk);
+  font-weight: 600;
+}
+.cc-opt:disabled:not(.is-wrong):not(.is-right) { opacity: 0.5; }
+.cc-fb {
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: 20px;
+  margin: var(--sp-8) 0 0;
+}
+.cc-fb.is-wrong { color: var(--err-tx); }
+.cc-fb.is-right { color: var(--pkd); font-weight: 600; }
+.cc-retry {
+  font: inherit;
+  font-size: 14px;
+  padding: var(--sp-8) var(--sp-16);
+  border-radius: 24px;
+  border: 1px solid var(--pk);
+  background: var(--pk);
+  color: var(--bgc);
+  cursor: pointer;
+}

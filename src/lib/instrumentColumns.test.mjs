@@ -157,5 +157,24 @@ check('hyphens are stripped from ids',
     hd.relax_s1_breath_hold_input === 'key+touch' && hd.relax_s1_breath_hold_mode === 'touch')
 }
 
+// ── comprehension_check ─────────────────────────────────────────────────────
+{
+  const cc = instrumentColumns('s4_check_aptitude_d1', 'comprehension_check', {
+    version: 'comprehension_check_v1', game: 'aptitude_suite',
+    shown_at: '2026-11-27T15:00:00.000Z', passed_at: '2026-11-27T15:00:42.340Z', total_wrong: 3,
+    questions: [
+      { id: 'time', correct: 'b', wrong: [], tries: 1 },
+      { id: 'grey', correct: 'c', wrong: ['a', 'b'], tries: 3 },
+      { id: 'score', correct: 'a', wrong: ['c'], tries: 2 },
+    ],
+  })
+  check('comprehension check: wrong counts per question, 0 when right first time',
+    cc.s4_check_aptitude_d1_time_wrong === 0 && cc.s4_check_aptitude_d1_grey_wrong === 2 && cc.s4_check_aptitude_d1_score_wrong === 1)
+  check('comprehension check: wrong options in order, blank when none',
+    cc.s4_check_aptitude_d1_grey_tried === 'a; b' && cc.s4_check_aptitude_d1_time_tried === null)
+  check('comprehension check: total and seconds',
+    cc.s4_check_aptitude_d1_total_wrong === 3 && cc.s4_check_aptitude_d1_secs === 42.3)
+}
+
 console.log(`instrumentColumns: ${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

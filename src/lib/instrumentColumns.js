@@ -142,6 +142,24 @@ export function instrumentColumns(prefix, type, response, def = null) {
       return out
     }
 
+    case 'comprehension_check': {
+      // A game's start-screen check (ComprehensionCheck.jsx): saved only once
+      // every question was answered correctly, so the record is the wrong answers
+      // each took. `_<q>_wrong` is a count (0 = right first time), `_<q>_tried`
+      // the wrong option ids in the order picked.
+      const r = response ?? {}
+      const t0 = Date.parse(r.shown_at), t1 = Date.parse(r.passed_at)
+      out[`${prefix}_total_wrong`] = Number.isInteger(r.total_wrong) ? r.total_wrong : null
+      out[`${prefix}_secs`] = Number.isFinite(t0) && Number.isFinite(t1) ? Math.round((t1 - t0) / 100) / 10 : null
+      for (const q of r.questions ?? []) {
+        if (!q?.id) continue
+        const wrong = Array.isArray(q.wrong) ? q.wrong : null
+        out[`${prefix}_${token(q.id)}_wrong`] = wrong ? wrong.length : null
+        out[`${prefix}_${token(q.id)}_tried`] = wrong && wrong.length ? wrong.map(token).join('; ') : null
+      }
+      return out
+    }
+
     default:
       // An unregistered type must still export its data — JSON beats dropping
       // the answer on the floor.

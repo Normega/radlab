@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase'
 import { DEMO_SECS, isDemoMode } from '../../lib/demoMode'
 import { useScrollToTopOn } from '../../lib/scrollToTop'
 import SaveRetryBanner from '../../components/study/SaveRetryBanner'
+import ComprehensionCheck from '../../components/study/ComprehensionCheck'
+import { useComprehensionCheck } from '../../components/study/useComprehensionCheck'
 import NoDefaultSlider from '../../components/study/NoDefaultSlider'
 import { ReviewIcon, ReviewCross } from './ReviewIcons'
 import { FIXED_PICTURES, mulberry32, shuffle, f1, getScene, sceneSVG, foundOverlay, reviewOverlay, answerOverlay } from './scenes'
@@ -114,7 +116,16 @@ export default function FoggyValleys({
 
   const valleyOffset = config?.valleyOffset ?? 0
 
+  // The study's comprehension check, if it set one (studies.comprehension_checks),
+  // on the first valley's rules only: Begin stays disabled until every question
+  // is answered correctly.
+  const check = useComprehensionCheck({
+    db, studyId, userId, scheduleId, game: 'foggy_valleys',
+    enabled: studyMode && !isSimMode && valleyOffset === 0,
+  })
+
   function startSession() {
+    if (!check.cleared) return
     const order = studyMode
       ? (config?.valleys ?? ['thin', 'thick'])
       : cfg.order === 'thin' ? ['thin', 'thick'] : cfg.order === 'thick' ? ['thick', 'thin'] : (Math.random() < 0.5 ? ['thin', 'thick'] : ['thick', 'thin'])
@@ -295,7 +306,7 @@ export default function FoggyValleys({
 
   let body = null
   if (view.name === 'intro') {
-    body = <Intro cfg={cfg} setCfg={setCfg} studyMode={studyMode} showRules={!studyMode || valleyOffset === 0} onStart={startSession} />
+    body = <Intro cfg={cfg} setCfg={setCfg} studyMode={studyMode} showRules={!studyMode || valleyOffset === 0} onStart={startSession} check={check} />
   } else if (view.name === 'ratings') {
     body = (
       <Ratings
@@ -361,7 +372,7 @@ export default function FoggyValleys({
 
 // ── participant instructions, with the researcher settings in a preview ──────
 
-function Intro({ cfg, setCfg, studyMode, showRules, onStart }) {
+function Intro({ cfg, setCfg, studyMode, showRules, onStart, check }) {
   const num = key => e => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v >= 0) setCfg(c => ({ ...c, [key]: v })) }
   const flag = key => e => { const on = e.target.checked; setCfg(c => ({ ...c, [key]: on })) }
   return (
@@ -380,7 +391,8 @@ function Intro({ cfg, setCfg, studyMode, showRules, onStart }) {
             <p>{freeText(cfg)}</p>
           </div>
         )}
-        <div className="fv-actions"><button type="button" className="fv-btn" onClick={onStart}>Begin</button></div>
+        {showRules && <ComprehensionCheck check={check} />}
+        <div className="fv-actions"><button type="button" className="fv-btn" disabled={!check.cleared} onClick={onStart}>Begin</button></div>
       </section>
       {!studyMode && (
         <details className="fv-card fv-settings">
