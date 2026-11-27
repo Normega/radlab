@@ -71,3 +71,20 @@ test('the task refuses to build on a missing or unknown assignment', () => {
   assert.throws(() => mainScript({ version: 'other', condition: 'sf', sequence: 1 }))
   assert.throws(() => mainScript({ version: 'main', condition: 'xx', sequence: 1 }))
 })
+
+test("the clip plan is Maya's picks, and the versions share the lead-in and washout", () => {
+  assert.equal(CLIP_PLAN.provisional, false)
+  assert.deepEqual(CLIP_PLAN.pairs, { sad: { 1: ['S6', 'S4'], 2: ['S5', 'S8'] }, anger: { 1: ['A7', 'A3'], 2: ['A1', 'A4'] } })
+  assert.deepEqual(CLIP_PLAN.mainNeutral, { n1: 'N3', n2: 'N5', w: 'N8' })
+  const neutral = clipsFor({ version: 'neutral' })
+  for (const k of ['n1', 'n2', 'w']) assert.equal(neutral[k], CLIP_PLAN.mainNeutral[k])
+  // the neutral version shows seven different neutral clips; across all sequences, main uses all eight emotional clips
+  assert.equal(new Set(clipOrder(neutral)).size, 7)
+  const emotional = new Set()
+  for (const seq of Object.keys(SEQUENCES)) {
+    const c = clipsFor({ version: 'main', sequence: seq })
+    assert.equal(new Set(clipOrder(c)).size, 7, `sequence ${seq} repeats a clip`)
+    for (const id of [...c.b1.clips, ...c.b2.clips]) emotional.add(id)
+  }
+  assert.deepEqual([...emotional].sort(), ['A1', 'A3', 'A4', 'A7', 'S4', 'S5', 'S6', 'S8'])
+})
